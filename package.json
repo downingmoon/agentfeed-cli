@@ -1,0 +1,27 @@
+{
+  "name": "agentfeed",
+  "version": "0.2.0",
+  "description": "AgentFeed local CLI MVP",
+  "type": "module",
+  "bin": {
+    "agentfeed": "./dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "devDependencies": {
+    "@types/node": "^20.17.24",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.8"
+  }
+}

@@ -1,0 +1,148 @@
+export type AgentType = 'claude_code' | 'codex' | 'cursor' | 'gemini_cli' | 'other';
+export type Visibility = 'private' | 'unlisted' | 'public' | 'team';
+export type WorklogStatus = 'draft' | 'needs_review' | 'private' | 'unlisted' | 'public' | 'rejected' | 'deleted';
+export type WorklogCategory = 'web_app' | 'bot' | 'automation' | 'trading' | 'devops' | 'data' | 'ai_tool' | 'open_source' | 'other';
+export type PrivacyStatus = 'safe' | 'warning' | 'danger';
+export type PrivacySeverity = 'low' | 'medium' | 'high';
+
+export interface AgentFeedProjectConfig {
+  version: '0.2';
+  project: {
+    name: string;
+    slug: string;
+    repository_url?: string | null;
+    visibility: 'private' | 'unlisted' | 'public';
+    tags: string[];
+  };
+  collection: {
+    auto_collect: boolean;
+    auto_upload: boolean;
+    open_review_after_upload: boolean;
+    include_public_prompt: boolean;
+    include_estimated_cost: boolean;
+    include_token_usage: boolean;
+    include_file_stats: boolean;
+    include_test_results: boolean;
+    run_tests_on_collect: boolean;
+  };
+  privacy: {
+    redact_secrets: boolean;
+    redact_emails: boolean;
+    redact_private_urls: boolean;
+    redact_local_paths: boolean;
+    block_public_publish_on_high_severity: boolean;
+    raw_transcript_upload: boolean;
+    raw_diff_upload: boolean;
+  };
+  agents: {
+    claude_code: { enabled: boolean; hook_scope: 'project' | 'global' };
+    codex: { enabled: boolean };
+    cursor: { enabled: boolean };
+    gemini_cli: { enabled: boolean };
+  };
+  commands: { test: 'auto' | string | null; build: 'auto' | string | null };
+}
+
+export interface AgentFeedCredentials {
+  api_base_url: string;
+  ingestion_token: string;
+  user?: { id?: string; username?: string };
+  created_at: string;
+}
+
+export interface WorklogMetrics {
+  tokens_used?: number | null;
+  estimated_cost_usd?: number | null;
+  duration_seconds?: number | null;
+  files_changed?: number | null;
+  lines_added?: number | null;
+  lines_removed?: number | null;
+  tests_run?: number | null;
+  tests_passed?: number | null;
+  commits_created?: number | null;
+  failed_commands?: number | null;
+}
+
+export interface WorklogTimelineItem {
+  order: number;
+  title: string;
+  description?: string;
+  status?: 'success' | 'warning' | 'failed' | 'info';
+}
+
+export interface PrivacyScanResult {
+  status: PrivacyStatus;
+  findings: PrivacyFinding[];
+}
+
+export interface PrivacyFinding {
+  id: string;
+  type: 'possible_secret' | 'private_url' | 'email_address' | 'api_key_pattern' | 'env_file_reference' | 'sensitive_path' | 'database_url' | 'other';
+  severity: PrivacySeverity;
+  message: string;
+  field?: string;
+  sample_redacted?: string;
+  resolved: boolean;
+  resolution?: 'ignored' | 'redacted' | 'removed';
+}
+
+export interface LocalDraft {
+  schema_version: '0.2';
+  id: string;
+  project: { name: string; repository_url?: string | null; local_path_hash?: string };
+  worklog: {
+    title: string;
+    summary: string;
+    agent: AgentType;
+    model?: string | null;
+    category: WorklogCategory;
+    tags: string[];
+    visibility: 'private';
+    metrics: WorklogMetrics;
+    changed_areas: string[];
+    public_prompt?: string | null;
+    outcome: string[];
+    timeline: WorklogTimelineItem[];
+  };
+  privacy_scan: PrivacyScanResult;
+  source: { agent: AgentType; session_id?: string | null; tool_version: string; host_label?: string | null; created_at: string };
+  upload: { uploaded: boolean; worklog_id?: string | null; review_url?: string | null; uploaded_at?: string | null };
+}
+
+export interface ChangedFileSummary {
+  path: string;
+  extension?: string | null;
+  language?: string | null;
+  status: 'added' | 'modified' | 'deleted' | 'renamed' | 'unknown';
+  lines_added?: number | null;
+  lines_removed?: number | null;
+  publish_path: boolean;
+}
+
+export interface GitMetrics {
+  repository_url?: string | null;
+  branch?: string | null;
+  head_commit?: string | null;
+  dirty: boolean;
+  files_changed: number;
+  lines_added: number;
+  lines_removed: number;
+  changed_files: ChangedFileSummary[];
+}
+
+export interface IngestWorklogRequest {
+  source: { agent: AgentType; tool_version: string; host_label?: string | null; session_id?: string | null; local_draft_id?: string };
+  project: { name: string; repository_url?: string | null; local_path_hash?: string };
+  worklog: {
+    title: string;
+    summary: string;
+    category: WorklogCategory;
+    tags: string[];
+    metrics: WorklogMetrics;
+    changed_areas: string[];
+    public_prompt?: string | null;
+    outcome: string[];
+    timeline: WorklogTimelineItem[];
+  };
+  privacy_scan: PrivacyScanResult;
+}

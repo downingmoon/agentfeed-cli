@@ -1,0 +1,75 @@
+import type { AgentFeedCredentials, IngestWorklogRequest, LocalDraft } from '../types.js';
+import { readDraft } from '../draft/read.js';
+import { writeDraft } from '../draft/write.js';
+
+export class AgentFeedApiError extends Error {
+  constructor(public status: number, public code: string, message: string, public details?: Record<string, unknown>) {
+    super(message);
+  }
+}
+
+export function draftToIngestRequest(draft: LocalDraft): IngestWorklogRequest {
+  return {
+    source: {
+      agent: draft.source.agent,
+      tool_version: draft.source.tool_version,
+      host_label: draft.source.host_label,
+      session_id: draft.source.session_id,
+      local_draft_id: draft.id
+    },
+    project: {
+      name: draft.project.name,
+      repository_url: draft.project.repository_url ?? null,
+      local_path_hash: draft.project.local_path_hash
+    },
+    worklog: {
+      title: draft.worklog.title,
+      summary: draft.worklog.summary,
+      category: draft.worklog.category,
+      tags: draft.worklog.tags,
+      metrics: draft.worklog.metrics,
+      changed_areas: draft.worklog.changed_areas,
+      public_prompt: draft.worklog.public_prompt ?? null,
+      outcome: draft.worklog.outcome,
+      timeline: draft.worklog.timeline
+    },
+    privacy_scan: draft.privacy_scan
+  };
+}
+
+function friendlyError(status: number, code: string, message: string, details?: Record<string, unknown>): string {
+  if (status === 401 || code === 'INGESTION_TOKEN_INVALID') return 'Login/token problem. Run: agentfeed login --token <token>';
+  if (status === 413 || code === 'INGESTION_PAYLOAD_TOO_LARGE') return 'Draft payload is too large. Local draft was kept.';
+  if (status === 422 || code === 'VALIDATION_ERROR') return `Validation error: ${message}${details ? ` ${JSON.stringify(details)}` : ''}`;
+  if (status === 429 || code === 'RATE_LIMITED') return `Rate limited.${details?.retry_after_seconds ? ` Retry after ${details.retry_after_seconds} seconds.` : ''}`;
+  if (status === 409 || code === 'DUPLICATE_INGESTION_SESSION') return `Duplicate ingestion session.${details?.review_url ? ` Existing review URL: ${details.review_url}` : ''}`;
+  if (status >= 500) return 'Server error. Local draft was kept.';
+  return message || `AgentFeed API error (${status})`;
+}
+
+export async function uploadDraft(draft: LocalDraft, credentials: AgentFeedCredentials): Promise<{ id: string; status: 'needs_review' | 'private'; visibility: 'private'; review_url: string; created_at: string }> {
+  const payload = draftToIngestRequest(draft);
+  const body = JSON.stringify(payload);
+  if (Buffer.byteLength(body, 'utf8') > 512 * 1024) throw new AgentFeedApiError(413, 'INGESTION_PAYLOAD_TOO_LARGE', 'Draft payload is too large.');
+  const response = await fetch(`${credentials.api_base_url.replace(/\/$/, '')}/ingest/worklogs`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${credentials.ingestion_token}`, 'content-type': 'application/json' },
+    body
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const api = data as { error?: { code?: string; message?: string; details?: Record<string, unknown> } };
+    const code = api.error?.code ?? `HTTP_${response.status}`;
+    const msg = friendlyError(response.status, code, api.error?.message ?? response.statusText, api.error?.details);
+    throw new AgentFeedApiError(response.status, code, msg, api.error?.details);
+  }
+  return (data as { data: { id: string; status: 'needs_review' | 'private'; visibility: 'private'; review_url: string; created_at: string } }).data;
+}
+
+export async function publishDraft(options: { cwd: string; id: string; credentials: AgentFeedCredentials }) {
+  const draft = await readDraft(options.cwd, options.id);
+  const result = await uploadDraft(draft, options.credentials);
+  draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, uploaded_at: result.created_at };
+  await writeDraft(options.cwd, draft);
+  return result;
+}

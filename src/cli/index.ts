@@ -6,7 +6,7 @@ import { loadCredentials, saveCredentials } from '../config/credentials.js';
 import { collectDraft } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
-import { publishDraft } from '../api/client.js';
+import { previewDraftRemote, publishDraft } from '../api/client.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { changedAreas } from '../summary/changed-areas.js';
@@ -93,6 +93,13 @@ async function cmdCollect(args: string[]) {
 async function cmdPreview(args: string[]) {
   const id = await resolveDraftId(process.cwd(), args);
   const draft = await readDraft(process.cwd(), id);
+  if (flag(args, '--remote')) {
+    const creds = await loadCredentials();
+    if (!creds) throw new Error('AgentFeed token is missing. Run: agentfeed login --token <token>');
+    const remote = await previewDraftRemote(draft, creds);
+    print(flag(args, '--json') ? JSON.stringify(remote, null, 2) : `Remote preview: ${remote.valid ? 'valid' : 'invalid'}\nWarnings: ${remote.warnings.length ? remote.warnings.join(', ') : 'none'}\nTitle: ${String(remote.preview.title ?? draft.worklog.title)}`);
+    return;
+  }
   if (flag(args, '--json')) { print(JSON.stringify(draft, null, 2)); return; }
   print('┌─────────────────────────────────────────────┐');
   print(`│ @local · ${draft.worklog.agent} · ${draft.project.name}`);

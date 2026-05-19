@@ -47,11 +47,17 @@ function friendlyError(status: number, code: string, message: string, details?: 
   return message || `AgentFeed API error (${status})`;
 }
 
-export async function uploadDraft(draft: LocalDraft, credentials: AgentFeedCredentials): Promise<{ id: string; status: 'needs_review' | 'private'; visibility: 'private'; review_url: string; created_at: string }> {
+export interface RemotePreviewResult {
+  valid: boolean;
+  preview: Record<string, unknown>;
+  warnings: string[];
+}
+
+async function postIngest<T>(path: string, draft: LocalDraft, credentials: AgentFeedCredentials): Promise<T> {
   const payload = draftToIngestRequest(draft);
   const body = JSON.stringify(payload);
   if (Buffer.byteLength(body, 'utf8') > 512 * 1024) throw new AgentFeedApiError(413, 'INGESTION_PAYLOAD_TOO_LARGE', 'Draft payload is too large.');
-  const response = await fetch(`${credentials.api_base_url.replace(/\/$/, '')}/ingest/worklogs`, {
+  const response = await fetch(`${credentials.api_base_url.replace(/\/$/, '')}${path}`, {
     method: 'POST',
     headers: { authorization: `Bearer ${credentials.ingestion_token}`, 'content-type': 'application/json' },
     body
@@ -63,7 +69,15 @@ export async function uploadDraft(draft: LocalDraft, credentials: AgentFeedCrede
     const msg = friendlyError(response.status, code, api.error?.message ?? response.statusText, api.error?.details);
     throw new AgentFeedApiError(response.status, code, msg, api.error?.details);
   }
-  return (data as { data: { id: string; status: 'needs_review' | 'private'; visibility: 'private'; review_url: string; created_at: string } }).data;
+  return (data as { data: T }).data;
+}
+
+export async function previewDraftRemote(draft: LocalDraft, credentials: AgentFeedCredentials): Promise<RemotePreviewResult> {
+  return postIngest<RemotePreviewResult>('/ingest/worklogs/preview', draft, credentials);
+}
+
+export async function uploadDraft(draft: LocalDraft, credentials: AgentFeedCredentials): Promise<{ id: string; status: 'needs_review' | 'private'; visibility: 'private'; review_url: string; created_at: string }> {
+  return postIngest<{ id: string; status: 'needs_review' | 'private'; visibility: 'private'; review_url: string; created_at: string }>('/ingest/worklogs', draft, credentials);
 }
 
 export async function publishDraft(options: { cwd: string; id: string; credentials: AgentFeedCredentials }) {

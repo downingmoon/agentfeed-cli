@@ -47,6 +47,13 @@ export async function collectDraft(options: { cwd: string; source?: AgentType; s
       session = codexSession;
     }
   }
+  if (!options.source && !session) {
+    const geminiSession = await collectAgentSessionMetrics({ cwd: root, source: 'gemini_cli', sessionFile: options.sessionFile });
+    if (geminiSession) {
+      source = 'gemini_cli';
+      session = geminiSession;
+    }
+  }
   const changedFiles = git.changed_files.length ? git.changed_files : session?.changed_files ?? [];
   const linesAdded = git.lines_added || session?.lines_added || 0;
   const linesRemoved = git.lines_removed || session?.lines_removed || 0;
@@ -57,14 +64,21 @@ export async function collectDraft(options: { cwd: string; source?: AgentType; s
   const metrics: WorklogMetrics = {
     tokens_used: config.collection.include_token_usage ? session?.tokens_used ?? null : null,
     estimated_cost_usd: null,
-    duration_seconds: null,
+    duration_seconds: session?.duration_seconds ?? null,
     files_changed: filesChanged,
     lines_added: linesAdded,
     lines_removed: linesRemoved,
     tests_run: config.collection.include_test_results ? session?.tests_run ?? null : null,
     tests_passed: config.collection.include_test_results ? session?.tests_passed ?? null : null,
     commits_created: null,
-    failed_commands: session?.failed_commands ?? null
+    failed_commands: session?.failed_commands ?? null,
+    commands_run: session?.commands_run ?? null,
+    tool_calls: session?.tool_calls ?? null,
+    skills_used: session?.skills_used ?? null,
+    subagents_spawned: session?.subagents_spawned ?? null,
+    subagents_completed: session?.subagents_completed ?? null,
+    agent_turns: session?.agent_turns ?? null,
+    agent_modes: session?.agent_modes ?? null
   };
   const title = generateTitle(safeAreas, mergedGit);
   const summary = generateSummary(safeAreas, metrics);

@@ -73,6 +73,13 @@ export interface WorklogMetrics {
   tests_passed?: number | null;
   commits_created?: number | null;
   failed_commands?: number | null;
+  commands_run?: number | null;
+  tool_calls?: number | null;
+  skills_used?: number | null;
+  subagents_spawned?: number | null;
+  subagents_completed?: number | null;
+  agent_turns?: number | null;
+  agent_modes?: string[] | null;
 }
 
 export interface WorklogTimelineItem {

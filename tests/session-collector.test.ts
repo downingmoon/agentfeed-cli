@@ -145,4 +145,116 @@ describe('agent session collector', () => {
     expect(draft.source.session_id).toBe('codex-auto-source');
     expect(draft.worklog.metrics.files_changed).toBe(1);
   });
+
+  it('extracts Gemini CLI tool calls, Superpowers skill use, tokens, and file edits', async () => {
+    const sessionFile = join(dir, 'gemini-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { sessionId: 'gemini-session-1', projectHash: 'hash', startTime: '2026-05-20T00:00:00Z', lastUpdated: '2026-05-20T00:02:00Z', kind: 'main' },
+      { id: 'g1', timestamp: '2026-05-20T00:00:10Z', type: 'gemini', model: 'gemini-3-flash-preview', tokens: { input: 10, cached: 5, output: 3, thoughts: 2, total: 20 }, toolCalls: [
+        { id: 'tool-1', name: 'activate_skill', status: 'success', args: { name: 'test-driven-development' } },
+        { id: 'tool-2', name: 'write_file', status: 'success', args: { file_path: join(dir, 'src', 'gemini.ts'), content: 'export const gemini = true;\\n' } },
+        { id: 'tool-3', name: 'replace', status: 'success', args: { file_path: join(dir, 'src', 'api.ts'), old_string: 'true', new_string: 'false\\n' } },
+        { id: 'tool-4', name: 'run_shell_command', status: 'error', args: { command: 'npm test' }, resultDisplay: 'Process exited with code 1\\nFAIL' },
+        { id: 'tool-5', name: 'update_topic', status: 'success', args: { title: 'Collector work', summary: 'Added session collector', strategic_intent: 'Improve collection' } }
+      ] }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile });
+
+    expect(metrics?.session_id).toBe('gemini-session-1');
+    expect(metrics?.model).toBe('gemini-3-flash-preview');
+    expect(metrics?.tokens_used).toBe(20);
+    expect(metrics?.duration_seconds).toBe(120);
+    expect(metrics?.tool_calls).toBe(5);
+    expect(metrics?.commands_run).toBe(1);
+    expect(metrics?.skills_used).toBe(1);
+    expect(metrics?.tests_run).toBe(1);
+    expect(metrics?.tests_passed).toBe(0);
+    expect(metrics?.failed_commands).toBe(1);
+    expect(metrics?.changed_files.map((file) => file.path).sort()).toEqual(['src/api.ts', 'src/gemini.ts']);
+  });
+
+  it('auto-detects Gemini CLI when collect receives a Gemini session file without an explicit source', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });
+    execFileSync('git', ['commit', '-m', 'agentfeed config'], { cwd: dir, stdio: 'ignore' });
+    const sessionFile = join(dir, 'gemini-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { sessionId: 'gemini-auto-source', startTime: '2026-05-20T00:00:00Z', lastUpdated: '2026-05-20T00:00:01Z', kind: 'main' },
+      { id: 'g1', timestamp: '2026-05-20T00:00:01Z', type: 'gemini', model: 'gemini-3-flash-preview', tokens: { total: 10 }, toolCalls: [
+        { id: 'tool-1', name: 'write_file', status: 'success', args: { file_path: join(dir, 'src', 'gemini.ts'), content: 'export const gemini = true;\\n' } }
+      ] }
+    ]);
+
+    const draft = await collectDraft({ cwd: dir, sessionFile });
+
+    expect(draft.worklog.agent).toBe('gemini_cli');
+    expect(draft.source.agent).toBe('gemini_cli');
+    expect(draft.source.session_id).toBe('gemini-auto-source');
+    expect(draft.worklog.metrics.tool_calls).toBe(1);
+    expect(draft.worklog.metrics.tokens_used).toBe(10);
+  });
+
+  it('merges OMC Claude session summaries and tool statistics without raw transcript data', async () => {
+    await mkdir(join(dir, '.omc', 'sessions'), { recursive: true });
+    await mkdir(join(dir, '.omc', 'state'), { recursive: true });
+    await writeFile(join(dir, '.omc', 'sessions', 'claude-omc-session.json'), JSON.stringify({
+      session_id: 'claude-omc-session',
+      ended_at: '2026-05-20T00:03:00Z',
+      reason: 'complete',
+      agents_spawned: 2,
+      agents_completed: 1,
+      modes_used: ['ralph', 'team']
+    }));
+    await writeJsonl(join(dir, '.omc', 'state', 'agent-replay-claude-omc-session.jsonl'), [
+      { t: 0, agent: 'a1', agent_type: 'executor', event: 'agent_stop', success: true }
+    ]);
+    const sessionFile = join(dir, 'claude-omc-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { type: 'assistant', cwd: dir, sessionId: 'claude-omc-session', timestamp: '2026-05-20T00:00:00Z', message: { model: 'claude-sonnet', content: [
+        { type: 'tool_use', name: 'Skill', input: { skill: 'test-driven-development' } },
+        { type: 'tool_use', name: 'Bash', input: { command: 'npm test' } }
+      ] } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'claude_code', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(2);
+    expect(metrics?.commands_run).toBe(1);
+    expect(metrics?.skills_used).toBe(1);
+    expect(metrics?.subagents_spawned).toBe(2);
+    expect(metrics?.subagents_completed).toBe(1);
+    expect(metrics?.agent_modes).toEqual(['ralph', 'team']);
+  });
+
+  it('merges OMX Codex subagent tracking and turn metrics', async () => {
+    await mkdir(join(dir, '.omx', 'state'), { recursive: true });
+    await writeFile(join(dir, '.omx', 'metrics.json'), JSON.stringify({ session_turns: 4, session_total_tokens: 1234 }));
+    await writeFile(join(dir, '.omx', 'state', 'subagent-tracking.json'), JSON.stringify({
+      schemaVersion: 1,
+      sessions: {
+        'codex-omx-session': {
+          session_id: 'codex-omx-session',
+          leader_thread_id: 'codex-omx-session',
+          threads: {
+            'codex-omx-session': { thread_id: 'codex-omx-session', kind: 'leader', turn_count: 3, mode: 'explore' },
+            'sub-1': { thread_id: 'sub-1', kind: 'subagent', turn_count: 1 },
+            'sub-2': { thread_id: 'sub-2', kind: 'subagent', turn_count: 2 }
+          }
+        }
+      }
+    }));
+    const sessionFile = join(dir, 'codex-omx-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-omx-session', cwd: dir } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.agent_turns).toBe(6);
+    expect(metrics?.subagents_spawned).toBe(2);
+    expect(metrics?.subagents_completed).toBe(2);
+    expect(metrics?.tokens_used).toBe(1234);
+    expect(metrics?.agent_modes).toEqual(['explore']);
+  });
 });

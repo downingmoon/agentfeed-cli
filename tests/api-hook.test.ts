@@ -6,6 +6,7 @@ import { initProject } from '../src/config/project-config.js';
 import { writeDraft } from '../src/draft/write.js';
 import { createEmptyDraft } from '../src/draft/create.js';
 import { createCliAuthSession, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
+import { waitForCliAuthExchange } from '../src/auth/browser-login.js';
 import { installClaudeCodeHook, uninstallClaudeCodeHook } from '../src/hooks/claude-code-settings.js';
 
 let dir: string;
@@ -84,6 +85,34 @@ describe('api client', () => {
     expect(exchange.token).toBe('af_live_test');
     expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.agentfeed.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
     expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://api.agentfeed.dev/v1/auth/cli/sessions/session-1/exchange', expect.objectContaining({ method: 'POST' }));
+  });
+
+  it('keeps polling the browser login session until it is approved', async () => {
+    let attempts = 0;
+    const exchange = vi.fn(async () => {
+      attempts += 1;
+      if (attempts === 1) {
+        throw new Error('pending');
+      }
+      return { token: 'af_live_after_approval', user: { id: 'user-1' } };
+    });
+
+    const result = await waitForCliAuthExchange({
+      apiBaseUrl: 'https://api.agentfeed.dev/v1',
+      session: {
+        session_id: 'session-1',
+        authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-1',
+        expires_at: '2026-05-20T00:05:00Z',
+        poll_interval_seconds: 1
+      },
+      verifier: 'verifier-1',
+      exchange,
+      sleep: async () => undefined,
+      isPendingError: (error) => error instanceof Error && error.message === 'pending'
+    });
+
+    expect(result.token).toBe('af_live_after_approval');
+    expect(exchange).toHaveBeenCalledTimes(2);
   });
 
   it.each([

@@ -1,7 +1,7 @@
 import { homedir } from 'node:os';
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path';
 import { readdir, readFile, stat } from 'node:fs/promises';
-import type { AgentType, ChangedFileSummary, WorklogMetrics } from '../types.js';
+import type { AgentType, ChangedFileSummary, CollectionQuality, CollectionSource, WorklogMetrics } from '../types.js';
 
 export interface AgentSessionMetrics extends WorklogMetrics {
   session_id?: string | null;
@@ -30,6 +30,17 @@ function numeric(value: unknown): number {
 function integer(value: unknown): number | null {
   const n = numeric(value);
   return n ? Math.trunc(n) : null;
+}
+
+function mergeQuality(sources: CollectionSource[]): CollectionQuality | null {
+  if (sources.some((source) => source.quality === 'high')) return 'high';
+  if (sources.some((source) => source.quality === 'medium')) return 'medium';
+  if (sources.some((source) => source.quality === 'low')) return 'low';
+  return null;
+}
+
+function pushSource(sources: CollectionSource[], source: CollectionSource) {
+  if (!sources.some((row) => row.type === source.type && row.name === source.name)) sources.push(source);
 }
 
 function safeJsonParse(text: string): unknown | null {
@@ -150,12 +161,15 @@ function finalize(input: {
   subagentsCompleted?: number;
   agentTurns?: number;
   agentModes?: Set<string>;
+  collectionSources?: CollectionSource[];
 }): AgentSessionMetrics | null {
   const changedFiles = [...input.files.values()];
   const linesAdded = changedFiles.reduce((sum, file) => sum + (file.lines_added ?? 0), 0);
   const linesRemoved = changedFiles.reduce((sum, file) => sum + (file.lines_removed ?? 0), 0);
   const skillsUsed = input.skills?.size ?? 0;
   const agentModes = [...(input.agentModes ?? new Set<string>())].sort();
+  const collectionSources = input.collectionSources ?? [];
+  const collectionQuality = mergeQuality(collectionSources);
   if (!input.sessionId && !input.model && !changedFiles.length && !input.tokensUsed && !input.testsRun && !input.failedCommands && !input.toolCalls && !input.commandsRun && !skillsUsed && !input.subagentsSpawned && !input.agentTurns) return null;
   return {
     session_id: input.sessionId ?? null,
@@ -175,7 +189,9 @@ function finalize(input: {
     subagents_spawned: input.subagentsSpawned || null,
     subagents_completed: input.subagentsCompleted || null,
     agent_turns: input.agentTurns || null,
-    agent_modes: agentModes.length ? agentModes : null
+    agent_modes: agentModes.length ? agentModes : null,
+    collection_quality: collectionQuality,
+    collection_sources: collectionSources.length ? collectionSources : null
   };
 }
 
@@ -184,11 +200,13 @@ async function readOmcMetadata(cwd: string, sessionId: string | null): Promise<{
   subagentsSpawned?: number;
   subagentsCompleted?: number;
   agentModes?: string[];
+  detected?: boolean;
 }> {
   if (!sessionId) return {};
-  const result: { toolCalls?: number; subagentsSpawned?: number; subagentsCompleted?: number; agentModes?: string[] } = {};
+  const result: { toolCalls?: number; subagentsSpawned?: number; subagentsCompleted?: number; agentModes?: string[]; detected?: boolean } = {};
   const session = await readJsonFile(join(cwd, '.omc', 'sessions', `${sessionId}.json`));
   if (session) {
+    result.detected = true;
     result.subagentsSpawned = integer(session.agents_spawned) ?? undefined;
     result.subagentsCompleted = integer(session.agents_completed) ?? undefined;
     result.agentModes = Array.isArray(session.modes_used) ? session.modes_used.filter((mode): mode is string => typeof mode === 'string') : undefined;
@@ -196,7 +214,7 @@ async function readOmcMetadata(cwd: string, sessionId: string | null): Promise<{
   const stats = await readJsonFile(join(homedir(), '.claude', '.session-stats.json'));
   const statsSession = asRecord(asRecord(stats?.sessions)?.[sessionId]);
   const totalCalls = integer(statsSession?.total_calls);
-  if (totalCalls) result.toolCalls = totalCalls;
+  if (totalCalls) { result.toolCalls = totalCalls; result.detected = true; }
   return result;
 }
 
@@ -206,15 +224,18 @@ async function readOmxMetadata(cwd: string, sessionId: string | null): Promise<{
   subagentsCompleted?: number;
   agentTurns?: number;
   agentModes?: string[];
+  detected?: boolean;
 }> {
-  const result: { tokensUsed?: number; subagentsSpawned?: number; subagentsCompleted?: number; agentTurns?: number; agentModes?: string[] } = {};
+  const result: { tokensUsed?: number; subagentsSpawned?: number; subagentsCompleted?: number; agentTurns?: number; agentModes?: string[]; detected?: boolean } = {};
   const metrics = await readJsonFile(join(cwd, '.omx', 'metrics.json'));
   result.tokensUsed = integer(metrics?.session_total_tokens) ?? undefined;
+  if (metrics) result.detected = true;
   const tracking = await readJsonFile(join(cwd, '.omx', 'state', 'subagent-tracking.json'));
   const sessions = asRecord(tracking?.sessions);
   const session = (sessionId && asRecord(sessions?.[sessionId])) || (sessions ? asRecord(Object.values(sessions)[0]) : null);
   const threads = asRecord(session?.threads);
   if (threads) {
+    result.detected = true;
     let spawned = 0;
     let turns = 0;
     const modes = new Set<string>();
@@ -298,12 +319,14 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string): Promise
       if (name === 'Agent') subagentsSpawned += 1;
     }
   }
+  const collectionSources: CollectionSource[] = [{ type: 'agent_session', name: 'claude_code', quality: 'high' }];
   const omc = await readOmcMetadata(cwd, sessionId);
+  if (omc.detected) pushSource(collectionSources, { type: 'plugin_metadata', name: 'omc', quality: 'medium' });
   toolCalls = Math.max(toolCalls, omc.toolCalls ?? 0);
   subagentsSpawned = Math.max(subagentsSpawned, omc.subagentsSpawned ?? 0);
   subagentsCompleted = Math.max(subagentsCompleted, omc.subagentsCompleted ?? 0);
   for (const mode of omc.agentModes ?? []) agentModes.add(mode);
-  return finalize({ sessionId, model, files, tokensUsed, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentModes });
+  return finalize({ sessionId, model, files, tokensUsed, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentModes, collectionSources });
 }
 
 function codexTokenTotal(info: Record<string, unknown>): number {
@@ -390,13 +413,15 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string): Promise<
       }
     }
   }
+  const collectionSources: CollectionSource[] = [{ type: 'agent_session', name: 'codex', quality: 'high' }];
   const omx = await readOmxMetadata(cwd, sessionId);
+  if (omx.detected) pushSource(collectionSources, { type: 'plugin_metadata', name: 'omx', quality: 'medium' });
   tokensUsed = Math.max(tokensUsed, omx.tokensUsed ?? 0);
   subagentsSpawned = Math.max(subagentsSpawned, omx.subagentsSpawned ?? 0);
   subagentsCompleted = Math.max(subagentsCompleted, omx.subagentsCompleted ?? 0);
   agentTurns = Math.max(agentTurns, omx.agentTurns ?? 0);
   for (const mode of omx.agentModes ?? []) agentModes.add(mode);
-  return finalize({ sessionId, model, files, tokensUsed, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes });
+  return finalize({ sessionId, model, files, tokensUsed, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes, collectionSources });
 }
 
 function geminiTokenTotal(tokens: Record<string, unknown>): number {
@@ -466,7 +491,111 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string): Promise
     }
   }
   const durationSeconds = startMillis && endMillis && endMillis > startMillis ? (endMillis - startMillis) / 1000 : null;
-  return finalize({ sessionId, model, files, tokensUsed, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted: subagentsSpawned, agentModes });
+  const collectionSources: CollectionSource[] = [{ type: 'agent_session', name: 'gemini_cli', quality: 'high' }];
+  if (skills.size || agentModes.has('superpowers')) pushSource(collectionSources, { type: 'plugin_metadata', name: 'superpowers', quality: 'medium' });
+  return finalize({ sessionId, model, files, tokensUsed, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted: subagentsSpawned, agentModes, collectionSources });
+}
+
+
+function firstInteger(record: Record<string, unknown>, keys: string[]): number | null {
+  for (const key of keys) {
+    const value = integer(record[key]);
+    if (value != null) return value;
+  }
+  return null;
+}
+
+function addModes(target: Set<string>, value: unknown) {
+  if (typeof value === 'string' && value) target.add(value);
+  else if (Array.isArray(value)) {
+    for (const item of value) if (typeof item === 'string' && item) target.add(item);
+  }
+}
+
+function applyGenericRecord(record: Record<string, unknown>, acc: {
+  sessionId: string | null;
+  model: string | null;
+  tokensUsed: number;
+  commandsRun: number;
+  toolCalls: number;
+  agentTurns: number;
+  agentModes: Set<string>;
+}) {
+  acc.sessionId ??= asString(record.session_id) ?? asString(record.sessionId);
+  acc.model ??= asString(record.model);
+  acc.tokensUsed = Math.max(acc.tokensUsed, firstInteger(record, ['tokens_used', 'tokensUsed', 'total_tokens', 'totalTokens']) ?? 0);
+  const tokens = asRecord(record.tokens) ?? asRecord(record.token_usage) ?? asRecord(record.tokenUsage);
+  if (tokens) acc.tokensUsed = Math.max(acc.tokensUsed, firstInteger(tokens, ['total', 'total_tokens', 'totalTokens']) ?? 0);
+  acc.commandsRun = Math.max(acc.commandsRun, firstInteger(record, ['commands_run', 'commandsRun', 'commands', 'command_count', 'commandCount']) ?? 0);
+  acc.toolCalls = Math.max(acc.toolCalls, firstInteger(record, ['tool_calls', 'toolCalls', 'tools', 'tool_count', 'toolCount']) ?? 0);
+  acc.agentTurns = Math.max(acc.agentTurns, firstInteger(record, ['agent_turns', 'agentTurns', 'turn_count', 'turnCount', 'turns']) ?? 0);
+  addModes(acc.agentModes, record.agent_modes ?? record.agentModes ?? record.modes ?? record.mode);
+
+  for (const key of ['metrics', 'stats', 'summary']) {
+    const nested = asRecord(record[key]);
+    if (nested) applyGenericRecord(nested, acc);
+  }
+}
+
+async function genericRecordsFromFile(path: string): Promise<Record<string, unknown>[]> {
+  let text: string;
+  try {
+    const info = await stat(path);
+    if (info.size > 1_000_000) return [];
+    text = await readFile(path, 'utf8');
+  } catch {
+    return [];
+  }
+  const parsed = safeJsonParse(text);
+  if (Array.isArray(parsed)) return parsed.map(asRecord).filter((row): row is Record<string, unknown> => Boolean(row));
+  const record = asRecord(parsed);
+  if (record) return [record];
+  const rows: Record<string, unknown>[] = [];
+  for (const line of text.split('\n')) {
+    const lineRecord = asRecord(safeJsonParse(line));
+    if (lineRecord) rows.push(lineRecord);
+  }
+  return rows;
+}
+
+async function genericMetadataFiles(cwd: string): Promise<string[]> {
+  const roots = ['.ai', '.agent', '.agents', '.aider'];
+  const files: Array<{ path: string; mtime: number }> = [];
+  async function walk(current: string, depth: number) {
+    if (depth < 0) return;
+    let entries;
+    try { entries = await readdir(current, { withFileTypes: true }); } catch { return; }
+    for (const entry of entries) {
+      const path = join(current, entry.name);
+      if (entry.isDirectory()) await walk(path, depth - 1);
+      else if (entry.isFile() && /\.(json|jsonl|log)$/i.test(entry.name)) {
+        try { files.push({ path, mtime: (await stat(path)).mtimeMs }); } catch { /* ignore */ }
+      }
+    }
+  }
+  for (const root of roots) await walk(join(cwd, root), 3);
+  return files.sort((a, b) => b.mtime - a.mtime).slice(0, 20).map((row) => row.path);
+}
+
+async function parseGenericMetadata(cwd: string, sessionFile?: string | null): Promise<AgentSessionMetrics | null> {
+  const acc = { sessionId: null as string | null, model: null as string | null, tokensUsed: 0, commandsRun: 0, toolCalls: 0, agentTurns: 0, agentModes: new Set<string>() };
+  const files = sessionFile ? [sessionFile] : await genericMetadataFiles(cwd);
+  for (const file of files) {
+    for (const record of await genericRecordsFromFile(file)) applyGenericRecord(record, acc);
+  }
+  return finalize({
+    sessionId: acc.sessionId,
+    model: acc.model,
+    files: new Map<string, ChangedFileSummary>(),
+    tokensUsed: acc.tokensUsed,
+    testsRun: 0,
+    failedCommands: 0,
+    commandsRun: acc.commandsRun,
+    toolCalls: acc.toolCalls,
+    agentTurns: acc.agentTurns,
+    agentModes: acc.agentModes,
+    collectionSources: files.length ? [{ type: 'generic_metadata', name: 'unknown_plugin', quality: 'low' }] : []
+  });
 }
 
 function claudeProjectDirName(cwd: string): string {
@@ -519,6 +648,7 @@ async function discoverSessionFile(cwd: string, source: AgentType): Promise<stri
 
 export async function collectAgentSessionMetrics(options: CollectAgentSessionOptions): Promise<AgentSessionMetrics | null> {
   const sessionFile = options.sessionFile ? resolve(options.cwd, options.sessionFile) : await discoverSessionFile(options.cwd, options.source);
+  if (options.source === 'other') return parseGenericMetadata(options.cwd, sessionFile);
   if (!sessionFile || basename(sessionFile).startsWith('.')) return null;
   if (options.source === 'claude_code') return parseClaudeSessionFile(options.cwd, sessionFile);
   if (options.source === 'codex') return parseCodexSessionFile(options.cwd, sessionFile);

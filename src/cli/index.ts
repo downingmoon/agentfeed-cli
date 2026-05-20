@@ -7,6 +7,7 @@ import { resolveApiBaseUrl } from '../config/api-base.js';
 import { collectDraft } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
+import { formatCollectionExplain } from '../draft/explain.js';
 import { previewDraftRemote, publishDraft } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
@@ -91,7 +92,9 @@ async function cmdCollect(args: string[]) {
   print(`ID: ${draft.id}`);
   print(`Project: ${draft.project.name}`);
   print(`Privacy: ${draft.privacy_scan.status}`);
-  print(`Metrics: ${metricsRow(draft)}\n`);
+  print(`Metrics: ${metricsRow(draft)}`);
+  if (flag(args, '--explain')) print(`\n${formatCollectionExplain(draft)}`);
+  print();
   print(`Preview:\n  agentfeed preview --id ${draft.id}\n`);
   print(`Upload:\n  agentfeed publish --id ${draft.id}`);
   const config = await loadProjectConfig(process.cwd());
@@ -235,7 +238,7 @@ async function main() {
     case '-h':
       print('Usage: agentfeed <init|login|status|collect|preview|publish|scan|hook|doctor|drafts|discard|open>');
       print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --token <token>');
-      print('\nCollect:\n  agentfeed collect\n  agentfeed collect --source codex\n  agentfeed collect --source gemini-cli\n  agentfeed collect --source claude-code --session-file <path>');
+      print('\nCollect:\n  agentfeed collect\n  agentfeed collect --explain\n  agentfeed collect --source codex\n  agentfeed collect --source gemini-cli\n  agentfeed collect --source claude-code --session-file <path>');
       return;
     default:
       throw new Error(`Unknown command: ${command}`);

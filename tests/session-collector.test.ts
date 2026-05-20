@@ -256,5 +256,37 @@ describe('agent session collector', () => {
     expect(metrics?.subagents_completed).toBe(2);
     expect(metrics?.tokens_used).toBe(1234);
     expect(metrics?.agent_modes).toEqual(['explore']);
+    expect(metrics?.collection_quality).toBe('high');
+    expect(metrics?.collection_sources).toEqual([
+      { type: 'agent_session', name: 'codex', quality: 'high' },
+      { type: 'plugin_metadata', name: 'omx', quality: 'medium' }
+    ]);
+  });
+
+  it('falls back to generic plugin signals without user mapping', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });
+    execFileSync('git', ['commit', '-m', 'agentfeed config'], { cwd: dir, stdio: 'ignore' });
+    await mkdir(join(dir, '.ai'), { recursive: true });
+    await writeFile(join(dir, '.ai', 'session-metrics.json'), JSON.stringify({
+      tool_calls: 9,
+      commands_run: 2,
+      tokens_used: 500,
+      agent_turns: 4,
+      agent_modes: ['parallel-agent']
+    }));
+
+    const draft = await collectDraft({ cwd: dir });
+
+    expect(draft.worklog.agent).toBe('other');
+    expect(draft.worklog.metrics.tool_calls).toBe(9);
+    expect(draft.worklog.metrics.commands_run).toBe(2);
+    expect(draft.worklog.metrics.tokens_used).toBe(500);
+    expect(draft.worklog.metrics.agent_turns).toBe(4);
+    expect(draft.worklog.metrics.agent_modes).toEqual(['parallel-agent']);
+    expect(draft.worklog.metrics.collection_quality).toBe('low');
+    expect(draft.worklog.metrics.collection_sources).toEqual([
+      { type: 'generic_metadata', name: 'unknown_plugin', quality: 'low' }
+    ]);
   });
 });

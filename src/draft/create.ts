@@ -54,6 +54,13 @@ export async function collectDraft(options: { cwd: string; source?: AgentType; s
       session = geminiSession;
     }
   }
+  if (!options.source && !session) {
+    const genericSession = await collectAgentSessionMetrics({ cwd: root, source: 'other', sessionFile: options.sessionFile });
+    if (genericSession) {
+      source = 'other';
+      session = genericSession;
+    }
+  }
   const changedFiles = git.changed_files.length ? git.changed_files : session?.changed_files ?? [];
   const linesAdded = git.lines_added || session?.lines_added || 0;
   const linesRemoved = git.lines_removed || session?.lines_removed || 0;
@@ -78,7 +85,9 @@ export async function collectDraft(options: { cwd: string; source?: AgentType; s
     subagents_spawned: session?.subagents_spawned ?? null,
     subagents_completed: session?.subagents_completed ?? null,
     agent_turns: session?.agent_turns ?? null,
-    agent_modes: session?.agent_modes ?? null
+    agent_modes: session?.agent_modes ?? null,
+    collection_quality: session?.collection_quality ?? null,
+    collection_sources: session?.collection_sources ?? null
   };
   const title = generateTitle(safeAreas, mergedGit);
   const summary = generateSummary(safeAreas, metrics);

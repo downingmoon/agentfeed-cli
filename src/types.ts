@@ -4,6 +4,14 @@ export type WorklogStatus = 'draft' | 'needs_review' | 'private' | 'unlisted' | 
 export type WorklogCategory = 'web_app' | 'bot' | 'automation' | 'trading' | 'devops' | 'data' | 'ai_tool' | 'open_source' | 'other';
 export type PrivacyStatus = 'safe' | 'warning' | 'danger';
 export type PrivacySeverity = 'low' | 'medium' | 'high';
+export type CollectionQuality = 'high' | 'medium' | 'low';
+export type CollectionSourceType = 'agent_session' | 'plugin_metadata' | 'generic_metadata';
+
+export interface CollectionSource {
+  type: CollectionSourceType;
+  name: string;
+  quality: CollectionQuality;
+}
 
 export interface AgentFeedProjectConfig {
   version: '0.2';
@@ -80,6 +88,8 @@ export interface WorklogMetrics {
   subagents_completed?: number | null;
   agent_turns?: number | null;
   agent_modes?: string[] | null;
+  collection_quality?: CollectionQuality | null;
+  collection_sources?: CollectionSource[] | null;
 }
 
 export interface WorklogTimelineItem {

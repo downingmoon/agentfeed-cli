@@ -3,6 +3,7 @@ import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { initProject, loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
 import { loadCredentials, saveCredentials } from '../config/credentials.js';
+import { resolveApiBaseUrl } from '../config/api-base.js';
 import { collectDraft } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
@@ -71,7 +72,7 @@ async function cmdStatus() {
   const settingsPath = config ? resolveClaudeSettingsPath({ projectRoot: root, scope: config.agents.claude_code.hook_scope }) : '';
   const hook = settingsPath && await pathExists(settingsPath) ? hasAgentFeedHook(await readJson<Record<string, unknown>>(settingsPath)) ? 'installed' : 'not installed' : 'unknown';
   print(`User/token: ${creds ? 'configured' : 'missing'}`);
-  print(`API base URL: ${creds?.api_base_url ?? process.env.AGENTFEED_API_BASE_URL ?? 'https://api.agentfeed.dev/v1'}`);
+  print(`API base URL: ${creds?.api_base_url ?? await resolveApiBaseUrl()}`);
   print(`Project initialized: ${config ? 'yes' : 'no'}`);
   if (config) print(`Project name: ${config.project.name}`);
   const git = await collectGitMetrics(process.cwd());

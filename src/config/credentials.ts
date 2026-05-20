@@ -1,8 +1,8 @@
 import { chmod } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { AgentFeedCredentials } from '../types.js';
-import { DEFAULT_API_BASE_URL } from './defaults.js';
 import { ensureDir, pathExists, readJson, writeJson } from '../utils/fs.js';
+import { resolveApiBaseUrl } from './api-base.js';
 
 export function homeDir(): string {
   return process.env.HOME || process.env.USERPROFILE || process.cwd();
@@ -18,7 +18,7 @@ export function credentialsPath(): string {
 
 export async function saveCredentials(token: string, options: { apiBaseUrl?: string; user?: AgentFeedCredentials['user'] } = {}): Promise<AgentFeedCredentials> {
   const credentials: AgentFeedCredentials = {
-    api_base_url: options.apiBaseUrl || process.env.AGENTFEED_API_BASE_URL || DEFAULT_API_BASE_URL,
+    api_base_url: await resolveApiBaseUrl({ explicitApiBaseUrl: options.apiBaseUrl }),
     ingestion_token: token,
     user: options.user,
     created_at: new Date().toISOString()
@@ -41,7 +41,7 @@ export async function resolveCredentials(base: AgentFeedCredentials | null): Pro
   const token = process.env.AGENTFEED_TOKEN || base?.ingestion_token;
   if (!token) throw new Error('AgentFeed token is missing. Run: agentfeed login --token <token>');
   return {
-    api_base_url: process.env.AGENTFEED_API_BASE_URL || base?.api_base_url || DEFAULT_API_BASE_URL,
+    api_base_url: await resolveApiBaseUrl({ storedApiBaseUrl: base?.api_base_url }),
     ingestion_token: token,
     user: base?.user,
     created_at: base?.created_at || new Date().toISOString()

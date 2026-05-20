@@ -1,8 +1,9 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { initProject, loadProjectConfig } from '../src/config/project-config.js';
+import { resolveApiBaseUrl } from '../src/config/api-base.js';
 import { resolveCredentials } from '../src/config/credentials.js';
 
 let dir: string;
@@ -47,5 +48,22 @@ describe('project config', () => {
     process.env.AGENTFEED_API_BASE_URL = 'http://localhost:8000/v1';
     const creds = await resolveCredentials({ ingestion_token: 'stored', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' });
     expect(creds.api_base_url).toBe('http://localhost:8000/v1');
+  });
+
+  it('discovers the dev orchestration .env when AGENTFEED_API_BASE_URL is not exported', async () => {
+    const workspace = await mkdtemp(join(tmpdir(), 'agentfeed-workspace-'));
+    const cliDir = join(workspace, 'AgentFeed-CLI');
+    const devDir = join(workspace, 'agentfeed-dev');
+    await mkdir(cliDir, { recursive: true });
+    await mkdir(devDir, { recursive: true });
+    await writeFile(join(devDir, '.env'), [
+      'FRONTEND_PORT=3001',
+      'AGENTFEED_API_BASE_URL=http://localhost:8001/v1',
+      ''
+    ].join('\n'));
+
+    await expect(resolveApiBaseUrl({ cwd: cliDir })).resolves.toBe('http://localhost:8001/v1');
+
+    await rm(workspace, { recursive: true, force: true });
   });
 });

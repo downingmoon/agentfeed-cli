@@ -3,7 +3,7 @@ import { hostname } from 'node:os';
 import { createInterface } from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 import { createCliAuthSession, exchangeCliAuthSession, AgentFeedApiError } from '../api/client.js';
-import { DEFAULT_API_BASE_URL } from '../config/defaults.js';
+import { resolveApiBaseUrl } from '../config/api-base.js';
 import { saveCredentials } from '../config/credentials.js';
 import { openBrowser } from '../utils/open-browser.js';
 
@@ -12,7 +12,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: boolean; waitMs?: number } = {}) {
-  const apiBaseUrl = options.apiBaseUrl || process.env.AGENTFEED_API_BASE_URL || DEFAULT_API_BASE_URL;
+  const apiBaseUrl = await resolveApiBaseUrl({ explicitApiBaseUrl: options.apiBaseUrl });
   const verifier = randomBytes(32).toString('hex');
   const session = await createCliAuthSession(apiBaseUrl, {
     verifier,

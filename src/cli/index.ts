@@ -83,7 +83,8 @@ async function cmdStatus() {
 }
 
 async function cmdCollect(args: string[]) {
-  const source = (option(args, '--source')?.replace(/-/g, '_') ?? 'claude_code') as AgentType;
+  const sourceOption = option(args, '--source');
+  const source = sourceOption ? sourceOption.replace(/-/g, '_') as AgentType : undefined;
   const draft = await collectDraft({ cwd: process.cwd(), source, sessionFile: option(args, '--session-file') ?? null });
   if (flag(args, '--json')) { print(JSON.stringify(draft, null, 2)); return; }
   print('Draft created.\n');
@@ -234,6 +235,7 @@ async function main() {
     case '-h':
       print('Usage: agentfeed <init|login|status|collect|preview|publish|scan|hook|doctor|drafts|discard|open>');
       print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --token <token>');
+      print('\nCollect:\n  agentfeed collect\n  agentfeed collect --source codex\n  agentfeed collect --source claude-code --session-file <path>');
       return;
     default:
       throw new Error(`Unknown command: ${command}`);

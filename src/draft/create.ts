@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import type { AgentType, LocalDraft, WorklogMetrics } from '../types.js';
 import { loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
 import { collectGitMetrics } from '../collectors/git.js';
+import { collectAgentSessionMetrics } from '../collectors/agent-session.js';
 import { changedAreas } from '../summary/changed-areas.js';
 import { generateOutcome, generateSummary, generateTimeline, generateTitle } from '../summary/rule-based.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
@@ -36,23 +37,36 @@ export function createEmptyDraft(input: { projectName: string; projectRoot: stri
 export async function collectDraft(options: { cwd: string; source?: AgentType; sessionFile?: string | null }): Promise<LocalDraft> {
   const root = await resolveProjectRoot(options.cwd);
   const config = await loadProjectConfig(root);
-  const source = options.source ?? 'claude_code';
+  let source = options.source ?? 'claude_code';
   const git = await collectGitMetrics(root);
-  const areas = changedAreas(git.changed_files);
+  let session = await collectAgentSessionMetrics({ cwd: root, source, sessionFile: options.sessionFile });
+  if (!options.source && !session) {
+    const codexSession = await collectAgentSessionMetrics({ cwd: root, source: 'codex', sessionFile: options.sessionFile });
+    if (codexSession) {
+      source = 'codex';
+      session = codexSession;
+    }
+  }
+  const changedFiles = git.changed_files.length ? git.changed_files : session?.changed_files ?? [];
+  const linesAdded = git.lines_added || session?.lines_added || 0;
+  const linesRemoved = git.lines_removed || session?.lines_removed || 0;
+  const filesChanged = git.files_changed || session?.files_changed || changedFiles.length;
+  const mergedGit = { ...git, changed_files: changedFiles, files_changed: filesChanged, lines_added: linesAdded, lines_removed: linesRemoved };
+  const areas = changedAreas(changedFiles);
   const safeAreas = areas.length ? areas : ['Application code'];
   const metrics: WorklogMetrics = {
-    tokens_used: null,
+    tokens_used: config.collection.include_token_usage ? session?.tokens_used ?? null : null,
     estimated_cost_usd: null,
     duration_seconds: null,
-    files_changed: git.files_changed,
-    lines_added: git.lines_added,
-    lines_removed: git.lines_removed,
-    tests_run: null,
-    tests_passed: null,
+    files_changed: filesChanged,
+    lines_added: linesAdded,
+    lines_removed: linesRemoved,
+    tests_run: config.collection.include_test_results ? session?.tests_run ?? null : null,
+    tests_passed: config.collection.include_test_results ? session?.tests_passed ?? null : null,
     commits_created: null,
-    failed_commands: null
+    failed_commands: session?.failed_commands ?? null
   };
-  const title = generateTitle(safeAreas, git);
+  const title = generateTitle(safeAreas, mergedGit);
   const summary = generateSummary(safeAreas, metrics);
   const publicFields = {
     title,
@@ -74,7 +88,7 @@ export async function collectDraft(options: { cwd: string; source?: AgentType; s
       title: String(redacted.title).slice(0, 120) || 'Explored project with AI agent',
       summary: String(redacted.summary).slice(0, 2000) || 'The AI agent worked on the project.',
       agent: source,
-      model: null,
+      model: session?.model ?? null,
       category: 'ai_tool',
       tags: (redacted.tags as string[]).slice(0, 10),
       visibility: 'private',
@@ -85,7 +99,7 @@ export async function collectDraft(options: { cwd: string; source?: AgentType; s
       timeline: (redacted.timeline as LocalDraft['worklog']['timeline']).slice(0, 8)
     },
     privacy_scan: scan,
-    source: { agent: source, tool_version: 'agentfeed-cli/0.2.0', host_label: hostname(), session_id: null, created_at: new Date().toISOString() },
+    source: { agent: source, tool_version: 'agentfeed-cli/0.2.0', host_label: hostname(), session_id: session?.session_id ?? null, created_at: new Date().toISOString() },
     upload: { uploaded: false }
   };
   await writeDraft(root, draft);

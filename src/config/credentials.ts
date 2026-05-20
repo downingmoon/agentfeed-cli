@@ -16,10 +16,11 @@ export function credentialsPath(): string {
   return join(globalAgentFeedDir(), 'credentials.json');
 }
 
-export async function saveCredentials(token: string): Promise<AgentFeedCredentials> {
+export async function saveCredentials(token: string, options: { apiBaseUrl?: string; user?: AgentFeedCredentials['user'] } = {}): Promise<AgentFeedCredentials> {
   const credentials: AgentFeedCredentials = {
-    api_base_url: process.env.AGENTFEED_API_BASE_URL || DEFAULT_API_BASE_URL,
+    api_base_url: options.apiBaseUrl || process.env.AGENTFEED_API_BASE_URL || DEFAULT_API_BASE_URL,
     ingestion_token: token,
+    user: options.user,
     created_at: new Date().toISOString()
   };
   await ensureDir(globalAgentFeedDir());

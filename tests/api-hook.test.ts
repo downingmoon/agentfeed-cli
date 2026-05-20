@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { initProject } from '../src/config/project-config.js';
 import { writeDraft } from '../src/draft/write.js';
 import { createEmptyDraft } from '../src/draft/create.js';
-import { previewDraftRemote, publishDraft } from '../src/api/client.js';
+import { createCliAuthSession, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
 import { installClaudeCodeHook, uninstallClaudeCodeHook } from '../src/hooks/claude-code-settings.js';
 
 let dir: string;
@@ -54,6 +54,36 @@ describe('api client', () => {
 
     expect(result.warnings).toEqual(['check privacy']);
     expect(fetchMock).toHaveBeenCalledWith('https://api.agentfeed.dev/v1/ingest/worklogs/preview', expect.objectContaining({ method: 'POST' }));
+  });
+
+  it('creates and exchanges a browser login session', async () => {
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.endsWith('/auth/cli/sessions')) {
+        return new Response(JSON.stringify({
+          data: {
+            session_id: 'session-1',
+            authorize_url: 'http://localhost:3000/cli/authorize?session_id=session-1',
+            expires_at: '2026-05-20T00:05:00Z',
+            poll_interval_seconds: 2
+          }
+        }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      return new Response(JSON.stringify({
+        data: {
+          token: 'af_live_test',
+          user: { id: 'user-1', username: 'downingmoon' }
+        }
+      }), { status: 200, headers: { 'content-type': 'application/json' } });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const session = await createCliAuthSession('https://api.agentfeed.dev/v1', { verifier: 'verifier-1', deviceName: 'devbox' });
+    const exchange = await exchangeCliAuthSession('https://api.agentfeed.dev/v1', session.session_id, 'verifier-1');
+
+    expect(session.authorize_url).toContain('/cli/authorize');
+    expect(exchange.token).toBe('af_live_test');
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.agentfeed.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://api.agentfeed.dev/v1/auth/cli/sessions/session-1/exchange', expect.objectContaining({ method: 'POST' }));
   });
 
   it.each([

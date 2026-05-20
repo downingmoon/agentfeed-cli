@@ -46,8 +46,20 @@ export interface AgentFeedProjectConfig {
 export interface AgentFeedCredentials {
   api_base_url: string;
   ingestion_token: string;
-  user?: { id?: string; username?: string };
+  user?: { id?: string; username?: string | null; display_name?: string | null };
   created_at: string;
+}
+
+export interface CliAuthSession {
+  session_id: string;
+  authorize_url: string;
+  expires_at: string;
+  poll_interval_seconds: number;
+}
+
+export interface CliAuthExchangeResult {
+  token: string;
+  user?: { id?: string; username?: string | null; display_name?: string | null };
 }
 
 export interface WorklogMetrics {

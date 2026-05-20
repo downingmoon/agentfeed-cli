@@ -1,4 +1,4 @@
-import type { AgentFeedCredentials, IngestWorklogRequest, LocalDraft } from '../types.js';
+import type { AgentFeedCredentials, CliAuthExchangeResult, CliAuthSession, IngestWorklogRequest, LocalDraft } from '../types.js';
 import { readDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 
@@ -38,7 +38,7 @@ export function draftToIngestRequest(draft: LocalDraft): IngestWorklogRequest {
 }
 
 function friendlyError(status: number, code: string, message: string, details?: Record<string, unknown>): string {
-  if (status === 401 || code === 'INGESTION_TOKEN_INVALID') return 'Login/token problem. Run: agentfeed login --token <token>';
+  if (status === 401 || code === 'INGESTION_TOKEN_INVALID') return 'Login/token problem. Run: agentfeed login';
   if (status === 413 || code === 'INGESTION_PAYLOAD_TOO_LARGE') return 'Draft payload is too large. Local draft was kept.';
   if (status === 422 || code === 'VALIDATION_ERROR') return `Validation error: ${message}${details ? ` ${JSON.stringify(details)}` : ''}`;
   if (status === 429 || code === 'RATE_LIMITED') return `Rate limited.${details?.retry_after_seconds ? ` Retry after ${details.retry_after_seconds} seconds.` : ''}`;
@@ -51,6 +51,33 @@ export interface RemotePreviewResult {
   valid: boolean;
   preview: Record<string, unknown>;
   warnings: string[];
+}
+
+async function postJson<T>(apiBaseUrl: string, path: string, body: Record<string, unknown>): Promise<T> {
+  const response = await fetch(`${apiBaseUrl.replace(/\/$/, '')}${path}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const api = data as { error?: { code?: string; message?: string; details?: Record<string, unknown> } };
+    const code = api.error?.code ?? `HTTP_${response.status}`;
+    const msg = friendlyError(response.status, code, api.error?.message ?? response.statusText, api.error?.details);
+    throw new AgentFeedApiError(response.status, code, msg, api.error?.details);
+  }
+  return (data as { data: T }).data;
+}
+
+export async function createCliAuthSession(apiBaseUrl: string, input: { verifier: string; deviceName?: string }): Promise<CliAuthSession> {
+  return postJson<CliAuthSession>(apiBaseUrl, '/auth/cli/sessions', {
+    verifier: input.verifier,
+    device_name: input.deviceName
+  });
+}
+
+export async function exchangeCliAuthSession(apiBaseUrl: string, sessionId: string, verifier: string): Promise<CliAuthExchangeResult> {
+  return postJson<CliAuthExchangeResult>(apiBaseUrl, `/auth/cli/sessions/${encodeURIComponent(sessionId)}/exchange`, { verifier });
 }
 
 async function postIngest<T>(path: string, draft: LocalDraft, credentials: AgentFeedCredentials): Promise<T> {

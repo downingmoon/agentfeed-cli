@@ -7,6 +7,7 @@ import { collectDraft } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 import { previewDraftRemote, publishDraft } from '../api/client.js';
+import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { changedAreas } from '../summary/changed-areas.js';
@@ -41,13 +42,20 @@ async function cmdInit(args: string[]) {
   print(`Project: ${result.config.project.name}`);
   print(`Visibility: ${result.config.project.visibility}`);
   print('Config: .agentfeed/config.json\n');
-  print('Next:\n  agentfeed login --token <token>\n  agentfeed hook install claude-code');
+  print('Next:\n  agentfeed login\n  agentfeed hook install claude-code');
 }
 
 async function cmdLogin(args: string[]) {
   const token = option(args, '--token');
-  if (!token) throw new Error('Missing --token. Usage: agentfeed login --token <token>');
-  const creds = await saveCredentials(token);
+  const apiBaseUrl = option(args, '--api-base-url');
+  if (!token) {
+    const creds = await browserLogin({ apiBaseUrl, noOpen: flag(args, '--no-open') });
+    print('\nAgentFeed browser login complete.\n');
+    print(`API: ${creds.api_base_url}`);
+    print('Next:\n  agentfeed status');
+    return;
+  }
+  const creds = await saveCredentials(token, { apiBaseUrl });
   print('AgentFeed credentials saved.\n');
   print(`API: ${creds.api_base_url}`);
   print('Next:\n  agentfeed status');
@@ -224,6 +232,7 @@ async function main() {
     case '--help':
     case '-h':
       print('Usage: agentfeed <init|login|status|collect|preview|publish|scan|hook|doctor|drafts|discard|open>');
+      print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --token <token>');
       return;
     default:
       throw new Error(`Unknown command: ${command}`);

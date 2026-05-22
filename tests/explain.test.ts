@@ -20,7 +20,7 @@ function draftWithMetrics(metrics: LocalDraft['worklog']['metrics']): LocalDraft
       timeline: []
     },
     privacy_scan: { status: 'safe', findings: [] },
-    source: { agent: 'codex', tool_version: 'agentfeed-cli/0.2.0', created_at: '2026-05-21T00:00:00Z' },
+    source: { agent: 'codex', tool_version: 'agentfeed-cli/0.2.0', created_at: '2026-05-21T00:00:00Z', collection_window: { since: '2026-05-20T01:00:00.000Z', until: '2026-05-20T02:00:00.000Z' } },
     upload: { uploaded: false }
   };
 }
@@ -42,5 +42,15 @@ describe('collection explain output', () => {
     expect(output).toContain('- agent_session: codex (high)');
     expect(output).toContain('- plugin_metadata: omx (medium)');
     expect(output).not.toContain('/Users/');
+  });
+});
+
+
+// P0: explain should make the scoped collection range visible to users.
+describe('collection window explain output', () => {
+  it('prints the collection window when present', () => {
+    const output = formatCollectionExplain(draftWithMetrics({ files_changed: 0, lines_added: 0, lines_removed: 0 }));
+
+    expect(output).toContain('Collection window: 2026-05-20T01:00:00.000Z → 2026-05-20T02:00:00.000Z');
   });
 });

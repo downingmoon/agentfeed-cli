@@ -1,7 +1,7 @@
 import { homedir } from 'node:os';
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path';
 import { readdir, readFile, stat } from 'node:fs/promises';
-import type { AgentType, ChangedFileSummary, CollectionQuality, CollectionSource, WorklogMetrics } from '../types.js';
+import type { AgentType, ChangedFileSummary, CollectionQuality, CollectionSource, CollectionWindow, WorklogMetrics } from '../types.js';
 
 export interface AgentSessionMetrics extends WorklogMetrics {
   session_id?: string | null;
@@ -13,6 +13,8 @@ interface CollectAgentSessionOptions {
   cwd: string;
   source: AgentType;
   sessionFile?: string | null;
+  since?: string | null;
+  until?: string | null;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -141,6 +143,28 @@ function parseIsoMillis(value: unknown): number | null {
   return Number.isFinite(millis) ? millis : null;
 }
 
+function parseBoundaryMillis(value?: string | null): number | null {
+  if (!value) return null;
+  const millis = Date.parse(value);
+  if (!Number.isFinite(millis)) throw new Error(`Invalid collection window timestamp: ${value}`);
+  return millis;
+}
+
+function rowTimestampMillis(row: Record<string, unknown>): number | null {
+  return parseIsoMillis(row.timestamp) ?? parseIsoMillis(row.lastUpdated) ?? parseIsoMillis(row.startTime);
+}
+
+function rowInCollectionWindow(row: Record<string, unknown>, window?: CollectionWindow | null): boolean {
+  const sinceMillis = parseBoundaryMillis(window?.since);
+  const untilMillis = parseBoundaryMillis(window?.until);
+  if (sinceMillis == null && untilMillis == null) return true;
+  const millis = rowTimestampMillis(row);
+  if (millis == null) return true;
+  if (sinceMillis != null && millis < sinceMillis) return false;
+  if (untilMillis != null && millis > untilMillis) return false;
+  return true;
+}
+
 async function readJsonFile(path: string): Promise<Record<string, unknown> | null> {
   return asRecord(safeJsonParse(await readFile(path, 'utf8').catch(() => '')));
 }
@@ -255,7 +279,7 @@ async function readOmxMetadata(cwd: string, sessionId: string | null): Promise<{
   return result;
 }
 
-async function parseClaudeSessionFile(cwd: string, sessionFile: string): Promise<AgentSessionMetrics | null> {
+async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null): Promise<AgentSessionMetrics | null> {
   const files = new Map<string, ChangedFileSummary>();
   let tokensUsed = 0;
   let durationSeconds: number | null = null;
@@ -279,6 +303,7 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string): Promise
     if (!message) continue;
     sessionId ??= asString(row.sessionId);
     model ??= asString(message.model);
+    if (!rowInCollectionWindow(row, window)) continue;
     const usage = asRecord(message.usage);
     if (usage) tokensUsed += numeric(usage.input_tokens) + numeric(usage.cache_creation_input_tokens) + numeric(usage.cache_read_input_tokens) + numeric(usage.output_tokens);
     const content = Array.isArray(message.content) ? message.content : [];
@@ -338,7 +363,7 @@ function codexTokenTotal(info: Record<string, unknown>): number {
   return numeric(total.input_tokens) + numeric(total.cached_input_tokens) + numeric(total.cache_read_input_tokens) + numeric(total.cache_creation_input_tokens) + numeric(total.output_tokens);
 }
 
-async function parseCodexSessionFile(cwd: string, sessionFile: string): Promise<AgentSessionMetrics | null> {
+async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null): Promise<AgentSessionMetrics | null> {
   const files = new Map<string, ChangedFileSummary>();
   const commands = new Map<string, { command: string; test: boolean }>();
   let tokensUsed = 0;
@@ -359,12 +384,14 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string): Promise<
   for (const line of (await readFile(sessionFile, 'utf8')).split('\n')) {
     if (!line.trim()) continue;
     const row = asRecord(safeJsonParse(line));
-    const payload = asRecord(row?.payload);
+    if (!row) continue;
+    const payload = asRecord(row.payload);
     if (!payload) continue;
     if (row?.type === 'session_meta') {
       sessionId ??= asString(payload.id);
       model ??= asString(payload.model);
     }
+    if (!rowInCollectionWindow(row, window)) continue;
     if (payload.type === 'token_count') {
       const info = asRecord(payload.info);
       if (info) tokensUsed = Math.max(tokensUsed, codexTokenTotal(info));
@@ -430,7 +457,7 @@ function geminiTokenTotal(tokens: Record<string, unknown>): number {
   return numeric(tokens.input) + numeric(tokens.cached) + numeric(tokens.output) + numeric(tokens.thoughts) + numeric(tokens.tool);
 }
 
-async function parseGeminiSessionFile(cwd: string, sessionFile: string): Promise<AgentSessionMetrics | null> {
+async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null): Promise<AgentSessionMetrics | null> {
   const files = new Map<string, ChangedFileSummary>();
   const skills = new Set<string>();
   const agentModes = new Set<string>();
@@ -455,6 +482,7 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string): Promise
     const rowEndMillis = parseIsoMillis(row.lastUpdated) ?? parseIsoMillis(row.timestamp);
     if (rowEndMillis) endMillis = Math.max(endMillis ?? 0, rowEndMillis);
     model ??= asString(row.model);
+    if (!rowInCollectionWindow(row, window)) continue;
     const tokens = asRecord(row.tokens);
     if (tokens) tokensUsed += geminiTokenTotal(tokens);
     const calls = Array.isArray(row.toolCalls) ? row.toolCalls : [];
@@ -650,8 +678,8 @@ export async function collectAgentSessionMetrics(options: CollectAgentSessionOpt
   const sessionFile = options.sessionFile ? resolve(options.cwd, options.sessionFile) : await discoverSessionFile(options.cwd, options.source);
   if (options.source === 'other') return parseGenericMetadata(options.cwd, sessionFile);
   if (!sessionFile || basename(sessionFile).startsWith('.')) return null;
-  if (options.source === 'claude_code') return parseClaudeSessionFile(options.cwd, sessionFile);
-  if (options.source === 'codex') return parseCodexSessionFile(options.cwd, sessionFile);
-  if (options.source === 'gemini_cli') return parseGeminiSessionFile(options.cwd, sessionFile);
+  if (options.source === 'claude_code') return parseClaudeSessionFile(options.cwd, sessionFile, { since: options.since, until: options.until });
+  if (options.source === 'codex') return parseCodexSessionFile(options.cwd, sessionFile, { since: options.since, until: options.until });
+  if (options.source === 'gemini_cli') return parseGeminiSessionFile(options.cwd, sessionFile, { since: options.since, until: options.until });
   return null;
 }

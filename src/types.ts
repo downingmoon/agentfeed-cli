@@ -115,6 +115,11 @@ export interface PrivacyFinding {
   resolution?: 'ignored' | 'redacted' | 'removed';
 }
 
+export interface CollectionWindow {
+  since?: string | null;
+  until?: string | null;
+}
+
 export interface LocalDraft {
   schema_version: '0.2';
   id: string;
@@ -134,7 +139,7 @@ export interface LocalDraft {
     timeline: WorklogTimelineItem[];
   };
   privacy_scan: PrivacyScanResult;
-  source: { agent: AgentType; session_id?: string | null; tool_version: string; host_label?: string | null; created_at: string };
+  source: { agent: AgentType; session_id?: string | null; tool_version: string; host_label?: string | null; created_at: string; collection_window?: CollectionWindow | null };
   upload: { uploaded: boolean; worklog_id?: string | null; review_url?: string | null; uploaded_at?: string | null };
 }
 

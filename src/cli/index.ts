@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { initProject, loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
 import { loadCredentials, saveCredentials } from '../config/credentials.js';
 import { resolveApiBaseUrl } from '../config/api-base.js';
+import { markCollectionComplete, resolveCollectionWindow } from '../config/collection-state.js';
 import { collectDraft } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
@@ -15,20 +16,13 @@ import { collectGitMetrics } from '../collectors/git.js';
 import { changedAreas } from '../summary/changed-areas.js';
 import { hasAgentFeedHook, installClaudeCodeHook, uninstallClaudeCodeHook, resolveClaudeSettingsPath } from '../hooks/claude-code-settings.js';
 import { flag, option } from './args.js';
-import type { AgentType, LocalDraft } from '../types.js';
+import { formatMetricsRow, formatSharePreview, parseShareArgs } from './share.js';
+import type { AgentType } from '../types.js';
 import { readJson, pathExists } from '../utils/fs.js';
 import { openBrowser } from '../utils/open-browser.js';
 
 function print(text = '') { process.stdout.write(`${text}\n`); }
 function err(text = '') { process.stderr.write(`${text}\n`); }
-
-function metricsRow(draft: LocalDraft): string {
-  const m = draft.worklog.metrics;
-  const parts = [`${m.files_changed ?? 0} files`, `+${m.lines_added ?? 0} -${m.lines_removed ?? 0}`];
-  if (m.tests_run != null) parts.push(`${m.tests_run} tests`);
-  if (m.tokens_used != null) parts.push(`${Math.round(m.tokens_used / 1000)}K tokens`);
-  return parts.join(' · ');
-}
 
 async function resolveDraftId(cwd: string, args: string[]): Promise<string> {
   const id = option(args, '--id');
@@ -86,13 +80,14 @@ async function cmdStatus() {
 async function cmdCollect(args: string[]) {
   const sourceOption = option(args, '--source');
   const source = sourceOption ? sourceOption.replace(/-/g, '_') as AgentType : undefined;
-  const draft = await collectDraft({ cwd: process.cwd(), source, sessionFile: option(args, '--session-file') ?? null });
+  const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
+  const draft = await collectDraft({ cwd: process.cwd(), source, sessionFile: option(args, '--session-file') ?? null, since: window.since, until: window.until });
   if (flag(args, '--json')) { print(JSON.stringify(draft, null, 2)); return; }
   print('Draft created.\n');
   print(`ID: ${draft.id}`);
   print(`Project: ${draft.project.name}`);
   print(`Privacy: ${draft.privacy_scan.status}`);
-  print(`Metrics: ${metricsRow(draft)}`);
+  print(`Metrics: ${formatMetricsRow(draft)}`);
   if (flag(args, '--explain')) print(`\n${formatCollectionExplain(draft)}`);
   print();
   print(`Preview:\n  agentfeed preview --id ${draft.id}\n`);
@@ -100,6 +95,49 @@ async function cmdCollect(args: string[]) {
   const config = await loadProjectConfig(process.cwd());
   if (flag(args, '--upload') || (!flag(args, '--no-upload') && config.collection.auto_upload)) {
     await cmdPublish(['--id', draft.id, ...(flag(args, '--open-review') ? ['--open-review'] : [])]);
+  }
+  if (!flag(args, '--no-save-cursor')) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
+}
+
+async function cmdShare(args: string[]) {
+  const opts = parseShareArgs(args);
+  const creds = opts.dryRun ? null : await loadCredentials();
+  if (!opts.dryRun && !creds) throw new Error('AgentFeed token is missing. Run: agentfeed login');
+
+  const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
+  const draft = await collectDraft({ cwd: process.cwd(), source: opts.source, sessionFile: opts.sessionFile, since: opts.since ?? window.since, until: opts.until ?? window.until });
+
+  if (opts.json) {
+    if (opts.dryRun) {
+      print(JSON.stringify({ dry_run: true, draft }, null, 2));
+      return;
+    }
+    const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds! });
+    await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
+    print(JSON.stringify({ dry_run: false, draft_id: draft.id, upload: result }, null, 2));
+    if (opts.openReview) await openBrowser(result.review_url);
+    return;
+  }
+
+  print(formatSharePreview(draft));
+  print();
+
+  if (opts.dryRun) {
+    print(`Dry run complete. Local draft kept: ${draft.id}`);
+    print(`Publish later:
+  agentfeed publish --id ${draft.id}`);
+    return;
+  }
+
+  const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds! });
+  await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
+  print('Worklog uploaded.');
+  print(`Status: ${result.status}`);
+  print(`Review URL:
+${result.review_url}`);
+  if (opts.openReview) {
+    const opened = await openBrowser(result.review_url);
+    if (!opened) print(result.review_url);
   }
 }
 
@@ -120,7 +158,7 @@ async function cmdPreview(args: string[]) {
   print(`│ ${draft.worklog.title}`);
   print(`│ ${draft.worklog.summary}`);
   print('│');
-  print(`│ ${metricsRow(draft)}`);
+  print(`│ ${formatMetricsRow(draft)}`);
   print('│');
   print(`│ Privacy: ${draft.privacy_scan.status}`);
   print('└─────────────────────────────────────────────┘\n');
@@ -225,6 +263,7 @@ async function main() {
     case 'login': return cmdLogin(args);
     case 'status': return cmdStatus();
     case 'collect': return cmdCollect(args);
+    case 'share': return cmdShare(args);
     case 'preview': return cmdPreview(args);
     case 'publish': return cmdPublish(args);
     case 'scan': return cmdScan(args);
@@ -236,9 +275,10 @@ async function main() {
     case undefined:
     case '--help':
     case '-h':
-      print('Usage: agentfeed <init|login|status|collect|preview|publish|scan|hook|doctor|drafts|discard|open>');
+      print('Usage: agentfeed <init|login|status|collect|share|preview|publish|scan|hook|doctor|drafts|discard|open>');
       print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --token <token>');
-      print('\nCollect:\n  agentfeed collect\n  agentfeed collect --explain\n  agentfeed collect --source codex\n  agentfeed collect --source gemini-cli\n  agentfeed collect --source claude-code --session-file <path>');
+      print('\nCollect:\n  agentfeed collect\n  agentfeed collect --explain\n  agentfeed collect --source codex\n  agentfeed collect --source gemini-cli\n  agentfeed collect --source claude-code --session-file <path>\n  agentfeed collect --since 2026-05-20T01:00:00Z\n  agentfeed collect --all');
+      print('\nShare:\n  agentfeed share\n  agentfeed share --dry\n  agentfeed share --open-review\n  agentfeed share --since 2026-05-20T01:00:00Z\n  agentfeed share --all');
       return;
     default:
       throw new Error(`Unknown command: ${command}`);

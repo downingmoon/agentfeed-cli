@@ -1,6 +1,6 @@
 import { hostname } from 'node:os';
 import { join } from 'node:path';
-import type { AgentType, LocalDraft, WorklogMetrics } from '../types.js';
+import type { AgentType, CollectionWindow, LocalDraft, WorklogMetrics } from '../types.js';
 import { loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { collectAgentSessionMetrics } from '../collectors/agent-session.js';
@@ -14,6 +14,21 @@ function draftId(date = new Date()): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   const stamp = `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}_${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
   return `draft_${stamp}_${randomSuffix(4)}`;
+}
+
+
+function normalizeBoundary(value?: string | null): string | null {
+  if (!value) return null;
+  const millis = Date.parse(value);
+  if (!Number.isFinite(millis)) throw new Error(`Invalid collection window timestamp: ${value}`);
+  return new Date(millis).toISOString();
+}
+
+function collectionWindow(options: { since?: string | null; until?: string | null }): CollectionWindow | null {
+  const since = normalizeBoundary(options.since);
+  const until = normalizeBoundary(options.until);
+  if (!since && !until) return null;
+  return { since, until };
 }
 
 export function createEmptyDraft(input: { projectName: string; projectRoot: string; source: AgentType }): LocalDraft {
@@ -34,28 +49,29 @@ export function createEmptyDraft(input: { projectName: string; projectRoot: stri
   };
 }
 
-export async function collectDraft(options: { cwd: string; source?: AgentType; sessionFile?: string | null }): Promise<LocalDraft> {
+export async function collectDraft(options: { cwd: string; source?: AgentType; sessionFile?: string | null; since?: string | null; until?: string | null }): Promise<LocalDraft> {
   const root = await resolveProjectRoot(options.cwd);
   const config = await loadProjectConfig(root);
   let source = options.source ?? 'claude_code';
   const git = await collectGitMetrics(root);
-  let session = await collectAgentSessionMetrics({ cwd: root, source, sessionFile: options.sessionFile });
+  const window = collectionWindow(options);
+  let session = await collectAgentSessionMetrics({ cwd: root, source, sessionFile: options.sessionFile, since: window?.since, until: window?.until });
   if (!options.source && !session) {
-    const codexSession = await collectAgentSessionMetrics({ cwd: root, source: 'codex', sessionFile: options.sessionFile });
+    const codexSession = await collectAgentSessionMetrics({ cwd: root, source: 'codex', sessionFile: options.sessionFile, since: window?.since, until: window?.until });
     if (codexSession) {
       source = 'codex';
       session = codexSession;
     }
   }
   if (!options.source && !session) {
-    const geminiSession = await collectAgentSessionMetrics({ cwd: root, source: 'gemini_cli', sessionFile: options.sessionFile });
+    const geminiSession = await collectAgentSessionMetrics({ cwd: root, source: 'gemini_cli', sessionFile: options.sessionFile, since: window?.since, until: window?.until });
     if (geminiSession) {
       source = 'gemini_cli';
       session = geminiSession;
     }
   }
   if (!options.source && !session) {
-    const genericSession = await collectAgentSessionMetrics({ cwd: root, source: 'other', sessionFile: options.sessionFile });
+    const genericSession = await collectAgentSessionMetrics({ cwd: root, source: 'other', sessionFile: options.sessionFile, since: window?.since, until: window?.until });
     if (genericSession) {
       source = 'other';
       session = genericSession;
@@ -122,7 +138,7 @@ export async function collectDraft(options: { cwd: string; source?: AgentType; s
       timeline: (redacted.timeline as LocalDraft['worklog']['timeline']).slice(0, 8)
     },
     privacy_scan: scan,
-    source: { agent: source, tool_version: 'agentfeed-cli/0.2.0', host_label: hostname(), session_id: session?.session_id ?? null, created_at: new Date().toISOString() },
+    source: { agent: source, tool_version: 'agentfeed-cli/0.2.0', host_label: hostname(), session_id: session?.session_id ?? null, created_at: new Date().toISOString(), collection_window: window },
     upload: { uploaded: false }
   };
   await writeDraft(root, draft);

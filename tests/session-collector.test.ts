@@ -289,4 +289,48 @@ describe('agent session collector', () => {
       { type: 'generic_metadata', name: 'unknown_plugin', quality: 'low' }
     ]);
   });
+
+  it('stores explicit collection windows on created drafts', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });
+    execFileSync('git', ['commit', '-m', 'agentfeed config'], { cwd: dir, stdio: 'ignore' });
+    const sessionFile = join(dir, 'codex-window-draft.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-window-draft', cwd: dir } },
+      { timestamp: '2026-05-20T01:02:00Z', type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: {
+        [join(dir, 'src', 'window.ts')]: { type: 'add', content: 'export const windowed = true;\n' }
+      } } }
+    ]);
+
+    const draft = await collectDraft({ cwd: dir, source: 'codex', sessionFile, since: '2026-05-20T01:00:00Z', until: '2026-05-20T02:00:00Z' });
+
+    expect(draft.source.collection_window).toEqual({ since: '2026-05-20T01:00:00.000Z', until: '2026-05-20T02:00:00.000Z' });
+    expect(draft.worklog.changed_areas).toContain('Application code');
+  });
+
+});
+
+// P0: collection window filtering keeps long-lived sessions from over-counting old work.
+describe('collection window filtering', () => {
+  it('filters Codex metrics and file edits before --since while preserving session identity', async () => {
+    const sessionFile = join(dir, 'codex-window-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-window-session', cwd: dir } },
+      { timestamp: '2026-05-20T00:01:00Z', type: 'event_msg', payload: { type: 'token_count', info: { total_token_usage: { input_tokens: 100, output_tokens: 50 } } } },
+      { timestamp: '2026-05-20T00:02:00Z', type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: {
+        [join(dir, 'src', 'old.ts')]: { type: 'add', content: 'export const oldWork = true;\n' }
+      } } },
+      { timestamp: '2026-05-20T01:01:00Z', type: 'event_msg', payload: { type: 'token_count', info: { total_token_usage: { input_tokens: 10, output_tokens: 5 } } } },
+      { timestamp: '2026-05-20T01:02:00Z', type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: {
+        [join(dir, 'src', 'new.ts')]: { type: 'add', content: 'export const newWork = true;\nexport const stillNew = true;\n' }
+      } } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile, since: '2026-05-20T01:00:00Z' });
+
+    expect(metrics?.session_id).toBe('codex-window-session');
+    expect(metrics?.tokens_used).toBe(15);
+    expect(metrics?.changed_files.map((file) => file.path)).toEqual(['src/new.ts']);
+    expect(metrics?.lines_added).toBe(2);
+  });
 });

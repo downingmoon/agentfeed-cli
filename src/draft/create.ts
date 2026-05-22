@@ -9,6 +9,7 @@ import { generateOutcome, generateSummary, generateTimeline, generateTitle } fro
 import { scanAndRedactFields } from '../privacy/scan.js';
 import { randomSuffix, shortHash } from '../utils/hash.js';
 import { writeDraft } from './write.js';
+import { listDrafts, readDraft } from './read.js';
 
 function draftId(date = new Date()): string {
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -22,6 +23,12 @@ function normalizeBoundary(value?: string | null): string | null {
   const millis = Date.parse(value);
   if (!Number.isFinite(millis)) throw new Error(`Invalid collection window timestamp: ${value}`);
   return new Date(millis).toISOString();
+}
+
+function applyUserNote(summary: string, note?: string | null): string {
+  const trimmed = note?.trim();
+  if (!trimmed) return summary;
+  return `Note: ${trimmed.slice(0, 500)}\n\n${summary}`;
 }
 
 function collectionWindow(options: { since?: string | null; until?: string | null }): CollectionWindow | null {
@@ -49,7 +56,21 @@ export function createEmptyDraft(input: { projectName: string; projectRoot: stri
   };
 }
 
-export async function collectDraft(options: { cwd: string; source?: AgentType; sessionFile?: string | null; since?: string | null; until?: string | null }): Promise<LocalDraft> {
+
+async function findDraftByFingerprint(cwd: string, fingerprint: string): Promise<LocalDraft | null> {
+  for (const row of await listDrafts(cwd)) {
+    const draft = await readDraft(cwd, row.id).catch(() => null);
+    if (draft?.source.collection_fingerprint === fingerprint) return draft;
+  }
+  return null;
+}
+
+function collectionFingerprint(input: { source: AgentType; sessionId?: string | null; headCommit?: string | null; window?: CollectionWindow | null }): string | null {
+  if (!input.sessionId || !input.headCommit) return null;
+  return shortHash(JSON.stringify({ source: input.source, session_id: input.sessionId, head_commit: input.headCommit, window: input.window ?? null }), 16);
+}
+
+export async function collectDraft(options: { cwd: string; source?: AgentType; sessionFile?: string | null; since?: string | null; until?: string | null; force?: boolean; note?: string | null }): Promise<LocalDraft> {
   const root = await resolveProjectRoot(options.cwd);
   const config = await loadProjectConfig(root);
   let source = options.source ?? 'claude_code';
@@ -105,8 +126,13 @@ export async function collectDraft(options: { cwd: string; source?: AgentType; s
     collection_quality: session?.collection_quality ?? null,
     collection_sources: session?.collection_sources ?? null
   };
+  const fingerprint = collectionFingerprint({ source, sessionId: session?.session_id, headCommit: git.head_commit, window });
+  if (fingerprint && !options.force) {
+    const existing = await findDraftByFingerprint(root, fingerprint);
+    if (existing) return existing;
+  }
   const title = generateTitle(safeAreas, mergedGit);
-  const summary = generateSummary(safeAreas, metrics);
+  const summary = applyUserNote(generateSummary(safeAreas, metrics), options.note);
   const publicFields = {
     title,
     summary,
@@ -138,7 +164,7 @@ export async function collectDraft(options: { cwd: string; source?: AgentType; s
       timeline: (redacted.timeline as LocalDraft['worklog']['timeline']).slice(0, 8)
     },
     privacy_scan: scan,
-    source: { agent: source, tool_version: 'agentfeed-cli/0.2.0', host_label: hostname(), session_id: session?.session_id ?? null, created_at: new Date().toISOString(), collection_window: window },
+    source: { agent: source, tool_version: 'agentfeed-cli/0.2.0', host_label: hostname(), session_id: session?.session_id ?? null, created_at: new Date().toISOString(), collection_window: window, collection_fingerprint: fingerprint },
     upload: { uploaded: false }
   };
   await writeDraft(root, draft);

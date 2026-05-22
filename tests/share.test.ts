@@ -35,14 +35,23 @@ describe('share command helpers', () => {
   });
 
   it('parses share-specific options and preserves collect source options', () => {
-    expect(parseShareArgs(['--dry', '--open-review', '--source', 'gemini-cli', '--session-file=/tmp/session.jsonl', '--since', '2026-05-20T01:00:00Z', '--until=2026-05-20T02:00:00Z'])).toEqual({
+    expect(parseShareArgs(['--dry', '--open-review', '--source', 'gemini-cli', '--session-file=/tmp/session.jsonl', '--since', '2026-05-20T01:00:00Z', '--until=2026-05-20T02:00:00Z', '--note', 'Refined login flow', '--no-clipboard'])).toEqual({
       dryRun: true,
       openReview: true,
       json: false,
       source: 'gemini_cli',
       sessionFile: '/tmp/session.jsonl',
       since: '2026-05-20T01:00:00Z',
-      until: '2026-05-20T02:00:00Z'
+      until: '2026-05-20T02:00:00Z',
+      note: 'Refined login flow',
+      noClipboard: true
     });
+  });
+
+  it('renders a user note in the share preview', () => {
+    const draft = createEmptyDraft({ projectName: 'agentfeed-cli', projectRoot: '/tmp/agentfeed-cli', source: 'codex' });
+    draft.worklog.summary = 'Note: Refined login flow\n\nCollected agent work.';
+
+    expect(formatSharePreview(draft)).toContain('Note: Refined login flow');
   });
 });

@@ -9,6 +9,8 @@ export interface ShareOptions {
   sessionFile?: string | null;
   since?: string | null;
   until?: string | null;
+  note?: string | null;
+  noClipboard: boolean;
 }
 
 export function formatMetricsRow(draft: LocalDraft): string {
@@ -55,6 +57,8 @@ export function parseShareArgs(args: string[]): ShareOptions {
     source: sourceOption ? sourceOption.replace(/-/g, '_') as AgentType : undefined,
     sessionFile: option(args, '--session-file') ?? null,
     since: option(args, '--since') ?? null,
-    until: option(args, '--until') ?? null
+    until: option(args, '--until') ?? null,
+    note: option(args, '--note') ?? null,
+    noClipboard: flag(args, '--no-clipboard') || flag(args, '--no-clip')
   };
 }

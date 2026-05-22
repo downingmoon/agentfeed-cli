@@ -31,6 +31,8 @@ The CLI creates `.agentfeed/drafts/*.json` first and uploads only reviewable pri
 agentfeed share              # collect -> preview -> upload private review draft
 agentfeed share --dry        # collect + preview only, keep the local draft
 agentfeed share --open-review
+agentfeed share --note "Fixed auth flow"
+agentfeed share --no-clipboard
 agentfeed share --source codex
 agentfeed share --source gemini-cli --session-file ./session.jsonl
 ```
@@ -52,3 +54,12 @@ agentfeed share --all             # same for one-command sharing
 
 
 `collect` combines Git metrics with local agent session metadata when available. Claude Code JSONL transcripts, Codex JSONL rollouts, Gemini CLI chat logs, and OMC/OMX/Superpowers metadata are parsed locally for safe aggregate data such as edited file paths, line counts, token usage, test commands, failed commands, tool calls, skills used, subagent counts, collection quality, model, and session id; raw transcript content is not stored in the draft. Unknown local agent/plugin metadata is collected as low-confidence aggregate signals when no known agent session is found, and `--explain` shows the non-path source summary used for the draft.
+
+
+## Diagnostics and duplicate safety
+
+`agentfeed doctor` reports local Claude Code, Codex CLI, Gemini CLI, OMC, OMX, and Superpowers signals so setup problems are easier to diagnose.
+
+Draft collection also records a stable fingerprint from `session_id + git head + collection_window`; repeated runs reuse the existing local draft unless `--force` or `--all` is used.
+
+Successful `share` / `publish` copies the review URL to the clipboard when the platform supports it. Use `--no-clipboard` to opt out.

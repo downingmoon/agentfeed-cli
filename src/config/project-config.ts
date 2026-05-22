@@ -4,6 +4,7 @@ import type { AgentFeedProjectConfig } from '../types.js';
 import { defaultProjectConfig, defaultRedactionRules } from './defaults.js';
 import { ensureDir, pathExists, readJson, writeJson } from '../utils/fs.js';
 import { run } from '../utils/shell.js';
+import { detectAgentSignals } from '../collectors/agent-discovery.js';
 
 export function slugify(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'my-project';
@@ -46,6 +47,10 @@ export async function initProject(options: { cwd?: string; projectName?: string;
   const repository = await run('git', ['remote', 'get-url', 'origin'], root);
   const name = options.projectName ?? basename(root);
   const config = defaultProjectConfig({ name, slug: slugify(name), repositoryUrl: repository.ok ? repository.stdout.trim() || null : null });
+  const signals = await detectAgentSignals({ cwd: root });
+  config.agents.claude_code.enabled = signals.claude_code.detected || signals.omc.detected || config.agents.claude_code.enabled;
+  config.agents.codex.enabled = signals.codex.detected || signals.omx.detected;
+  config.agents.gemini_cli.enabled = signals.gemini_cli.detected || signals.superpowers.detected;
   const afDir = join(root, '.agentfeed');
   await Promise.all(['drafts', 'logs', 'cache', 'backups'].map((d) => ensureDir(join(afDir, d))));
   await writeJson(join(afDir, 'config.json'), config);

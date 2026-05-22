@@ -139,7 +139,7 @@ export interface LocalDraft {
     timeline: WorklogTimelineItem[];
   };
   privacy_scan: PrivacyScanResult;
-  source: { agent: AgentType; session_id?: string | null; tool_version: string; host_label?: string | null; created_at: string; collection_window?: CollectionWindow | null };
+  source: { agent: AgentType; session_id?: string | null; tool_version: string; host_label?: string | null; created_at: string; collection_window?: CollectionWindow | null; collection_fingerprint?: string | null };
   upload: { uploaded: boolean; worklog_id?: string | null; review_url?: string | null; uploaded_at?: string | null };
 }
 

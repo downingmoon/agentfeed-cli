@@ -13,6 +13,7 @@ import { previewDraftRemote, publishDraft } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
 import { collectGitMetrics } from '../collectors/git.js';
+import { detectAgentSignals, formatAgentSignalLines } from '../collectors/agent-discovery.js';
 import { changedAreas } from '../summary/changed-areas.js';
 import { hasAgentFeedHook, installClaudeCodeHook, uninstallClaudeCodeHook, resolveClaudeSettingsPath } from '../hooks/claude-code-settings.js';
 import { flag, option } from './args.js';
@@ -20,6 +21,7 @@ import { formatMetricsRow, formatSharePreview, parseShareArgs } from './share.js
 import type { AgentType } from '../types.js';
 import { readJson, pathExists } from '../utils/fs.js';
 import { openBrowser } from '../utils/open-browser.js';
+import { copyToClipboard } from '../utils/clipboard.js';
 
 function print(text = '') { process.stdout.write(`${text}\n`); }
 function err(text = '') { process.stderr.write(`${text}\n`); }
@@ -81,7 +83,7 @@ async function cmdCollect(args: string[]) {
   const sourceOption = option(args, '--source');
   const source = sourceOption ? sourceOption.replace(/-/g, '_') as AgentType : undefined;
   const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
-  const draft = await collectDraft({ cwd: process.cwd(), source, sessionFile: option(args, '--session-file') ?? null, since: window.since, until: window.until });
+  const draft = await collectDraft({ cwd: process.cwd(), source, sessionFile: option(args, '--session-file') ?? null, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all') });
   if (flag(args, '--json')) { print(JSON.stringify(draft, null, 2)); return; }
   print('Draft created.\n');
   print(`ID: ${draft.id}`);
@@ -105,7 +107,7 @@ async function cmdShare(args: string[]) {
   if (!opts.dryRun && !creds) throw new Error('AgentFeed token is missing. Run: agentfeed login');
 
   const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
-  const draft = await collectDraft({ cwd: process.cwd(), source: opts.source, sessionFile: opts.sessionFile, since: window.since, until: window.until });
+  const draft = await collectDraft({ cwd: process.cwd(), source: opts.source, sessionFile: opts.sessionFile, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all'), note: opts.note });
 
   if (opts.json) {
     if (opts.dryRun) {
@@ -115,6 +117,7 @@ async function cmdShare(args: string[]) {
     const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds! });
     await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
     print(JSON.stringify({ dry_run: false, draft_id: draft.id, upload: result }, null, 2));
+    if (!opts.noClipboard) await copyToClipboard(result.review_url);
     if (opts.openReview) await openBrowser(result.review_url);
     return;
   }
@@ -135,6 +138,7 @@ async function cmdShare(args: string[]) {
   print(`Status: ${result.status}`);
   print(`Review URL:
 ${result.review_url}`);
+  if (!opts.noClipboard && await copyToClipboard(result.review_url)) print('Review URL copied to clipboard.');
   if (opts.openReview) {
     const opened = await openBrowser(result.review_url);
     if (!opened) print(result.review_url);
@@ -234,6 +238,8 @@ async function cmdDoctor() {
   const git = await collectGitMetrics(process.cwd());
   checks.push(['current directory is git repository', git.branch || git.head_commit ? 'yes' : 'no']);
   for (const [name, value] of checks) print(`${name}: ${value}`);
+  print();
+  for (const line of formatAgentSignalLines(await detectAgentSignals({ cwd: process.cwd() }))) print(line);
 }
 
 async function cmdDrafts() {
@@ -278,7 +284,7 @@ async function main() {
       print('Usage: agentfeed <init|login|status|collect|share|preview|publish|scan|hook|doctor|drafts|discard|open>');
       print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --token <token>');
       print('\nCollect:\n  agentfeed collect\n  agentfeed collect --explain\n  agentfeed collect --source codex\n  agentfeed collect --source gemini-cli\n  agentfeed collect --source claude-code --session-file <path>\n  agentfeed collect --since 2026-05-20T01:00:00Z\n  agentfeed collect --all');
-      print('\nShare:\n  agentfeed share\n  agentfeed share --dry\n  agentfeed share --open-review\n  agentfeed share --since 2026-05-20T01:00:00Z\n  agentfeed share --all');
+      print('\nShare:\n  agentfeed share\n  agentfeed share --dry\n  agentfeed share --open-review\n  agentfeed share --since 2026-05-20T01:00:00Z\n  agentfeed share --all\n  agentfeed share --note "Fixed auth flow"\n  agentfeed share --no-clipboard');
       return;
     default:
       throw new Error(`Unknown command: ${command}`);

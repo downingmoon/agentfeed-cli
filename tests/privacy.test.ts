@@ -14,6 +14,13 @@ describe('privacy scanner', () => {
     expect(result.scan.findings.some((f) => f.type === type)).toBe(true);
   });
 
+  it('redacts absolute paths without adding leading whitespace', () => {
+    const result = scanAndRedactFields({ summary: '/Users/downing/project/src/index.ts changed' });
+
+    expect(result.redacted.summary).toBe('[REDACTED_PATH] changed');
+    expect(result.scan.findings.some((f) => f.type === 'sensitive_path')).toBe(true);
+  });
+
   it('redacts high severity secrets and marks danger', () => {
     const result = scanAndRedactFields({ title: 'Use sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890' });
     expect(result.redacted.title).toContain('[REDACTED_SECRET]');

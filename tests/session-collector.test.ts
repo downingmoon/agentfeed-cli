@@ -312,6 +312,43 @@ describe('agent session collector', () => {
 
 // P0: collection window filtering keeps long-lived sessions from over-counting old work.
 describe('collection window filtering', () => {
+  it('filters Claude metrics and edits before --since inclusively at the boundary', async () => {
+    const sessionFile = join(dir, 'claude-window-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { type: 'assistant', cwd: dir, sessionId: 'claude-window-session', timestamp: '2026-05-20T00:59:59Z', message: { model: 'claude-sonnet', usage: { input_tokens: 100, output_tokens: 50 }, content: [
+        { type: 'tool_use', name: 'Write', input: { file_path: join(dir, 'src', 'old-claude.ts'), content: 'export const oldClaude = true;\n' } }
+      ] } },
+      { type: 'assistant', cwd: dir, sessionId: 'claude-window-session', timestamp: '2026-05-20T01:00:00Z', message: { model: 'claude-sonnet', usage: { input_tokens: 10, output_tokens: 5 }, content: [
+        { type: 'tool_use', name: 'Write', input: { file_path: join(dir, 'src', 'new-claude.ts'), content: 'export const newClaude = true;\n' } }
+      ] } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'claude_code', sessionFile, since: '2026-05-20T01:00:00Z' });
+
+    expect(metrics?.session_id).toBe('claude-window-session');
+    expect(metrics?.tokens_used).toBe(15);
+    expect(metrics?.changed_files.map((file) => file.path)).toEqual(['src/new-claude.ts']);
+  });
+
+  it('filters Gemini metrics and edits before --since inclusively at the boundary', async () => {
+    const sessionFile = join(dir, 'gemini-window-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { sessionId: 'gemini-window-session', startTime: '2026-05-20T00:00:00Z', lastUpdated: '2026-05-20T00:59:59Z', kind: 'main' },
+      { id: 'g-old', timestamp: '2026-05-20T00:59:59Z', type: 'gemini', model: 'gemini-3-flash-preview', tokens: { total: 100 }, toolCalls: [
+        { id: 'tool-old', name: 'write_file', status: 'success', args: { file_path: join(dir, 'src', 'old-gemini.ts'), content: 'export const oldGemini = true;\n' } }
+      ] },
+      { id: 'g-new', timestamp: '2026-05-20T01:00:00Z', type: 'gemini', model: 'gemini-3-flash-preview', tokens: { total: 15 }, toolCalls: [
+        { id: 'tool-new', name: 'write_file', status: 'success', args: { file_path: join(dir, 'src', 'new-gemini.ts'), content: 'export const newGemini = true;\n' } }
+      ] }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile, since: '2026-05-20T01:00:00Z' });
+
+    expect(metrics?.session_id).toBe('gemini-window-session');
+    expect(metrics?.tokens_used).toBe(15);
+    expect(metrics?.changed_files.map((file) => file.path)).toEqual(['src/new-gemini.ts']);
+  });
+
   it('filters Codex metrics and file edits before --since while preserving session identity', async () => {
     const sessionFile = join(dir, 'codex-window-session.jsonl');
     await writeJsonl(sessionFile, [

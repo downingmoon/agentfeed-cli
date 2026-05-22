@@ -105,7 +105,7 @@ async function cmdShare(args: string[]) {
   if (!opts.dryRun && !creds) throw new Error('AgentFeed token is missing. Run: agentfeed login');
 
   const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
-  const draft = await collectDraft({ cwd: process.cwd(), source: opts.source, sessionFile: opts.sessionFile, since: opts.since ?? window.since, until: opts.until ?? window.until });
+  const draft = await collectDraft({ cwd: process.cwd(), source: opts.source, sessionFile: opts.sessionFile, since: window.since, until: window.until });
 
   if (opts.json) {
     if (opts.dryRun) {

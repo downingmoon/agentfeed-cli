@@ -8,6 +8,49 @@ export class AgentFeedApiError extends Error {
   }
 }
 
+export interface ApiCheckResult {
+  ok: boolean;
+  url: string;
+  status?: number;
+  error?: string;
+}
+
+function apiUrl(apiBaseUrl: string, path: string): string {
+  return `${apiBaseUrl.replace(/\/$/, '')}${path}`;
+}
+
+function healthUrl(apiBaseUrl: string): string {
+  const url = new URL(apiBaseUrl);
+  url.pathname = '/health';
+  url.search = '';
+  url.hash = '';
+  return url.toString();
+}
+
+async function fetchCheck(url: string, init: RequestInit): Promise<ApiCheckResult> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 3000);
+  try {
+    const response = await fetch(url, { ...init, signal: controller.signal });
+    return { ok: response.ok, url, status: response.status };
+  } catch (error) {
+    return { ok: false, url, error: error instanceof Error ? error.message : String(error) };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function checkApiReachability(apiBaseUrl: string): Promise<ApiCheckResult> {
+  return fetchCheck(healthUrl(apiBaseUrl), { method: 'GET' });
+}
+
+export async function checkIngestionToken(credentials: AgentFeedCredentials): Promise<ApiCheckResult> {
+  return fetchCheck(apiUrl(credentials.api_base_url, '/ingest/status'), {
+    method: 'GET',
+    headers: { authorization: `Bearer ${credentials.ingestion_token}` }
+  });
+}
+
 export function draftToIngestRequest(draft: LocalDraft): IngestWorklogRequest {
   return {
     source: {
@@ -86,7 +129,7 @@ async function postIngest<T>(path: string, draft: LocalDraft, credentials: Agent
   const payload = draftToIngestRequest(draft);
   const body = JSON.stringify(payload);
   if (Buffer.byteLength(body, 'utf8') > 512 * 1024) throw new AgentFeedApiError(413, 'INGESTION_PAYLOAD_TOO_LARGE', 'Draft payload is too large.');
-  const response = await fetch(`${credentials.api_base_url.replace(/\/$/, '')}${path}`, {
+  const response = await fetch(apiUrl(credentials.api_base_url, path), {
     method: 'POST',
     headers: { authorization: `Bearer ${credentials.ingestion_token}`, 'content-type': 'application/json' },
     body

@@ -58,7 +58,7 @@ agentfeed share --all             # same for one-command sharing
 
 ## Diagnostics and duplicate safety
 
-`agentfeed doctor` reports local Claude Code, Codex CLI, Gemini CLI, OMC, OMX, and Superpowers signals so setup problems are easier to diagnose.
+`agentfeed doctor` reports API reachability, ingestion token validity, and local Claude Code, Codex CLI, Gemini CLI, OMC, OMX, and Superpowers signals so setup problems are easier to diagnose.
 
 Draft collection also records a stable fingerprint from `session_id + git head + collection_window`; repeated runs reuse the existing local draft unless `--force` or `--all` is used.
 

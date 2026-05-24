@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { initProject } from '../src/config/project-config.js';
 import { writeDraft } from '../src/draft/write.js';
 import { createEmptyDraft } from '../src/draft/create.js';
-import { createCliAuthSession, draftToIngestRequest, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
+import { checkApiReachability, checkIngestionToken, createCliAuthSession, draftToIngestRequest, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
 import { waitForCliAuthExchange } from '../src/auth/browser-login.js';
 import { installClaudeCodeHook, uninstallClaudeCodeHook } from '../src/hooks/claude-code-settings.js';
 
@@ -69,6 +69,38 @@ describe('api client', () => {
 
     expect(payload.source.collection_window).toEqual(draft.source.collection_window);
     expect(payload.source.collection_fingerprint).toBe('agentfeed-window-fingerprint');
+  });
+
+  it('checks API reachability against the backend health endpoint', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ status: 'ok' }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await checkApiReachability('http://localhost:8001/v1');
+
+    expect(result).toMatchObject({ ok: true, status: 200, url: 'http://localhost:8001/health' });
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/health', expect.objectContaining({ method: 'GET' }));
+  });
+
+  it('checks ingestion token validity without uploading a draft', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ data: { ok: true } }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await checkIngestionToken({ ingestion_token: 'af_live_test', api_base_url: 'http://localhost:8001/v1', created_at: 'now' });
+
+    expect(result).toMatchObject({ ok: true, status: 200, url: 'http://localhost:8001/v1/ingest/status' });
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/v1/ingest/status', expect.objectContaining({
+      method: 'GET',
+      headers: { authorization: 'Bearer af_live_test' }
+    }));
+  });
+
+  it('reports invalid ingestion token as an unhealthy token check', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID' } }), { status: 401, headers: { 'content-type': 'application/json' } })));
+
+    await expect(checkIngestionToken({ ingestion_token: 'af_live_bad', api_base_url: 'http://localhost:8001/v1', created_at: 'now' })).resolves.toMatchObject({
+      ok: false,
+      status: 401
+    });
   });
 
   it('creates and exchanges a browser login session', async () => {

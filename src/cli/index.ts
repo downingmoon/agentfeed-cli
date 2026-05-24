@@ -9,7 +9,7 @@ import { collectDraft } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 import { formatCollectionExplain } from '../draft/explain.js';
-import { previewDraftRemote, publishDraft } from '../api/client.js';
+import { checkApiReachability, checkIngestionToken, previewDraftRemote, publishDraft } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
 import { collectGitMetrics } from '../collectors/git.js';
@@ -231,9 +231,18 @@ async function cmdDoctor() {
   checks.push(['Node version', process.versions.node]);
   checks.push(['agentfeed version', '0.2.0']);
   const creds = await loadCredentials();
+  const apiBaseUrl = creds?.api_base_url ?? await resolveApiBaseUrl();
+  const apiReachability = await checkApiReachability(apiBaseUrl);
   checks.push(['global credentials file exists', creds ? 'yes' : 'no']);
   checks.push(['ingestion token exists', creds?.ingestion_token ? 'yes' : 'no']);
-  checks.push(['API base URL configured', creds?.api_base_url ?? process.env.AGENTFEED_API_BASE_URL ?? 'no']);
+  checks.push(['API base URL configured', apiBaseUrl]);
+  checks.push(['API reachable', apiReachability.ok ? `yes (${apiReachability.status})` : `no (${apiReachability.status ?? apiReachability.error ?? 'unreachable'})`]);
+  if (creds?.ingestion_token) {
+    const tokenCheck = await checkIngestionToken(creds);
+    checks.push(['ingestion token valid', tokenCheck.ok ? `yes (${tokenCheck.status})` : `no (${tokenCheck.status ?? tokenCheck.error ?? 'unreachable'})`]);
+  } else {
+    checks.push(['ingestion token valid', 'skipped']);
+  }
   try { await loadProjectConfig(process.cwd()); checks.push(['project config valid', 'yes']); } catch { checks.push(['project config valid', 'no']); }
   const git = await collectGitMetrics(process.cwd());
   checks.push(['current directory is git repository', git.branch || git.head_commit ? 'yes' : 'no']);

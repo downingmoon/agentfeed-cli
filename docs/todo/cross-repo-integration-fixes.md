@@ -59,7 +59,7 @@ agentfeed collect
 - [ ] Worklog comments를 실제 API로 연결한다.
 - [ ] Like/bookmark buttons를 실제 API로 연결한다.
 - [x] Explore route를 구현하거나 Header 링크를 제거한다.
-- [ ] CLI `doctor`가 API/token reachability를 확인한다.
+- [x] CLI `doctor`가 API/token reachability를 확인한다.
 - [x] CLI `preview`가 선택적으로 Backend preview endpoint를 호출할 수 있게 한다.
 - [ ] CLI publish 성공 후 local draft metadata의 `worklog_id/review_url`을 기준으로 재오픈/재업로드 방지 정책을 강화한다.
 

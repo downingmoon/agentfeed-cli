@@ -1,4 +1,4 @@
-import type { AgentFeedCredentials, CliAuthExchangeResult, CliAuthSession, IngestWorklogRequest, LocalDraft } from '../types.js';
+import type { AgentFeedCredentials, CliAuthExchangeResult, CliAuthSession, IngestWorklogRequest, LocalDraft, WorklogStatus } from '../types.js';
 import { readDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 
@@ -100,7 +100,7 @@ export interface RemotePreviewResult {
 
 export interface PublishDraftResult {
   id: string;
-  status: 'needs_review' | 'private' | 'already_uploaded';
+  status: WorklogStatus | 'already_uploaded';
   visibility: 'private';
   review_url: string;
   created_at: string;

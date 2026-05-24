@@ -51,6 +51,8 @@ agentfeed collect
   - 기준: CLI draft `source.collection_window`, `source.collection_fingerprint`
   - Backend: `IngestSource`가 수용하고 `Worklog.source_json`으로 저장
   - Frontend: feed/detail/review API 타입과 adapter에서 노출
+- [x] Backend ingest가 `source.collection_fingerprint` / `source.local_draft_id` 기준으로 중복 업로드를 idempotent하게 처리한다.
+  - 같은 사용자의 같은 수집 identity가 이미 있으면 새 worklog를 만들지 않고 기존 review URL 반환
 
 ## P2 — 제품 완성도
 

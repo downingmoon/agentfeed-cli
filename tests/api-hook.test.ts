@@ -42,6 +42,28 @@ describe('api client', () => {
     expect(saved.upload).toMatchObject({ uploaded: true, worklog_id: 'worklog_1', review_url: 'https://agentfeed.dev/review/1' });
   });
 
+  it('publish reuses an already uploaded draft instead of uploading again', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    draft.upload = {
+      uploaded: true,
+      worklog_id: 'worklog_existing',
+      review_url: 'https://agentfeed.dev/worklogs/worklog_existing/review',
+      uploaded_at: '2026-05-19T00:00:00Z'
+    };
+    await writeDraft(dir, draft);
+    const fetchMock = vi.fn(async () => { throw new Error('must not upload'); });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } });
+
+    expect(result).toMatchObject({
+      id: 'worklog_existing',
+      review_url: 'https://agentfeed.dev/worklogs/worklog_existing/review',
+      reused_existing: true
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
 
 
   it('remote preview posts the ingest payload and returns backend warnings', async () => {

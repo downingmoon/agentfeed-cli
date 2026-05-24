@@ -70,7 +70,12 @@ function collectionFingerprint(input: { source: AgentType; sessionId?: string | 
   return shortHash(JSON.stringify({ source: input.source, session_id: input.sessionId, head_commit: input.headCommit, window: input.window ?? null }), 16);
 }
 
-export async function collectDraft(options: { cwd: string; source?: AgentType; sessionFile?: string | null; since?: string | null; until?: string | null; force?: boolean; note?: string | null }): Promise<LocalDraft> {
+export interface CollectDraftStatus {
+  draft: LocalDraft;
+  reusedExisting: boolean;
+}
+
+export async function collectDraftWithStatus(options: { cwd: string; source?: AgentType; sessionFile?: string | null; since?: string | null; until?: string | null; force?: boolean; note?: string | null }): Promise<CollectDraftStatus> {
   const root = await resolveProjectRoot(options.cwd);
   const config = await loadProjectConfig(root);
   let source = options.source ?? 'claude_code';
@@ -129,7 +134,7 @@ export async function collectDraft(options: { cwd: string; source?: AgentType; s
   const fingerprint = collectionFingerprint({ source, sessionId: session?.session_id, headCommit: git.head_commit, window });
   if (fingerprint && !options.force) {
     const existing = await findDraftByFingerprint(root, fingerprint);
-    if (existing) return existing;
+    if (existing) return { draft: existing, reusedExisting: true };
   }
   const title = generateTitle(safeAreas, mergedGit);
   const summary = applyUserNote(generateSummary(safeAreas, metrics), options.note);
@@ -168,5 +173,9 @@ export async function collectDraft(options: { cwd: string; source?: AgentType; s
     upload: { uploaded: false }
   };
   await writeDraft(root, draft);
-  return draft;
+  return { draft, reusedExisting: false };
+}
+
+export async function collectDraft(options: { cwd: string; source?: AgentType; sessionFile?: string | null; since?: string | null; until?: string | null; force?: boolean; note?: string | null }): Promise<LocalDraft> {
+  return (await collectDraftWithStatus(options)).draft;
 }

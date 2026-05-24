@@ -5,7 +5,7 @@ import { initProject, loadProjectConfig, resolveProjectRoot } from '../config/pr
 import { loadCredentials, saveCredentials } from '../config/credentials.js';
 import { resolveApiBaseUrl } from '../config/api-base.js';
 import { markCollectionComplete, resolveCollectionWindow } from '../config/collection-state.js';
-import { collectDraft } from '../draft/create.js';
+import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 import { formatCollectionExplain } from '../draft/explain.js';
@@ -83,9 +83,10 @@ async function cmdCollect(args: string[]) {
   const sourceOption = option(args, '--source');
   const source = sourceOption ? sourceOption.replace(/-/g, '_') as AgentType : undefined;
   const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
-  const draft = await collectDraft({ cwd: process.cwd(), source, sessionFile: option(args, '--session-file') ?? null, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all') });
+  const collection = await collectDraftWithStatus({ cwd: process.cwd(), source, sessionFile: option(args, '--session-file') ?? null, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all') });
+  const draft = collection.draft;
   if (flag(args, '--json')) { print(JSON.stringify(draft, null, 2)); return; }
-  print('Draft created.\n');
+  print(collection.reusedExisting ? 'Existing matching draft reused.\n' : 'Draft created.\n');
   print(`ID: ${draft.id}`);
   print(`Project: ${draft.project.name}`);
   print(`Privacy: ${draft.privacy_scan.status}`);
@@ -107,21 +108,23 @@ async function cmdShare(args: string[]) {
   if (!opts.dryRun && !creds) throw new Error('AgentFeed token is missing. Run: agentfeed login');
 
   const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
-  const draft = await collectDraft({ cwd: process.cwd(), source: opts.source, sessionFile: opts.sessionFile, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all'), note: opts.note });
+  const collection = await collectDraftWithStatus({ cwd: process.cwd(), source: opts.source, sessionFile: opts.sessionFile, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all'), note: opts.note });
+  const draft = collection.draft;
 
   if (opts.json) {
     if (opts.dryRun) {
-      print(JSON.stringify({ dry_run: true, draft }, null, 2));
+      print(JSON.stringify({ dry_run: true, reused_existing_draft: collection.reusedExisting, draft }, null, 2));
       return;
     }
     const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds! });
     await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
-    print(JSON.stringify({ dry_run: false, draft_id: draft.id, upload: result }, null, 2));
+    print(JSON.stringify({ dry_run: false, reused_existing_draft: collection.reusedExisting, draft_id: draft.id, upload: result }, null, 2));
     if (!opts.noClipboard) await copyToClipboard(result.review_url);
     if (opts.openReview) await openBrowser(result.review_url);
     return;
   }
 
+  if (collection.reusedExisting) print(`Reusing existing matching draft: ${draft.id}\n`);
   print(formatSharePreview(draft));
   print();
 
@@ -134,7 +137,7 @@ async function cmdShare(args: string[]) {
 
   const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds! });
   await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
-  print('Worklog uploaded.');
+  print(result.reused_existing ? 'Worklog already uploaded; reusing existing review URL.' : 'Worklog uploaded.');
   print(`Status: ${result.status}`);
   print(`Review URL:
 ${result.review_url}`);
@@ -174,7 +177,7 @@ async function cmdPublish(args: string[]) {
   if (!creds) throw new Error('AgentFeed token is missing. Run: agentfeed login --token <token>');
   const id = await resolveDraftId(process.cwd(), args);
   const result = await publishDraft({ cwd: process.cwd(), id, credentials: creds });
-  print('Worklog uploaded.\n');
+  print(result.reused_existing ? 'Worklog already uploaded; reusing existing review URL.\n' : 'Worklog uploaded.\n');
   print(`Status: ${result.status}`);
   print(`Review URL:\n${result.review_url}`);
   if (flag(args, '--open-review')) {

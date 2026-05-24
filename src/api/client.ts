@@ -98,6 +98,15 @@ export interface RemotePreviewResult {
   warnings: string[];
 }
 
+export interface PublishDraftResult {
+  id: string;
+  status: 'needs_review' | 'private' | 'already_uploaded';
+  visibility: 'private';
+  review_url: string;
+  created_at: string;
+  reused_existing?: boolean;
+}
+
 async function postJson<T>(apiBaseUrl: string, path: string, body: Record<string, unknown>): Promise<T> {
   const response = await fetch(`${apiBaseUrl.replace(/\/$/, '')}${path}`, {
     method: 'POST',
@@ -148,12 +157,22 @@ export async function previewDraftRemote(draft: LocalDraft, credentials: AgentFe
   return postIngest<RemotePreviewResult>('/ingest/worklogs/preview', draft, credentials);
 }
 
-export async function uploadDraft(draft: LocalDraft, credentials: AgentFeedCredentials): Promise<{ id: string; status: 'needs_review' | 'private'; visibility: 'private'; review_url: string; created_at: string }> {
-  return postIngest<{ id: string; status: 'needs_review' | 'private'; visibility: 'private'; review_url: string; created_at: string }>('/ingest/worklogs', draft, credentials);
+export async function uploadDraft(draft: LocalDraft, credentials: AgentFeedCredentials): Promise<PublishDraftResult> {
+  return postIngest<PublishDraftResult>('/ingest/worklogs', draft, credentials);
 }
 
-export async function publishDraft(options: { cwd: string; id: string; credentials: AgentFeedCredentials }) {
+export async function publishDraft(options: { cwd: string; id: string; credentials: AgentFeedCredentials }): Promise<PublishDraftResult> {
   const draft = await readDraft(options.cwd, options.id);
+  if (draft.upload.uploaded && draft.upload.worklog_id && draft.upload.review_url) {
+    return {
+      id: draft.upload.worklog_id,
+      status: 'already_uploaded',
+      visibility: 'private',
+      review_url: draft.upload.review_url,
+      created_at: draft.upload.uploaded_at ?? draft.source.created_at,
+      reused_existing: true
+    };
+  }
   const result = await uploadDraft(draft, options.credentials);
   draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, uploaded_at: result.created_at };
   await writeDraft(options.cwd, draft);

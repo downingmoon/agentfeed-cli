@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { initProject } from '../src/config/project-config.js';
-import { collectDraft } from '../src/draft/create.js';
+import { collectDraft, collectDraftWithStatus } from '../src/draft/create.js';
 import { listDrafts } from '../src/draft/read.js';
 
 let dir: string;
@@ -47,6 +47,20 @@ describe('duplicate draft guard and draft note', () => {
     expect(second.id).toBe(first.id);
     expect(second.source.collection_fingerprint).toBe(first.source.collection_fingerprint);
     expect(await listDrafts(dir)).toHaveLength(1);
+  });
+
+  it('reports when collection reused an existing matching draft', async () => {
+    const sessionFile = join(dir, 'codex-duplicate-status.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T01:00:00Z', type: 'session_meta', payload: { id: 'dup-status-session', cwd: dir } }
+    ]);
+
+    const first = await collectDraftWithStatus({ cwd: dir, source: 'codex', sessionFile, since: '2026-05-20T01:00:00Z', until: '2026-05-20T02:00:00Z' });
+    const second = await collectDraftWithStatus({ cwd: dir, source: 'codex', sessionFile, since: '2026-05-20T01:00:00Z', until: '2026-05-20T02:00:00Z' });
+
+    expect(first.reusedExisting).toBe(false);
+    expect(second.reusedExisting).toBe(true);
+    expect(second.draft.id).toBe(first.draft.id);
   });
 
   it('redacts secrets in share notes before storing draft summaries', async () => {

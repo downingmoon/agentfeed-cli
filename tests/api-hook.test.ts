@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { initProject } from '../src/config/project-config.js';
 import { writeDraft } from '../src/draft/write.js';
 import { createEmptyDraft } from '../src/draft/create.js';
-import { createCliAuthSession, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
+import { createCliAuthSession, draftToIngestRequest, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
 import { waitForCliAuthExchange } from '../src/auth/browser-login.js';
 import { installClaudeCodeHook, uninstallClaudeCodeHook } from '../src/hooks/claude-code-settings.js';
 
@@ -55,6 +55,20 @@ describe('api client', () => {
 
     expect(result.warnings).toEqual(['check privacy']);
     expect(fetchMock).toHaveBeenCalledWith('https://api.agentfeed.dev/v1/ingest/worklogs/preview', expect.objectContaining({ method: 'POST' }));
+  });
+
+  it('preserves collection window and fingerprint in ingest source payload', () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.source.collection_window = {
+      since: '2026-05-24T00:00:00.000Z',
+      until: '2026-05-24T00:10:00.000Z'
+    };
+    draft.source.collection_fingerprint = 'agentfeed-window-fingerprint';
+
+    const payload = draftToIngestRequest(draft);
+
+    expect(payload.source.collection_window).toEqual(draft.source.collection_window);
+    expect(payload.source.collection_fingerprint).toBe('agentfeed-window-fingerprint');
   });
 
   it('creates and exchanges a browser login session', async () => {

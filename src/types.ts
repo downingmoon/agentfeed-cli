@@ -165,7 +165,15 @@ export interface GitMetrics {
 }
 
 export interface IngestWorklogRequest {
-  source: { agent: AgentType; tool_version: string; host_label?: string | null; session_id?: string | null; local_draft_id?: string };
+  source: {
+    agent: AgentType;
+    tool_version: string;
+    host_label?: string | null;
+    session_id?: string | null;
+    local_draft_id?: string;
+    collection_window?: CollectionWindow | null;
+    collection_fingerprint?: string | null;
+  };
   project: { name: string; repository_url?: string | null; local_path_hash?: string };
   worklog: {
     title: string;

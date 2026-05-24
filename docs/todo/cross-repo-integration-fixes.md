@@ -47,6 +47,10 @@ agentfeed collect
 - [x] `outcome` canonical shape를 정한다.
   - 적용: CLI ingest는 `string[]` 유지, Frontend adapter가 string/object 둘 다 수용
   - 장기 권장: `{ label, value, delta, ... }[]`로 통일
+- [x] 수집 증거 메타데이터를 CLI → Backend → Frontend까지 보존한다.
+  - 기준: CLI draft `source.collection_window`, `source.collection_fingerprint`
+  - Backend: `IngestSource`가 수용하고 `Worklog.source_json`으로 저장
+  - Frontend: feed/detail/review API 타입과 adapter에서 노출
 
 ## P2 — 제품 완성도
 
@@ -77,4 +81,3 @@ agentfeed collect
 - Frontend API wrapper sort/social/project-detail contract 보정
 - CLI `agentfeed preview --remote` 추가
 - Frontend `/explore` placeholder route 추가
-

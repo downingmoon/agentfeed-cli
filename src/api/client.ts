@@ -15,7 +15,9 @@ export function draftToIngestRequest(draft: LocalDraft): IngestWorklogRequest {
       tool_version: draft.source.tool_version,
       host_label: draft.source.host_label,
       session_id: draft.source.session_id,
-      local_draft_id: draft.id
+      local_draft_id: draft.id,
+      collection_window: draft.source.collection_window ?? null,
+      collection_fingerprint: draft.source.collection_fingerprint ?? null
     },
     project: {
       name: draft.project.name,

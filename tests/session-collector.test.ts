@@ -602,6 +602,22 @@ describe('agent session collector', () => {
     expect(metrics?.agent_turns).toBe(4);
   });
 
+  it('filters generic plugin metadata by common timestamp aliases and numeric epochs', async () => {
+    const sessionFile = join(dir, 'generic-window-timestamp-aliases.jsonl');
+    await writeJsonl(sessionFile, [
+      { created_at: '2026-05-20T00:59:59Z', session_id: 'generic-window-old', tokens_used: 100, commands_run: 5 },
+      { createdAt: '2026-05-20T01:00:00Z', session_id: 'generic-window-fresh', tokens_used: 10, commands_run: 1 },
+      { ts: Date.parse('2026-05-20T01:00:01Z') / 1000, tokens_used: 20, tool_calls: 2 }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'other', sessionFile, since: '2026-05-20T01:00:00Z' });
+
+    expect(metrics?.session_id).toBe('generic-window-fresh');
+    expect(metrics?.tokens_used).toBe(20);
+    expect(metrics?.commands_run).toBe(1);
+    expect(metrics?.tool_calls).toBe(2);
+  });
+
   it('captures explicit USD cost from generic metadata without estimating missing cost', async () => {
     const sessionFile = join(dir, 'generic-cost.jsonl');
     await writeJsonl(sessionFile, [

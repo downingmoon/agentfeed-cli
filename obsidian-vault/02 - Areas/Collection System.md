@@ -93,6 +93,7 @@ created: 2026-05-30
 - [x] generic/Cursor metadata 증분 window에서 timestamp 없는 row 제외
 - [x] Codex mixed `apply_patch` / `patch_apply_end` evidence에서 fallback-only 파일 누락 방지
 - [x] `uv run pytest`, `python -m pytest`, `make test` 같은 wrapped test command 인식
+- [x] generic/Cursor metadata의 `created_at`, `createdAt`, `ts` timestamp alias window 필터링
 - [ ] Docker 기반 local E2E smoke success path 재검증
 
 ## 2026-05-30 Collection hardening pass
@@ -229,5 +230,28 @@ created: 2026-05-30
 검증:
 
 - `codex-wrapped-test-commands` 회귀 테스트 추가
+- `npm test -- tests/session-collector.test.ts --run`
+- `npm run build`
+
+## 2026-05-30 Generic timestamp alias 보강
+
+> [!success]
+> Cursor/generic/plugin metadata가 ISO `timestamp` 대신 `created_at`, `createdAt`, `updated_at`, `updatedAt`, `time`, `ts` 또는 numeric epoch를 쓰는 경우에도 collection window가 올바르게 적용되도록 보강했습니다.
+
+문제:
+
+- 증분 수집에서는 timestamp가 없다고 판단한 row를 제외합니다.
+- 하지만 실제 metadata exporter는 `timestamp`가 아니라 `created_at`/`createdAt`/`ts`를 쓰는 경우가 많습니다.
+- 이 alias를 모르면 fresh row까지 timestamp-less로 오해해 수집에서 제외할 수 있습니다.
+
+수정:
+
+- row timestamp 파서가 common alias를 순서대로 확인합니다.
+- numeric epoch는 millisecond/second 단위를 구분해 millisecond로 정규화합니다.
+- 기존 ISO timestamp 동작은 유지합니다.
+
+검증:
+
+- `generic-window-timestamp-aliases` 회귀 테스트 추가
 - `npm test -- tests/session-collector.test.ts --run`
 - `npm run build`

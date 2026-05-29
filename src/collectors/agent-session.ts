@@ -284,6 +284,16 @@ function parseIsoMillis(value: unknown): number | null {
   return Number.isFinite(millis) ? millis : null;
 }
 
+function parseTimestampMillis(value: unknown): number | null {
+  const isoMillis = parseIsoMillis(value);
+  if (isoMillis != null) return isoMillis;
+  const n = finiteNumber(value);
+  if (n == null || n <= 0) return null;
+  if (n > 1_000_000_000_000) return n;
+  if (n > 1_000_000_000) return n * 1000;
+  return null;
+}
+
 function parseBoundaryMillis(value?: string | null): number | null {
   if (!value) return null;
   const millis = Date.parse(value);
@@ -292,7 +302,15 @@ function parseBoundaryMillis(value?: string | null): number | null {
 }
 
 function rowTimestampMillis(row: Record<string, unknown>): number | null {
-  return parseIsoMillis(row.timestamp) ?? parseIsoMillis(row.lastUpdated) ?? parseIsoMillis(row.startTime);
+  return parseTimestampMillis(row.timestamp)
+    ?? parseTimestampMillis(row.created_at)
+    ?? parseTimestampMillis(row.createdAt)
+    ?? parseTimestampMillis(row.updated_at)
+    ?? parseTimestampMillis(row.updatedAt)
+    ?? parseTimestampMillis(row.lastUpdated)
+    ?? parseTimestampMillis(row.startTime)
+    ?? parseTimestampMillis(row.time)
+    ?? parseTimestampMillis(row.ts);
 }
 
 function rowInCollectionWindow(row: Record<string, unknown>, window?: CollectionWindow | null, options: { includeMissingTimestamp?: boolean } = {}): boolean {

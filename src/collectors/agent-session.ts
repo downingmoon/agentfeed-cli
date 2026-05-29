@@ -346,22 +346,25 @@ function finalize(input: {
 
 async function readOmcMetadata(cwd: string, sessionId: string | null): Promise<{
   toolCalls?: number;
+  estimatedCostUsd?: number;
   subagentsSpawned?: number;
   subagentsCompleted?: number;
   agentModes?: string[];
   detected?: boolean;
 }> {
   if (!sessionId) return {};
-  const result: { toolCalls?: number; subagentsSpawned?: number; subagentsCompleted?: number; agentModes?: string[]; detected?: boolean } = {};
+  const result: { toolCalls?: number; estimatedCostUsd?: number; subagentsSpawned?: number; subagentsCompleted?: number; agentModes?: string[]; detected?: boolean } = {};
   const session = await readJsonFile(join(cwd, '.omc', 'sessions', `${sessionId}.json`));
   if (session) {
     result.detected = true;
+    result.estimatedCostUsd = explicitCostUsd(session) ?? undefined;
     result.subagentsSpawned = integer(session.agents_spawned) ?? undefined;
     result.subagentsCompleted = integer(session.agents_completed) ?? undefined;
     result.agentModes = Array.isArray(session.modes_used) ? session.modes_used.filter((mode): mode is string => typeof mode === 'string') : undefined;
   }
   const stats = await readJsonFile(join(homedir(), '.claude', '.session-stats.json'));
   const statsSession = asRecord(asRecord(stats?.sessions)?.[sessionId]);
+  result.estimatedCostUsd = Math.max(result.estimatedCostUsd ?? 0, explicitCostUsd(statsSession) ?? 0) || result.estimatedCostUsd;
   const totalCalls = integer(statsSession?.total_calls);
   if (totalCalls) { result.toolCalls = totalCalls; result.detected = true; }
   return result;
@@ -369,15 +372,17 @@ async function readOmcMetadata(cwd: string, sessionId: string | null): Promise<{
 
 async function readOmxMetadata(cwd: string, sessionId: string | null): Promise<{
   tokensUsed?: number;
+  estimatedCostUsd?: number;
   subagentsSpawned?: number;
   subagentsCompleted?: number;
   agentTurns?: number;
   agentModes?: string[];
   detected?: boolean;
 }> {
-  const result: { tokensUsed?: number; subagentsSpawned?: number; subagentsCompleted?: number; agentTurns?: number; agentModes?: string[]; detected?: boolean } = {};
+  const result: { tokensUsed?: number; estimatedCostUsd?: number; subagentsSpawned?: number; subagentsCompleted?: number; agentTurns?: number; agentModes?: string[]; detected?: boolean } = {};
   const metrics = await readJsonFile(join(cwd, '.omx', 'metrics.json'));
   result.tokensUsed = integer(metrics?.session_total_tokens) ?? undefined;
+  result.estimatedCostUsd = explicitCostUsd(metrics) ?? undefined;
   if (metrics) result.detected = true;
   const tracking = await readJsonFile(join(cwd, '.omx', 'state', 'subagent-tracking.json'));
   const sessions = asRecord(tracking?.sessions);
@@ -494,6 +499,7 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?:
   const collectionSources: CollectionSource[] = [{ type: 'agent_session', name: 'claude_code', quality: 'high' }];
   const omc = await readOmcMetadata(cwd, sessionId);
   if (omc.detected) pushSource(collectionSources, { type: 'plugin_metadata', name: 'omc', quality: 'medium' });
+  estimatedCostUsd = Math.max(estimatedCostUsd, omc.estimatedCostUsd ?? 0);
   toolCalls = Math.max(toolCalls, omc.toolCalls ?? 0);
   subagentsSpawned = Math.max(subagentsSpawned, omc.subagentsSpawned ?? 0);
   subagentsCompleted = Math.max(subagentsCompleted, omc.subagentsCompleted ?? 0);
@@ -611,6 +617,7 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
   const omx = await readOmxMetadata(cwd, sessionId);
   if (omx.detected) pushSource(collectionSources, { type: 'plugin_metadata', name: 'omx', quality: 'medium' });
   if (!hasCollectionWindowBoundary(effectiveWindow)) tokensUsed = Math.max(tokensUsed, omx.tokensUsed ?? 0);
+  estimatedCostUsd = Math.max(estimatedCostUsd, omx.estimatedCostUsd ?? 0);
   subagentsSpawned = Math.max(subagentsSpawned, omx.subagentsSpawned ?? 0);
   subagentsCompleted = Math.max(subagentsCompleted, omx.subagentsCompleted ?? 0);
   agentTurns = Math.max(agentTurns, omx.agentTurns ?? 0);

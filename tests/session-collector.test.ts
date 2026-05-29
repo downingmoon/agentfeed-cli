@@ -300,6 +300,7 @@ describe('agent session collector', () => {
       session_id: 'claude-omc-session',
       ended_at: '2026-05-20T00:03:00Z',
       reason: 'complete',
+      estimated_cost_usd: 0.044,
       agents_spawned: 2,
       agents_completed: 1,
       modes_used: ['ralph', 'team']
@@ -322,12 +323,13 @@ describe('agent session collector', () => {
     expect(metrics?.skills_used).toBe(1);
     expect(metrics?.subagents_spawned).toBe(2);
     expect(metrics?.subagents_completed).toBe(1);
+    expect(metrics?.estimated_cost_usd).toBe(0.044);
     expect(metrics?.agent_modes).toEqual(['ralph', 'team']);
   });
 
   it('merges OMX Codex subagent tracking and turn metrics', async () => {
     await mkdir(join(dir, '.omx', 'state'), { recursive: true });
-    await writeFile(join(dir, '.omx', 'metrics.json'), JSON.stringify({ session_turns: 4, session_total_tokens: 1234 }));
+    await writeFile(join(dir, '.omx', 'metrics.json'), JSON.stringify({ session_turns: 4, session_total_tokens: 1234, cost_usd: 0.055 }));
     await writeFile(join(dir, '.omx', 'state', 'subagent-tracking.json'), JSON.stringify({
       schemaVersion: 1,
       sessions: {
@@ -353,6 +355,7 @@ describe('agent session collector', () => {
     expect(metrics?.subagents_spawned).toBe(2);
     expect(metrics?.subagents_completed).toBe(2);
     expect(metrics?.tokens_used).toBe(1234);
+    expect(metrics?.estimated_cost_usd).toBe(0.055);
     expect(metrics?.agent_modes).toEqual(['explore']);
     expect(metrics?.collection_quality).toBe('high');
     expect(metrics?.collection_sources).toEqual([

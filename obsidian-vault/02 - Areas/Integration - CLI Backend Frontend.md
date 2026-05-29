@@ -69,6 +69,20 @@ sequenceDiagram
 - `share --note`가 `summary`에 섞이지 않고 `user_note`로 draft/review/detail/feed까지 보존되는지 확인
 - 현재 로컬 검증 상태: Docker daemon 미실행으로 syntax/static check만 가능
 
+## 2026-05-30 test-all gate 보강
+
+> [!success]
+> Docker daemon이 꺼진 환경에서도 3-repo 통합 회귀를 더 빨리 잡을 수 있도록 `agentfeed-dev/scripts/test-all.sh`에 static smoke gate와 Alembic offline migration chain 검증을 추가했습니다.
+
+- `agentfeed-dev`: `bash -n scripts/smoke-e2e.sh`
+- `AgentFeed-CLI`: `npm test -- --run`, `npm run typecheck`
+- `agentfeed-frontend`: `npx tsc --noEmit`, `npm run build`
+- `agentfeed-backend`: `pytest tests/test_contracts.py`, `alembic upgrade head --sql`
+- `uv run`이 생성할 수 있는 미추적 `agentfeed-backend/uv.lock`은 검증 후 자동 정리
+
+> [!note]
+> 이 gate는 실제 Docker compose 기동을 대체하지 않습니다. `make smoke-e2e`는 여전히 Docker Desktop 실행 후 별도로 확인해야 합니다.
+
 ## 2026-05-30 Review evidence 계약
 
 > [!success]

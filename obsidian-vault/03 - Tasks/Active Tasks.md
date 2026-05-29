@@ -15,6 +15,7 @@ created: 2026-05-30
 ## P0 / 검증
 
 - [x] Review 화면에서 collection quality/source evidence 노출
+- [x] Docker 없이 가능한 static gate 보강: `smoke-e2e.sh` syntax + Alembic offline migration chain
 - [ ] Docker daemon 실행 후 `agentfeed-dev`에서 `make smoke-e2e` 성공 경로 확인
 - [ ] CLI → Backend → Frontend review/publish/feed 수동 smoke 재확인
 
@@ -42,4 +43,5 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 Clipboard fallback 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 user_note 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 E2E smoke gate 보강]]
+- [[Integration - CLI Backend Frontend#2026-05-30 test-all gate 보강]]
 - [[Collection System#2026-05-30 Cursor 실제 저장소 조사]]

@@ -14,6 +14,7 @@ created: 2026-05-30
 
 ## P0 / 검증
 
+- [x] Review 화면에서 collection quality/source evidence 노출
 - [ ] Docker daemon 실행 후 `agentfeed-dev`에서 `make smoke-e2e` 성공 경로 확인
 - [ ] CLI → Backend → Frontend review/publish/feed 수동 smoke 재확인
 
@@ -36,4 +37,5 @@ created: 2026-05-30
 - [[Collection System#Doctor 진단 UX]]
 - [[Collection System#비용 수집 정책]]
 - [[Privacy Safety#Redaction dry-run UX]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Review evidence 계약]]
 - [[Integration - CLI Backend Frontend#남은 검증 리스크]]

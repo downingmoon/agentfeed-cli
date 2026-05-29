@@ -41,6 +41,7 @@ sequenceDiagram
 - duplicate ingest idempotency
 - feed/project/leaderboard/social API mock 제거 및 실 API 연결
 - collection window reason review evidence 노출
+- review evidence에 `collection_quality` / `collection_sources` 노출
 
 ## 관련 원본
 
@@ -56,3 +57,12 @@ sequenceDiagram
 - [ ] Docker Desktop 실행 상태에서 `agentfeed-dev`의 `make smoke-e2e` 성공 확인
 - [ ] 실제 GitHub OAuth / CLI browser login happy path 재확인
 - [ ] 실제 사용자 작업 repo에서 `agentfeed share --open-review` smoke
+
+## 2026-05-30 Review evidence 계약
+
+> [!success]
+> Frontend review 페이지는 publish 전 검토 화면에서 수집 신뢰도를 판단할 수 있도록 Backend metrics의 `collection_quality`와 `collection_sources`를 함께 표시합니다.
+
+- 기준 필드: `worklog.metrics.collection_quality`, `worklog.metrics.collection_sources`
+- UI 위치: `WorklogReviewPage`의 **Collection evidence**
+- 검증: `agentfeed-frontend`에서 `npx tsc --noEmit --pretty false`, `npm run build`

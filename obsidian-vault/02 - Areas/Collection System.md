@@ -166,16 +166,22 @@ created: 2026-05-30
 ## 2026-05-30 Cursor 실제 저장소 조사
 
 > [!warning]
-> 현재 로컬에는 Cursor 기본 저장 경로가 없어 실제 workspace/session format을 더 분석하지 못했습니다.
+> 2차 확인에서도 현재 로컬에는 Cursor 기본 저장 경로와 실행 프로세스가 없어 실제 workspace/session format을 더 분석하지 못했습니다.
 
 확인한 경로:
 
 - `/Users/downing/Library/Application Support/Cursor/User/workspaceStorage`
 - `/Users/downing/.cursor`
+- `/Users/downing/.config/Cursor`
 - `AgentFeed-CLI/.cursor`
+- `$HOME` 하위 2-depth `*cursor*` directory
+- macOS process list의 Cursor app process
 
 현재 대응:
 
 - 명시적 `--session-file` 또는 project-local `.cursor/*.json|jsonl|log`는 low-quality generic metadata로 수집
 - raw Cursor transcript parser는 확인 가능한 실제 sample이 생길 때까지 보수적으로 보류
 - `agentfeed doctor` / `collect --source cursor --explain`로 low-quality 근거와 수동 session-file 경로를 안내
+
+> [!note]
+> 판단: 검증 가능한 sample 없이 Cursor 전용 parser를 추정 구현하면 잘못된 metrics를 만들 위험이 더 큽니다. 현재는 generic metadata 수집을 유지하고, 실제 Cursor workspace sample이 생기면 별도 회귀 fixture를 먼저 만든 뒤 parser 품질을 올립니다.

@@ -30,7 +30,7 @@ created: 2026-05-30
 - [x] 하위 디렉터리 실행 시 relative `--session-file` 경로 오해석 방지
 - [x] Codex/OMX session id 불일치 metrics 오염 방지
 - [x] generic/Cursor 증분 window에서 timestamp 없는 row 반복 집계 방지
-- [ ] 실제 Cursor workspace/session format 추가 조사 후 parser 품질 상향 가능성 판단
+- [x] 실제 Cursor workspace/session format 추가 조사 후 parser 품질 상향 가능성 판단
 - [x] CLI ingest `worklog.model` → Backend 저장 → Frontend 노출 계약화
 
 ## P2 후보

@@ -22,9 +22,69 @@ import { parseAgentSource } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
 import { openBrowser } from '../utils/open-browser.js';
 import { copyToClipboard } from '../utils/clipboard.js';
+import type { LocalDraft } from '../types.js';
 
 function print(text = '') { process.stdout.write(`${text}\n`); }
 function err(text = '') { process.stderr.write(`${text}\n`); }
+
+type PublicScanFields = Record<string, unknown>;
+
+function flattenStringFields(input: PublicScanFields, prefix = ''): Array<[string, string]> {
+  const entries: Array<[string, string]> = [];
+  for (const [key, value] of Object.entries(input)) {
+    const field = prefix ? `${prefix}.${key}` : key;
+    if (typeof value === 'string') entries.push([field, value]);
+    else if (Array.isArray(value)) {
+      value.forEach((item, i) => {
+        if (typeof item === 'string') entries.push([`${field}.${i}`, item]);
+        else if (item && typeof item === 'object') entries.push(...flattenStringFields(item as PublicScanFields, `${field}.${i}`));
+      });
+    } else if (value && typeof value === 'object') {
+      entries.push(...flattenStringFields(value as PublicScanFields, field));
+    }
+  }
+  return entries;
+}
+
+function singleLine(value: string): string {
+  const text = value.replace(/\s+/g, ' ').trim();
+  return text.length > 160 ? `${text.slice(0, 157)}...` : text;
+}
+
+function redactedFieldPreviews(original: PublicScanFields, redacted: PublicScanFields): Array<{ field: string; value: string }> {
+  const originalFields = new Map(flattenStringFields(original));
+  return flattenStringFields(redacted)
+    .filter(([field, value]) => originalFields.get(field) !== value)
+    .map(([field, value]) => ({ field, value: singleLine(value) }));
+}
+
+function formatPrivacyScanReport(input: PublicScanFields, redacted: PublicScanFields, scan: ReturnType<typeof scanAndRedactFields>['scan'], options: { dryRun?: boolean } = {}): string {
+  const lines = [`Privacy: ${scan.status}`, `Findings: ${scan.findings.length}`];
+  if (options.dryRun) lines.push('Dry run: draft not modified.');
+  if (scan.findings.length) {
+    lines.push('Findings detail:');
+    for (const finding of scan.findings) {
+      lines.push(`- [${finding.severity}] ${finding.type}${finding.field ? ` at ${finding.field}` : ''} -> ${finding.sample_redacted ?? '[REDACTED]'}`);
+    }
+  }
+  const previews = redactedFieldPreviews(input, redacted);
+  if (previews.length) {
+    lines.push('Redacted preview:');
+    for (const preview of previews) lines.push(`- ${preview.field}: ${preview.value}`);
+  }
+  return lines.join('\n');
+}
+
+function applyRedactedPublicFields(draft: LocalDraft, redacted: PublicScanFields): void {
+  if (typeof redacted.title === 'string') draft.worklog.title = redacted.title;
+  if (typeof redacted.summary === 'string') draft.worklog.summary = redacted.summary;
+  if (typeof redacted.public_prompt === 'string' || redacted.public_prompt == null) draft.worklog.public_prompt = redacted.public_prompt as string | null;
+  if (Array.isArray(redacted.outcome)) draft.worklog.outcome = redacted.outcome as string[];
+  if (Array.isArray(redacted.timeline)) draft.worklog.timeline = redacted.timeline as LocalDraft['worklog']['timeline'];
+  if (Array.isArray(redacted.changed_areas)) draft.worklog.changed_areas = redacted.changed_areas as string[];
+  if (Array.isArray(redacted.tags)) draft.worklog.tags = redacted.tags as string[];
+  if (redacted.project && typeof redacted.project === 'object') draft.project = redacted.project as LocalDraft['project'];
+}
 
 async function resolveDraftId(cwd: string, args: string[]): Promise<string> {
   const id = option(args, '--id');
@@ -190,16 +250,20 @@ async function cmdPublish(args: string[]) {
 }
 
 async function cmdScan(args: string[]) {
+  const dryRun = flag(args, '--dry-run') || flag(args, '--dry');
   if (option(args, '--path')) {
     const git = await collectGitMetrics(option(args, '--path')!);
     const areas = changedAreas(git.changed_files);
-    const result = scanAndRedactFields({ changed_areas: areas });
-    print(flag(args, '--json') ? JSON.stringify(result.scan, null, 2) : `Privacy: ${result.scan.status}\nFindings: ${result.scan.findings.length}`);
+    const input = { changed_areas: areas };
+    const result = scanAndRedactFields(input);
+    print(flag(args, '--json')
+      ? JSON.stringify(dryRun ? { dry_run: true, scan: result.scan, redacted_fields: redactedFieldPreviews(input, result.redacted) } : result.scan, null, 2)
+      : formatPrivacyScanReport(input, result.redacted, result.scan, { dryRun }));
     return;
   }
   const id = await resolveDraftId(process.cwd(), args);
   const draft = await readDraft(process.cwd(), id);
-  const result = scanAndRedactFields({
+  const input = {
     title: draft.worklog.title,
     summary: draft.worklog.summary,
     public_prompt: draft.worklog.public_prompt,
@@ -208,10 +272,16 @@ async function cmdScan(args: string[]) {
     changed_areas: draft.worklog.changed_areas,
     tags: draft.worklog.tags,
     project: draft.project
-  });
-  draft.privacy_scan = result.scan;
-  await writeDraft(process.cwd(), draft);
-  print(flag(args, '--json') ? JSON.stringify(result.scan, null, 2) : `Privacy: ${result.scan.status}\nFindings: ${result.scan.findings.length}`);
+  };
+  const result = scanAndRedactFields(input);
+  if (!dryRun) {
+    applyRedactedPublicFields(draft, result.redacted);
+    draft.privacy_scan = result.scan;
+    await writeDraft(process.cwd(), draft);
+  }
+  print(flag(args, '--json')
+    ? JSON.stringify(dryRun ? { dry_run: true, scan: result.scan, redacted_fields: redactedFieldPreviews(input, result.redacted) } : result.scan, null, 2)
+    : formatPrivacyScanReport(input, result.redacted, result.scan, { dryRun }));
 }
 
 async function cmdHook(args: string[]) {
@@ -300,6 +370,7 @@ async function main() {
       print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --token <token>');
       print('\nCollect:\n  agentfeed collect\n  agentfeed collect --explain\n  agentfeed collect --source codex\n  agentfeed collect --source gemini-cli\n  agentfeed collect --source claude-code --session-file <path>\n  agentfeed collect --since 2026-05-20T01:00:00Z\n  agentfeed collect --all');
       print('\nShare:\n  agentfeed share\n  agentfeed share --dry\n  agentfeed share --open-review\n  agentfeed share --since 2026-05-20T01:00:00Z\n  agentfeed share --all\n  agentfeed share --note "Fixed auth flow"\n  agentfeed share --no-clipboard');
+      print('\nScan:\n  agentfeed scan --id <draft_id>\n  agentfeed scan --id <draft_id> --dry-run\n  agentfeed scan --path . --json');
       return;
     default:
       throw new Error(`Unknown command: ${command}`);

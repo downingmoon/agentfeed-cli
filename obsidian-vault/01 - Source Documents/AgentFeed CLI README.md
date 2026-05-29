@@ -33,6 +33,7 @@ agentfeed share --open-review
 agentfeed collect --since 2026-05-20T01:00:00Z
 agentfeed collect --all
 agentfeed preview
+agentfeed scan --id <draft_id> --dry-run
 agentfeed publish --latest --open-review
 ```
 
@@ -79,3 +80,17 @@ agentfeed share --all             # same for one-command sharing
 Draft collection also records a stable fingerprint from `session_id + git head + collection_window`; repeated runs reuse the existing local draft unless `--force` or `--all` is used. If that draft was already uploaded, `share` / `publish` reuse the saved review URL instead of uploading a duplicate worklog.
 
 Successful `share` / `publish` copies the review URL to the clipboard when the platform supports it. Use `--no-clipboard` to opt out.
+
+## Privacy scan dry-run
+
+Run a safe redaction preview before uploading or after manually editing a draft:
+
+```bash
+agentfeed scan --id <draft_id> --dry-run
+agentfeed scan --id <draft_id>
+```
+
+`--dry-run` prints finding severity, field, redaction placeholder, and redacted preview without showing the original secret or modifying the draft. Without `--dry-run`, `scan` updates the draft's uploadable public fields with redacted values and saves the `privacy_scan` result.
+
+> [!tip] 관련 노트
+> 자세한 정책은 [[Privacy Safety#Redaction dry-run UX]] 참고.

@@ -1,0 +1,85 @@
+import { beforeAll, beforeEach, afterEach, describe, expect, it } from 'vitest';
+import { execFileSync } from 'node:child_process';
+import { mkdtemp, rm, readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { initProject } from '../src/config/project-config.js';
+import { createEmptyDraft } from '../src/draft/create.js';
+import { writeDraft } from '../src/draft/write.js';
+
+const repoRoot = resolve('.');
+const cliPath = join(repoRoot, 'dist', 'cli', 'index.js');
+const secret = 'sk-abcdefghijklmnopqrstuvwxyz1234567890';
+
+let dir: string;
+let home: string;
+
+beforeAll(() => {
+  execFileSync('npm', ['run', 'build'], { cwd: repoRoot, stdio: 'ignore' });
+});
+
+beforeEach(async () => {
+  dir = await mkdtemp(join(tmpdir(), 'agentfeed-cli-scan-'));
+  home = await mkdtemp(join(tmpdir(), 'agentfeed-cli-home-'));
+  await initProject({ cwd: dir, noGitCheck: true });
+});
+
+afterEach(async () => {
+  await rm(dir, { recursive: true, force: true });
+  await rm(home, { recursive: true, force: true });
+});
+
+describe('scan CLI command', () => {
+  it('shows a safe redaction dry-run report without mutating the draft', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    draft.worklog.summary = `Deploy with ${secret}`;
+    await writeDraft(dir, draft);
+
+    const stdout = execFileSync(process.execPath, [
+      cliPath,
+      'scan',
+      '--id',
+      draft.id,
+      '--dry-run'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+
+    expect(stdout).toContain('Privacy: danger');
+    expect(stdout).toContain('Findings: 1');
+    expect(stdout).toContain('Dry run: draft not modified.');
+    expect(stdout).toContain('[high] api_key_pattern at summary -> [REDACTED_SECRET]');
+    expect(stdout).toContain('- summary: Deploy with [REDACTED_SECRET]');
+    expect(stdout).not.toContain(secret);
+    expect(saved.privacy_scan.status).toBe('safe');
+  });
+
+  it('redacts uploadable draft fields when scan is not a dry-run', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    draft.worklog.summary = `Deploy with ${secret}`;
+    await writeDraft(dir, draft);
+
+    const stdout = execFileSync(process.execPath, [
+      cliPath,
+      'scan',
+      '--id',
+      draft.id
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+
+    expect(stdout).toContain('Privacy: danger');
+    expect(stdout).toContain('- summary: Deploy with [REDACTED_SECRET]');
+    expect(stdout).not.toContain(secret);
+    expect(saved.privacy_scan.status).toBe('danger');
+    expect(saved.worklog.summary).toBe('Deploy with [REDACTED_SECRET]');
+  });
+});

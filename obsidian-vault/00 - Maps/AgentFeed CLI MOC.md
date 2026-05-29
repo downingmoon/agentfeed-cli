@@ -28,6 +28,7 @@ graph LR
 ## 핵심 노트
 
 - [[Collection System]]
+- [[Privacy Safety]]
 - [[Integration - CLI Backend Frontend]]
 - [[Active Tasks]]
 
@@ -42,5 +43,6 @@ graph LR
 
 - [[Collection System#수집 품질 원칙|수집 품질 원칙]]
 - [[Collection System#증거 소스|증거 소스]]
+- [[Privacy Safety#Redaction dry-run UX|Redaction dry-run UX]]
 - [[Integration - CLI Backend Frontend#End-to-end 흐름|End-to-end 흐름]]
 - [[Active Tasks#P1 후보|P1 후보]]

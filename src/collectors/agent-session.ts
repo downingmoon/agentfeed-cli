@@ -490,7 +490,7 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
   const collectionSources: CollectionSource[] = [{ type: 'agent_session', name: 'codex', quality: 'high' }];
   const omx = await readOmxMetadata(cwd, sessionId);
   if (omx.detected) pushSource(collectionSources, { type: 'plugin_metadata', name: 'omx', quality: 'medium' });
-  tokensUsed = Math.max(tokensUsed, omx.tokensUsed ?? 0);
+  if (!hasCollectionWindowBoundary(window)) tokensUsed = Math.max(tokensUsed, omx.tokensUsed ?? 0);
   subagentsSpawned = Math.max(subagentsSpawned, omx.subagentsSpawned ?? 0);
   subagentsCompleted = Math.max(subagentsCompleted, omx.subagentsCompleted ?? 0);
   agentTurns = Math.max(agentTurns, omx.agentTurns ?? 0);

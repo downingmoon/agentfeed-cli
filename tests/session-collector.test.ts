@@ -460,4 +460,20 @@ describe('collection window filtering', () => {
     expect(metrics?.session_id).toBe('codex-cumulative-token-window');
     expect(metrics?.tokens_used).toBe(65);
   });
+
+  it('does not let cumulative OMX token metadata override a windowed Codex delta', async () => {
+    await mkdir(join(dir, '.omx'), { recursive: true });
+    await writeFile(join(dir, '.omx', 'metrics.json'), JSON.stringify({ session_total_tokens: 1000 }));
+    const sessionFile = join(dir, 'codex-omx-cumulative-token-window.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-omx-cumulative-token-window', cwd: dir } },
+      { timestamp: '2026-05-20T00:59:59Z', type: 'event_msg', payload: { type: 'token_count', info: { total_token_usage: { total_tokens: 150 } } } },
+      { timestamp: '2026-05-20T01:10:00Z', type: 'event_msg', payload: { type: 'token_count', info: { total_token_usage: { total_tokens: 215 } } } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile, since: '2026-05-20T01:00:00Z' });
+
+    expect(metrics?.tokens_used).toBe(65);
+    expect(metrics?.collection_sources).toContainEqual({ type: 'plugin_metadata', name: 'omx', quality: 'medium' });
+  });
 });

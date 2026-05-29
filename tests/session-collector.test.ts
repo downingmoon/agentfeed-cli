@@ -307,12 +307,16 @@ describe('agent session collector', () => {
       { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'playwright install --with-deps', workdir: dir }), call_id: 'playwright-install' } },
       { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'playwright-install', output: 'Process exited with code 0\nBrowsers installed' } },
       { timestamp: '2026-05-20T00:00:03Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'npx cypress open', workdir: dir }), call_id: 'cypress-open' } },
-      { timestamp: '2026-05-20T00:00:04Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'cypress-open', output: 'Process exited with code 0\nOpening Cypress' } }
+      { timestamp: '2026-05-20T00:00:04Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'cypress-open', output: 'Process exited with code 0\nOpening Cypress' } },
+      { timestamp: '2026-05-20T00:00:05Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'uv run playwright install chromium', workdir: dir }), call_id: 'uv-playwright-install' } },
+      { timestamp: '2026-05-20T00:00:06Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'uv-playwright-install', output: 'Process exited with code 0\nChromium installed' } },
+      { timestamp: '2026-05-20T00:00:07Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'uv run cypress open', workdir: dir }), call_id: 'uv-cypress-open' } },
+      { timestamp: '2026-05-20T00:00:08Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'uv-cypress-open', output: 'Process exited with code 0\nOpening Cypress' } }
     ]);
 
     const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
 
-    expect(metrics?.commands_run).toBe(2);
+    expect(metrics?.commands_run).toBe(4);
     expect(metrics?.tests_run).toBeNull();
     expect(metrics?.tests_passed).toBeNull();
     expect(metrics?.failed_commands).toBeNull();

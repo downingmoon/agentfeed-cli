@@ -41,7 +41,7 @@ created: 2026-05-30
 - [x] Gemini failed `write_file` / `replace`를 changed file evidence로 과대집계하지 않도록 보정
 - [x] Claude failed `Write` / `Edit` / `MultiEdit`를 changed file evidence로 과대집계하지 않도록 보정
 - [x] 성공한 test summary의 `0 failed` 문구를 failed command로 과대집계하지 않도록 보정
-- [x] `playwright install`, `cypress open` 같은 browser test setup command를 executed test로 과대집계하지 않도록 보정
+- [x] `playwright install`, `cypress open` 같은 browser test setup command와 wrapped setup command를 executed test로 과대집계하지 않도록 보정
 - [x] 실제 Cursor workspace/session format 추가 조사 후 parser 품질 상향 가능성 판단
 - [x] CLI ingest `worklog.model` → Backend 저장 → Frontend 노출 계약화
 

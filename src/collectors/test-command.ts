@@ -31,23 +31,61 @@ async function inferTestCommand(cwd: string): Promise<ResolvedCommand | null> {
   return null;
 }
 
-async function resolveTestCommand(cwd: string, config: AgentFeedProjectConfig): Promise<ResolvedCommand | null> {
-  if (!config.collection.run_tests_on_collect || !config.collection.include_test_results) return null;
-  const configured = config.commands.test;
+async function inferBuildCommand(cwd: string): Promise<ResolvedCommand | null> {
+  const packageJsonPath = join(cwd, 'package.json');
+  if (await pathExists(packageJsonPath)) {
+    const pkg = await readJson<{ scripts?: Record<string, string> }>(packageJsonPath).catch(() => null);
+    if (pkg?.scripts?.build) return { command: 'npm', args: ['run', 'build'] };
+  }
+  if (await pathExists(join(cwd, 'go.mod'))) return { command: 'go', args: ['build', './...'] };
+  if (await pathExists(join(cwd, 'Cargo.toml'))) return { command: 'cargo', args: ['build'] };
+  const makefilePath = join(cwd, 'Makefile');
+  if (await pathExists(makefilePath)) {
+    const makefile = await readFile(makefilePath, 'utf8').catch(() => '');
+    if (/^build:/m.test(makefile)) return { command: 'make', args: ['build'] };
+  }
+  return null;
+}
+
+async function resolveConfiguredCommand(cwd: string, configured: 'auto' | string | null, infer: (cwd: string) => Promise<ResolvedCommand | null>): Promise<ResolvedCommand | null> {
   if (!configured) return null;
-  if (configured === 'auto') return inferTestCommand(cwd);
+  if (configured === 'auto') return infer(cwd);
   const [command, ...args] = splitCommandLine(configured);
   return command ? { command, args } : null;
 }
 
-export async function collectConfiguredTestMetrics(cwd: string, config: AgentFeedProjectConfig): Promise<Pick<WorklogMetrics, 'tests_run' | 'tests_passed' | 'failed_commands' | 'commands_run'> | null> {
-  const testCommand = await resolveTestCommand(cwd, config);
-  if (!testCommand) return null;
-  const result = await run(testCommand.command, testCommand.args, cwd);
+async function resolveConfiguredCommands(cwd: string, config: AgentFeedProjectConfig): Promise<{ test: ResolvedCommand | null; build: ResolvedCommand | null } | null> {
+  if (!config.collection.run_tests_on_collect || !config.collection.include_test_results) return null;
   return {
-    tests_run: 1,
-    tests_passed: result.ok ? 1 : 0,
-    failed_commands: result.ok ? null : 1,
-    commands_run: 1
+    test: await resolveConfiguredCommand(cwd, config.commands.test, inferTestCommand),
+    build: await resolveConfiguredCommand(cwd, config.commands.build, inferBuildCommand)
+  };
+}
+
+export async function collectConfiguredCommandMetrics(cwd: string, config: AgentFeedProjectConfig): Promise<Pick<WorklogMetrics, 'tests_run' | 'tests_passed' | 'failed_commands' | 'commands_run'> | null> {
+  const commands = await resolveConfiguredCommands(cwd, config);
+  if (!commands) return null;
+  let testsRun: number | null = null;
+  let testsPassed: number | null = null;
+  let failedCommands = 0;
+  let commandsRun = 0;
+  if (commands.test) {
+    const result = await run(commands.test.command, commands.test.args, cwd);
+    commandsRun += 1;
+    testsRun = 1;
+    testsPassed = result.ok ? 1 : 0;
+    if (!result.ok) failedCommands += 1;
+  }
+  if (commands.build) {
+    const result = await run(commands.build.command, commands.build.args, cwd);
+    commandsRun += 1;
+    if (!result.ok) failedCommands += 1;
+  }
+  if (!commandsRun) return null;
+  return {
+    tests_run: testsRun,
+    tests_passed: testsPassed,
+    failed_commands: failedCommands || null,
+    commands_run: commandsRun
   };
 }

@@ -150,4 +150,44 @@ describe('git collector and drafts', () => {
     expect(draft.worklog.metrics.tests_passed).toBe(1);
     expect(draft.worklog.metrics.commands_run).toBe(1);
   });
+
+  it('records configured build command failures as command metrics without counting them as tests', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.collection.run_tests_on_collect = true;
+    config.commands.test = 'node .agentfeed/test-pass.mjs';
+    config.commands.build = 'node .agentfeed/build-fail.mjs';
+    await writeFile(configPath, JSON.stringify(config, null, 2));
+    await writeFile(join(dir, '.agentfeed', 'test-pass.mjs'), 'process.exit(0);\n');
+    await writeFile(join(dir, '.agentfeed', 'build-fail.mjs'), 'console.error("SECRET_RAW_BUILD_OUTPUT"); process.exit(1);\n');
+
+    const draft = await collectDraft({ cwd: dir, source: 'claude_code' });
+    const payloadText = JSON.stringify(draftToIngestRequest(draft));
+
+    expect(draft.worklog.metrics.tests_run).toBe(1);
+    expect(draft.worklog.metrics.tests_passed).toBe(1);
+    expect(draft.worklog.metrics.commands_run).toBe(2);
+    expect(draft.worklog.metrics.failed_commands).toBe(1);
+    expect(payloadText).not.toContain('SECRET_RAW_BUILD_OUTPUT');
+  });
+
+  it('infers npm build when run_tests_on_collect uses auto build detection', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.collection.run_tests_on_collect = true;
+    config.commands.test = null;
+    config.commands.build = 'auto';
+    await writeFile(configPath, JSON.stringify(config, null, 2));
+    await writeFile(join(dir, 'package.json'), JSON.stringify({ scripts: { build: 'node .agentfeed/build-auto.mjs' } }, null, 2));
+    await writeFile(join(dir, '.agentfeed', 'build-auto.mjs'), 'process.exit(0);\n');
+
+    const draft = await collectDraft({ cwd: dir, source: 'claude_code' });
+
+    expect(draft.worklog.metrics.tests_run).toBeNull();
+    expect(draft.worklog.metrics.tests_passed).toBeNull();
+    expect(draft.worklog.metrics.commands_run).toBe(1);
+    expect(draft.worklog.metrics.failed_commands).toBeNull();
+  });
 });

@@ -4,7 +4,7 @@ import type { AgentFeedProjectConfig, AgentType, ChangedFileSummary, CollectionW
 import { loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { collectAgentSessionMetrics } from '../collectors/agent-session.js';
-import { collectConfiguredTestMetrics } from '../collectors/test-command.js';
+import { collectConfiguredCommandMetrics } from '../collectors/test-command.js';
 import { detectAgentSignals } from '../collectors/agent-discovery.js';
 import { changedAreas } from '../summary/changed-areas.js';
 import { generateOutcome, generateSummary, generateTimeline, generateTitle } from '../summary/rule-based.js';
@@ -207,7 +207,7 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
     const existing = await findDraftByFingerprint(root, fingerprint);
     if (existing) return { draft: existing, reusedExisting: true };
   }
-  const configuredTestMetrics = await collectConfiguredTestMetrics(root, config);
+  const configuredCommandMetrics = await collectConfiguredCommandMetrics(root, config);
   const includeFileStats = config.collection.include_file_stats;
   const metrics: WorklogMetrics = {
     tokens_used: config.collection.include_token_usage ? session?.tokens_used ?? null : null,
@@ -216,11 +216,11 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
     files_changed: includeFileStats ? filesChanged : null,
     lines_added: includeFileStats ? linesAdded : null,
     lines_removed: includeFileStats ? linesRemoved : null,
-    tests_run: config.collection.include_test_results ? addOptionalCounts(session?.tests_run, configuredTestMetrics?.tests_run) : null,
-    tests_passed: config.collection.include_test_results ? addOptionalCounts(session?.tests_passed, configuredTestMetrics?.tests_passed) : null,
+    tests_run: config.collection.include_test_results ? addOptionalCounts(session?.tests_run, configuredCommandMetrics?.tests_run) : null,
+    tests_passed: config.collection.include_test_results ? addOptionalCounts(session?.tests_passed, configuredCommandMetrics?.tests_passed) : null,
     commits_created: null,
-    failed_commands: addOptionalCounts(session?.failed_commands, configuredTestMetrics?.failed_commands),
-    commands_run: addOptionalCounts(session?.commands_run, configuredTestMetrics?.commands_run),
+    failed_commands: addOptionalCounts(session?.failed_commands, configuredCommandMetrics?.failed_commands),
+    commands_run: addOptionalCounts(session?.commands_run, configuredCommandMetrics?.commands_run),
     tool_calls: session?.tool_calls ?? null,
     skills_used: session?.skills_used ?? null,
     subagents_spawned: session?.subagents_spawned ?? null,

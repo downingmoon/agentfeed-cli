@@ -42,6 +42,7 @@ sequenceDiagram
 - feed/project/leaderboard/social API mock 제거 및 실 API 연결
 - collection window reason review evidence 노출
 - review evidence에 `collection_quality` / `collection_sources` 노출
+- Linux review URL clipboard fallback 보강
 
 ## 관련 원본
 
@@ -66,3 +67,13 @@ sequenceDiagram
 - 기준 필드: `worklog.metrics.collection_quality`, `worklog.metrics.collection_sources`
 - UI 위치: `WorklogReviewPage`의 **Collection evidence**
 - 검증: `agentfeed-frontend`에서 `npx tsc --noEmit --pretty false`, `npm run build`
+
+## 2026-05-30 Clipboard fallback 계약
+
+> [!success]
+> `agentfeed share` / upload 이후 review URL 전달 UX가 Linux desktop 환경에서도 더 안정적으로 동작하도록 clipboard command fallback을 확장했습니다.
+
+- macOS: `pbcopy`
+- WSL: `clip.exe`
+- Linux: `xclip` → `wl-copy` → `xsel`
+- 검증: `npm test -- tests/clipboard.test.ts --run`, `npm test -- --run`, `npm run build`

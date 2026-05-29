@@ -21,7 +21,7 @@ created: 2026-05-30
 ## P1 후보
 
 - [ ] `share --note`를 Backend 별도 필드로 승격할지 API 계약 결정
-- [ ] review URL clipboard Linux fallback(`wl-copy`, `xsel`) 보강
+- [x] review URL clipboard Linux fallback(`wl-copy`, `xsel`) 보강
 - [ ] 실제 Cursor workspace/session format 추가 조사 후 parser 품질 상향 가능성 판단
 
 ## P2 후보
@@ -39,3 +39,4 @@ created: 2026-05-30
 - [[Privacy Safety#Redaction dry-run UX]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Review evidence 계약]]
 - [[Integration - CLI Backend Frontend#남은 검증 리스크]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Clipboard fallback 계약]]

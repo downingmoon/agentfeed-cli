@@ -35,6 +35,30 @@ afterEach(async () => {
 });
 
 describe('collect CLI command', () => {
+  it('rejects unsupported source values before creating a draft', async () => {
+    let error: unknown = null;
+    try {
+      execFileSync(process.execPath, [
+        cliPath,
+        'collect',
+        '--source',
+        'banana-agent',
+        '--no-save-cursor'
+      ], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: { ...process.env, HOME: home },
+        stdio: 'pipe'
+      });
+    } catch (caught) {
+      error = caught;
+    }
+
+    expect(error).toBeTruthy();
+    const stderr = String((error as { stderr?: Buffer | string }).stderr ?? '');
+    expect(stderr).toMatch(/Unsupported agent source/i);
+  });
+
   it('persists collection cursor when rendering JSON output', async () => {
     await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = false;\n');
 

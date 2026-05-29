@@ -18,7 +18,7 @@ import { changedAreas } from '../summary/changed-areas.js';
 import { hasAgentFeedHook, installClaudeCodeHook, uninstallClaudeCodeHook, resolveClaudeSettingsPath } from '../hooks/claude-code-settings.js';
 import { flag, option } from './args.js';
 import { formatMetricsRow, formatSharePreview, parseShareArgs } from './share.js';
-import type { AgentType } from '../types.js';
+import { parseAgentSource } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
 import { openBrowser } from '../utils/open-browser.js';
 import { copyToClipboard } from '../utils/clipboard.js';
@@ -80,8 +80,7 @@ async function cmdStatus() {
 }
 
 async function cmdCollect(args: string[]) {
-  const sourceOption = option(args, '--source');
-  const source = sourceOption ? sourceOption.replace(/-/g, '_') as AgentType : undefined;
+  const source = parseAgentSource(option(args, '--source'));
   const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
   const collection = await collectDraftWithStatus({ cwd: process.cwd(), source, sessionFile: option(args, '--session-file') ?? null, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all') });
   const draft = collection.draft;

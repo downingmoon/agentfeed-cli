@@ -48,6 +48,10 @@ describe('share command helpers', () => {
     });
   });
 
+  it('rejects unsupported share source values before creating drafts', () => {
+    expect(() => parseShareArgs(['--source', 'banana-agent'])).toThrow(/Unsupported agent source/i);
+  });
+
   it('renders a user note in the share preview', () => {
     const draft = createEmptyDraft({ projectName: 'agentfeed-cli', projectRoot: '/tmp/agentfeed-cli', source: 'codex' });
     draft.worklog.summary = 'Note: Refined login flow\n\nCollected agent work.';

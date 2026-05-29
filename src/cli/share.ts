@@ -1,6 +1,7 @@
 import type { AgentType, LocalDraft } from '../types.js';
 import { collectionQualityLabel, formatCollectionGuidanceLines, formatCollectionWindowLine } from '../draft/collection-diagnostics.js';
 import { flag, option } from './args.js';
+import { parseAgentSource } from './source.js';
 
 export interface ShareOptions {
   dryRun: boolean;
@@ -59,12 +60,11 @@ export function formatSharePreview(draft: LocalDraft): string {
 }
 
 export function parseShareArgs(args: string[]): ShareOptions {
-  const sourceOption = option(args, '--source');
   return {
     dryRun: flag(args, '--dry') || flag(args, '--dry-run'),
     openReview: flag(args, '--open-review'),
     json: flag(args, '--json'),
-    source: sourceOption ? sourceOption.replace(/-/g, '_') as AgentType : undefined,
+    source: parseAgentSource(option(args, '--source')),
     sessionFile: option(args, '--session-file') ?? null,
     since: option(args, '--since') ?? null,
     until: option(args, '--until') ?? null,

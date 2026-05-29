@@ -182,6 +182,7 @@ export interface IngestWorklogRequest {
     title: string;
     summary: string;
     user_note?: string | null;
+    model?: string | null;
     category: WorklogCategory;
     tags: string[];
     metrics: WorklogMetrics;

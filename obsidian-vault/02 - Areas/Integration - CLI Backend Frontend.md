@@ -63,7 +63,7 @@ sequenceDiagram
 ## 2026-05-30 계약 감사 결과
 
 > [!warning]
-> 수집 파트는 model 정보를 이미 draft/share preview에서 보유하지만, ingest 계약에는 아직 `worklog.model`이 없어 Backend 저장 이후 정보가 사라집니다.
+> 수집 파트는 model 정보를 이미 draft/share preview에서 보유하지만, 당시 ingest 계약에는 `worklog.model`이 없어 Backend 저장 이후 정보가 사라졌습니다.
 
 P1로 남길 계약 gap:
 
@@ -72,12 +72,34 @@ P1로 남길 계약 gap:
 - Frontend: 타입/카드에서 model을 활용할 여지가 있으나 ingest 경로로 저장되지 않으면 표시할 수 없음
 
 > [!todo]
-> 다음 cross-repo 작업은 DB/Backend schema를 기준으로 `worklog.model` 저장 계약을 먼저 정하고 CLI → Frontend 순서로 맞춥니다.
+> [[#2026-05-30 worklog.model ingest 계약]]에서 DB/Backend schema 기준으로 정리했습니다.
 
 추가 P2 후보:
 
 - Frontend feed 정렬 라벨 `Most shipped`가 실제 UI에서 `most_discussed`로 매핑되는지 재확인 후 수정
 - Backend `/worklogs/{id}/unpublish`를 Frontend review/detail action에 연결할지 제품 정책 결정
+
+## 2026-05-30 worklog.model ingest 계약
+
+> [!success]
+> DB column `worklogs.model`을 기준으로 Backend ingest/store/review 응답, CLI upload payload, Frontend review/detail 표시까지 `worklog.model` 계약을 연결했습니다.
+
+- 기준 컬럼: `worklogs.model`
+- Backend:
+  - `IngestWorklogPayload.model`을 nullable field로 수신
+  - `POST /v1/ingest/worklogs`에서 `Worklog.model`에 저장
+  - `GET /v1/worklogs/{id}/review`, `GET /v1/worklogs/{id}`, `GET /v1/feed` 응답에서 first-class `model` 유지
+- CLI:
+  - `LocalDraft.worklog.model`을 `IngestWorklogRequest.worklog.model`로 업로드
+  - `null` 허용으로 기존 collector/client와 호환
+- Frontend:
+  - API adapter가 card/detail model을 보존
+  - review **Collection evidence**, review header, public detail header/metrics에서 표시
+- Dev smoke:
+  - Cursor-style session row의 `model=cursor-agent`가 draft → review API → public detail/feed까지 보존되는지 assertion 추가
+
+> [!note]
+> 모델명은 수집된 경우에만 보존하며, collector가 제공하지 않은 값을 추정해서 채우지 않습니다.
 
 ## 2026-05-30 E2E smoke gate 보강
 

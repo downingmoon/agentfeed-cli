@@ -102,7 +102,38 @@ created: 2026-05-30
 - [x] Gemini failed `write_file` / `replace`를 changed file evidence로 과대집계하지 않도록 보정
 - [x] Claude failed `Write` / `Edit` / `MultiEdit`를 changed file evidence로 과대집계하지 않도록 보정
 - [x] 성공한 test summary의 `0 failed` 문구를 failed command로 과대집계하지 않도록 보정
+- [x] `playwright install`, `cypress open` 같은 browser test setup command를 executed test로 과대집계하지 않도록 보정
 - [ ] Docker 기반 local E2E smoke success path 재검증
+
+## 2026-05-30 Browser test setup command 과대집계 보정
+
+> [!success]
+> `playwright install` / `cypress open` 같은 준비 명령을 `tests_run`으로 세지 않고, 실제 실행 명령만 test evidence로 수집하도록 보정했습니다.
+
+문제:
+
+- 기존 test command 인식은 `playwright` / `cypress` 바이너리 호출 자체를 test 실행으로 보았습니다.
+- 실제로는 `playwright install --with-deps`, `cypress open`처럼 브라우저 설치나 UI 오픈만 수행하는 명령도 많습니다.
+- 이 경우 검증을 수행하지 않았는데도 `tests_run` / `tests_passed`가 올라가 feed의 검증 evidence가 과장될 수 있었습니다.
+
+수정:
+
+- `playwright`는 `playwright test`일 때만 test command로 봅니다.
+- `cypress`는 `cypress run`일 때만 test command로 봅니다.
+- `pytest`, `vitest`, `jest`, `mocha` 같은 direct runner는 기존처럼 test command로 유지합니다.
+- package manager script의 `npm test`, `pnpm test`, `yarn test`, `bun test`, `test:*`는 기존처럼 인정합니다.
+
+검증:
+
+- `does not count browser test setup commands as executed tests` 회귀 테스트
+- `recognizes direct test runner commands in Codex shell calls` 회귀 테스트
+- `recognizes common wrapped test commands in Codex shell calls` 회귀 테스트
+- `npm test -- tests/session-collector.test.ts --run -t "browser test setup commands|direct test runner commands|wrapped test"`
+- `npm test -- tests/session-collector.test.ts --run`
+- `npm test -- tests/git-draft.test.ts tests/cli-collect.test.ts --run`
+- `npm run build`
+- `npm test -- --run`
+- `../agentfeed-dev/scripts/test-all.sh`
 
 ## 2026-05-30 Test summary zero failed 과대집계 보정
 

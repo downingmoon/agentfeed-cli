@@ -280,6 +280,44 @@ describe('agent session collector', () => {
     expect(metrics?.failed_commands).toBe(1);
   });
 
+  it('recognizes direct test runner commands in Codex shell calls', async () => {
+    const sessionFile = join(dir, 'codex-direct-test-commands.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-direct-test-commands', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'pytest tests -q', workdir: dir }), call_id: 'pytest-direct' } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'pytest-direct', output: 'Process exited with code 0\n24 passed' } },
+      { timestamp: '2026-05-20T00:00:03Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'vitest run', workdir: dir }), call_id: 'vitest-direct' } },
+      { timestamp: '2026-05-20T00:00:04Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'vitest-direct', output: 'Process exited with code 0\nTest Files: 0 failed, 4 passed, 4 total' } },
+      { timestamp: '2026-05-20T00:00:05Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'playwright test', workdir: dir }), call_id: 'playwright-direct' } },
+      { timestamp: '2026-05-20T00:00:06Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'playwright-direct', output: 'Process exited with code 1\n1 failed, 2 passed' } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.commands_run).toBe(3);
+    expect(metrics?.tests_run).toBe(3);
+    expect(metrics?.tests_passed).toBe(2);
+    expect(metrics?.failed_commands).toBe(1);
+  });
+
+  it('does not count browser test setup commands as executed tests', async () => {
+    const sessionFile = join(dir, 'codex-browser-test-setup-commands.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-browser-test-setup-commands', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'playwright install --with-deps', workdir: dir }), call_id: 'playwright-install' } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'playwright-install', output: 'Process exited with code 0\nBrowsers installed' } },
+      { timestamp: '2026-05-20T00:00:03Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'npx cypress open', workdir: dir }), call_id: 'cypress-open' } },
+      { timestamp: '2026-05-20T00:00:04Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'cypress-open', output: 'Process exited with code 0\nOpening Cypress' } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.commands_run).toBe(2);
+    expect(metrics?.tests_run).toBeNull();
+    expect(metrics?.tests_passed).toBeNull();
+    expect(metrics?.failed_commands).toBeNull();
+  });
+
   it('counts Codex non-shell tool calls, spawned subagents, and agent turns', async () => {
     const sessionFile = join(dir, 'codex-tooling-session.jsonl');
     await writeJsonl(sessionFile, [

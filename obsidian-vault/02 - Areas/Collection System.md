@@ -96,7 +96,35 @@ created: 2026-05-30
 - [x] generic/Cursor metadata의 `created_at`, `createdAt`, `ts` timestamp alias window 필터링
 - [x] staged diff와 untracked text file의 git line stats 누락 방지
 - [x] explicit `--session-file` source sniff가 agent config disabled 상태에도 동작
+- [x] Codex `turn_context.payload.model`에서 model 누락 없이 수집
 - [ ] Docker 기반 local E2E smoke success path 재검증
+
+## 2026-05-30 Codex turn_context model 수집
+
+> [!success]
+> 실제 Codex CLI 로그에서 모델명은 `session_meta.payload.model`이 아니라 `turn_context.payload.model`에 들어오는 경우가 많아, draft/review/detail에 모델명이 비어 보이는 문제를 막았습니다.
+
+근거:
+
+- 로컬 실제 Codex session JSONL을 content 없이 key/type 수준으로 확인했습니다.
+- 최근 session의 `session_meta.payload`에는 `id`, `cwd`, `cli_version` 등은 있지만 `model`이 없었습니다.
+- 같은 session의 `turn_context.payload`에는 `model`, `effort`, `cwd`가 있었습니다.
+
+수정:
+
+- Codex parser가 `session_meta.payload.model`을 우선 유지합니다.
+- 값이 없으면 `turn_context.payload.model`을 session model로 보존합니다.
+- raw prompt/transcript content는 읽거나 업로드하지 않고 schema key 기반 evidence만 사용합니다.
+
+검증:
+
+- `extracts Codex model from turn_context rows when session_meta omits it` 회귀 테스트
+- `npm test -- tests/session-collector.test.ts --run -t "extracts Codex model from turn_context"`
+- `npm test -- tests/session-collector.test.ts --run`
+- `npm test -- tests/cli-collect.test.ts tests/share.test.ts --run`
+- `npm run build`
+- `npm test -- --run`
+- `../agentfeed-dev/scripts/test-all.sh`
 
 ## 2026-05-30 Explicit session-file source sniff
 

@@ -116,6 +116,23 @@ describe('agent session collector', () => {
     expect(metrics?.lines_removed).toBe(1);
   });
 
+  it('extracts Codex model from turn_context rows when session_meta omits it', async () => {
+    const sessionFile = join(dir, 'codex-turn-context-model.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-turn-context-model', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'turn_context', payload: { cwd: dir, model: 'gpt-5.5', effort: 'high' } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: {
+        [join(dir, 'src', 'model.ts')]: { type: 'add', content: 'export const model = true;\\n' }
+      } } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.session_id).toBe('codex-turn-context-model');
+    expect(metrics?.model).toBe('gpt-5.5');
+    expect(metrics?.changed_files.map((file) => file.path)).toEqual(['src/model.ts']);
+  });
+
   it('falls back to Codex apply_patch custom tool input when patch_apply_end is absent', async () => {
     const sessionFile = join(dir, 'codex-apply-patch-only.jsonl');
     await writeJsonl(sessionFile, [

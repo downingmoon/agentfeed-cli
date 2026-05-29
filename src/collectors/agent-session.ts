@@ -624,6 +624,9 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
       sessionId ??= asString(payload.id);
       model ??= asString(payload.model);
     }
+    if (row?.type === 'turn_context') {
+      model ??= asString(payload.model);
+    }
     if (payload.type === 'token_count') {
       const info = asRecord(payload.info);
       const rowMillis = rowTimestampMillis(row);

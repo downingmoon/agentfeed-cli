@@ -189,6 +189,61 @@ describe('agent session collector', () => {
     expect(draft.worklog.metrics.files_changed).toBe(1);
   });
 
+  it('respects enabled agent config when auto-selecting session sources', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });
+    execFileSync('git', ['commit', '-m', 'agentfeed config'], { cwd: dir, stdio: 'ignore' });
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.agents.claude_code.enabled = false;
+    config.agents.codex.enabled = true;
+    config.agents.gemini_cli.enabled = false;
+    await writeFile(configPath, JSON.stringify(config, null, 2) + '\n');
+    const sessionFile = join(dir, '.agentfeed', 'mixed-source-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { type: 'assistant', cwd: dir, sessionId: 'disabled-claude-source', timestamp: '2026-05-20T01:00:00Z', message: { model: 'claude-sonnet', content: [
+        { type: 'tool_use', name: 'Write', input: { file_path: join(dir, 'src', 'claude-disabled.ts'), content: 'export const claude = true;\\n' } }
+      ] } },
+      { timestamp: '2026-05-20T01:01:00Z', type: 'session_meta', payload: { id: 'enabled-codex-source', cwd: dir } },
+      { timestamp: '2026-05-20T01:02:00Z', type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: {
+        [join(dir, 'src', 'codex-enabled.ts')]: { type: 'add', content: 'export const codex = true;\\n' }
+      } } }
+    ]);
+
+    const draft = await collectDraft({ cwd: dir, sessionFile, since: '2026-05-20T01:00:00Z', until: '2026-05-20T02:00:00Z' });
+
+    expect(draft.worklog.agent).toBe('codex');
+    expect(draft.source.agent).toBe('codex');
+    expect(draft.source.session_id).toBe('enabled-codex-source');
+    expect(draft.worklog.metrics.files_changed).toBe(1);
+    expect(draft.worklog.changed_areas).toContain('Application code');
+  });
+
+  it('allows explicit source to override disabled agent config', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });
+    execFileSync('git', ['commit', '-m', 'agentfeed config'], { cwd: dir, stdio: 'ignore' });
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.agents.claude_code.enabled = false;
+    config.agents.codex.enabled = true;
+    config.agents.gemini_cli.enabled = false;
+    await writeFile(configPath, JSON.stringify(config, null, 2) + '\n');
+    const sessionFile = join(dir, '.agentfeed', 'claude-explicit-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { type: 'assistant', cwd: dir, sessionId: 'explicit-claude-source', timestamp: '2026-05-20T01:00:00Z', message: { model: 'claude-sonnet', content: [
+        { type: 'tool_use', name: 'Write', input: { file_path: join(dir, 'src', 'claude-explicit.ts'), content: 'export const claude = true;\\n' } }
+      ] } }
+    ]);
+
+    const draft = await collectDraft({ cwd: dir, source: 'claude_code', sessionFile, since: '2026-05-20T01:00:00Z', until: '2026-05-20T02:00:00Z' });
+
+    expect(draft.worklog.agent).toBe('claude_code');
+    expect(draft.source.agent).toBe('claude_code');
+    expect(draft.source.session_id).toBe('explicit-claude-source');
+    expect(draft.worklog.metrics.files_changed).toBe(1);
+  });
+
   it('extracts Gemini CLI tool calls, Superpowers skill use, tokens, and file edits', async () => {
     const sessionFile = join(dir, 'gemini-session.jsonl');
     await writeJsonl(sessionFile, [

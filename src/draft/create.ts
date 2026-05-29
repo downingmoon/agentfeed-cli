@@ -1,6 +1,6 @@
 import { hostname } from 'node:os';
 import { isAbsolute, join, relative, resolve } from 'node:path';
-import type { AgentType, ChangedFileSummary, CollectionWindow, LocalDraft, WorklogMetrics } from '../types.js';
+import type { AgentFeedProjectConfig, AgentType, ChangedFileSummary, CollectionWindow, LocalDraft, WorklogMetrics } from '../types.js';
 import { loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { collectAgentSessionMetrics } from '../collectors/agent-session.js';
@@ -120,6 +120,14 @@ function sumChangedFileLines(files: ChangedFileSummary[], key: 'lines_added' | '
   return files.reduce((sum, file) => sum + (file[key] ?? 0), 0);
 }
 
+function enabledAutoAgentSources(config: AgentFeedProjectConfig): AgentType[] {
+  const sources: AgentType[] = [];
+  if (config.agents.claude_code.enabled) sources.push('claude_code');
+  if (config.agents.codex.enabled) sources.push('codex');
+  if (config.agents.gemini_cli.enabled) sources.push('gemini_cli');
+  return sources;
+}
+
 export interface CollectDraftStatus {
   draft: LocalDraft;
   reusedExisting: boolean;
@@ -128,23 +136,21 @@ export interface CollectDraftStatus {
 export async function collectDraftWithStatus(options: { cwd: string; source?: AgentType; sessionFile?: string | null; since?: string | null; until?: string | null; force?: boolean; note?: string | null; inferIdleGap?: boolean }): Promise<CollectDraftStatus> {
   const root = await resolveProjectRoot(options.cwd);
   const config = await loadProjectConfig(root);
-  let source = options.source ?? 'claude_code';
+  const enabledSources = enabledAutoAgentSources(config);
+  let source = options.source ?? enabledSources[0] ?? 'other';
   const git = await collectGitMetrics(root);
   const window = collectionWindow(options);
   const inferIdleGap = options.inferIdleGap ?? (!options.force && !window?.since);
-  let session = await collectAgentSessionMetrics({ cwd: root, source, sessionFile: options.sessionFile, since: window?.since, until: window?.until, inferIdleGap });
-  if (!options.source && !session) {
-    const codexSession = await collectAgentSessionMetrics({ cwd: root, source: 'codex', sessionFile: options.sessionFile, since: window?.since, until: window?.until, inferIdleGap });
-    if (codexSession) {
-      source = 'codex';
-      session = codexSession;
-    }
-  }
-  if (!options.source && !session) {
-    const geminiSession = await collectAgentSessionMetrics({ cwd: root, source: 'gemini_cli', sessionFile: options.sessionFile, since: window?.since, until: window?.until, inferIdleGap });
-    if (geminiSession) {
-      source = 'gemini_cli';
-      session = geminiSession;
+  let session = options.source
+    ? await collectAgentSessionMetrics({ cwd: root, source, sessionFile: options.sessionFile, since: window?.since, until: window?.until, inferIdleGap })
+    : null;
+  if (!options.source) {
+    for (const candidate of enabledSources) {
+      const candidateSession = await collectAgentSessionMetrics({ cwd: root, source: candidate, sessionFile: options.sessionFile, since: window?.since, until: window?.until, inferIdleGap });
+      if (!candidateSession) continue;
+      source = candidate;
+      session = candidateSession;
+      break;
     }
   }
   if (!options.source && !session) {

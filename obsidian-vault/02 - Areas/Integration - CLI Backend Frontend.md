@@ -77,7 +77,7 @@ P1로 남길 계약 gap:
 추가 P2 후보:
 
 - [x] Frontend feed 정렬 라벨 `Most shipped`가 실제 UI에서 `most_discussed`로 매핑되는지 재확인 후 수정
-- Backend `/worklogs/{id}/unpublish`를 Frontend review/detail action에 연결할지 제품 정책 결정
+- [x] Backend `/worklogs/{id}/unpublish`를 Frontend review/detail action에 연결할지 제품 정책 결정
 
 ## 2026-05-30 Feed sort label 계약
 
@@ -92,6 +92,25 @@ P1로 남길 계약 gap:
 
 > [!note]
 > `most_shipped`는 leaderboard type에서는 계속 사용하지만, public feed sort UI에서는 comment aggregate가 필요한 위치이므로 `Most discussed`가 맞습니다.
+
+## 2026-05-30 Publish management 계약
+
+> [!success]
+> Backend에 이미 있던 `POST /v1/worklogs/{id}/unpublish`를 Frontend API wrapper와 review/detail 관리 UX에 연결했습니다.
+
+- Backend 기준:
+  - publish: `POST /v1/worklogs/{id}/publish`
+  - unpublish: `POST /v1/worklogs/{id}/unpublish`
+- Frontend:
+  - `worklogs.unpublish(id, 'private')` wrapper 추가
+  - review 화면에서 이미 `public`/`unlisted`인 worklog는 **Make private**로 비공개 전환 가능
+  - detail 화면에서 author/editor는 **Manage publishing** 버튼으로 review 관리 화면 진입
+- 계약 테스트:
+  - `worklogs.unpublish` wrapper 존재 확인
+  - `public`/`unlisted`만 unpublish control 대상이고 `needs_review/private` draft는 제외
+
+> [!note]
+> 직접 삭제가 아니라 visibility/status를 private로 되돌리는 reversible publish 관리 액션으로 취급합니다.
 
 ## 2026-05-30 worklog.model ingest 계약
 

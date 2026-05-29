@@ -39,6 +39,7 @@ created: 2026-05-30
 - [x] `doctor` 출력에 source별 개선 가이드 더 구체화
 - [x] privacy redaction dry-run 상세 표시
 - [x] Public Feed sort 라벨 `Most shipped` → `Most discussed` 계약 정리
+- [x] Backend unpublish endpoint를 Frontend review/detail 관리 UX에 연결
 
 ## 관련 링크
 
@@ -55,6 +56,7 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 test-all gate 보강]]
 - [[Integration - CLI Backend Frontend#2026-05-30 worklog.model ingest 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Feed sort label 계약]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Publish management 계약]]
 - [[Collection System#2026-05-30 Collection hardening pass]]
 - [[Collection System#2026-05-30 Session file project guard]]
 - [[Collection System#2026-05-30 Local runtime noise 필터]]

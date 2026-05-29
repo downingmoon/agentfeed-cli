@@ -186,6 +186,26 @@ describe('agent session collector', () => {
     expect(metrics?.failed_commands).toBe(1);
   });
 
+  it('recognizes common wrapped test commands in Codex shell calls', async () => {
+    const sessionFile = join(dir, 'codex-wrapped-test-commands.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-wrapped-test-commands', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'uv run --with pytest pytest tests -q', workdir: dir }), call_id: 'uv-pytest' } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'uv-pytest', output: 'Process exited with code 0\n24 passed' } },
+      { timestamp: '2026-05-20T00:00:03Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'python -m pytest tests/test_contracts.py -q', workdir: dir }), call_id: 'python-pytest' } },
+      { timestamp: '2026-05-20T00:00:04Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'python-pytest', output: 'Process exited with code 1\nFAILED tests/test_contracts.py' } },
+      { timestamp: '2026-05-20T00:00:05Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'make test', workdir: dir }), call_id: 'make-test' } },
+      { timestamp: '2026-05-20T00:00:06Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'make-test', output: 'Process exited with code 0\nPASS' } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.commands_run).toBe(3);
+    expect(metrics?.tests_run).toBe(3);
+    expect(metrics?.tests_passed).toBe(2);
+    expect(metrics?.failed_commands).toBe(1);
+  });
+
   it('counts Codex non-shell tool calls, spawned subagents, and agent turns', async () => {
     const sessionFile = join(dir, 'codex-tooling-session.jsonl');
     await writeJsonl(sessionFile, [

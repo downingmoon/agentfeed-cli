@@ -253,7 +253,11 @@ function applyCodexPatchText(cwd: string, patch: string, files: Map<string, Chan
 function isTestCommand(command: string): boolean {
   const normalized = command.trim();
   return /(^|&&|\|\||;)\s*(npm|pnpm|yarn|bun)\s+(run\s+)?(test|test:[\w:-]+)\b/i.test(normalized)
+    || /(^|&&|\|\||;)\s*(pnpm|yarn|bun)\s+(exec\s+)?(vitest|jest|pytest|mocha|playwright|cypress)\b/i.test(normalized)
     || /(^|&&|\|\||;)\s*(npx\s+)?(vitest|jest|pytest|mocha|playwright|cypress)\b/i.test(normalized)
+    || /(^|&&|\|\||;)\s*uv\s+run\b.*\b((python3?\s+-m\s+)?(pytest|unittest)|(vitest|jest|mocha|playwright|cypress))\b/i.test(normalized)
+    || /(^|&&|\|\||;)\s*python3?\s+-m\s+(pytest|unittest)\b/i.test(normalized)
+    || /(^|&&|\|\||;)\s*make\s+[\w:-]*test[\w:-]*\b/i.test(normalized)
     || /(^|&&|\|\||;)\s*go\s+test\b/i.test(normalized)
     || /(^|&&|\|\||;)\s*cargo\s+test\b/i.test(normalized);
 }

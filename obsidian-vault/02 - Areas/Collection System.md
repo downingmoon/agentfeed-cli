@@ -92,6 +92,7 @@ created: 2026-05-30
 - [x] Codex/OMX session id 불일치 시 다른 세션의 subagent/turn metrics 병합 방지
 - [x] generic/Cursor metadata 증분 window에서 timestamp 없는 row 제외
 - [x] Codex mixed `apply_patch` / `patch_apply_end` evidence에서 fallback-only 파일 누락 방지
+- [x] `uv run pytest`, `python -m pytest`, `make test` 같은 wrapped test command 인식
 - [ ] Docker 기반 local E2E smoke success path 재검증
 
 ## 2026-05-30 Collection hardening pass
@@ -207,5 +208,26 @@ created: 2026-05-30
 검증:
 
 - `codex-mixed-patch-evidence` 회귀 테스트 추가
+- `npm test -- tests/session-collector.test.ts --run`
+- `npm run build`
+
+## 2026-05-30 Wrapped test command 인식 보강
+
+> [!success]
+> 실제 Python/Make 기반 프로젝트에서 자주 쓰는 wrapped test command가 `tests_run` / `tests_passed` 집계에서 빠지지 않도록 보강했습니다.
+
+추가 인식:
+
+- `uv run ... pytest`
+- `python -m pytest`
+- `python3 -m pytest`
+- `python -m unittest`
+- `make test`
+- `make test-*` / `make *test*`
+- `pnpm exec vitest`, `yarn exec jest`, `bun exec vitest`
+
+검증:
+
+- `codex-wrapped-test-commands` 회귀 테스트 추가
 - `npm test -- tests/session-collector.test.ts --run`
 - `npm run build`

@@ -136,6 +136,17 @@ function commandFailed(output: string): boolean {
   return /Process exited with code [1-9]\d*|exit code [1-9]\d*|\bFAIL\b|failed/i.test(output);
 }
 
+function toolResultOutput(item: Record<string, unknown>): string {
+  const content = item.content;
+  if (typeof content === 'string') return content;
+  if (!Array.isArray(content)) return '';
+  return content.map((part) => {
+    if (typeof part === 'string') return part;
+    const record = asRecord(part);
+    return asString(record?.text) ?? asString(record?.content) ?? '';
+  }).filter(Boolean).join('\n');
+}
+
 function parseIsoMillis(value: unknown): number | null {
   const text = asString(value);
   if (!text) return null;
@@ -281,6 +292,7 @@ async function readOmxMetadata(cwd: string, sessionId: string | null): Promise<{
 
 async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null): Promise<AgentSessionMetrics | null> {
   const files = new Map<string, ChangedFileSummary>();
+  const commands = new Map<string, { command: string; test: boolean }>();
   let tokensUsed = 0;
   let durationSeconds: number | null = null;
   let testsRun = 0;
@@ -309,7 +321,17 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?:
     const content = Array.isArray(message.content) ? message.content : [];
     for (const itemRaw of content) {
       const item = asRecord(itemRaw);
-      if (!item || item.type !== 'tool_use') continue;
+      if (!item) continue;
+      if (item.type === 'tool_result') {
+        const toolUseId = asString(item.tool_use_id);
+        const command = toolUseId ? commands.get(toolUseId) : null;
+        if (command && (item.is_error === true || commandFailed(toolResultOutput(item)))) {
+          failedCommands += 1;
+          if (command.test) failedTestCommands += 1;
+        }
+        continue;
+      }
+      if (item.type !== 'tool_use') continue;
       toolCalls += 1;
       const name = asString(item.name);
       const input = asRecord(item.input) ?? {};
@@ -335,7 +357,10 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?:
       if (name === 'Bash') {
         const command = asString(input.command) ?? '';
         commandsRun += 1;
-        if (isTestCommand(command)) testsRun += 1;
+        const test = isTestCommand(command);
+        if (test) testsRun += 1;
+        const toolUseId = asString(item.id);
+        if (toolUseId && command) commands.set(toolUseId, { command, test });
       }
       if (name === 'Skill') {
         const skill = asString(input.skill);

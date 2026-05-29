@@ -52,6 +52,27 @@ describe('agent session collector', () => {
     expect(metrics?.lines_added).toBeGreaterThanOrEqual(2);
   });
 
+  it('extracts Claude Code failed Bash test results from tool_result rows', async () => {
+    const sessionFile = join(dir, 'claude-failed-test-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { type: 'assistant', cwd: dir, sessionId: 'claude-failed-test-session', timestamp: '2026-05-20T00:00:00Z', message: { model: 'claude-sonnet', content: [
+        { type: 'tool_use', id: 'bash-test-1', name: 'Bash', input: { command: 'npm test' } },
+        { type: 'tool_use', id: 'bash-build-1', name: 'Bash', input: { command: 'npm run build' } }
+      ] } },
+      { type: 'user', cwd: dir, sessionId: 'claude-failed-test-session', timestamp: '2026-05-20T00:00:02Z', message: { role: 'user', content: [
+        { type: 'tool_result', tool_use_id: 'bash-test-1', content: 'Process exited with code 1\nFAIL tests/api.test.ts', is_error: true },
+        { type: 'tool_result', tool_use_id: 'bash-build-1', content: 'Process exited with code 0\nBuild complete' }
+      ] } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'claude_code', sessionFile });
+
+    expect(metrics?.commands_run).toBe(2);
+    expect(metrics?.tests_run).toBe(1);
+    expect(metrics?.tests_passed).toBe(0);
+    expect(metrics?.failed_commands).toBe(1);
+  });
+
   it('extracts Codex patch files, line counts, tokens, and failed commands from a session file', async () => {
     const sessionFile = join(dir, 'codex-session.jsonl');
     await writeJsonl(sessionFile, [

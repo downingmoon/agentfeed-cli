@@ -333,6 +333,33 @@ describe('agent session collector', () => {
     expect(draft.worklog.metrics.files_changed).toBe(1);
   });
 
+  it('sniffs an explicit Codex session file even when Codex auto discovery is disabled', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });
+    execFileSync('git', ['commit', '-m', 'agentfeed config'], { cwd: dir, stdio: 'ignore' });
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.agents.claude_code.enabled = true;
+    config.agents.codex.enabled = false;
+    config.agents.cursor.enabled = false;
+    config.agents.gemini_cli.enabled = false;
+    await writeFile(configPath, JSON.stringify(config, null, 2) + '\n');
+    const sessionFile = join(dir, 'codex-disabled-auto-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-disabled-auto-source', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: {
+        [join(dir, 'src', 'codex-disabled-auto.ts')]: { type: 'add', content: 'export const fromDisabledCodex = true;\\n' }
+      } } }
+    ]);
+
+    const draft = await collectDraft({ cwd: dir, sessionFile });
+
+    expect(draft.worklog.agent).toBe('codex');
+    expect(draft.source.agent).toBe('codex');
+    expect(draft.source.session_id).toBe('codex-disabled-auto-source');
+    expect(draft.worklog.metrics.files_changed).toBe(1);
+  });
+
   it('respects enabled agent config when auto-selecting session sources', async () => {
     await initProject({ cwd: dir, noGitCheck: false });
     execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });

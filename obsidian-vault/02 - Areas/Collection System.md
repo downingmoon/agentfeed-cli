@@ -95,7 +95,35 @@ created: 2026-05-30
 - [x] `uv run pytest`, `python -m pytest`, `make test` 같은 wrapped test command 인식
 - [x] generic/Cursor metadata의 `created_at`, `createdAt`, `ts` timestamp alias window 필터링
 - [x] staged diff와 untracked text file의 git line stats 누락 방지
+- [x] explicit `--session-file` source sniff가 agent config disabled 상태에도 동작
 - [ ] Docker 기반 local E2E smoke success path 재검증
+
+## 2026-05-30 Explicit session-file source sniff
+
+> [!success]
+> 사용자가 `agentfeed collect --session-file <path>`만 제공해도 Codex/Gemini/Claude session shape를 sniff해서 올바른 source로 수집합니다.
+
+문제:
+
+- 기존 auto source 선택은 `.agentfeed/config.json`에서 enabled인 agent만 먼저 시도했습니다.
+- `agentfeed init` 시점에 Codex/Gemini 신호가 감지되지 않아 disabled로 저장된 프로젝트에서는 사용자가 Codex session file을 직접 넘겨도 `claude_code` git-only draft처럼 보일 수 있었습니다.
+- 이 경우 사용자가 "직접 session 파일까지 줬는데 왜 수집이 약하지?"라고 느끼는 핵심 UX 결함이 됩니다.
+
+수정:
+
+- 명시적 `--session-file`이 있을 때는 enabled source를 먼저 존중합니다.
+- enabled source가 매칭되지 않으면 structured parser를 가진 `claude_code`, `codex`, `gemini_cli`를 추가로 sniff합니다.
+- Cursor/generic shape는 애매하므로 path가 `.cursor` 아래이거나 config에서 cursor가 enabled인 경우만 cursor로 처리하고, 나머지는 기존 `other` fallback을 유지합니다.
+
+검증:
+
+- `sniffs an explicit Codex session file even when Codex auto discovery is disabled` 회귀 테스트
+- `npm test -- tests/session-collector.test.ts --run -t "sniffs an explicit Codex session file"`
+- `npm test -- tests/session-collector.test.ts --run`
+- `npm test -- tests/git-draft.test.ts tests/duplicate-draft.test.ts --run`
+- `npm run build`
+- `npm test -- --run`
+- `../agentfeed-dev/scripts/test-all.sh`
 
 ## 2026-05-30 Git evidence 라인 카운트 보강
 

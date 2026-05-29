@@ -161,6 +161,14 @@ async function enabledAutoAgentSources(cwd: string, config: AgentFeedProjectConf
   return [...sources].sort((a, b) => scores[b] - scores[a]);
 }
 
+function explicitSessionProbeSources(enabledSources: AgentType[], sessionFile: string | null): AgentType[] {
+  if (!sessionFile) return enabledSources;
+  const sources = new Set<AgentType>(enabledSources);
+  for (const source of ['claude_code', 'codex', 'gemini_cli'] as const) sources.add(source);
+  if (sessionFile.split(/[\\/]/).includes('.cursor')) sources.add('cursor');
+  return [...sources];
+}
+
 export interface CollectDraftStatus {
   draft: LocalDraft;
   reusedExisting: boolean;
@@ -180,7 +188,7 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
     ? await collectAgentSessionMetrics({ cwd: root, source, sessionFile, since: window?.since, until: window?.until, inferIdleGap })
     : null;
   if (!options.source) {
-    for (const candidate of enabledSources) {
+    for (const candidate of explicitSessionProbeSources(enabledSources, sessionFile)) {
       const candidateSession = await collectAgentSessionMetrics({ cwd: root, source: candidate, sessionFile, since: window?.since, until: window?.until, inferIdleGap });
       if (!candidateSession) continue;
       source = candidate;

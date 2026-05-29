@@ -60,9 +60,10 @@ agentfeed collect
 
 - [x] Projects page를 mock에서 실제 API로 전환한다.
   - 2026-05-29 추가 보강: list 응답에도 project stats를 포함해 카드의 worklogs/tokens/files가 0으로 고정되지 않게 함.
-- [ ] Leaderboard page를 mock에서 실제 API로 전환한다.
-- [ ] Worklog comments를 실제 API로 연결한다.
-- [ ] Like/bookmark buttons를 실제 API로 연결한다.
+- [x] Leaderboard page를 mock에서 실제 API로 전환한다.
+- [x] Worklog comments를 실제 API로 연결한다.
+- [x] Like/bookmark buttons를 실제 API로 연결한다.
+  - 2026-05-30 보강: Backend `viewer_state`를 Frontend adapter와 카드/상세 social state에 반영해, 기존 좋아요/북마크 상태와 optimistic count delta가 이중 집계 없이 동작하도록 수정.
 - [x] Explore route를 구현하거나 Header 링크를 제거한다.
 - [x] CLI `doctor`가 API/token reachability를 확인한다.
 - [x] CLI `preview`가 선택적으로 Backend preview endpoint를 호출할 수 있게 한다.

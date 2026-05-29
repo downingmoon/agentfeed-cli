@@ -24,6 +24,7 @@ created: 2026-05-30
 - 비용은 모델 가격표로 추정하지 않고 source/OMC/OMX/plugin metadata가 명시한 USD cost만 보존한다.
 - `collection.include_estimated_cost=true`가 아니면 명시적 cost도 draft/upload metrics에 노출하지 않는다.
 - high-quality source가 없으면 사용자가 `agentfeed doctor` 또는 `--session-file`로 개선할 수 있어야 한다.
+- `agentfeed doctor`는 source별 품질 기대치, 추천 `collect --source ... --explain` 명령, 플러그인 역할, 감지된 경로를 함께 보여줘야 한다.
 
 ## 증거 소스
 
@@ -46,6 +47,24 @@ created: 2026-05-30
 - 노출 조건: `.agentfeed/config.json`의 `collection.include_estimated_cost=true`
 - 기본값: `false`, 따라서 public draft/upload payload에는 `estimated_cost_usd: null`
 
+## Doctor 진단 UX
+
+> [!tip] 목표
+> 사용자가 "왜 수집 품질이 낮지?"를 문서 검색 없이 터미널에서 바로 알 수 있어야 한다.
+
+`agentfeed doctor`의 agent signal 영역은 각 source마다 다음을 제공한다.
+
+- 감지 여부: `detected` / `not found`
+- 품질 기대치: high / medium / low의 원인
+- 바로 실행 가능한 명령:
+  - `agentfeed collect --source claude-code --explain`
+  - `agentfeed collect --source codex --explain`
+  - `agentfeed collect --source cursor --explain`
+  - `agentfeed collect --source gemini-cli --explain`
+- default discovery가 실패했을 때 `--session-file <path>` 재시도 안내
+- OMC/OMX/Superpowers가 어떤 base agent evidence를 보강하는지
+- 감지된 path 최대 3개
+
 ## 관련 원본
 
 - [[CLI Product Improvements Roadmap#P0. 수집 정확도 / 세션 슬라이싱]]
@@ -59,4 +78,5 @@ created: 2026-05-30
 - [x] git dirty diff + session changed files 병합
 - [x] agent metadata path filter
 - [x] explicit source cost opt-in 보존
+- [x] doctor source별 수집 개선 가이드
 - [ ] Docker 기반 local E2E smoke success path 재검증

@@ -26,12 +26,13 @@ created: 2026-05-30
 ## P2 후보
 
 - [x] 비용 정보는 추정 금지 원칙 유지, explicit cost field만 opt-in 보존
-- [ ] `doctor` 출력에 source별 개선 가이드 더 구체화
+- [x] `doctor` 출력에 source별 개선 가이드 더 구체화
 - [ ] privacy redaction dry-run 상세 표시
 
 ## 관련 링크
 
 - [[CLI Product Improvements Roadmap#남은 P1 후보]]
 - [[Collection System#체크포인트]]
+- [[Collection System#Doctor 진단 UX]]
 - [[Collection System#비용 수집 정책]]
 - [[Integration - CLI Backend Frontend#남은 검증 리스크]]

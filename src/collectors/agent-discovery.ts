@@ -53,6 +53,56 @@ export function formatAgentSignalLines(signals: AgentSignals): string[] {
     const row = signals[key];
     lines.push(`${row.label}: ${row.detected ? 'detected' : 'not found'}`);
     lines.push(`  ${row.guidance}`);
+    lines.push(...agentSignalGuidanceLines(key));
+    if (row.detected && row.paths.length) {
+      lines.push('  Detected paths:');
+      for (const path of row.paths.slice(0, 3)) lines.push(`  - ${path}`);
+      if (row.paths.length > 3) lines.push(`  - ...and ${row.paths.length - 3} more`);
+    }
   }
   return lines;
+}
+
+function agentSignalGuidanceLines(key: AgentSignalKey): string[] {
+  switch (key) {
+    case 'claude_code':
+      return [
+        '  Quality: high when Claude Code session rows are available.',
+        '  Try: agentfeed collect --source claude-code --explain',
+        '  Improve: agentfeed hook install claude-code'
+      ];
+    case 'codex':
+      return [
+        '  Quality: high when Codex session rows are available; medium with OMX metadata only.',
+        '  Try: agentfeed collect --source codex --explain',
+        '  If default discovery misses logs: agentfeed collect --source codex --session-file <path> --explain'
+      ];
+    case 'cursor':
+      return [
+        '  Quality: low until a Cursor transcript format is explicitly supported.',
+        '  Try: agentfeed collect --source cursor --explain',
+        '  Improve: pass an exported Cursor/session metadata file with --session-file <path>.'
+      ];
+    case 'gemini_cli':
+      return [
+        '  Quality: high when Gemini CLI session rows are available; medium with Superpowers metadata.',
+        '  Try: agentfeed collect --source gemini-cli --explain',
+        '  If default discovery misses logs: agentfeed collect --source gemini-cli --session-file <path> --explain'
+      ];
+    case 'omc':
+      return [
+        '  Plugin role: enriches Claude evidence with tool calls, subagents, and modes.',
+        '  Best paired with: agentfeed collect --source claude-code --explain'
+      ];
+    case 'omx':
+      return [
+        '  Plugin role: enriches Codex evidence with tokens, subagents, turns, and modes.',
+        '  Best paired with: agentfeed collect --source codex --explain'
+      ];
+    case 'superpowers':
+      return [
+        '  Plugin role: enriches Gemini evidence with skill/mode signals.',
+        '  Best paired with: agentfeed collect --source gemini-cli --explain'
+      ];
+  }
 }

@@ -48,7 +48,12 @@ describe('agent discovery', () => {
     expect(lines).toContain('Agent signals:');
     expect(lines).toContain('Codex CLI: detected');
     expect(lines).toContain('OMX: detected');
+    expect(lines).toContain('  Quality: high when Codex session rows are available; medium with OMX metadata only.');
+    expect(lines).toContain('  Try: agentfeed collect --source codex --explain');
+    expect(lines).toContain('  Plugin role: enriches Codex evidence with tokens, subagents, turns, and modes.');
+    expect(lines).toContain('  Detected paths:');
     expect(lines.some((line) => line.includes('Run Gemini CLI in this project.'))).toBe(true);
+    expect(lines.some((line) => line.includes('Try: agentfeed collect --source gemini-cli --explain'))).toBe(true);
   });
 
   it('auto-enables detected agents during init', async () => {

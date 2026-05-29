@@ -26,6 +26,9 @@ created: 2026-05-30
 - 비용은 모델 가격표로 추정하지 않고 source/OMC/OMX/plugin metadata가 명시한 USD cost만 보존한다.
 - `collection.include_estimated_cost=true`가 아니면 명시적 cost도 draft/upload metrics에 노출하지 않는다.
 - high-quality source가 없으면 사용자가 `agentfeed doctor` 또는 `--session-file`로 개선할 수 있어야 한다.
+- CLI 파일 인자(`--session-file`)는 프로젝트 루트가 아니라 사용자가 명령을 실행한 cwd 기준으로 해석한다.
+- plugin metadata는 session id가 맞는 경우에만 high-quality agent session에 병합한다.
+- generic/Cursor metadata는 증분 `since` window에서 timestamp 없는 row를 제외해 반복 집계를 피한다.
 - `agentfeed doctor`는 source별 품질 기대치, 추천 `collect --source ... --explain` 명령, 플러그인 역할, 감지된 경로를 함께 보여줘야 한다.
 
 ## 증거 소스
@@ -85,7 +88,33 @@ created: 2026-05-30
 - [x] Claude/Gemini agent turn, Claude Task subagent, Gemini `skill_name` skill signal 보강
 - [x] Obsidian runtime / OS metadata가 git/session evidence에 섞이지 않도록 필터링
 - [x] 잘못된 project의 explicit `--session-file` metrics 혼입 방지
+- [x] 하위 디렉터리 실행 시 relative `--session-file` 경로를 invocation cwd 기준으로 해석
+- [x] Codex/OMX session id 불일치 시 다른 세션의 subagent/turn metrics 병합 방지
+- [x] generic/Cursor metadata 증분 window에서 timestamp 없는 row 제외
 - [ ] Docker 기반 local E2E smoke success path 재검증
+
+## 2026-05-30 Collection hardening pass
+
+> [!success]
+> 실제 사용자가 repo 하위 폴더에서 CLI를 실행하거나, 여러 Codex/OMX 세션이 같은 프로젝트에 누적된 상황에서도 수집 지표가 다른 경로/세션과 섞이지 않도록 보강했습니다.
+
+### Invocation cwd 기준 `--session-file`
+
+- 문제: `agentfeed collect`를 `src/` 같은 하위 디렉터리에서 실행하면 `--session-file ../session.jsonl`이 project root 기준으로 잘못 resolve될 수 있었습니다.
+- 결정: 사용자가 입력한 파일 경로는 명령 실행 cwd 기준으로 먼저 absolute path로 만든 뒤 project root collector에 전달합니다.
+- 검증: `collectDraft({ cwd: <repo>/src, sessionFile: '../codex-subdir-session.jsonl' })` 회귀 테스트.
+
+### OMX session id isolation
+
+- 문제: `.omx/state/subagent-tracking.json`에 현재 Codex `session_id`가 없으면 첫 번째 session tracking을 fallback으로 병합할 수 있었습니다.
+- 결정: Codex session id가 명확하면 OMX tracking도 같은 key/session_id일 때만 subagent/turn/mode metrics에 병합합니다. session id가 없는 legacy 상황에서만 기존 fallback을 허용합니다.
+- 검증: `other-codex-session` tracking이 있어도 `codex-current-session` draft에는 `agent_turns=1`, subagent/mode는 null.
+
+### Generic metadata incremental window guard
+
+- 문제: `other`/`cursor` generic metadata가 `--since` window 안에서 timestamp 없는 row를 항상 포함해 과거 metrics를 반복 집계할 수 있었습니다.
+- 결정: `since`가 있는 증분 수집에서는 timestamp 없는 generic row를 제외합니다. 단, lower bound 없는 전체/초기 generic 수집에서는 보수적 호환성을 위해 timestamp 없는 row를 계속 허용합니다.
+- 검증: timestamp 없는 stale row와 timestamp 있는 fresh row가 섞인 JSONL에서 fresh row만 집계.
 
 ## 2026-05-30 Session file project guard
 

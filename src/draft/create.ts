@@ -167,7 +167,9 @@ export interface CollectDraftStatus {
 }
 
 export async function collectDraftWithStatus(options: { cwd: string; source?: AgentType; sessionFile?: string | null; since?: string | null; until?: string | null; force?: boolean; note?: string | null; inferIdleGap?: boolean }): Promise<CollectDraftStatus> {
-  const root = await resolveProjectRoot(options.cwd);
+  const invocationCwd = resolve(options.cwd);
+  const sessionFile = options.sessionFile ? resolve(invocationCwd, options.sessionFile) : null;
+  const root = await resolveProjectRoot(invocationCwd);
   const config = await loadProjectConfig(root);
   const enabledSources = await enabledAutoAgentSources(root, config);
   let source = options.source ?? enabledSources[0] ?? 'other';
@@ -175,11 +177,11 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
   const window = collectionWindow(options);
   const inferIdleGap = options.inferIdleGap ?? (!options.force && !window?.since);
   let session = options.source
-    ? await collectAgentSessionMetrics({ cwd: root, source, sessionFile: options.sessionFile, since: window?.since, until: window?.until, inferIdleGap })
+    ? await collectAgentSessionMetrics({ cwd: root, source, sessionFile, since: window?.since, until: window?.until, inferIdleGap })
     : null;
   if (!options.source) {
     for (const candidate of enabledSources) {
-      const candidateSession = await collectAgentSessionMetrics({ cwd: root, source: candidate, sessionFile: options.sessionFile, since: window?.since, until: window?.until, inferIdleGap });
+      const candidateSession = await collectAgentSessionMetrics({ cwd: root, source: candidate, sessionFile, since: window?.since, until: window?.until, inferIdleGap });
       if (!candidateSession) continue;
       source = candidate;
       session = candidateSession;
@@ -187,13 +189,13 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
     }
   }
   if (!options.source && !session) {
-    const genericSession = await collectAgentSessionMetrics({ cwd: root, source: 'other', sessionFile: options.sessionFile, since: window?.since, until: window?.until, inferIdleGap: false });
+    const genericSession = await collectAgentSessionMetrics({ cwd: root, source: 'other', sessionFile, since: window?.since, until: window?.until, inferIdleGap: false });
     if (genericSession) {
       source = 'other';
       session = genericSession;
     }
   }
-  const sessionFileRel = relativeProjectPath(root, options.sessionFile);
+  const sessionFileRel = relativeProjectPath(root, sessionFile);
   const gitChangedFiles = sessionFileRel ? git.changed_files.filter((file) => file.path !== sessionFileRel) : git.changed_files;
   const changedFiles = mergeChangedFiles(gitChangedFiles, session?.changed_files ?? []);
   const linesAdded = sumChangedFileLines(changedFiles, 'lines_added');

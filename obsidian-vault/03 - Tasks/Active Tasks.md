@@ -27,7 +27,11 @@ created: 2026-05-30
 - [x] 실제 Claude/Gemini session schema 기반 turn / skill / Task subagent 과소집계 보강
 - [x] `.obsidian` / `.DS_Store` 로컬 런타임 파일 수집 노이즈 제거
 - [x] explicit `--session-file`이 다른 project 로그일 때 metrics 혼입 방지
+- [x] 하위 디렉터리 실행 시 relative `--session-file` 경로 오해석 방지
+- [x] Codex/OMX session id 불일치 metrics 오염 방지
+- [x] generic/Cursor 증분 window에서 timestamp 없는 row 반복 집계 방지
 - [ ] 실제 Cursor workspace/session format 추가 조사 후 parser 품질 상향 가능성 판단
+- [ ] CLI ingest `worklog.model` → Backend 저장 → Frontend 노출 계약화
 
 ## P2 후보
 
@@ -48,6 +52,7 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 user_note 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 E2E smoke gate 보강]]
 - [[Integration - CLI Backend Frontend#2026-05-30 test-all gate 보강]]
+- [[Collection System#2026-05-30 Collection hardening pass]]
 - [[Collection System#2026-05-30 Session file project guard]]
 - [[Collection System#2026-05-30 Local runtime noise 필터]]
 - [[Collection System#2026-05-30 Claude/Gemini turn metrics 보강]]

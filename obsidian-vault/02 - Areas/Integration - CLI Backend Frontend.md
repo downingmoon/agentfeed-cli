@@ -60,6 +60,25 @@ sequenceDiagram
 - [ ] 실제 GitHub OAuth / CLI browser login happy path 재확인
 - [ ] 실제 사용자 작업 repo에서 `agentfeed share --open-review` smoke
 
+## 2026-05-30 계약 감사 결과
+
+> [!warning]
+> 수집 파트는 model 정보를 이미 draft/share preview에서 보유하지만, ingest 계약에는 아직 `worklog.model`이 없어 Backend 저장 이후 정보가 사라집니다.
+
+P1로 남길 계약 gap:
+
+- CLI: `LocalDraft.worklog.model`은 존재하지만 `IngestWorklogRequest.worklog` / `draftToIngestRequest()`에 model이 없음
+- Backend: ingest schema와 저장 경로가 model을 받지 않음
+- Frontend: 타입/카드에서 model을 활용할 여지가 있으나 ingest 경로로 저장되지 않으면 표시할 수 없음
+
+> [!todo]
+> 다음 cross-repo 작업은 DB/Backend schema를 기준으로 `worklog.model` 저장 계약을 먼저 정하고 CLI → Frontend 순서로 맞춥니다.
+
+추가 P2 후보:
+
+- Frontend feed 정렬 라벨 `Most shipped`가 실제 UI에서 `most_discussed`로 매핑되는지 재확인 후 수정
+- Backend `/worklogs/{id}/unpublish`를 Frontend review/detail action에 연결할지 제품 정책 결정
+
 ## 2026-05-30 E2E smoke gate 보강
 
 > [!info]

@@ -246,6 +246,25 @@ describe('agent session collector', () => {
     expect(draft.worklog.changed_areas).toContain('Application code');
   });
 
+  it('resolves relative session files from the invocation cwd when collecting from a subdirectory', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });
+    execFileSync('git', ['commit', '-m', 'agentfeed config'], { cwd: dir, stdio: 'ignore' });
+    const sessionFile = join(dir, 'codex-subdir-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-subdir-session', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: {
+        [join(dir, 'src', 'subdir.ts')]: { type: 'add', content: 'export const fromSubdir = true;\n' }
+      } } }
+    ]);
+
+    const draft = await collectDraft({ cwd: join(dir, 'src'), source: 'codex', sessionFile: '../codex-subdir-session.jsonl' });
+
+    expect(draft.source.session_id).toBe('codex-subdir-session');
+    expect(draft.worklog.metrics.files_changed).toBe(1);
+    expect(draft.worklog.metrics.lines_added).toBe(1);
+  });
+
   it('auto-detects Codex when collect receives a Codex session file without an explicit source', async () => {
     await initProject({ cwd: dir, noGitCheck: false });
     execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });
@@ -405,6 +424,37 @@ describe('agent session collector', () => {
     expect(metrics?.agent_modes).toEqual(['ralph', 'team']);
   });
 
+  it('does not merge OMX subagent tracking from a different Codex session id', async () => {
+    await mkdir(join(dir, '.omx', 'state'), { recursive: true });
+    await writeFile(join(dir, '.omx', 'state', 'subagent-tracking.json'), JSON.stringify({
+      schemaVersion: 1,
+      sessions: {
+        'other-codex-session': {
+          session_id: 'other-codex-session',
+          leader_thread_id: 'other-codex-session',
+          threads: {
+            'other-codex-session': { thread_id: 'other-codex-session', kind: 'leader', turn_count: 10, mode: 'team' },
+            'other-sub-1': { thread_id: 'other-sub-1', kind: 'subagent', turn_count: 5 }
+          }
+        }
+      }
+    }));
+    const sessionFile = join(dir, 'codex-current-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-current-session', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'event_msg', payload: { type: 'agent_message', phase: 'final' } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.agent_turns).toBe(1);
+    expect(metrics?.subagents_spawned).toBeNull();
+    expect(metrics?.agent_modes).toBeNull();
+    expect(metrics?.collection_sources).toEqual([
+      { type: 'agent_session', name: 'codex', quality: 'high' }
+    ]);
+  });
+
   it('merges OMX Codex subagent tracking and turn metrics', async () => {
     await mkdir(join(dir, '.omx', 'state'), { recursive: true });
     await writeFile(join(dir, '.omx', 'metrics.json'), JSON.stringify({ session_turns: 4, session_total_tokens: 1234, cost_usd: 0.055 }));
@@ -467,6 +517,25 @@ describe('agent session collector', () => {
     expect(draft.worklog.metrics.collection_sources).toEqual([
       { type: 'generic_metadata', name: 'unknown_plugin', quality: 'low' }
     ]);
+  });
+
+  it('excludes timestamp-less generic metadata rows when a since window is active', async () => {
+    const sessionFile = join(dir, 'generic-window-missing-timestamp.jsonl');
+    await writeJsonl(sessionFile, [
+      { session_id: 'generic-window-missing-timestamp', tokens_used: 999, commands_run: 8, changed_files: [
+        { path: join(dir, 'src', 'stale-generic.ts'), lines_added: 10 }
+      ] },
+      { timestamp: '2026-05-20T01:00:00Z', session_id: 'generic-window-missing-timestamp', tokens_used: 10, commands_run: 1, changed_files: [
+        { path: join(dir, 'src', 'fresh-generic.ts'), lines_added: 1 }
+      ] }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'other', sessionFile, since: '2026-05-20T01:00:00Z' });
+
+    expect(metrics?.tokens_used).toBe(10);
+    expect(metrics?.commands_run).toBe(1);
+    expect(metrics?.changed_files.map((file) => file.path)).toEqual(['src/fresh-generic.ts']);
+    expect(metrics?.lines_added).toBe(1);
   });
 
   it('filters generic plugin metadata by collection window when timestamps are present', async () => {

@@ -291,12 +291,12 @@ function rowTimestampMillis(row: Record<string, unknown>): number | null {
   return parseIsoMillis(row.timestamp) ?? parseIsoMillis(row.lastUpdated) ?? parseIsoMillis(row.startTime);
 }
 
-function rowInCollectionWindow(row: Record<string, unknown>, window?: CollectionWindow | null): boolean {
+function rowInCollectionWindow(row: Record<string, unknown>, window?: CollectionWindow | null, options: { includeMissingTimestamp?: boolean } = {}): boolean {
   const sinceMillis = parseBoundaryMillis(window?.since);
   const untilMillis = parseBoundaryMillis(window?.until);
   if (sinceMillis == null && untilMillis == null) return true;
   const millis = rowTimestampMillis(row);
-  if (millis == null) return true;
+  if (millis == null) return options.includeMissingTimestamp ?? true;
   if (sinceMillis != null && millis < sinceMillis) return false;
   if (untilMillis != null && millis > untilMillis) return false;
   return true;
@@ -434,8 +434,11 @@ async function readOmxMetadata(cwd: string, sessionId: string | null): Promise<{
   if (metrics) result.detected = true;
   const tracking = await readJsonFile(join(cwd, '.omx', 'state', 'subagent-tracking.json'));
   const sessions = asRecord(tracking?.sessions);
-  const session = (sessionId && asRecord(sessions?.[sessionId])) || (sessions ? asRecord(Object.values(sessions)[0]) : null);
-  const threads = asRecord(session?.threads);
+  const exactSession = sessionId && sessions ? asRecord(sessions[sessionId]) : null;
+  const fallbackSession = !sessionId && sessions ? asRecord(Object.values(sessions)[0]) : null;
+  const session = exactSession ?? fallbackSession;
+  const declaredSessionId = asString(session?.session_id);
+  const threads = sessionId && declaredSessionId && declaredSessionId !== sessionId ? null : asRecord(session?.threads);
   if (threads) {
     result.detected = true;
     let spawned = 0;
@@ -920,9 +923,10 @@ async function parseGenericMetadata(cwd: string, sessionFile?: string | null, wi
   const acc = { sessionId: null as string | null, model: null as string | null, tokensUsed: 0, estimatedCostUsd: 0, commandsRun: 0, toolCalls: 0, agentTurns: 0, agentModes: new Set<string>() };
   const changedFiles = new Map<string, ChangedFileSummary>();
   const metadataFiles = sessionFile ? [sessionFile] : await genericMetadataFiles(cwd, options.roots);
+  const includeMissingTimestamp = !window?.since;
   for (const file of metadataFiles) {
     for (const record of await genericRecordsFromFile(file)) {
-      if (rowInCollectionWindow(record, window)) applyGenericRecord(record, acc, cwd, changedFiles);
+      if (rowInCollectionWindow(record, window, { includeMissingTimestamp })) applyGenericRecord(record, acc, cwd, changedFiles);
     }
   }
   return finalize({

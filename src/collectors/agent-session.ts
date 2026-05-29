@@ -263,7 +263,14 @@ function isTestCommand(command: string): boolean {
 }
 
 function commandFailed(output: string): boolean {
-  return /Process exited with code [1-9]\d*|exit code [1-9]\d*|\bFAIL\b|failed/i.test(output);
+  const text = output.trim();
+  if (!text) return false;
+  if (/(?:Process exited with code|exit code)\s*[:=]?\s*[1-9]\d*/i.test(text)) return true;
+  if (/^\s*(?:FAIL|FAILED)\b/im.test(text)) return true;
+  if (/\b[1-9]\d*\s+failed\b/i.test(text)) return true;
+  if (/\bfailed\s*[:=]\s*[1-9]\d*\b/i.test(text)) return true;
+  if (/\bfailures?\s*[:=]\s*[1-9]\d*\b/i.test(text)) return true;
+  return false;
 }
 
 function toolResultOutput(item: Record<string, unknown>): string {

@@ -101,7 +101,38 @@ created: 2026-05-30
 - [x] Gemini failed `activate_skill` / `invoke_agent`를 성공한 skill/subagent로 과대집계하지 않도록 보정
 - [x] Gemini failed `write_file` / `replace`를 changed file evidence로 과대집계하지 않도록 보정
 - [x] Claude failed `Write` / `Edit` / `MultiEdit`를 changed file evidence로 과대집계하지 않도록 보정
+- [x] 성공한 test summary의 `0 failed` 문구를 failed command로 과대집계하지 않도록 보정
 - [ ] Docker 기반 local E2E smoke success path 재검증
+
+## 2026-05-30 Test summary zero failed 과대집계 보정
+
+> [!success]
+> Claude / Codex / Gemini session output에 `0 failed`가 포함되어도 성공한 test command를 실패로 세지 않도록 보정했습니다.
+
+문제:
+
+- 여러 test runner는 성공 시에도 `0 failed, N passed` 형태의 summary를 출력합니다.
+- 기존 실패 판정은 output에 `failed` 단어가 있으면 실패로 보았습니다.
+- 따라서 실제 exit code가 0인 테스트가 `failed_commands=1`, `tests_passed=0`으로 공개될 수 있었습니다.
+
+수정:
+
+- non-zero exit code를 우선 신뢰합니다.
+- `FAIL` / `FAILED`가 라인 시작에 나타나는 runner failure row만 실패로 봅니다.
+- `1 failed`, `failed: 1`, `failures=1`처럼 실패 개수가 양수인 summary만 실패로 봅니다.
+- `0 failed` summary는 실패로 보지 않습니다.
+
+검증:
+
+- `does not count successful Claude test summaries with zero failed as failures` 회귀 테스트
+- Codex successful test output의 `0 failed` summary 회귀 검증
+- Gemini successful `run_shell_command` output의 `0 failed` summary 회귀 검증
+- `npm test -- tests/session-collector.test.ts --run -t "zero failed|non-test command failures|failed Gemini skill|failed Bash test results|wrapped test"`
+- `npm test -- tests/session-collector.test.ts --run`
+- `npm test -- tests/git-draft.test.ts tests/cli-collect.test.ts --run`
+- `npm run build`
+- `npm test -- --run`
+- `../agentfeed-dev/scripts/test-all.sh`
 
 ## 2026-05-30 Claude 실패 file edit 과대집계 보정
 

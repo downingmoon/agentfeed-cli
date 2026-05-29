@@ -73,6 +73,25 @@ describe('agent session collector', () => {
     expect(metrics?.failed_commands).toBe(1);
   });
 
+  it('does not count successful Claude test summaries with zero failed as failures', async () => {
+    const sessionFile = join(dir, 'claude-zero-failed-test-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { type: 'assistant', cwd: dir, sessionId: 'claude-zero-failed-test-session', timestamp: '2026-05-20T00:00:00Z', message: { model: 'claude-sonnet', content: [
+        { type: 'tool_use', id: 'bash-test-1', name: 'Bash', input: { command: 'npm test' } }
+      ] } },
+      { type: 'user', cwd: dir, sessionId: 'claude-zero-failed-test-session', timestamp: '2026-05-20T00:00:02Z', message: { role: 'user', content: [
+        { type: 'tool_result', tool_use_id: 'bash-test-1', content: 'Process exited with code 0\nTest Suites: 0 failed, 4 passed, 4 total\nTests: 0 failed, 19 passed, 19 total' }
+      ] } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'claude_code', sessionFile });
+
+    expect(metrics?.commands_run).toBe(1);
+    expect(metrics?.tests_run).toBe(1);
+    expect(metrics?.tests_passed).toBe(1);
+    expect(metrics?.failed_commands).toBeNull();
+  });
+
   it('counts Claude assistant turns and Task subagent launches', async () => {
     const sessionFile = join(dir, 'claude-agent-turns-session.jsonl');
     await writeJsonl(sessionFile, [
@@ -229,7 +248,7 @@ describe('agent session collector', () => {
     await writeJsonl(sessionFile, [
       { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-session-commands', cwd: dir } },
       { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'npm test', workdir: dir }), call_id: 'test-ok' } },
-      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'test-ok', output: 'Process exited with code 0\\nPASS tests/api.test.ts' } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'test-ok', output: 'Process exited with code 0\\nPASS tests/api.test.ts\\nTest Files: 0 failed, 1 passed, 1 total' } },
       { timestamp: '2026-05-20T00:00:03Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'git diff --check', workdir: dir }), call_id: 'lint-fail' } },
       { timestamp: '2026-05-20T00:00:04Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'lint-fail', output: 'Process exited with code 1\\nwhitespace error' } }
     ]);
@@ -506,7 +525,7 @@ describe('agent session collector', () => {
       { id: 'g1', timestamp: '2026-05-20T00:00:10Z', type: 'gemini', model: 'gemini-3-flash-preview', toolCalls: [
         { id: 'tool-1', name: 'activate_skill', status: 'error', args: { skill_name: 'test-driven-development' }, resultDisplay: 'Skill not found' },
         { id: 'tool-2', name: 'invoke_agent', status: 'error', args: { agent_name: 'explore', prompt: 'Map files' }, resultDisplay: 'Agent unavailable' },
-        { id: 'tool-3', name: 'run_shell_command', status: 'success', args: { command: 'npm test' }, resultDisplay: 'Process exited with code 0\\nPASS' }
+        { id: 'tool-3', name: 'run_shell_command', status: 'success', args: { command: 'npm test' }, resultDisplay: 'Process exited with code 0\\nPASS\\nTest Files: 0 failed, 1 passed, 1 total' }
       ] }
     ]);
 
@@ -517,6 +536,7 @@ describe('agent session collector', () => {
     expect(metrics?.subagents_spawned).toBeNull();
     expect(metrics?.tests_run).toBe(1);
     expect(metrics?.tests_passed).toBe(1);
+    expect(metrics?.failed_commands).toBeNull();
     expect(metrics?.collection_sources).toEqual([
       { type: 'agent_session', name: 'gemini_cli', quality: 'high' }
     ]);

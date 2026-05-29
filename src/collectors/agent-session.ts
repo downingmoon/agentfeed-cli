@@ -782,9 +782,10 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?:
       const name = asString(call.name);
       const args = asRecord(call.args) ?? {};
       const status = asString(call.status);
+      const failed = status === 'error' || status === 'failed';
       if (name === 'activate_skill') {
         const skill = asString(args.name) ?? asString(args.skill_name) ?? asString(args.skillName);
-        if (skill) skills.add(skill);
+        if (skill && !failed) skills.add(skill);
       } else if (name === 'write_file') {
         const rel = relativeProjectPath(cwd, asString(args.file_path) ?? '');
         if (rel) upsertFile(files, rel, { status: 'added', added: countTextLines(asString(args.content) ?? ''), removed: 0 });
@@ -794,16 +795,16 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?:
       } else if (name === 'run_shell_command') {
         commandsRun += 1;
         const command = asString(args.command) ?? '';
-        const failed = status === 'error' || commandFailed(asString(call.resultDisplay) ?? '');
-        if (failed) failedCommands += 1;
+        const commandDidFail = failed || commandFailed(asString(call.resultDisplay) ?? '');
+        if (commandDidFail) failedCommands += 1;
         if (isTestCommand(command)) {
           testsRun += 1;
-          if (failed) failedTestCommands += 1;
+          if (commandDidFail) failedTestCommands += 1;
         }
       } else if (name === 'invoke_agent') {
-        subagentsSpawned += 1;
+        if (!failed) subagentsSpawned += 1;
       } else if (name === 'update_topic') {
-        agentModes.add('superpowers');
+        if (!failed) agentModes.add('superpowers');
       }
     }
   }

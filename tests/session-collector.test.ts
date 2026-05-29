@@ -476,6 +476,29 @@ describe('agent session collector', () => {
     expect(metrics?.changed_files.map((file) => file.path).sort()).toEqual(['src/api.ts', 'src/gemini.ts']);
   });
 
+  it('does not count failed Gemini skill or agent activation as completed usage', async () => {
+    const sessionFile = join(dir, 'gemini-failed-skill-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { sessionId: 'gemini-failed-skill-session', startTime: '2026-05-20T00:00:00Z', lastUpdated: '2026-05-20T00:01:00Z', kind: 'main' },
+      { id: 'g1', timestamp: '2026-05-20T00:00:10Z', type: 'gemini', model: 'gemini-3-flash-preview', toolCalls: [
+        { id: 'tool-1', name: 'activate_skill', status: 'error', args: { skill_name: 'test-driven-development' }, resultDisplay: 'Skill not found' },
+        { id: 'tool-2', name: 'invoke_agent', status: 'error', args: { agent_name: 'explore', prompt: 'Map files' }, resultDisplay: 'Agent unavailable' },
+        { id: 'tool-3', name: 'run_shell_command', status: 'success', args: { command: 'npm test' }, resultDisplay: 'Process exited with code 0\\nPASS' }
+      ] }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(3);
+    expect(metrics?.skills_used).toBeNull();
+    expect(metrics?.subagents_spawned).toBeNull();
+    expect(metrics?.tests_run).toBe(1);
+    expect(metrics?.tests_passed).toBe(1);
+    expect(metrics?.collection_sources).toEqual([
+      { type: 'agent_session', name: 'gemini_cli', quality: 'high' }
+    ]);
+  });
+
   it('auto-detects Gemini CLI when collect receives a Gemini session file without an explicit source', async () => {
     await initProject({ cwd: dir, noGitCheck: false });
     execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });

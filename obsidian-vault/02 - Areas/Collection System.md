@@ -98,7 +98,36 @@ created: 2026-05-30
 - [x] explicit `--session-file` source sniff가 agent config disabled 상태에도 동작
 - [x] Codex `turn_context.payload.model`에서 model 누락 없이 수집
 - [x] Claude `TaskCreate` todo planning을 subagent로 과대집계하지 않도록 보정
+- [x] Gemini failed `activate_skill` / `invoke_agent`를 성공한 skill/subagent로 과대집계하지 않도록 보정
 - [ ] Docker 기반 local E2E smoke success path 재검증
+
+## 2026-05-30 Gemini 실패 skill/subagent 과대집계 보정
+
+> [!success]
+> 실제 Gemini CLI 로그에 `activate_skill` 실패 row가 존재하므로, 실패한 skill/agent activation을 성공한 사용량처럼 표시하지 않도록 수정했습니다.
+
+근거:
+
+- 로컬 실제 Gemini session JSONL을 content 없이 tool name/status/args key 수준으로 확인했습니다.
+- `activate_skill`은 `status=success`와 `status=error`가 모두 나타납니다.
+- `invoke_agent`도 tool call status를 가지므로 실패한 호출은 subagent spawned로 보기 어렵습니다.
+
+수정:
+
+- Gemini `activate_skill`은 `status=error|failed`가 아닐 때만 `skills_used`에 반영합니다.
+- Gemini `invoke_agent`는 `status=error|failed`가 아닐 때만 `subagents_spawned`에 반영합니다.
+- 실패한 tool call 자체는 여전히 `tool_calls`로 집계해 작업 시도량은 보존합니다.
+- 실패한 `run_shell_command` 판정도 동일한 failed status helper를 사용합니다.
+
+검증:
+
+- `does not count failed Gemini skill or agent activation as completed usage` 회귀 테스트
+- `npm test -- tests/session-collector.test.ts --run -t "does not count failed Gemini skill or agent"`
+- `npm test -- tests/session-collector.test.ts --run`
+- `npm test -- tests/cli-collect.test.ts tests/share.test.ts tests/explain.test.ts --run`
+- `npm run build`
+- `npm test -- --run`
+- `../agentfeed-dev/scripts/test-all.sh`
 
 ## 2026-05-30 Claude TaskCreate subagent 과대집계 보정
 

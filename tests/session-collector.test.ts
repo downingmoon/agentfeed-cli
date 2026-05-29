@@ -311,6 +311,22 @@ describe('agent session collector', () => {
     ]);
   });
 
+  it('filters generic plugin metadata by collection window when timestamps are present', async () => {
+    const sessionFile = join(dir, 'generic-window.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:59:59Z', session_id: 'generic-window', tokens_used: 100, commands_run: 5, tool_calls: 7, agent_turns: 9 },
+      { timestamp: '2026-05-20T01:00:00Z', session_id: 'generic-window', tokens_used: 25, commands_run: 2, tool_calls: 3, agent_turns: 4 }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'other', sessionFile, since: '2026-05-20T01:00:00Z' });
+
+    expect(metrics?.session_id).toBe('generic-window');
+    expect(metrics?.tokens_used).toBe(25);
+    expect(metrics?.commands_run).toBe(2);
+    expect(metrics?.tool_calls).toBe(3);
+    expect(metrics?.agent_turns).toBe(4);
+  });
+
   it('stores explicit collection windows on created drafts', async () => {
     await initProject({ cwd: dir, noGitCheck: false });
     execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });

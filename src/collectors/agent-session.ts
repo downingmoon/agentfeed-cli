@@ -630,11 +630,13 @@ async function genericMetadataFiles(cwd: string): Promise<string[]> {
   return files.sort((a, b) => b.mtime - a.mtime).slice(0, 20).map((row) => row.path);
 }
 
-async function parseGenericMetadata(cwd: string, sessionFile?: string | null): Promise<AgentSessionMetrics | null> {
+async function parseGenericMetadata(cwd: string, sessionFile?: string | null, window?: CollectionWindow | null): Promise<AgentSessionMetrics | null> {
   const acc = { sessionId: null as string | null, model: null as string | null, tokensUsed: 0, commandsRun: 0, toolCalls: 0, agentTurns: 0, agentModes: new Set<string>() };
   const files = sessionFile ? [sessionFile] : await genericMetadataFiles(cwd);
   for (const file of files) {
-    for (const record of await genericRecordsFromFile(file)) applyGenericRecord(record, acc);
+    for (const record of await genericRecordsFromFile(file)) {
+      if (rowInCollectionWindow(record, window)) applyGenericRecord(record, acc);
+    }
   }
   return finalize({
     sessionId: acc.sessionId,
@@ -701,7 +703,7 @@ async function discoverSessionFile(cwd: string, source: AgentType): Promise<stri
 
 export async function collectAgentSessionMetrics(options: CollectAgentSessionOptions): Promise<AgentSessionMetrics | null> {
   const sessionFile = options.sessionFile ? resolve(options.cwd, options.sessionFile) : await discoverSessionFile(options.cwd, options.source);
-  if (options.source === 'other') return parseGenericMetadata(options.cwd, sessionFile);
+  if (options.source === 'other') return parseGenericMetadata(options.cwd, sessionFile, { since: options.since, until: options.until });
   if (!sessionFile || basename(sessionFile).startsWith('.')) return null;
   if (options.source === 'claude_code') return parseClaudeSessionFile(options.cwd, sessionFile, { since: options.since, until: options.until });
   if (options.source === 'codex') return parseCodexSessionFile(options.cwd, sessionFile, { since: options.since, until: options.until });

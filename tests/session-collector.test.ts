@@ -432,4 +432,19 @@ describe('collection window filtering', () => {
     expect(metrics?.changed_files.map((file) => file.path)).toEqual(['src/new.ts']);
     expect(metrics?.lines_added).toBe(2);
   });
+
+  it('subtracts the pre-window Codex cumulative token baseline', async () => {
+    const sessionFile = join(dir, 'codex-cumulative-token-window.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-cumulative-token-window', cwd: dir } },
+      { timestamp: '2026-05-20T00:59:59Z', type: 'event_msg', payload: { type: 'token_count', info: { total_token_usage: { total_tokens: 150 } } } },
+      { timestamp: '2026-05-20T01:10:00Z', type: 'event_msg', payload: { type: 'token_count', info: { total_token_usage: { total_tokens: 180 } } } },
+      { timestamp: '2026-05-20T01:20:00Z', type: 'event_msg', payload: { type: 'token_count', info: { total_token_usage: { total_tokens: 215 } } } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile, since: '2026-05-20T01:00:00Z' });
+
+    expect(metrics?.session_id).toBe('codex-cumulative-token-window');
+    expect(metrics?.tokens_used).toBe(65);
+  });
 });

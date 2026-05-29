@@ -413,6 +413,8 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
   let sessionId: string | null = null;
   let model: string | null = null;
   let matchedWindowRow = false;
+  let tokenBaselineBeforeWindow: number | null = null;
+  const sinceMillis = parseBoundaryMillis(window?.since);
 
   for (const line of (await readFile(sessionFile, 'utf8')).split('\n')) {
     if (!line.trim()) continue;
@@ -423,6 +425,13 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
     if (row?.type === 'session_meta') {
       sessionId ??= asString(payload.id);
       model ??= asString(payload.model);
+    }
+    if (payload.type === 'token_count') {
+      const info = asRecord(payload.info);
+      const rowMillis = rowTimestampMillis(row);
+      if (info && sinceMillis != null && rowMillis != null && rowMillis < sinceMillis) {
+        tokenBaselineBeforeWindow = Math.max(tokenBaselineBeforeWindow ?? 0, codexTokenTotal(info));
+      }
     }
     if (!rowInCollectionWindow(row, window)) continue;
     matchedWindowRow = true;
@@ -475,6 +484,9 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
     }
   }
   if (hasCollectionWindowBoundary(window) && !matchedWindowRow) return null;
+  if (tokenBaselineBeforeWindow != null && tokensUsed >= tokenBaselineBeforeWindow) {
+    tokensUsed -= tokenBaselineBeforeWindow;
+  }
   const collectionSources: CollectionSource[] = [{ type: 'agent_session', name: 'codex', quality: 'high' }];
   const omx = await readOmxMetadata(cwd, sessionId);
   if (omx.detected) pushSource(collectionSources, { type: 'plugin_metadata', name: 'omx', quality: 'medium' });

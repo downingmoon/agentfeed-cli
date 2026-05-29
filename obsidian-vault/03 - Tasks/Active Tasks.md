@@ -36,6 +36,7 @@ created: 2026-05-30
 - [x] staged diff / untracked text file git line stats 누락 방지
 - [x] explicit `--session-file` source sniff가 agent config disabled 상태에도 동작
 - [x] Codex `turn_context.payload.model` 기반 model 누락 방지
+- [x] Claude `TaskCreate` todo planning을 subagent로 과대집계하지 않도록 보정
 - [x] 실제 Cursor workspace/session format 추가 조사 후 parser 품질 상향 가능성 판단
 - [x] CLI ingest `worklog.model` → Backend 저장 → Frontend 노출 계약화
 
@@ -63,6 +64,7 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 worklog.model ingest 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Feed sort label 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Publish management 계약]]
+- [[Collection System#2026-05-30 Claude TaskCreate subagent 과대집계 보정]]
 - [[Collection System#2026-05-30 Codex turn_context model 수집]]
 - [[Collection System#2026-05-30 Explicit session-file source sniff]]
 - [[Collection System#2026-05-30 Git evidence 라인 카운트 보강]]

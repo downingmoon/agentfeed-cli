@@ -91,6 +91,21 @@ describe('agent session collector', () => {
     expect(metrics?.agent_turns).toBe(2);
   });
 
+  it('does not count Claude TaskCreate todo planning as a subagent launch', async () => {
+    const sessionFile = join(dir, 'claude-taskcreate-todo-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { type: 'assistant', cwd: dir, sessionId: 'claude-taskcreate-todo-session', timestamp: '2026-05-20T00:00:00Z', message: { model: 'claude-sonnet', content: [
+        { type: 'tool_use', id: 'todo-1', name: 'TaskCreate', input: { subject: 'Plan collector fix', description: 'Add regression coverage', activeForm: 'Planning collector fix' } },
+        { type: 'tool_use', id: 'agent-1', name: 'Agent', input: { description: 'Explore repo', prompt: 'Map collector files', subagent_type: 'explore' } }
+      ] } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'claude_code', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(2);
+    expect(metrics?.subagents_spawned).toBe(1);
+  });
+
   it('extracts Codex patch files, line counts, tokens, and failed commands from a session file', async () => {
     const sessionFile = join(dir, 'codex-session.jsonl');
     await writeJsonl(sessionFile, [

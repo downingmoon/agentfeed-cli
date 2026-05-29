@@ -567,7 +567,7 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?:
         const skill = asString(input.skill);
         if (skill) skills.add(skill);
       }
-      if (name === 'Agent' || name === 'Task' || name === 'TaskCreate') subagentsSpawned += 1;
+      if (name === 'Agent' || name === 'Task') subagentsSpawned += 1;
     }
   }
   if (hasCollectionWindowBoundary(effectiveWindow) && !matchedWindowRow) return null;

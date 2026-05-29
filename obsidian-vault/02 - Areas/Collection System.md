@@ -35,7 +35,7 @@ created: 2026-05-30
 
 | Source | 품질 | 메모 |
 | --- | --- | --- |
-| Claude Code session | high | tool use, token, command, file edit, Task subagent, agent turn 파싱 |
+| Claude Code session | high | tool use, token, command, file edit, Agent/Task subagent, agent turn 파싱 |
 | Codex session | high | token delta, command, patch evidence, non-shell tool call, subagent, agent turn 파싱 |
 | Gemini session | high | tool call, token, duration, Superpowers skill signal, agent turn 파싱 |
 | OMC/OMX/Superpowers metadata | medium | plugin metadata 보강 |
@@ -85,7 +85,7 @@ created: 2026-05-30
 - [x] explicit source cost opt-in 보존
 - [x] doctor source별 수집 개선 가이드
 - [x] Codex non-shell tool call / subagent / agent turn metrics 보강
-- [x] Claude/Gemini agent turn, Claude Task subagent, Gemini `skill_name` skill signal 보강
+- [x] Claude/Gemini agent turn, Claude Agent/Task subagent, Gemini `skill_name` skill signal 보강
 - [x] Obsidian runtime / OS metadata가 git/session evidence에 섞이지 않도록 필터링
 - [x] 잘못된 project의 explicit `--session-file` metrics 혼입 방지
 - [x] 하위 디렉터리 실행 시 relative `--session-file` 경로를 invocation cwd 기준으로 해석
@@ -97,7 +97,35 @@ created: 2026-05-30
 - [x] staged diff와 untracked text file의 git line stats 누락 방지
 - [x] explicit `--session-file` source sniff가 agent config disabled 상태에도 동작
 - [x] Codex `turn_context.payload.model`에서 model 누락 없이 수집
+- [x] Claude `TaskCreate` todo planning을 subagent로 과대집계하지 않도록 보정
 - [ ] Docker 기반 local E2E smoke success path 재검증
+
+## 2026-05-30 Claude TaskCreate subagent 과대집계 보정
+
+> [!success]
+> 실제 Claude Code 로그에서 `Agent`는 subagent 실행이고 `TaskCreate`는 계획/todo 관리 도구로 나타나므로, `TaskCreate`를 subagent로 세지 않도록 수정했습니다.
+
+근거:
+
+- 로컬 실제 Claude session JSONL을 content 없이 tool name/input key 수준으로 확인했습니다.
+- `Agent` tool input은 `prompt`, `description`, `subagent_type` 등을 포함했습니다.
+- `TaskCreate` tool input은 `subject`, `description`, `activeForm` 형태로 계획/todo 항목에 가까웠습니다.
+
+수정:
+
+- `Agent`와 legacy `Task`는 `subagents_spawned`로 집계합니다.
+- `TaskCreate` / `TaskUpdate`는 일반 tool call로만 집계하고 subagent 수에는 넣지 않습니다.
+- 이 변경은 "더 많이 한 것처럼 보이는" 과대집계를 줄이는 방향입니다.
+
+검증:
+
+- `does not count Claude TaskCreate todo planning as a subagent launch` 회귀 테스트
+- `npm test -- tests/session-collector.test.ts --run -t "does not count Claude TaskCreate"`
+- `npm test -- tests/session-collector.test.ts --run`
+- `npm test -- tests/share.test.ts tests/explain.test.ts --run`
+- `npm run build`
+- `npm test -- --run`
+- `../agentfeed-dev/scripts/test-all.sh`
 
 ## 2026-05-30 Codex turn_context model 수집
 
@@ -229,7 +257,7 @@ created: 2026-05-30
 > 실제 Claude/Gemini 로그 shape를 기준으로 command/file edit 외 작업량 지표가 누락되지 않도록 보강했습니다.
 
 - Claude `assistant` row를 `agent_turns`로 집계
-- Claude `Task` / `TaskCreate` tool use를 `subagents_spawned`로 집계
+- Claude `Agent` / legacy `Task` tool use를 `subagents_spawned`로 집계
 - Gemini `type=gemini` row를 `agent_turns`로 집계
 - Gemini `activate_skill`의 `args.name`, `args.skill_name`, `args.skillName`을 모두 skill evidence로 인정
 

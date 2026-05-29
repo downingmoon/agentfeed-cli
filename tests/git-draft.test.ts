@@ -70,11 +70,15 @@ describe('git collector and drafts', () => {
 
     const draft = await collectDraft({ cwd: dir, source: 'claude_code' });
     const payload = draftToIngestRequest(draft);
+    const markdown = await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.md`), 'utf8');
 
     expect(draft.worklog.metrics.files_changed).toBeNull();
     expect(draft.worklog.metrics.lines_added).toBeNull();
     expect(draft.worklog.metrics.lines_removed).toBeNull();
     expect(draft.worklog.summary).not.toContain('changed 0 files');
+    expect(markdown).toContain('- Files changed: Unknown');
+    expect(markdown).toContain('- Lines: Unknown');
+    expect(markdown).not.toContain('- Files changed: 0');
     expect(payload.worklog.metrics.files_changed).toBeNull();
     expect(payload.worklog.metrics.lines_added).toBeNull();
     expect(payload.worklog.metrics.lines_removed).toBeNull();

@@ -349,6 +349,31 @@ describe('agent session collector', () => {
 
 // P0: collection window filtering keeps long-lived sessions from over-counting old work.
 describe('collection window filtering', () => {
+  it('ignores agent session files with no rows inside the collection window', async () => {
+    const claudeSessionFile = join(dir, 'claude-outside-window.jsonl');
+    await writeJsonl(claudeSessionFile, [
+      { type: 'assistant', cwd: dir, sessionId: 'claude-outside-window', timestamp: '2026-05-20T00:59:59Z', message: { model: 'claude-sonnet', usage: { input_tokens: 100, output_tokens: 50 }, content: [
+        { type: 'tool_use', name: 'Write', input: { file_path: join(dir, 'src', 'old-claude.ts'), content: 'export const oldClaude = true;\n' } }
+      ] } }
+    ]);
+    const codexSessionFile = join(dir, 'codex-outside-window.jsonl');
+    await writeJsonl(codexSessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-outside-window', cwd: dir } },
+      { timestamp: '2026-05-20T00:01:00Z', type: 'event_msg', payload: { type: 'token_count', info: { total_token_usage: { input_tokens: 100, output_tokens: 50 } } } }
+    ]);
+    const geminiSessionFile = join(dir, 'gemini-outside-window.jsonl');
+    await writeJsonl(geminiSessionFile, [
+      { sessionId: 'gemini-outside-window', startTime: '2026-05-20T00:00:00Z', lastUpdated: '2026-05-20T00:59:59Z', kind: 'main' },
+      { id: 'g-old', timestamp: '2026-05-20T00:59:59Z', type: 'gemini', model: 'gemini-3-flash-preview', tokens: { total: 100 }, toolCalls: [
+        { id: 'tool-old', name: 'write_file', status: 'success', args: { file_path: join(dir, 'src', 'old-gemini.ts'), content: 'export const oldGemini = true;\n' } }
+      ] }
+    ]);
+
+    await expect(collectAgentSessionMetrics({ cwd: dir, source: 'claude_code', sessionFile: claudeSessionFile, since: '2026-05-20T01:00:00Z' })).resolves.toBeNull();
+    await expect(collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile: codexSessionFile, since: '2026-05-20T01:00:00Z' })).resolves.toBeNull();
+    await expect(collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile: geminiSessionFile, since: '2026-05-20T01:00:00Z' })).resolves.toBeNull();
+  });
+
   it('filters Claude metrics and edits before --since inclusively at the boundary', async () => {
     const sessionFile = join(dir, 'claude-window-session.jsonl');
     await writeJsonl(sessionFile, [

@@ -176,6 +176,10 @@ function rowInCollectionWindow(row: Record<string, unknown>, window?: Collection
   return true;
 }
 
+function hasCollectionWindowBoundary(window?: CollectionWindow | null): boolean {
+  return Boolean(window?.since || window?.until);
+}
+
 async function readJsonFile(path: string): Promise<Record<string, unknown> | null> {
   return asRecord(safeJsonParse(await readFile(path, 'utf8').catch(() => '')));
 }
@@ -306,6 +310,7 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?:
   let subagentsCompleted = 0;
   let sessionId: string | null = null;
   let model: string | null = null;
+  let matchedWindowRow = false;
 
   for (const line of (await readFile(sessionFile, 'utf8')).split('\n')) {
     if (!line.trim()) continue;
@@ -316,6 +321,7 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?:
     sessionId ??= asString(row.sessionId);
     model ??= asString(message.model);
     if (!rowInCollectionWindow(row, window)) continue;
+    matchedWindowRow = true;
     const usage = asRecord(message.usage);
     if (usage) tokensUsed += numeric(usage.input_tokens) + numeric(usage.cache_creation_input_tokens) + numeric(usage.cache_read_input_tokens) + numeric(usage.output_tokens);
     const content = Array.isArray(message.content) ? message.content : [];
@@ -369,6 +375,7 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?:
       if (name === 'Agent') subagentsSpawned += 1;
     }
   }
+  if (hasCollectionWindowBoundary(window) && !matchedWindowRow) return null;
   const collectionSources: CollectionSource[] = [{ type: 'agent_session', name: 'claude_code', quality: 'high' }];
   const omc = await readOmcMetadata(cwd, sessionId);
   if (omc.detected) pushSource(collectionSources, { type: 'plugin_metadata', name: 'omc', quality: 'medium' });
@@ -405,6 +412,7 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
   let agentTurns = 0;
   let sessionId: string | null = null;
   let model: string | null = null;
+  let matchedWindowRow = false;
 
   for (const line of (await readFile(sessionFile, 'utf8')).split('\n')) {
     if (!line.trim()) continue;
@@ -417,6 +425,7 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
       model ??= asString(payload.model);
     }
     if (!rowInCollectionWindow(row, window)) continue;
+    matchedWindowRow = true;
     if (payload.type === 'token_count') {
       const info = asRecord(payload.info);
       if (info) tokensUsed = Math.max(tokensUsed, codexTokenTotal(info));
@@ -465,6 +474,7 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
       }
     }
   }
+  if (hasCollectionWindowBoundary(window) && !matchedWindowRow) return null;
   const collectionSources: CollectionSource[] = [{ type: 'agent_session', name: 'codex', quality: 'high' }];
   const omx = await readOmxMetadata(cwd, sessionId);
   if (omx.detected) pushSource(collectionSources, { type: 'plugin_metadata', name: 'omx', quality: 'medium' });
@@ -497,6 +507,7 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?:
   let startMillis: number | null = null;
   let endMillis: number | null = null;
   let subagentsSpawned = 0;
+  let matchedWindowRow = false;
 
   for (const line of (await readFile(sessionFile, 'utf8')).split('\n')) {
     if (!line.trim()) continue;
@@ -508,6 +519,7 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?:
     if (rowEndMillis) endMillis = Math.max(endMillis ?? 0, rowEndMillis);
     model ??= asString(row.model);
     if (!rowInCollectionWindow(row, window)) continue;
+    matchedWindowRow = true;
     const tokens = asRecord(row.tokens);
     if (tokens) tokensUsed += geminiTokenTotal(tokens);
     const calls = Array.isArray(row.toolCalls) ? row.toolCalls : [];
@@ -543,6 +555,7 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?:
       }
     }
   }
+  if (hasCollectionWindowBoundary(window) && !matchedWindowRow) return null;
   const durationSeconds = startMillis && endMillis && endMillis > startMillis ? (endMillis - startMillis) / 1000 : null;
   const collectionSources: CollectionSource[] = [{ type: 'agent_session', name: 'gemini_cli', quality: 'high' }];
   if (skills.size || agentModes.has('superpowers')) pushSource(collectionSources, { type: 'plugin_metadata', name: 'superpowers', quality: 'medium' });

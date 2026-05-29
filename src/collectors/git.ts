@@ -11,6 +11,10 @@ function statusFromCode(code: string): ChangedFileSummary['status'] {
   return 'unknown';
 }
 
+function shouldIgnorePath(path: string): boolean {
+  return path === '.agentfeed' || path.startsWith('.agentfeed/');
+}
+
 function languageFor(path: string): string | null {
   const ext = extname(path).toLowerCase();
   return ({ '.ts': 'TypeScript', '.tsx': 'TypeScript', '.js': 'JavaScript', '.py': 'Python', '.go': 'Go', '.rs': 'Rust', '.md': 'Markdown', '.json': 'JSON' } as Record<string, string>)[ext] ?? null;
@@ -33,6 +37,7 @@ export async function collectGitMetrics(cwd: string): Promise<GitMetrics> {
     const code = line.slice(0, 2).trim() || '??';
     const rawPath = line.slice(3).trim();
     const path = rawPath.includes(' -> ') ? rawPath.split(' -> ').at(-1)! : rawPath;
+    if (shouldIgnorePath(path)) continue;
     files.set(path, { path, extension: extname(path) || null, language: languageFor(path), status: statusFromCode(code), publish_path: false, lines_added: null, lines_removed: null });
   }
 
@@ -46,6 +51,7 @@ export async function collectGitMetrics(cwd: string): Promise<GitMetrics> {
     const removed = Number(removedRaw);
     const safeAdded = Number.isFinite(added) ? added : 0;
     const safeRemoved = Number.isFinite(removed) ? removed : 0;
+    if (shouldIgnorePath(path)) continue;
     linesAdded += safeAdded;
     linesRemoved += safeRemoved;
     const current = files.get(path) ?? { path, extension: extname(path) || null, language: languageFor(path), status: 'modified' as const, publish_path: false };

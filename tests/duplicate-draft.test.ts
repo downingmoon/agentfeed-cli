@@ -63,6 +63,20 @@ describe('duplicate draft guard and draft note', () => {
     expect(second.draft.id).toBe(first.draft.id);
   });
 
+  it('reuses git-only drafts when no agent session evidence is available', async () => {
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = false;\nexport const changed = true;\n');
+
+    const first = await collectDraftWithStatus({ cwd: dir, since: '2026-05-20T01:00:00Z', until: '2026-05-20T02:00:00Z' });
+    const second = await collectDraftWithStatus({ cwd: dir, since: '2026-05-20T01:00:00Z', until: '2026-05-20T02:00:00Z' });
+
+    expect(first.reusedExisting).toBe(false);
+    expect(second.reusedExisting).toBe(true);
+    expect(second.draft.id).toBe(first.draft.id);
+    expect(second.draft.source.collection_fingerprint).toBe(first.draft.source.collection_fingerprint);
+    expect(second.draft.source.collection_fingerprint).toBeTruthy();
+    expect(await listDrafts(dir)).toHaveLength(1);
+  });
+
   it('redacts secrets in share notes before storing draft summaries', async () => {
     const sessionFile = join(dir, 'codex-note.jsonl');
     await writeJsonl(sessionFile, [

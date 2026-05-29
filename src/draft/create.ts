@@ -1,6 +1,6 @@
 import { hostname } from 'node:os';
 import { join } from 'node:path';
-import type { AgentType, CollectionWindow, LocalDraft, WorklogMetrics } from '../types.js';
+import type { AgentType, ChangedFileSummary, CollectionWindow, LocalDraft, WorklogMetrics } from '../types.js';
 import { loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { collectAgentSessionMetrics } from '../collectors/agent-session.js';
@@ -65,9 +65,26 @@ async function findDraftByFingerprint(cwd: string, fingerprint: string): Promise
   return null;
 }
 
-function collectionFingerprint(input: { source: AgentType; sessionId?: string | null; headCommit?: string | null; window?: CollectionWindow | null }): string | null {
-  if (!input.sessionId || !input.headCommit) return null;
-  return shortHash(JSON.stringify({ source: input.source, session_id: input.sessionId, head_commit: input.headCommit, window: input.window ?? null }), 16);
+function normalizedChangedFilesForFingerprint(files: ChangedFileSummary[]): Array<Pick<ChangedFileSummary, 'path' | 'status' | 'lines_added' | 'lines_removed'>> {
+  return files
+    .filter((file) => file.path && file.path !== '.agentfeed' && !file.path.startsWith('.agentfeed/'))
+    .map((file) => ({
+      path: file.path,
+      status: file.status,
+      lines_added: file.lines_added ?? null,
+      lines_removed: file.lines_removed ?? null
+    }))
+    .sort((a, b) => a.path.localeCompare(b.path));
+}
+
+function collectionFingerprint(input: { source: AgentType; sessionId?: string | null; headCommit?: string | null; window?: CollectionWindow | null; changedFiles?: ChangedFileSummary[] }): string | null {
+  if (!input.headCommit) return null;
+  if (input.sessionId) {
+    return shortHash(JSON.stringify({ source: input.source, session_id: input.sessionId, head_commit: input.headCommit, window: input.window ?? null }), 16);
+  }
+  const changedFiles = normalizedChangedFilesForFingerprint(input.changedFiles ?? []);
+  if (!changedFiles.length) return null;
+  return shortHash(JSON.stringify({ source: input.source, head_commit: input.headCommit, window: input.window ?? null, changed_files: changedFiles }), 16);
 }
 
 export interface CollectDraftStatus {
@@ -131,7 +148,7 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
     collection_quality: session?.collection_quality ?? null,
     collection_sources: session?.collection_sources ?? null
   };
-  const fingerprint = collectionFingerprint({ source, sessionId: session?.session_id, headCommit: git.head_commit, window });
+  const fingerprint = collectionFingerprint({ source, sessionId: session?.session_id, headCommit: git.head_commit, window, changedFiles });
   if (fingerprint && !options.force) {
     const existing = await findDraftByFingerprint(root, fingerprint);
     if (existing) return { draft: existing, reusedExisting: true };

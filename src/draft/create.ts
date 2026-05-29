@@ -124,6 +124,7 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
   const linesAdded = git.lines_added || session?.lines_added || 0;
   const linesRemoved = git.lines_removed || session?.lines_removed || 0;
   const filesChanged = git.files_changed || session?.files_changed || changedFiles.length;
+  const actualWindow = session?.collection_window ?? window;
   const mergedGit = { ...git, changed_files: changedFiles, files_changed: filesChanged, lines_added: linesAdded, lines_removed: linesRemoved };
   const areas = changedAreas(changedFiles);
   const safeAreas = areas.length ? areas : ['Application code'];
@@ -148,7 +149,7 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
     collection_quality: session?.collection_quality ?? null,
     collection_sources: session?.collection_sources ?? null
   };
-  const fingerprint = collectionFingerprint({ source, sessionId: session?.session_id, headCommit: git.head_commit, window, changedFiles });
+  const fingerprint = collectionFingerprint({ source, sessionId: session?.session_id, headCommit: git.head_commit, window: actualWindow, changedFiles });
   if (fingerprint && !options.force) {
     const existing = await findDraftByFingerprint(root, fingerprint);
     if (existing) return { draft: existing, reusedExisting: true };
@@ -186,7 +187,7 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
       timeline: (redacted.timeline as LocalDraft['worklog']['timeline']).slice(0, 8)
     },
     privacy_scan: scan,
-    source: { agent: source, tool_version: 'agentfeed-cli/0.2.0', host_label: hostname(), session_id: session?.session_id ?? null, created_at: new Date().toISOString(), collection_window: window, collection_fingerprint: fingerprint },
+    source: { agent: source, tool_version: 'agentfeed-cli/0.2.0', host_label: hostname(), session_id: session?.session_id ?? null, created_at: new Date().toISOString(), collection_window: actualWindow, collection_fingerprint: fingerprint },
     upload: { uploaded: false }
   };
   await writeDraft(root, draft);

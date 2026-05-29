@@ -73,6 +73,24 @@ describe('agent session collector', () => {
     expect(metrics?.failed_commands).toBe(1);
   });
 
+  it('counts Claude assistant turns and Task subagent launches', async () => {
+    const sessionFile = join(dir, 'claude-agent-turns-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { type: 'assistant', cwd: dir, sessionId: 'claude-agent-turns-session', timestamp: '2026-05-20T00:00:00Z', message: { model: 'claude-sonnet', content: [
+        { type: 'tool_use', id: 'task-1', name: 'Task', input: { description: 'Explore repo', prompt: 'Map relevant files' } }
+      ] } },
+      { type: 'assistant', cwd: dir, sessionId: 'claude-agent-turns-session', timestamp: '2026-05-20T00:00:10Z', message: { model: 'claude-sonnet', content: [
+        { type: 'tool_use', id: 'read-1', name: 'Read', input: { file_path: join(dir, 'src', 'api.ts') } }
+      ] } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'claude_code', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(2);
+    expect(metrics?.subagents_spawned).toBe(1);
+    expect(metrics?.agent_turns).toBe(2);
+  });
+
   it('extracts Codex patch files, line counts, tokens, and failed commands from a session file', async () => {
     const sessionFile = join(dir, 'codex-session.jsonl');
     await writeJsonl(sessionFile, [
@@ -297,7 +315,7 @@ describe('agent session collector', () => {
     await writeJsonl(sessionFile, [
       { sessionId: 'gemini-session-1', projectHash: 'hash', startTime: '2026-05-20T00:00:00Z', lastUpdated: '2026-05-20T00:02:00Z', kind: 'main' },
       { id: 'g1', timestamp: '2026-05-20T00:00:10Z', type: 'gemini', model: 'gemini-3-flash-preview', tokens: { input: 10, cached: 5, output: 3, thoughts: 2, total: 20 }, toolCalls: [
-        { id: 'tool-1', name: 'activate_skill', status: 'success', args: { name: 'test-driven-development' } },
+        { id: 'tool-1', name: 'activate_skill', status: 'success', args: { skill_name: 'test-driven-development' } },
         { id: 'tool-2', name: 'write_file', status: 'success', args: { file_path: join(dir, 'src', 'gemini.ts'), content: 'export const gemini = true;\\n' } },
         { id: 'tool-3', name: 'replace', status: 'success', args: { file_path: join(dir, 'src', 'api.ts'), old_string: 'true', new_string: 'false\\n' } },
         { id: 'tool-4', name: 'run_shell_command', status: 'error', args: { command: 'npm test' }, resultDisplay: 'Process exited with code 1\\nFAIL' },
@@ -317,6 +335,7 @@ describe('agent session collector', () => {
     expect(metrics?.tests_run).toBe(1);
     expect(metrics?.tests_passed).toBe(0);
     expect(metrics?.failed_commands).toBe(1);
+    expect(metrics?.agent_turns).toBe(1);
     expect(metrics?.changed_files.map((file) => file.path).sort()).toEqual(['src/api.ts', 'src/gemini.ts']);
   });
 

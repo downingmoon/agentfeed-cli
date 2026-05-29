@@ -462,6 +462,7 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?:
   let toolCalls = 0;
   const skills = new Set<string>();
   const agentModes = new Set<string>();
+  let agentTurns = 0;
   let subagentsSpawned = 0;
   let subagentsCompleted = 0;
   let sessionId: string | null = null;
@@ -475,6 +476,7 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?:
     model ??= asString(message.model);
     if (!rowInCollectionWindow(row, effectiveWindow)) continue;
     matchedWindowRow = true;
+    if (row.type === 'assistant') agentTurns += 1;
     estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(row) ?? 0, explicitCostUsd(message) ?? 0);
     const usage = asRecord(message.usage);
     if (usage) {
@@ -529,7 +531,7 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?:
         const skill = asString(input.skill);
         if (skill) skills.add(skill);
       }
-      if (name === 'Agent') subagentsSpawned += 1;
+      if (name === 'Agent' || name === 'Task' || name === 'TaskCreate') subagentsSpawned += 1;
     }
   }
   if (hasCollectionWindowBoundary(effectiveWindow) && !matchedWindowRow) return null;
@@ -541,7 +543,7 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?:
   subagentsSpawned = Math.max(subagentsSpawned, omc.subagentsSpawned ?? 0);
   subagentsCompleted = Math.max(subagentsCompleted, omc.subagentsCompleted ?? 0);
   for (const mode of omc.agentModes ?? []) agentModes.add(mode);
-  return finalize({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
+  return finalize({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
 }
 
 function codexTokenTotal(info: Record<string, unknown>): number {
@@ -702,6 +704,7 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?:
   let startMillis: number | null = null;
   let endMillis: number | null = null;
   let subagentsSpawned = 0;
+  let agentTurns = 0;
   let matchedWindowRow = false;
   const sinceMillis = parseBoundaryMillis(effectiveWindow?.since);
   const untilMillis = parseBoundaryMillis(effectiveWindow?.until);
@@ -711,6 +714,7 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?:
     model ??= asString(row.model);
     if (!rowInCollectionWindow(row, effectiveWindow)) continue;
     matchedWindowRow = true;
+    if (row.type === 'gemini') agentTurns += 1;
     estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(row) ?? 0);
     const rowStartMillis = parseIsoMillis(row.startTime) ?? rowTimestampMillis(row);
     const rowEndMillis = parseIsoMillis(row.lastUpdated) ?? parseIsoMillis(row.timestamp) ?? rowStartMillis;
@@ -736,7 +740,7 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?:
       const args = asRecord(call.args) ?? {};
       const status = asString(call.status);
       if (name === 'activate_skill') {
-        const skill = asString(args.name);
+        const skill = asString(args.name) ?? asString(args.skill_name) ?? asString(args.skillName);
         if (skill) skills.add(skill);
       } else if (name === 'write_file') {
         const rel = relativeProjectPath(cwd, asString(args.file_path) ?? '');
@@ -764,7 +768,7 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?:
   const durationSeconds = startMillis && endMillis && endMillis > startMillis ? (endMillis - startMillis) / 1000 : null;
   const collectionSources: CollectionSource[] = [{ type: 'agent_session', name: 'gemini_cli', quality: 'high' }];
   if (skills.size || agentModes.has('superpowers')) pushSource(collectionSources, { type: 'plugin_metadata', name: 'superpowers', quality: 'medium' });
-  return finalize({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted: subagentsSpawned, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
+  return finalize({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted: subagentsSpawned, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
 }
 
 

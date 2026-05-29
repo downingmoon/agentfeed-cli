@@ -24,6 +24,7 @@ created: 2026-05-30
 - [x] `share --note`를 Backend 별도 필드로 승격할지 API 계약 결정
 - [x] review URL clipboard Linux fallback(`wl-copy`, `xsel`) 보강
 - [x] 실제 Codex session schema 기반 tool call / subagent / agent turn 과소집계 보강
+- [x] 실제 Claude/Gemini session schema 기반 turn / skill / Task subagent 과소집계 보강
 - [ ] 실제 Cursor workspace/session format 추가 조사 후 parser 품질 상향 가능성 판단
 
 ## P2 후보
@@ -45,5 +46,6 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 user_note 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 E2E smoke gate 보강]]
 - [[Integration - CLI Backend Frontend#2026-05-30 test-all gate 보강]]
+- [[Collection System#2026-05-30 Claude/Gemini turn metrics 보강]]
 - [[Collection System#2026-05-30 Codex tool metrics 보강]]
 - [[Collection System#2026-05-30 Cursor 실제 저장소 조사]]

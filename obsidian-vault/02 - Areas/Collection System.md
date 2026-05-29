@@ -30,9 +30,9 @@ created: 2026-05-30
 
 | Source | 품질 | 메모 |
 | --- | --- | --- |
-| Claude Code session | high | tool use, token, command, file edit 파싱 |
+| Claude Code session | high | tool use, token, command, file edit, Task subagent, agent turn 파싱 |
 | Codex session | high | token delta, command, patch evidence, non-shell tool call, subagent, agent turn 파싱 |
-| Gemini session | high | tool call, token, duration, Superpowers signal 파싱 |
+| Gemini session | high | tool call, token, duration, Superpowers skill signal, agent turn 파싱 |
 | OMC/OMX/Superpowers metadata | medium | plugin metadata 보강 |
 | Cursor/generic metadata | low | 프로젝트 로컬 JSON/JSONL/log의 보수적 파싱 |
 | Git diff/status | unknown | agent evidence가 없을 때 최소 changed area 보강 |
@@ -80,7 +80,18 @@ created: 2026-05-30
 - [x] explicit source cost opt-in 보존
 - [x] doctor source별 수집 개선 가이드
 - [x] Codex non-shell tool call / subagent / agent turn metrics 보강
+- [x] Claude/Gemini agent turn, Claude Task subagent, Gemini `skill_name` skill signal 보강
 - [ ] Docker 기반 local E2E smoke success path 재검증
+
+## 2026-05-30 Claude/Gemini turn metrics 보강
+
+> [!success]
+> 실제 Claude/Gemini 로그 shape를 기준으로 command/file edit 외 작업량 지표가 누락되지 않도록 보강했습니다.
+
+- Claude `assistant` row를 `agent_turns`로 집계
+- Claude `Task` / `TaskCreate` tool use를 `subagents_spawned`로 집계
+- Gemini `type=gemini` row를 `agent_turns`로 집계
+- Gemini `activate_skill`의 `args.name`, `args.skill_name`, `args.skillName`을 모두 skill evidence로 인정
 
 ## 2026-05-30 Codex tool metrics 보강
 

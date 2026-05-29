@@ -1,4 +1,5 @@
-import { extname } from 'node:path';
+import { extname, join } from 'node:path';
+import { readFile, stat } from 'node:fs/promises';
 import type { ChangedFileSummary, GitMetrics } from '../types.js';
 import { findGitRoot } from '../config/project-config.js';
 import { run } from '../utils/shell.js';
@@ -21,13 +22,39 @@ function languageFor(path: string): string | null {
   return ({ '.ts': 'TypeScript', '.tsx': 'TypeScript', '.js': 'JavaScript', '.py': 'Python', '.go': 'Go', '.rs': 'Rust', '.md': 'Markdown', '.json': 'JSON' } as Record<string, string>)[ext] ?? null;
 }
 
+function countTextLines(text: string): number {
+  if (!text) return 0;
+  const normalized = text.endsWith('\n') ? text.slice(0, -1) : text;
+  if (!normalized) return 0;
+  return normalized.split(/\r?\n/).length;
+}
+
+async function countUntrackedTextFileLines(root: string, path: string): Promise<number | null> {
+  try {
+    const info = await stat(join(root, path));
+    if (!info.isFile() || info.size > 1_000_000) return null;
+    const text = await readFile(join(root, path), 'utf8');
+    if (text.includes('\u0000')) return null;
+    return countTextLines(text);
+  } catch {
+    return null;
+  }
+}
+
+function numstatPath(pathRaw?: string): string | null {
+  if (!pathRaw) return null;
+  if (pathRaw.includes(' => ')) return pathRaw.split(' => ').at(-1)!.replace(/[{}]/g, '');
+  return pathRaw;
+}
+
 export async function collectGitMetrics(cwd: string): Promise<GitMetrics> {
   const root = await findGitRoot(cwd);
   if (!root) return { dirty: false, files_changed: 0, lines_added: 0, lines_removed: 0, changed_files: [] };
 
-  const [status, numstat, branch, head, remote] = await Promise.all([
+  const [status, numstat, cachedNumstat, branch, head, remote] = await Promise.all([
     run('git', ['status', '--porcelain', '-uall'], root),
     run('git', ['diff', '--numstat'], root),
+    run('git', ['diff', '--cached', '--numstat'], root),
     run('git', ['rev-parse', '--abbrev-ref', 'HEAD'], root),
     run('git', ['rev-parse', 'HEAD'], root),
     run('git', ['remote', 'get-url', 'origin'], root)
@@ -44,21 +71,32 @@ export async function collectGitMetrics(cwd: string): Promise<GitMetrics> {
 
   let linesAdded = 0;
   let linesRemoved = 0;
-  for (const line of (numstat.ok ? numstat.stdout : '').split('\n').filter(Boolean)) {
-    const [addedRaw, removedRaw, pathRaw] = line.split('\t');
-    const path = pathRaw?.includes(' => ') ? pathRaw.split(' => ').at(-1)!.replace(/[{}]/g, '') : pathRaw;
-    if (!path) continue;
-    const added = Number(addedRaw);
-    const removed = Number(removedRaw);
-    const safeAdded = Number.isFinite(added) ? added : 0;
-    const safeRemoved = Number.isFinite(removed) ? removed : 0;
-    if (shouldIgnorePath(path)) continue;
-    linesAdded += safeAdded;
-    linesRemoved += safeRemoved;
-    const current = files.get(path) ?? { path, extension: extname(path) || null, language: languageFor(path), status: 'modified' as const, publish_path: false };
-    current.lines_added = safeAdded;
-    current.lines_removed = safeRemoved;
-    files.set(path, current);
+  for (const output of [numstat, cachedNumstat]) {
+    for (const line of (output.ok ? output.stdout : '').split('\n').filter(Boolean)) {
+      const [addedRaw, removedRaw, pathRaw] = line.split('\t');
+      const path = numstatPath(pathRaw);
+      if (!path) continue;
+      const added = Number(addedRaw);
+      const removed = Number(removedRaw);
+      const safeAdded = Number.isFinite(added) ? added : 0;
+      const safeRemoved = Number.isFinite(removed) ? removed : 0;
+      if (shouldIgnorePath(path)) continue;
+      linesAdded += safeAdded;
+      linesRemoved += safeRemoved;
+      const current = files.get(path) ?? { path, extension: extname(path) || null, language: languageFor(path), status: 'modified' as const, publish_path: false };
+      current.lines_added = (current.lines_added ?? 0) + safeAdded;
+      current.lines_removed = (current.lines_removed ?? 0) + safeRemoved;
+      files.set(path, current);
+    }
+  }
+
+  for (const file of files.values()) {
+    if (file.status !== 'added' || file.lines_added != null) continue;
+    const lineCount = await countUntrackedTextFileLines(root, file.path);
+    if (lineCount == null) continue;
+    file.lines_added = lineCount;
+    file.lines_removed = 0;
+    linesAdded += lineCount;
   }
 
   return {

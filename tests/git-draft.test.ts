@@ -36,6 +36,31 @@ describe('git collector and drafts', () => {
     expect(metrics.lines_removed).toBeGreaterThanOrEqual(1);
   });
 
+  it('counts staged file line changes instead of reporting only changed file names', async () => {
+    await writeFile(join(dir, 'src', 'api.ts'), 'one\ntwo staged\nthree\nfour\n');
+    execFileSync('git', ['add', 'src/api.ts'], { cwd: dir });
+
+    const metrics = await collectGitMetrics(dir);
+
+    expect(metrics.changed_files).toMatchObject([
+      { path: 'src/api.ts', status: 'modified', lines_added: 2, lines_removed: 1 }
+    ]);
+    expect(metrics.lines_added).toBe(2);
+    expect(metrics.lines_removed).toBe(1);
+  });
+
+  it('counts untracked text file lines without uploading file contents', async () => {
+    await writeFile(join(dir, 'src', 'new-file.ts'), 'export const a = 1;\nexport const b = 2;\n');
+
+    const metrics = await collectGitMetrics(dir);
+
+    expect(metrics.changed_files).toMatchObject([
+      { path: 'src/new-file.ts', status: 'added', lines_added: 2, lines_removed: 0 }
+    ]);
+    expect(metrics.lines_added).toBe(2);
+    expect(metrics.lines_removed).toBe(0);
+  });
+
   it('ignores local OS and Obsidian runtime files in git evidence', async () => {
     await mkdir(join(dir, 'obsidian-vault', '.obsidian'), { recursive: true });
     await writeFile(join(dir, '.DS_Store'), 'local finder metadata');

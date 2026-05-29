@@ -94,7 +94,32 @@ created: 2026-05-30
 - [x] Codex mixed `apply_patch` / `patch_apply_end` evidence에서 fallback-only 파일 누락 방지
 - [x] `uv run pytest`, `python -m pytest`, `make test` 같은 wrapped test command 인식
 - [x] generic/Cursor metadata의 `created_at`, `createdAt`, `ts` timestamp alias window 필터링
+- [x] staged diff와 untracked text file의 git line stats 누락 방지
 - [ ] Docker 기반 local E2E smoke success path 재검증
+
+## 2026-05-30 Git evidence 라인 카운트 보강
+
+> [!success]
+> `agentfeed collect`가 agent session 없이 git dirty state만 보는 경우에도 staged change와 untracked text file의 line stats를 더 정확히 계산합니다.
+
+문제:
+
+- 기존 `git diff --numstat`는 unstaged diff만 계산합니다.
+- 사용자가 이미 `git add`한 staged 변경은 changed file로는 보이지만 `lines_added` / `lines_removed`가 `null`로 남았습니다.
+- untracked text file도 changed file로만 보이고 additions가 빠졌습니다.
+
+수정:
+
+- `git diff --numstat` + `git diff --cached --numstat`를 합산합니다.
+- 같은 path가 staged/unstaged 양쪽에 있으면 line count를 누적합니다.
+- untracked added file은 1MB 이하 UTF-8 text file에 한해 로컬에서 line count만 계산하고 content는 draft/upload payload에 포함하지 않습니다.
+
+검증:
+
+- staged modified file 회귀 테스트
+- untracked text file 회귀 테스트
+- `npm test -- tests/git-draft.test.ts --run`
+- `npm run build`
 
 ## 2026-05-30 Collection hardening pass
 

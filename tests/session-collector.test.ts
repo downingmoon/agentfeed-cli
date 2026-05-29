@@ -115,6 +115,29 @@ describe('agent session collector', () => {
     expect(metrics?.failed_commands).toBe(1);
   });
 
+  it('counts Codex non-shell tool calls, spawned subagents, and agent turns', async () => {
+    const sessionFile = join(dir, 'codex-tooling-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-session-tooling', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'event_msg', payload: { type: 'agent_message', phase: 'commentary' } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call', name: 'update_plan', arguments: JSON.stringify({ plan: [] }), call_id: 'plan-1' } },
+      { timestamp: '2026-05-20T00:00:03Z', type: 'response_item', payload: { type: 'function_call', name: 'spawn_agent', arguments: JSON.stringify({ role: 'explore' }), call_id: 'agent-1' } },
+      { timestamp: '2026-05-20T00:00:04Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'npm test', workdir: dir }), call_id: 'test-ok' } },
+      { timestamp: '2026-05-20T00:00:05Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'test-ok', output: 'Process exited with code 0\\nPASS tests/api.test.ts' } },
+      { timestamp: '2026-05-20T00:00:06Z', type: 'response_item', payload: { type: 'custom_tool_call', name: 'apply_patch', status: 'completed', call_id: 'patch-1' } },
+      { timestamp: '2026-05-20T00:00:07Z', type: 'event_msg', payload: { type: 'agent_message', phase: 'final' } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(4);
+    expect(metrics?.commands_run).toBe(1);
+    expect(metrics?.tests_run).toBe(1);
+    expect(metrics?.tests_passed).toBe(1);
+    expect(metrics?.subagents_spawned).toBe(1);
+    expect(metrics?.agent_turns).toBe(2);
+  });
+
   it('matches session files by structured cwd fields, not arbitrary transcript text', async () => {
     const sessionFile = join(dir, 'wrong-project-mentions-this-one.jsonl');
     await writeJsonl(sessionFile, [

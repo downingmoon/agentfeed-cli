@@ -31,7 +31,7 @@ created: 2026-05-30
 | Source | 품질 | 메모 |
 | --- | --- | --- |
 | Claude Code session | high | tool use, token, command, file edit 파싱 |
-| Codex session | high | token delta, command, patch evidence 파싱 |
+| Codex session | high | token delta, command, patch evidence, non-shell tool call, subagent, agent turn 파싱 |
 | Gemini session | high | tool call, token, duration, Superpowers signal 파싱 |
 | OMC/OMX/Superpowers metadata | medium | plugin metadata 보강 |
 | Cursor/generic metadata | low | 프로젝트 로컬 JSON/JSONL/log의 보수적 파싱 |
@@ -79,7 +79,21 @@ created: 2026-05-30
 - [x] agent metadata path filter
 - [x] explicit source cost opt-in 보존
 - [x] doctor source별 수집 개선 가이드
+- [x] Codex non-shell tool call / subagent / agent turn metrics 보강
 - [ ] Docker 기반 local E2E smoke success path 재검증
+
+## 2026-05-30 Codex tool metrics 보강
+
+> [!success]
+> 실제 Codex session row에서 `exec_command`가 아닌 `update_plan`, `write_stdin`, `spawn_agent`, MCP/custom tool call이 많이 발생하므로 shell command만 tool call로 세면 수집 결과가 실제 작업보다 과소평가됩니다.
+
+반영한 수집 기준:
+
+- `response_item.payload.type=function_call`은 command 여부와 무관하게 `tool_calls`에 포함
+- `exec_command`만 `commands_run` / `tests_run` / `failed_commands` 판정에 사용
+- `spawn_agent` function call은 `subagents_spawned`로 집계
+- `event_msg.payload.type=agent_message`는 `agent_turns`로 집계
+- `mcp_tool_call_end`와 `custom_tool_call`도 tool usage evidence로 집계
 
 ## 2026-05-30 Cursor 실제 저장소 조사
 

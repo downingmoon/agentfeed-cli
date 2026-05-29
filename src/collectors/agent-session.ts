@@ -558,6 +558,8 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
     if (!rowInCollectionWindow(row, effectiveWindow)) continue;
     matchedWindowRow = true;
     estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(row) ?? 0, explicitCostUsd(payload) ?? 0);
+    if (payload.type === 'agent_message') agentTurns += 1;
+    if (payload.type === 'mcp_tool_call_end') toolCalls += 1;
     if (payload.type === 'token_count') {
       const info = asRecord(payload.info);
       if (info) {
@@ -565,17 +567,20 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
         estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(info) ?? 0);
       }
     }
-    if (payload.type === 'function_call' && payload.name === 'exec_command') {
+    if (payload.type === 'function_call') {
       toolCalls += 1;
-      const callId = asString(payload.call_id);
-      const argsText = asString(payload.arguments);
-      const args = argsText ? asRecord(safeJsonParse(argsText)) : null;
-      const command = asString(args?.cmd) ?? '';
-      if (callId && command) {
-        commandsRun += 1;
-        const test = isTestCommand(command);
-        if (test) testsRun += 1;
-        commands.set(callId, { command, test });
+      if (payload.name === 'spawn_agent') subagentsSpawned += 1;
+      if (payload.name === 'exec_command') {
+        const callId = asString(payload.call_id);
+        const argsText = asString(payload.arguments);
+        const args = argsText ? asRecord(safeJsonParse(argsText)) : null;
+        const command = asString(args?.cmd) ?? '';
+        if (callId && command) {
+          commandsRun += 1;
+          const test = isTestCommand(command);
+          if (test) testsRun += 1;
+          commands.set(callId, { command, test });
+        }
       }
     }
     if (payload.type === 'custom_tool_call') toolCalls += 1;

@@ -1,4 +1,5 @@
 import type { AgentType, LocalDraft } from '../types.js';
+import { collectionQualityLabel, formatCollectionGuidanceLines } from '../draft/collection-diagnostics.js';
 import { flag, option } from './args.js';
 
 export interface ShareOptions {
@@ -38,11 +39,14 @@ export function formatSharePreview(draft: LocalDraft): string {
     `Privacy: ${draft.privacy_scan.status} · findings ${draft.privacy_scan.findings.length}`
   ];
 
-  if (m.collection_quality) lines.push(`Collection quality: ${m.collection_quality}`);
+  lines.push(`Collection quality: ${collectionQualityLabel(m)}`);
   if (m.collection_sources?.length) {
     lines.push('Collection sources:');
     for (const source of m.collection_sources) lines.push(`- ${source.type}: ${source.name} (${source.quality})`);
+  } else {
+    lines.push('Collection sources: none');
   }
+  lines.push(...formatCollectionGuidanceLines(m));
 
   lines.push('', 'Upload target: private AgentFeed review draft');
   return lines.join('\n');

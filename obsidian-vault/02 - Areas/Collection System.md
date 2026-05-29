@@ -91,6 +91,7 @@ created: 2026-05-30
 - [x] 하위 디렉터리 실행 시 relative `--session-file` 경로를 invocation cwd 기준으로 해석
 - [x] Codex/OMX session id 불일치 시 다른 세션의 subagent/turn metrics 병합 방지
 - [x] generic/Cursor metadata 증분 window에서 timestamp 없는 row 제외
+- [x] Codex mixed `apply_patch` / `patch_apply_end` evidence에서 fallback-only 파일 누락 방지
 - [ ] Docker 기반 local E2E smoke success path 재검증
 
 ## 2026-05-30 Collection hardening pass
@@ -185,3 +186,26 @@ created: 2026-05-30
 
 > [!note]
 > 판단: 검증 가능한 sample 없이 Cursor 전용 parser를 추정 구현하면 잘못된 metrics를 만들 위험이 더 큽니다. 현재는 generic metadata 수집을 유지하고, 실제 Cursor workspace sample이 생기면 별도 회귀 fixture를 먼저 만든 뒤 parser 품질을 올립니다.
+
+## 2026-05-30 Codex mixed patch evidence 보강
+
+> [!success]
+> Codex session 안에 `custom_tool_call.apply_patch` fallback evidence와 `patch_apply_end` structured evidence가 함께 있을 때, structured evidence가 하나라도 있다는 이유로 fallback-only 파일을 버리지 않도록 수정했습니다.
+
+문제:
+
+- 이전 로직은 `patch_apply_end`가 세션에 하나라도 있으면 모든 `apply_patch` fallback text를 무시했습니다.
+- 긴 Codex 세션이나 mixed tool trace에서는 어떤 patch는 structured event가 있고, 다른 patch는 fallback text만 남을 수 있습니다.
+- 이 경우 fallback-only 파일의 `changed_files`, `lines_added`, `lines_removed`가 누락됩니다.
+
+수정:
+
+- 각 fallback patch를 임시 changed-file map으로 파싱합니다.
+- structured evidence에 이미 같은 path가 있으면 중복 방지를 위해 skip합니다.
+- structured evidence에 없는 path만 병합해 누락을 막습니다.
+
+검증:
+
+- `codex-mixed-patch-evidence` 회귀 테스트 추가
+- `npm test -- tests/session-collector.test.ts --run`
+- `npm run build`

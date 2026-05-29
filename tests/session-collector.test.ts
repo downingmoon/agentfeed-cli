@@ -141,6 +141,34 @@ describe('agent session collector', () => {
     expect(metrics?.tool_calls).toBe(1);
   });
 
+  it('keeps Codex apply_patch fallback files that do not appear in structured patch_apply_end changes', async () => {
+    const sessionFile = join(dir, 'codex-mixed-patch-evidence.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-mixed-patch-evidence', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'custom_tool_call', name: 'apply_patch', status: 'completed', call_id: 'fallback-patch', input: [
+        '*** Begin Patch',
+        `*** Add File: ${join(dir, 'src', 'fallback-only.ts')}`,
+        '+export const fallbackOnly = true;',
+        '*** End Patch'
+      ].join('\n') } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'custom_tool_call', name: 'apply_patch', status: 'completed', call_id: 'structured-patch', input: [
+        '*** Begin Patch',
+        `*** Add File: ${join(dir, 'src', 'structured.ts')}`,
+        '+export const structured = true;',
+        '*** End Patch'
+      ].join('\n') } },
+      { timestamp: '2026-05-20T00:00:03Z', type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: {
+        [join(dir, 'src', 'structured.ts')]: { type: 'add', content: 'export const structured = true;\n' }
+      } } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.changed_files.map((file) => file.path).sort()).toEqual(['src/fallback-only.ts', 'src/structured.ts']);
+    expect(metrics?.lines_added).toBe(2);
+    expect(metrics?.tool_calls).toBe(2);
+  });
+
   it('does not treat non-test command failures as failed tests', async () => {
     const sessionFile = join(dir, 'codex-failed-shell.jsonl');
     await writeJsonl(sessionFile, [

@@ -592,7 +592,6 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
   let model: string | null = null;
   let matchedWindowRow = false;
   let tokenBaselineBeforeWindow: number | null = null;
-  let sawStructuredPatchChanges = false;
   const patchTextFallbacks: string[] = [];
   const sinceMillis = parseBoundaryMillis(effectiveWindow?.since);
 
@@ -654,7 +653,6 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
     if (payload.type === 'patch_apply_end' && payload.status !== 'failed') {
       const changes = asRecord(payload.changes);
       if (!changes) continue;
-      sawStructuredPatchChanges = true;
       for (const [absolutePath, changeRaw] of Object.entries(changes)) {
         const rel = relativeProjectPath(cwd, absolutePath);
         if (!rel) continue;
@@ -675,8 +673,14 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
     }
   }
   if (hasCollectionWindowBoundary(effectiveWindow) && !matchedWindowRow) return null;
-  if (!sawStructuredPatchChanges) {
-    for (const patchText of patchTextFallbacks) applyCodexPatchText(cwd, patchText, files);
+  if (patchTextFallbacks.length) {
+    for (const patchText of patchTextFallbacks) {
+      const fallbackFiles = new Map<string, ChangedFileSummary>();
+      applyCodexPatchText(cwd, patchText, fallbackFiles);
+      for (const file of fallbackFiles.values()) {
+        if (!files.has(file.path)) files.set(file.path, file);
+      }
+    }
   }
   if (tokenBaselineBeforeWindow != null && tokensUsed >= tokenBaselineBeforeWindow) {
     tokensUsed -= tokenBaselineBeforeWindow;

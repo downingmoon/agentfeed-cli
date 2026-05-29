@@ -181,6 +181,12 @@ function countUnifiedDiff(diff: string): { added: number; removed: number } {
   return { added, removed };
 }
 
+function statusForPatchHeader(action: string): ChangedFileSummary['status'] {
+  if (action === 'Add') return 'added';
+  if (action === 'Delete') return 'deleted';
+  return 'modified';
+}
+
 function upsertFile(
   files: Map<string, ChangedFileSummary>,
   path: string,
@@ -200,6 +206,37 @@ function upsertFile(
   current.lines_added = (current.lines_added ?? 0) + (input.added ?? 0);
   current.lines_removed = (current.lines_removed ?? 0) + (input.removed ?? 0);
   files.set(path, current);
+}
+
+function applyCodexPatchText(cwd: string, patch: string, files: Map<string, ChangedFileSummary>) {
+  let currentPath: string | null = null;
+  let currentStatus: ChangedFileSummary['status'] = 'modified';
+  let added = 0;
+  let removed = 0;
+
+  function flush() {
+    if (!currentPath) return;
+    const rel = relativeProjectPath(cwd, currentPath);
+    if (rel) upsertFile(files, rel, { status: currentStatus, added, removed });
+    currentPath = null;
+    currentStatus = 'modified';
+    added = 0;
+    removed = 0;
+  }
+
+  for (const line of patch.split('\n')) {
+    const header = line.match(/^\*\*\* (Add|Update|Delete) File: (.+)$/);
+    if (header) {
+      flush();
+      currentStatus = statusForPatchHeader(header[1]);
+      currentPath = header[2].trim();
+      continue;
+    }
+    if (!currentPath || line.startsWith('***') || line.startsWith('@@')) continue;
+    if (line.startsWith('+') && !line.startsWith('+++')) added += 1;
+    else if (line.startsWith('-') && !line.startsWith('---')) removed += 1;
+  }
+  flush();
 }
 
 function isTestCommand(command: string): boolean {
@@ -539,6 +576,8 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
   let model: string | null = null;
   let matchedWindowRow = false;
   let tokenBaselineBeforeWindow: number | null = null;
+  let sawStructuredPatchChanges = false;
+  const patchTextFallbacks: string[] = [];
   const sinceMillis = parseBoundaryMillis(effectiveWindow?.since);
 
   for (const row of rows) {
@@ -592,9 +631,14 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
         if (command.test) failedTestCommands += 1;
       }
     }
+    if (payload.type === 'custom_tool_call' && payload.name === 'apply_patch') {
+      const patchText = asString(payload.input);
+      if (patchText) patchTextFallbacks.push(patchText);
+    }
     if (payload.type === 'patch_apply_end' && payload.status !== 'failed') {
       const changes = asRecord(payload.changes);
       if (!changes) continue;
+      sawStructuredPatchChanges = true;
       for (const [absolutePath, changeRaw] of Object.entries(changes)) {
         const rel = relativeProjectPath(cwd, absolutePath);
         if (!rel) continue;
@@ -615,6 +659,9 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
     }
   }
   if (hasCollectionWindowBoundary(effectiveWindow) && !matchedWindowRow) return null;
+  if (!sawStructuredPatchChanges) {
+    for (const patchText of patchTextFallbacks) applyCodexPatchText(cwd, patchText, files);
+  }
   if (tokenBaselineBeforeWindow != null && tokensUsed >= tokenBaselineBeforeWindow) {
     tokensUsed -= tokenBaselineBeforeWindow;
   }

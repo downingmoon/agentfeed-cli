@@ -98,6 +98,31 @@ describe('agent session collector', () => {
     expect(metrics?.lines_removed).toBe(1);
   });
 
+  it('falls back to Codex apply_patch custom tool input when patch_apply_end is absent', async () => {
+    const sessionFile = join(dir, 'codex-apply-patch-only.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-apply-patch-only', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'custom_tool_call', name: 'apply_patch', status: 'completed', call_id: 'patch-only', input: [
+        '*** Begin Patch',
+        `*** Update File: ${join(dir, 'src', 'api.ts')}`,
+        '@@',
+        '-export const ok = true;',
+        '+export const ok = false;',
+        '+export const patched = true;',
+        `*** Add File: ${join(dir, 'src', 'created.ts')}`,
+        '+export const created = true;',
+        '*** End Patch'
+      ].join('\n') } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.changed_files.map((file) => file.path).sort()).toEqual(['src/api.ts', 'src/created.ts']);
+    expect(metrics?.lines_added).toBe(3);
+    expect(metrics?.lines_removed).toBe(1);
+    expect(metrics?.tool_calls).toBe(1);
+  });
+
   it('does not treat non-test command failures as failed tests', async () => {
     const sessionFile = join(dir, 'codex-failed-shell.jsonl');
     await writeJsonl(sessionFile, [

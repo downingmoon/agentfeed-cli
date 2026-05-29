@@ -94,6 +94,7 @@ created: 2026-05-30
 - `spawn_agent` function call은 `subagents_spawned`로 집계
 - `event_msg.payload.type=agent_message`는 `agent_turns`로 집계
 - `mcp_tool_call_end`와 `custom_tool_call`도 tool usage evidence로 집계
+- `patch_apply_end`가 없는 session에서는 `apply_patch` custom tool input을 fallback으로 파싱해 changed file/line evidence를 복구
 
 ## 2026-05-30 Cursor 실제 저장소 조사
 

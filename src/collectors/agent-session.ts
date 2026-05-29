@@ -660,6 +660,54 @@ function addModes(target: Set<string>, value: unknown) {
   }
 }
 
+function changedFileStatus(value: unknown): ChangedFileSummary['status'] {
+  const text = asString(value)?.toLowerCase();
+  if (text === 'add' || text === 'added' || text === 'create' || text === 'created') return 'added';
+  if (text === 'delete' || text === 'deleted' || text === 'remove' || text === 'removed') return 'deleted';
+  if (text === 'rename' || text === 'renamed' || text === 'move' || text === 'moved') return 'renamed';
+  if (text === 'modify' || text === 'modified' || text === 'update' || text === 'updated' || text === 'edit' || text === 'edited') return 'modified';
+  return 'unknown';
+}
+
+function firstString(record: Record<string, unknown>, keys: string[]): string | null {
+  for (const key of keys) {
+    const value = asString(record[key]);
+    if (value) return value;
+  }
+  return null;
+}
+
+function applyGenericChangedFile(cwd: string, raw: unknown, files: Map<string, ChangedFileSummary>, fallbackPath?: string) {
+  if (typeof raw === 'string') {
+    const rel = relativeProjectPath(cwd, raw);
+    if (rel) upsertFile(files, rel, { status: 'modified', added: null, removed: null });
+    return;
+  }
+  const record = asRecord(raw);
+  if (!record) return;
+  const rawPath = firstString(record, ['path', 'file_path', 'filePath', 'file', 'uri']) ?? fallbackPath ?? null;
+  if (!rawPath) return;
+  const normalizedPath = rawPath.startsWith('file://') ? decodeURIComponent(rawPath.slice('file://'.length)) : rawPath;
+  const rel = relativeProjectPath(cwd, normalizedPath);
+  if (!rel) return;
+  const diff = asString(record.unified_diff) ?? asString(record.diff) ?? asString(record.patch);
+  const diffCounts = diff ? countUnifiedDiff(diff) : null;
+  const added = firstInteger(record, ['lines_added', 'linesAdded', 'additions', 'added']) ?? diffCounts?.added ?? null;
+  const removed = firstInteger(record, ['lines_removed', 'linesRemoved', 'deletions', 'removed']) ?? diffCounts?.removed ?? null;
+  const status = changedFileStatus(record.status ?? record.type ?? record.kind);
+  upsertFile(files, rel, { status: status === 'unknown' ? 'modified' : status, added, removed });
+}
+
+function applyGenericChangedFiles(cwd: string, raw: unknown, files: Map<string, ChangedFileSummary>) {
+  if (Array.isArray(raw)) {
+    for (const item of raw) applyGenericChangedFile(cwd, item, files);
+    return;
+  }
+  const record = asRecord(raw);
+  if (!record) return;
+  for (const [path, change] of Object.entries(record)) applyGenericChangedFile(cwd, change, files, path);
+}
+
 function applyGenericRecord(record: Record<string, unknown>, acc: {
   sessionId: string | null;
   model: string | null;
@@ -668,7 +716,7 @@ function applyGenericRecord(record: Record<string, unknown>, acc: {
   toolCalls: number;
   agentTurns: number;
   agentModes: Set<string>;
-}) {
+}, cwd: string, files: Map<string, ChangedFileSummary>) {
   acc.sessionId ??= asString(record.session_id) ?? asString(record.sessionId);
   acc.model ??= asString(record.model);
   acc.tokensUsed = Math.max(acc.tokensUsed, firstInteger(record, ['tokens_used', 'tokensUsed', 'total_tokens', 'totalTokens']) ?? 0);
@@ -678,10 +726,11 @@ function applyGenericRecord(record: Record<string, unknown>, acc: {
   acc.toolCalls = Math.max(acc.toolCalls, firstInteger(record, ['tool_calls', 'toolCalls', 'tools', 'tool_count', 'toolCount']) ?? 0);
   acc.agentTurns = Math.max(acc.agentTurns, firstInteger(record, ['agent_turns', 'agentTurns', 'turn_count', 'turnCount', 'turns']) ?? 0);
   addModes(acc.agentModes, record.agent_modes ?? record.agentModes ?? record.modes ?? record.mode);
+  for (const key of ['changed_files', 'changedFiles', 'files', 'edits', 'changes']) applyGenericChangedFiles(cwd, record[key], files);
 
   for (const key of ['metrics', 'stats', 'summary']) {
     const nested = asRecord(record[key]);
-    if (nested) applyGenericRecord(nested, acc);
+    if (nested) applyGenericRecord(nested, acc, cwd, files);
   }
 }
 
@@ -706,8 +755,7 @@ async function genericRecordsFromFile(path: string): Promise<Record<string, unkn
   return rows;
 }
 
-async function genericMetadataFiles(cwd: string): Promise<string[]> {
-  const roots = ['.ai', '.agent', '.agents', '.aider'];
+async function genericMetadataFiles(cwd: string, roots = ['.ai', '.agent', '.agents', '.aider']): Promise<string[]> {
   const files: Array<{ path: string; mtime: number }> = [];
   async function walk(current: string, depth: number) {
     if (depth < 0) return;
@@ -725,18 +773,19 @@ async function genericMetadataFiles(cwd: string): Promise<string[]> {
   return files.sort((a, b) => b.mtime - a.mtime).slice(0, 20).map((row) => row.path);
 }
 
-async function parseGenericMetadata(cwd: string, sessionFile?: string | null, window?: CollectionWindow | null): Promise<AgentSessionMetrics | null> {
+async function parseGenericMetadata(cwd: string, sessionFile?: string | null, window?: CollectionWindow | null, options: { sourceName?: string; roots?: string[]; quality?: CollectionQuality } = {}): Promise<AgentSessionMetrics | null> {
   const acc = { sessionId: null as string | null, model: null as string | null, tokensUsed: 0, commandsRun: 0, toolCalls: 0, agentTurns: 0, agentModes: new Set<string>() };
-  const files = sessionFile ? [sessionFile] : await genericMetadataFiles(cwd);
-  for (const file of files) {
+  const changedFiles = new Map<string, ChangedFileSummary>();
+  const metadataFiles = sessionFile ? [sessionFile] : await genericMetadataFiles(cwd, options.roots);
+  for (const file of metadataFiles) {
     for (const record of await genericRecordsFromFile(file)) {
-      if (rowInCollectionWindow(record, window)) applyGenericRecord(record, acc);
+      if (rowInCollectionWindow(record, window)) applyGenericRecord(record, acc, cwd, changedFiles);
     }
   }
   return finalize({
     sessionId: acc.sessionId,
     model: acc.model,
-    files: new Map<string, ChangedFileSummary>(),
+    files: changedFiles,
     tokensUsed: acc.tokensUsed,
     testsRun: 0,
     failedCommands: 0,
@@ -744,7 +793,8 @@ async function parseGenericMetadata(cwd: string, sessionFile?: string | null, wi
     toolCalls: acc.toolCalls,
     agentTurns: acc.agentTurns,
     agentModes: acc.agentModes,
-    collectionSources: files.length ? [{ type: 'generic_metadata', name: 'unknown_plugin', quality: 'low' }] : []
+    collectionSources: metadataFiles.length ? [{ type: 'generic_metadata', name: options.sourceName ?? 'unknown_plugin', quality: options.quality ?? 'low' }] : [],
+    collectionWindow: normalizedCollectionWindow(window)
   });
 }
 
@@ -799,6 +849,7 @@ async function discoverSessionFile(cwd: string, source: AgentType): Promise<stri
 export async function collectAgentSessionMetrics(options: CollectAgentSessionOptions): Promise<AgentSessionMetrics | null> {
   const sessionFile = options.sessionFile ? resolve(options.cwd, options.sessionFile) : await discoverSessionFile(options.cwd, options.source);
   if (options.source === 'other') return parseGenericMetadata(options.cwd, sessionFile, { since: options.since, until: options.until });
+  if (options.source === 'cursor') return parseGenericMetadata(options.cwd, sessionFile, { since: options.since, until: options.until }, { sourceName: 'cursor', roots: ['.cursor'] });
   if (!sessionFile || basename(sessionFile).startsWith('.')) return null;
   if (options.source === 'claude_code') return parseClaudeSessionFile(options.cwd, sessionFile, { since: options.since, until: options.until }, options.inferIdleGap ?? true);
   if (options.source === 'codex') return parseCodexSessionFile(options.cwd, sessionFile, { since: options.since, until: options.until }, options.inferIdleGap ?? true);

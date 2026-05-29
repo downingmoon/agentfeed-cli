@@ -11,8 +11,10 @@ function statusFromCode(code: string): ChangedFileSummary['status'] {
   return 'unknown';
 }
 
+const METADATA_ROOTS = ['.agentfeed', '.claude', '.codex', '.cursor', '.gemini', '.omc', '.omx', '.ai', '.agent', '.agents', '.aider'];
+
 function shouldIgnorePath(path: string): boolean {
-  return path === '.agentfeed' || path.startsWith('.agentfeed/');
+  return METADATA_ROOTS.some((root) => path === root || path.startsWith(`${root}/`));
 }
 
 function languageFor(path: string): string | null {

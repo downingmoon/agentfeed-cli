@@ -60,6 +60,7 @@ export function draftToIngestRequest(draft: LocalDraft): IngestWorklogRequest {
       session_id: draft.source.session_id,
       local_draft_id: draft.id,
       collection_window: draft.source.collection_window ?? null,
+      collection_window_reason: draft.source.collection_window_reason ?? null,
       collection_fingerprint: draft.source.collection_fingerprint ?? null
     },
     project: {

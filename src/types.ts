@@ -173,6 +173,7 @@ export interface IngestWorklogRequest {
     session_id?: string | null;
     local_draft_id?: string;
     collection_window?: CollectionWindow | null;
+    collection_window_reason?: CollectionWindowReason | null;
     collection_fingerprint?: string | null;
   };
   project: { name: string; repository_url?: string | null; local_path_hash?: string };

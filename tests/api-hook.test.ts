@@ -85,11 +85,13 @@ describe('api client', () => {
       since: '2026-05-24T00:00:00.000Z',
       until: '2026-05-24T00:10:00.000Z'
     };
+    draft.source.collection_window_reason = 'idle_gap';
     draft.source.collection_fingerprint = 'agentfeed-window-fingerprint';
 
     const payload = draftToIngestRequest(draft);
 
     expect(payload.source.collection_window).toEqual(draft.source.collection_window);
+    expect(payload.source.collection_window_reason).toBe('idle_gap');
     expect(payload.source.collection_fingerprint).toBe('agentfeed-window-fingerprint');
   });
 

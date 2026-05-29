@@ -1,0 +1,60 @@
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { execFileSync } from 'node:child_process';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { initProject } from '../src/config/project-config.js';
+import { readCollectionState } from '../src/config/collection-state.js';
+
+const repoRoot = resolve('.');
+const cliPath = join(repoRoot, 'dist', 'cli', 'index.js');
+
+let dir: string;
+let home: string;
+
+beforeAll(() => {
+  execFileSync('npm', ['run', 'build'], { cwd: repoRoot, stdio: 'ignore' });
+});
+
+beforeEach(async () => {
+  dir = await mkdtemp(join(tmpdir(), 'agentfeed-cli-collect-'));
+  home = await mkdtemp(join(tmpdir(), 'agentfeed-cli-home-'));
+  execFileSync('git', ['init'], { cwd: dir });
+  execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: dir });
+  execFileSync('git', ['config', 'user.name', 'Test'], { cwd: dir });
+  await mkdir(join(dir, 'src'), { recursive: true });
+  await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = true;\n');
+  execFileSync('git', ['add', '.'], { cwd: dir });
+  execFileSync('git', ['commit', '-m', 'initial'], { cwd: dir, stdio: 'ignore' });
+  await initProject({ cwd: dir, noGitCheck: false });
+});
+
+afterEach(async () => {
+  await rm(dir, { recursive: true, force: true });
+  await rm(home, { recursive: true, force: true });
+});
+
+describe('collect CLI command', () => {
+  it('persists collection cursor when rendering JSON output', async () => {
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = false;\n');
+
+    const stdout = execFileSync(process.execPath, [
+      cliPath,
+      'collect',
+      '--json',
+      '--since',
+      '2026-05-20T01:00:00Z',
+      '--until',
+      '2026-05-20T02:00:00Z'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    const draft = JSON.parse(stdout);
+
+    expect(draft.source.collection_window.until).toBe('2026-05-20T02:00:00.000Z');
+    await expect(readCollectionState(dir)).resolves.toEqual({ last_collected_at: '2026-05-20T02:00:00.000Z' });
+  });
+});

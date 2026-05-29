@@ -85,7 +85,11 @@ async function cmdCollect(args: string[]) {
   const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
   const collection = await collectDraftWithStatus({ cwd: process.cwd(), source, sessionFile: option(args, '--session-file') ?? null, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all') });
   const draft = collection.draft;
-  if (flag(args, '--json')) { print(JSON.stringify(draft, null, 2)); return; }
+  if (flag(args, '--json')) {
+    if (!flag(args, '--no-save-cursor')) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
+    print(JSON.stringify(draft, null, 2));
+    return;
+  }
   print(collection.reusedExisting ? 'Existing matching draft reused.\n' : 'Draft created.\n');
   print(`ID: ${draft.id}`);
   print(`Project: ${draft.project.name}`);

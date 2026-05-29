@@ -16,11 +16,15 @@ export interface ShareOptions {
 
 export function formatMetricsRow(draft: LocalDraft): string {
   const m = draft.worklog.metrics;
-  const parts = [`${m.files_changed ?? 0} files`, `+${m.lines_added ?? 0} -${m.lines_removed ?? 0}`];
+  const parts: string[] = [];
+  if (m.files_changed != null || m.lines_added != null || m.lines_removed != null) {
+    if (m.files_changed != null) parts.push(`${m.files_changed} files`);
+    if (m.lines_added != null || m.lines_removed != null) parts.push(`+${m.lines_added ?? 0} -${m.lines_removed ?? 0}`);
+  }
   if (m.tests_run != null) parts.push(`${m.tests_run} tests`);
   if (m.tool_calls != null) parts.push(`${m.tool_calls} tool calls`);
   if (m.tokens_used != null) parts.push(`${Math.round(m.tokens_used / 1000)}K tokens`);
-  return parts.join(' · ');
+  return parts.length ? parts.join(' · ') : 'no metrics';
 }
 
 export function formatSharePreview(draft: LocalDraft): string {

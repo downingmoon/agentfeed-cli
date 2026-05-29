@@ -165,13 +165,14 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
   const mergedGit = { ...git, changed_files: changedFiles, files_changed: filesChanged, lines_added: linesAdded, lines_removed: linesRemoved };
   const areas = changedAreas(changedFiles);
   const safeAreas = areas.length ? areas : ['Application code'];
+  const includeFileStats = config.collection.include_file_stats;
   const metrics: WorklogMetrics = {
     tokens_used: config.collection.include_token_usage ? session?.tokens_used ?? null : null,
     estimated_cost_usd: null,
     duration_seconds: session?.duration_seconds ?? null,
-    files_changed: filesChanged,
-    lines_added: linesAdded,
-    lines_removed: linesRemoved,
+    files_changed: includeFileStats ? filesChanged : null,
+    lines_added: includeFileStats ? linesAdded : null,
+    lines_removed: includeFileStats ? linesRemoved : null,
     tests_run: config.collection.include_test_results ? session?.tests_run ?? null : null,
     tests_passed: config.collection.include_test_results ? session?.tests_passed ?? null : null,
     commits_created: null,

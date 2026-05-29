@@ -79,4 +79,18 @@ describe('share command helpers', () => {
 
     expect(output).toContain('Collection window: 2026-05-20T01:01:00.000Z → 2026-05-20T02:00:00.000Z (auto-sliced after idle gap)');
   });
+
+  it('does not render disabled file stats as zero file changes', () => {
+    const draft = createEmptyDraft({ projectName: 'agentfeed-cli', projectRoot: '/tmp/agentfeed-cli', source: 'codex' });
+    draft.worklog.metrics.files_changed = null;
+    draft.worklog.metrics.lines_added = null;
+    draft.worklog.metrics.lines_removed = null;
+    draft.worklog.metrics.tokens_used = 12_345;
+    draft.worklog.summary = 'The AI agent worked on application code.';
+
+    const output = formatSharePreview(draft);
+
+    expect(output).not.toContain('0 files');
+    expect(output).toContain('Metrics: 12K tokens');
+  });
 });

@@ -59,4 +59,24 @@ describe('git collector and drafts', () => {
     expect(payload.worklog.changed_areas).toContain('API layer');
     expect(payloadText).not.toContain('src/api.ts');
   });
+
+  it('respects include_file_stats=false when creating public draft fields', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.collection.include_file_stats = false;
+    await writeFile(configPath, JSON.stringify(config, null, 2));
+    await writeFile(join(dir, 'src', 'api.ts'), 'one\ntwo changed\nthree\nfour\n');
+
+    const draft = await collectDraft({ cwd: dir, source: 'claude_code' });
+    const payload = draftToIngestRequest(draft);
+
+    expect(draft.worklog.metrics.files_changed).toBeNull();
+    expect(draft.worklog.metrics.lines_added).toBeNull();
+    expect(draft.worklog.metrics.lines_removed).toBeNull();
+    expect(draft.worklog.summary).not.toContain('changed 0 files');
+    expect(payload.worklog.metrics.files_changed).toBeNull();
+    expect(payload.worklog.metrics.lines_added).toBeNull();
+    expect(payload.worklog.metrics.lines_removed).toBeNull();
+  });
 });

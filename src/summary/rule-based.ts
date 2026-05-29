@@ -8,7 +8,9 @@ export function generateTitle(areas: string[], metrics: GitMetrics): string {
 
 export function generateSummary(areas: string[], metrics: WorklogMetrics): string {
   const areaText = areas.length ? areas.map((a) => a.toLowerCase()).join(', ') : 'the project';
-  let summary = `The AI agent worked on ${areaText}. The session changed ${metrics.files_changed ?? 0} files with ${metrics.lines_added ?? 0} additions and ${metrics.lines_removed ?? 0} deletions.`;
+  const includeFileStats = metrics.files_changed != null || metrics.lines_added != null || metrics.lines_removed != null;
+  let summary = `The AI agent worked on ${areaText}.`;
+  if (includeFileStats) summary += ` The session changed ${metrics.files_changed ?? 0} files with ${metrics.lines_added ?? 0} additions and ${metrics.lines_removed ?? 0} deletions.`;
   if (metrics.tests_run != null) summary += ` It also ran ${metrics.tests_run} tests, with ${metrics.tests_passed ?? 0} passing.`;
   return summary.slice(0, 2000);
 }

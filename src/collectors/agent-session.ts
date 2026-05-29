@@ -39,6 +39,51 @@ function integer(value: unknown): number | null {
   return n ? Math.trunc(n) : null;
 }
 
+function finiteNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim()) {
+    const n = Number(value.trim().replace(/^\$/, ''));
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+function costNumber(value: unknown): number | null {
+  const n = finiteNumber(value);
+  return n != null && n >= 0 ? n : null;
+}
+
+function explicitCostUsd(record?: Record<string, unknown> | null): number | null {
+  if (!record) return null;
+  const keys = [
+    'estimated_cost_usd',
+    'estimatedCostUsd',
+    'estimatedCostUSD',
+    'cost_usd',
+    'costUsd',
+    'costUSD',
+    'total_cost_usd',
+    'totalCostUsd',
+    'totalCostUSD',
+    'usd_cost',
+    'usdCost',
+    'usd'
+  ];
+  for (const key of keys) {
+    const n = costNumber(record[key]);
+    if (n != null) return n;
+  }
+  for (const key of ['cost', 'billing']) {
+    const nested = asRecord(record[key]);
+    if (!nested) continue;
+    for (const nestedKey of ['usd', 'USD', 'total_usd', 'totalUsd', 'estimated_usd', 'estimatedUsd', 'amount_usd', 'amountUsd']) {
+      const n = costNumber(nested[nestedKey]);
+      if (n != null) return n;
+    }
+  }
+  return null;
+}
+
 function mergeQuality(sources: CollectionSource[]): CollectionQuality | null {
   if (sources.some((source) => source.quality === 'high')) return 'high';
   if (sources.some((source) => source.quality === 'medium')) return 'medium';
@@ -254,6 +299,7 @@ function finalize(input: {
   failedTestCommands?: number;
   commandsRun?: number;
   toolCalls?: number;
+  estimatedCostUsd?: number | null;
   skills?: Set<string>;
   subagentsSpawned?: number;
   subagentsCompleted?: number;
@@ -270,12 +316,13 @@ function finalize(input: {
   const agentModes = [...(input.agentModes ?? new Set<string>())].sort();
   const collectionSources = input.collectionSources ?? [];
   const collectionQuality = mergeQuality(collectionSources);
-  if (!input.sessionId && !input.model && !changedFiles.length && !input.tokensUsed && !input.testsRun && !input.failedCommands && !input.toolCalls && !input.commandsRun && !skillsUsed && !input.subagentsSpawned && !input.agentTurns) return null;
+  if (!input.sessionId && !input.model && !changedFiles.length && !input.tokensUsed && !input.estimatedCostUsd && !input.testsRun && !input.failedCommands && !input.toolCalls && !input.commandsRun && !skillsUsed && !input.subagentsSpawned && !input.agentTurns) return null;
   return {
     session_id: input.sessionId ?? null,
     model: input.model ?? null,
     changed_files: changedFiles,
     tokens_used: input.tokensUsed || null,
+    estimated_cost_usd: input.estimatedCostUsd && input.estimatedCostUsd > 0 ? input.estimatedCostUsd : null,
     duration_seconds: input.durationSeconds ? Math.round(input.durationSeconds) : null,
     files_changed: changedFiles.length || null,
     lines_added: linesAdded || null,
@@ -365,6 +412,7 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?:
   const commands = new Map<string, { command: string; test: boolean }>();
   let tokensUsed = 0;
   let durationSeconds: number | null = null;
+  let estimatedCostUsd = 0;
   let testsRun = 0;
   let failedCommands = 0;
   let failedTestCommands = 0;
@@ -385,8 +433,12 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?:
     model ??= asString(message.model);
     if (!rowInCollectionWindow(row, effectiveWindow)) continue;
     matchedWindowRow = true;
+    estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(row) ?? 0, explicitCostUsd(message) ?? 0);
     const usage = asRecord(message.usage);
-    if (usage) tokensUsed += numeric(usage.input_tokens) + numeric(usage.cache_creation_input_tokens) + numeric(usage.cache_read_input_tokens) + numeric(usage.output_tokens);
+    if (usage) {
+      tokensUsed += numeric(usage.input_tokens) + numeric(usage.cache_creation_input_tokens) + numeric(usage.cache_read_input_tokens) + numeric(usage.output_tokens);
+      estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(usage) ?? 0);
+    }
     const content = Array.isArray(message.content) ? message.content : [];
     for (const itemRaw of content) {
       const item = asRecord(itemRaw);
@@ -446,7 +498,7 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?:
   subagentsSpawned = Math.max(subagentsSpawned, omc.subagentsSpawned ?? 0);
   subagentsCompleted = Math.max(subagentsCompleted, omc.subagentsCompleted ?? 0);
   for (const mode of omc.agentModes ?? []) agentModes.add(mode);
-  return finalize({ sessionId, model, files, tokensUsed, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
+  return finalize({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
 }
 
 function codexTokenTotal(info: Record<string, unknown>): number {
@@ -466,6 +518,7 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
   const commands = new Map<string, { command: string; test: boolean }>();
   let tokensUsed = 0;
   let durationSeconds: number | null = null;
+  let estimatedCostUsd = 0;
   let testsRun = 0;
   let failedCommands = 0;
   let failedTestCommands = 0;
@@ -498,9 +551,13 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
     }
     if (!rowInCollectionWindow(row, effectiveWindow)) continue;
     matchedWindowRow = true;
+    estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(row) ?? 0, explicitCostUsd(payload) ?? 0);
     if (payload.type === 'token_count') {
       const info = asRecord(payload.info);
-      if (info) tokensUsed = Math.max(tokensUsed, codexTokenTotal(info));
+      if (info) {
+        tokensUsed = Math.max(tokensUsed, codexTokenTotal(info));
+        estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(info) ?? 0);
+      }
     }
     if (payload.type === 'function_call' && payload.name === 'exec_command') {
       toolCalls += 1;
@@ -558,7 +615,7 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
   subagentsCompleted = Math.max(subagentsCompleted, omx.subagentsCompleted ?? 0);
   agentTurns = Math.max(agentTurns, omx.agentTurns ?? 0);
   for (const mode of omx.agentModes ?? []) agentModes.add(mode);
-  return finalize({ sessionId, model, files, tokensUsed, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
+  return finalize({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
 }
 
 function geminiTokenTotal(tokens: Record<string, unknown>): number {
@@ -577,6 +634,7 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?:
   let sessionId: string | null = null;
   let model: string | null = null;
   let tokensUsed = 0;
+  let estimatedCostUsd = 0;
   let testsRun = 0;
   let failedCommands = 0;
   let failedTestCommands = 0;
@@ -594,6 +652,7 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?:
     model ??= asString(row.model);
     if (!rowInCollectionWindow(row, effectiveWindow)) continue;
     matchedWindowRow = true;
+    estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(row) ?? 0);
     const rowStartMillis = parseIsoMillis(row.startTime) ?? rowTimestampMillis(row);
     const rowEndMillis = parseIsoMillis(row.lastUpdated) ?? parseIsoMillis(row.timestamp) ?? rowStartMillis;
     if (rowStartMillis != null) {
@@ -605,7 +664,10 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?:
       endMillis = Math.max(endMillis ?? effectiveEnd, effectiveEnd);
     }
     const tokens = asRecord(row.tokens);
-    if (tokens) tokensUsed += geminiTokenTotal(tokens);
+    if (tokens) {
+      tokensUsed += geminiTokenTotal(tokens);
+      estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(tokens) ?? 0);
+    }
     const calls = Array.isArray(row.toolCalls) ? row.toolCalls : [];
     for (const callRaw of calls) {
       const call = asRecord(callRaw);
@@ -643,7 +705,7 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?:
   const durationSeconds = startMillis && endMillis && endMillis > startMillis ? (endMillis - startMillis) / 1000 : null;
   const collectionSources: CollectionSource[] = [{ type: 'agent_session', name: 'gemini_cli', quality: 'high' }];
   if (skills.size || agentModes.has('superpowers')) pushSource(collectionSources, { type: 'plugin_metadata', name: 'superpowers', quality: 'medium' });
-  return finalize({ sessionId, model, files, tokensUsed, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted: subagentsSpawned, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
+  return finalize({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted: subagentsSpawned, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
 }
 
 
@@ -714,6 +776,7 @@ function applyGenericRecord(record: Record<string, unknown>, acc: {
   sessionId: string | null;
   model: string | null;
   tokensUsed: number;
+  estimatedCostUsd: number;
   commandsRun: number;
   toolCalls: number;
   agentTurns: number;
@@ -722,8 +785,12 @@ function applyGenericRecord(record: Record<string, unknown>, acc: {
   acc.sessionId ??= asString(record.session_id) ?? asString(record.sessionId);
   acc.model ??= asString(record.model);
   acc.tokensUsed = Math.max(acc.tokensUsed, firstInteger(record, ['tokens_used', 'tokensUsed', 'total_tokens', 'totalTokens']) ?? 0);
+  acc.estimatedCostUsd = Math.max(acc.estimatedCostUsd, explicitCostUsd(record) ?? 0);
   const tokens = asRecord(record.tokens) ?? asRecord(record.token_usage) ?? asRecord(record.tokenUsage);
-  if (tokens) acc.tokensUsed = Math.max(acc.tokensUsed, firstInteger(tokens, ['total', 'total_tokens', 'totalTokens']) ?? 0);
+  if (tokens) {
+    acc.tokensUsed = Math.max(acc.tokensUsed, firstInteger(tokens, ['total', 'total_tokens', 'totalTokens']) ?? 0);
+    acc.estimatedCostUsd = Math.max(acc.estimatedCostUsd, explicitCostUsd(tokens) ?? 0);
+  }
   acc.commandsRun = Math.max(acc.commandsRun, firstInteger(record, ['commands_run', 'commandsRun', 'commands', 'command_count', 'commandCount']) ?? 0);
   acc.toolCalls = Math.max(acc.toolCalls, firstInteger(record, ['tool_calls', 'toolCalls', 'tools', 'tool_count', 'toolCount']) ?? 0);
   acc.agentTurns = Math.max(acc.agentTurns, firstInteger(record, ['agent_turns', 'agentTurns', 'turn_count', 'turnCount', 'turns']) ?? 0);
@@ -776,7 +843,7 @@ async function genericMetadataFiles(cwd: string, roots = ['.ai', '.agent', '.age
 }
 
 async function parseGenericMetadata(cwd: string, sessionFile?: string | null, window?: CollectionWindow | null, options: { sourceName?: string; roots?: string[]; quality?: CollectionQuality } = {}): Promise<AgentSessionMetrics | null> {
-  const acc = { sessionId: null as string | null, model: null as string | null, tokensUsed: 0, commandsRun: 0, toolCalls: 0, agentTurns: 0, agentModes: new Set<string>() };
+  const acc = { sessionId: null as string | null, model: null as string | null, tokensUsed: 0, estimatedCostUsd: 0, commandsRun: 0, toolCalls: 0, agentTurns: 0, agentModes: new Set<string>() };
   const changedFiles = new Map<string, ChangedFileSummary>();
   const metadataFiles = sessionFile ? [sessionFile] : await genericMetadataFiles(cwd, options.roots);
   for (const file of metadataFiles) {
@@ -789,6 +856,7 @@ async function parseGenericMetadata(cwd: string, sessionFile?: string | null, wi
     model: acc.model,
     files: changedFiles,
     tokensUsed: acc.tokensUsed,
+    estimatedCostUsd: acc.estimatedCostUsd,
     testsRun: 0,
     failedCommands: 0,
     commandsRun: acc.commandsRun,

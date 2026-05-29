@@ -404,6 +404,41 @@ describe('agent session collector', () => {
     expect(metrics?.agent_turns).toBe(4);
   });
 
+  it('captures explicit USD cost from generic metadata without estimating missing cost', async () => {
+    const sessionFile = join(dir, 'generic-cost.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T01:00:00Z', session_id: 'generic-cost', tokens_used: 100, cost_usd: 0.012345 },
+      { timestamp: '2026-05-20T01:01:00Z', session_id: 'generic-cost', tokens_used: 150, estimated_cost_usd: '0.023456' }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'other', sessionFile, since: '2026-05-20T01:00:00Z' });
+
+    expect(metrics?.estimated_cost_usd).toBe(0.023456);
+  });
+
+  it('only includes explicit cost in drafts when estimated cost collection is enabled', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });
+    execFileSync('git', ['commit', '-m', 'agentfeed config'], { cwd: dir, stdio: 'ignore' });
+    const sessionFile = join(dir, 'generic-cost-draft.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T01:00:00Z', session_id: 'generic-cost-draft', estimated_cost_usd: 0.031, changed_files: [
+        { path: join(dir, 'src', 'cost.ts'), lines_added: 1 }
+      ] }
+    ]);
+
+    const hidden = await collectDraft({ cwd: dir, source: 'other', sessionFile, since: '2026-05-20T01:00:00Z', force: true });
+    expect(hidden.worklog.metrics.estimated_cost_usd).toBeNull();
+
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.collection.include_estimated_cost = true;
+    await writeFile(configPath, JSON.stringify(config, null, 2));
+
+    const visible = await collectDraft({ cwd: dir, source: 'other', sessionFile, since: '2026-05-20T01:00:00Z', force: true });
+    expect(visible.worklog.metrics.estimated_cost_usd).toBe(0.031);
+  });
+
   it('parses explicit Cursor metadata as generic collection evidence', async () => {
     const sessionFile = join(dir, 'cursor-session.jsonl');
     await writeJsonl(sessionFile, [

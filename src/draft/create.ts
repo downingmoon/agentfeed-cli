@@ -213,7 +213,7 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
   const includeFileStats = config.collection.include_file_stats;
   const metrics: WorklogMetrics = {
     tokens_used: config.collection.include_token_usage ? session?.tokens_used ?? null : null,
-    estimated_cost_usd: null,
+    estimated_cost_usd: config.collection.include_estimated_cost ? session?.estimated_cost_usd ?? null : null,
     duration_seconds: session?.duration_seconds ?? null,
     files_changed: includeFileStats ? filesChanged : null,
     lines_added: includeFileStats ? linesAdded : null,

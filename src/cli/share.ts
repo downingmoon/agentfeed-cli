@@ -1,5 +1,5 @@
 import type { AgentType, LocalDraft } from '../types.js';
-import { collectionQualityLabel, formatCollectionGuidanceLines } from '../draft/collection-diagnostics.js';
+import { collectionQualityLabel, formatCollectionGuidanceLines, formatCollectionWindowLine } from '../draft/collection-diagnostics.js';
 import { flag, option } from './args.js';
 
 export interface ShareOptions {
@@ -40,6 +40,8 @@ export function formatSharePreview(draft: LocalDraft): string {
   ];
 
   lines.push(`Collection quality: ${collectionQualityLabel(m)}`);
+  const windowLine = formatCollectionWindowLine(draft.source.collection_window, draft.source.collection_window_reason);
+  if (windowLine) lines.push(windowLine);
   if (m.collection_sources?.length) {
     lines.push('Collection sources:');
     for (const source of m.collection_sources) lines.push(`- ${source.type}: ${source.name} (${source.quality})`);

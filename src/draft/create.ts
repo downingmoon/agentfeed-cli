@@ -92,29 +92,30 @@ export interface CollectDraftStatus {
   reusedExisting: boolean;
 }
 
-export async function collectDraftWithStatus(options: { cwd: string; source?: AgentType; sessionFile?: string | null; since?: string | null; until?: string | null; force?: boolean; note?: string | null }): Promise<CollectDraftStatus> {
+export async function collectDraftWithStatus(options: { cwd: string; source?: AgentType; sessionFile?: string | null; since?: string | null; until?: string | null; force?: boolean; note?: string | null; inferIdleGap?: boolean }): Promise<CollectDraftStatus> {
   const root = await resolveProjectRoot(options.cwd);
   const config = await loadProjectConfig(root);
   let source = options.source ?? 'claude_code';
   const git = await collectGitMetrics(root);
   const window = collectionWindow(options);
-  let session = await collectAgentSessionMetrics({ cwd: root, source, sessionFile: options.sessionFile, since: window?.since, until: window?.until });
+  const inferIdleGap = options.inferIdleGap ?? (!options.force && !window?.since);
+  let session = await collectAgentSessionMetrics({ cwd: root, source, sessionFile: options.sessionFile, since: window?.since, until: window?.until, inferIdleGap });
   if (!options.source && !session) {
-    const codexSession = await collectAgentSessionMetrics({ cwd: root, source: 'codex', sessionFile: options.sessionFile, since: window?.since, until: window?.until });
+    const codexSession = await collectAgentSessionMetrics({ cwd: root, source: 'codex', sessionFile: options.sessionFile, since: window?.since, until: window?.until, inferIdleGap });
     if (codexSession) {
       source = 'codex';
       session = codexSession;
     }
   }
   if (!options.source && !session) {
-    const geminiSession = await collectAgentSessionMetrics({ cwd: root, source: 'gemini_cli', sessionFile: options.sessionFile, since: window?.since, until: window?.until });
+    const geminiSession = await collectAgentSessionMetrics({ cwd: root, source: 'gemini_cli', sessionFile: options.sessionFile, since: window?.since, until: window?.until, inferIdleGap });
     if (geminiSession) {
       source = 'gemini_cli';
       session = geminiSession;
     }
   }
   if (!options.source && !session) {
-    const genericSession = await collectAgentSessionMetrics({ cwd: root, source: 'other', sessionFile: options.sessionFile, since: window?.since, until: window?.until });
+    const genericSession = await collectAgentSessionMetrics({ cwd: root, source: 'other', sessionFile: options.sessionFile, since: window?.since, until: window?.until, inferIdleGap: false });
     if (genericSession) {
       source = 'other';
       session = genericSession;
@@ -125,6 +126,7 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
   const linesRemoved = git.lines_removed || session?.lines_removed || 0;
   const filesChanged = git.files_changed || session?.files_changed || changedFiles.length;
   const actualWindow = session?.collection_window ?? window;
+  const actualWindowReason = session?.collection_window_reason ?? null;
   const mergedGit = { ...git, changed_files: changedFiles, files_changed: filesChanged, lines_added: linesAdded, lines_removed: linesRemoved };
   const areas = changedAreas(changedFiles);
   const safeAreas = areas.length ? areas : ['Application code'];
@@ -187,13 +189,13 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
       timeline: (redacted.timeline as LocalDraft['worklog']['timeline']).slice(0, 8)
     },
     privacy_scan: scan,
-    source: { agent: source, tool_version: 'agentfeed-cli/0.2.0', host_label: hostname(), session_id: session?.session_id ?? null, created_at: new Date().toISOString(), collection_window: actualWindow, collection_fingerprint: fingerprint },
+    source: { agent: source, tool_version: 'agentfeed-cli/0.2.0', host_label: hostname(), session_id: session?.session_id ?? null, created_at: new Date().toISOString(), collection_window: actualWindow, collection_window_reason: actualWindowReason, collection_fingerprint: fingerprint },
     upload: { uploaded: false }
   };
   await writeDraft(root, draft);
   return { draft, reusedExisting: false };
 }
 
-export async function collectDraft(options: { cwd: string; source?: AgentType; sessionFile?: string | null; since?: string | null; until?: string | null; force?: boolean; note?: string | null }): Promise<LocalDraft> {
+export async function collectDraft(options: { cwd: string; source?: AgentType; sessionFile?: string | null; since?: string | null; until?: string | null; force?: boolean; note?: string | null; inferIdleGap?: boolean }): Promise<LocalDraft> {
   return (await collectDraftWithStatus(options)).draft;
 }

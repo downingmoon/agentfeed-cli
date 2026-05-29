@@ -71,4 +71,13 @@ describe('collection window explain output', () => {
 
     expect(output).toContain('Collection window: 2026-05-20T01:00:00.000Z → 2026-05-20T02:00:00.000Z');
   });
+
+  it('marks idle-gap inferred collection windows', () => {
+    const draft = draftWithMetrics({ files_changed: 0, lines_added: 0, lines_removed: 0 });
+    draft.source.collection_window_reason = 'idle_gap';
+
+    const output = formatCollectionExplain(draft);
+
+    expect(output).toContain('Collection window: 2026-05-20T01:00:00.000Z → 2026-05-20T02:00:00.000Z (auto-sliced after idle gap)');
+  });
 });

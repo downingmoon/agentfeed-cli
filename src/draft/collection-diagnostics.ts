@@ -1,4 +1,4 @@
-import type { CollectionQuality, WorklogMetrics } from '../types.js';
+import type { CollectionQuality, CollectionWindow, CollectionWindowReason, WorklogMetrics } from '../types.js';
 
 export type CollectionQualityLabel = CollectionQuality | 'unknown';
 
@@ -22,4 +22,10 @@ export function formatCollectionGuidanceLines(metrics: WorklogMetrics): string[]
     lines.push('- Low-quality agent evidence can miss token, tool-call, or command details.');
   }
   return lines;
+}
+
+export function formatCollectionWindowLine(window?: CollectionWindow | null, reason?: CollectionWindowReason | null): string | null {
+  if (!window?.since && !window?.until) return null;
+  const suffix = reason === 'idle_gap' ? ' (auto-sliced after idle gap)' : '';
+  return `Collection window: ${window.since ?? 'beginning'} → ${window.until ?? 'now'}${suffix}`;
 }

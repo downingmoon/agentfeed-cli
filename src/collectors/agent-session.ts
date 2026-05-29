@@ -1,13 +1,15 @@
 import { homedir } from 'node:os';
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path';
+import { realpathSync } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
-import type { AgentType, ChangedFileSummary, CollectionQuality, CollectionSource, CollectionWindow, WorklogMetrics } from '../types.js';
+import type { AgentType, ChangedFileSummary, CollectionQuality, CollectionSource, CollectionWindow, CollectionWindowReason, WorklogMetrics } from '../types.js';
 
 export interface AgentSessionMetrics extends WorklogMetrics {
   session_id?: string | null;
   model?: string | null;
   changed_files: ChangedFileSummary[];
   collection_window?: CollectionWindow | null;
+  collection_window_reason?: CollectionWindowReason | null;
 }
 
 interface CollectAgentSessionOptions {
@@ -16,6 +18,7 @@ interface CollectAgentSessionOptions {
   sessionFile?: string | null;
   since?: string | null;
   until?: string | null;
+  inferIdleGap?: boolean;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -73,13 +76,30 @@ function findStructuredCwd(value: unknown): string | null {
   return null;
 }
 
+function canonicalPath(path: string): string {
+  const absolute = resolve(path);
+  const suffix: string[] = [];
+  let current = absolute;
+  while (true) {
+    try {
+      const real = realpathSync.native(current);
+      return suffix.length ? join(real, ...suffix.reverse()) : real;
+    } catch {
+      const parent = dirname(current);
+      if (parent === current) return absolute;
+      suffix.push(basename(current));
+      current = parent;
+    }
+  }
+}
+
 export async function sessionFileBelongsToProject(sessionFile: string, cwd: string): Promise<boolean> {
-  const projectRoot = resolve(cwd);
+  const projectRoot = canonicalPath(cwd);
   for (const line of (await readFile(sessionFile, 'utf8')).split('\n')) {
     if (!line.trim()) continue;
     const structuredCwd = findStructuredCwd(safeJsonParse(line));
     if (!structuredCwd) continue;
-    const absoluteCwd = resolve(structuredCwd);
+    const absoluteCwd = canonicalPath(structuredCwd);
     if (absoluteCwd === projectRoot || absoluteCwd.startsWith(`${projectRoot}/`)) return true;
   }
   return false;
@@ -91,8 +111,8 @@ function languageFor(path: string): string | null {
 }
 
 function relativeProjectPath(cwd: string, filePath: string): string | null {
-  const absolute = isAbsolute(filePath) ? resolve(filePath) : resolve(cwd, filePath);
-  const rel = relative(resolve(cwd), absolute);
+  const absolute = canonicalPath(isAbsolute(filePath) ? filePath : resolve(cwd, filePath));
+  const rel = relative(canonicalPath(cwd), absolute);
   if (!rel || rel.startsWith('..') || isAbsolute(rel)) return null;
   return rel.split('\\').join('/');
 }
@@ -199,9 +219,9 @@ function normalizedCollectionWindow(window?: CollectionWindow | null): Collectio
   return since || until ? { since, until } : null;
 }
 
-function inferEffectiveCollectionWindow(rows: Record<string, unknown>[], window?: CollectionWindow | null): CollectionWindow | null {
+function inferEffectiveCollectionWindow(rows: Record<string, unknown>[], window?: CollectionWindow | null, options: { inferIdleGap?: boolean } = {}): { window: CollectionWindow | null; reason: CollectionWindowReason | null } {
   const explicitWindow = normalizedCollectionWindow(window);
-  if (explicitWindow) return explicitWindow;
+  if (explicitWindow?.since || options.inferIdleGap === false) return { window: explicitWindow, reason: null };
 
   let lastMillis: number | null = null;
   let sinceMillis: number | null = null;
@@ -213,7 +233,8 @@ function inferEffectiveCollectionWindow(rows: Record<string, unknown>[], window?
     }
     lastMillis = millis;
   }
-  return sinceMillis != null ? { since: new Date(sinceMillis).toISOString(), until: null } : null;
+  if (sinceMillis != null) return { window: { since: new Date(sinceMillis).toISOString(), until: explicitWindow?.until ?? null }, reason: 'idle_gap' };
+  return { window: explicitWindow, reason: null };
 }
 
 async function readJsonFile(path: string): Promise<Record<string, unknown> | null> {
@@ -238,6 +259,7 @@ function finalize(input: {
   agentModes?: Set<string>;
   collectionSources?: CollectionSource[];
   collectionWindow?: CollectionWindow | null;
+  collectionWindowReason?: CollectionWindowReason | null;
 }): AgentSessionMetrics | null {
   const changedFiles = [...input.files.values()];
   const linesAdded = changedFiles.reduce((sum, file) => sum + (file.lines_added ?? 0), 0);
@@ -268,7 +290,8 @@ function finalize(input: {
     agent_modes: agentModes.length ? agentModes : null,
     collection_quality: collectionQuality,
     collection_sources: collectionSources.length ? collectionSources : null,
-    collection_window: input.collectionWindow ?? null
+    collection_window: input.collectionWindow ?? null,
+    collection_window_reason: input.collectionWindowReason ?? null
   };
 }
 
@@ -332,9 +355,10 @@ async function readOmxMetadata(cwd: string, sessionId: string | null): Promise<{
   return result;
 }
 
-async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null): Promise<AgentSessionMetrics | null> {
+async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null, inferIdleGap = true): Promise<AgentSessionMetrics | null> {
   const rows = parseJsonlRecords(await readFile(sessionFile, 'utf8'));
-  const effectiveWindow = inferEffectiveCollectionWindow(rows, window);
+  const effective = inferEffectiveCollectionWindow(rows, window, { inferIdleGap });
+  const effectiveWindow = effective.window;
   const files = new Map<string, ChangedFileSummary>();
   const commands = new Map<string, { command: string; test: boolean }>();
   let tokensUsed = 0;
@@ -420,7 +444,7 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?:
   subagentsSpawned = Math.max(subagentsSpawned, omc.subagentsSpawned ?? 0);
   subagentsCompleted = Math.max(subagentsCompleted, omc.subagentsCompleted ?? 0);
   for (const mode of omc.agentModes ?? []) agentModes.add(mode);
-  return finalize({ sessionId, model, files, tokensUsed, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentModes, collectionSources, collectionWindow: effectiveWindow });
+  return finalize({ sessionId, model, files, tokensUsed, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
 }
 
 function codexTokenTotal(info: Record<string, unknown>): number {
@@ -432,9 +456,10 @@ function codexTokenTotal(info: Record<string, unknown>): number {
   return numeric(total.input_tokens) + numeric(total.cached_input_tokens) + numeric(total.cache_read_input_tokens) + numeric(total.cache_creation_input_tokens) + numeric(total.output_tokens);
 }
 
-async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null): Promise<AgentSessionMetrics | null> {
+async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null, inferIdleGap = true): Promise<AgentSessionMetrics | null> {
   const rows = parseJsonlRecords(await readFile(sessionFile, 'utf8'));
-  const effectiveWindow = inferEffectiveCollectionWindow(rows, window);
+  const effective = inferEffectiveCollectionWindow(rows, window, { inferIdleGap });
+  const effectiveWindow = effective.window;
   const files = new Map<string, ChangedFileSummary>();
   const commands = new Map<string, { command: string; test: boolean }>();
   let tokensUsed = 0;
@@ -531,7 +556,7 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
   subagentsCompleted = Math.max(subagentsCompleted, omx.subagentsCompleted ?? 0);
   agentTurns = Math.max(agentTurns, omx.agentTurns ?? 0);
   for (const mode of omx.agentModes ?? []) agentModes.add(mode);
-  return finalize({ sessionId, model, files, tokensUsed, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow });
+  return finalize({ sessionId, model, files, tokensUsed, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
 }
 
 function geminiTokenTotal(tokens: Record<string, unknown>): number {
@@ -540,9 +565,10 @@ function geminiTokenTotal(tokens: Record<string, unknown>): number {
   return numeric(tokens.input) + numeric(tokens.cached) + numeric(tokens.output) + numeric(tokens.thoughts) + numeric(tokens.tool);
 }
 
-async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null): Promise<AgentSessionMetrics | null> {
+async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null, inferIdleGap = true): Promise<AgentSessionMetrics | null> {
   const rows = parseJsonlRecords(await readFile(sessionFile, 'utf8'));
-  const effectiveWindow = inferEffectiveCollectionWindow(rows, window);
+  const effective = inferEffectiveCollectionWindow(rows, window, { inferIdleGap });
+  const effectiveWindow = effective.window;
   const files = new Map<string, ChangedFileSummary>();
   const skills = new Set<string>();
   const agentModes = new Set<string>();
@@ -615,7 +641,7 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?:
   const durationSeconds = startMillis && endMillis && endMillis > startMillis ? (endMillis - startMillis) / 1000 : null;
   const collectionSources: CollectionSource[] = [{ type: 'agent_session', name: 'gemini_cli', quality: 'high' }];
   if (skills.size || agentModes.has('superpowers')) pushSource(collectionSources, { type: 'plugin_metadata', name: 'superpowers', quality: 'medium' });
-  return finalize({ sessionId, model, files, tokensUsed, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted: subagentsSpawned, agentModes, collectionSources, collectionWindow: effectiveWindow });
+  return finalize({ sessionId, model, files, tokensUsed, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted: subagentsSpawned, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
 }
 
 
@@ -774,8 +800,8 @@ export async function collectAgentSessionMetrics(options: CollectAgentSessionOpt
   const sessionFile = options.sessionFile ? resolve(options.cwd, options.sessionFile) : await discoverSessionFile(options.cwd, options.source);
   if (options.source === 'other') return parseGenericMetadata(options.cwd, sessionFile, { since: options.since, until: options.until });
   if (!sessionFile || basename(sessionFile).startsWith('.')) return null;
-  if (options.source === 'claude_code') return parseClaudeSessionFile(options.cwd, sessionFile, { since: options.since, until: options.until });
-  if (options.source === 'codex') return parseCodexSessionFile(options.cwd, sessionFile, { since: options.since, until: options.until });
-  if (options.source === 'gemini_cli') return parseGeminiSessionFile(options.cwd, sessionFile, { since: options.since, until: options.until });
+  if (options.source === 'claude_code') return parseClaudeSessionFile(options.cwd, sessionFile, { since: options.since, until: options.until }, options.inferIdleGap ?? true);
+  if (options.source === 'codex') return parseCodexSessionFile(options.cwd, sessionFile, { since: options.since, until: options.until }, options.inferIdleGap ?? true);
+  if (options.source === 'gemini_cli') return parseGeminiSessionFile(options.cwd, sessionFile, { since: options.since, until: options.until }, options.inferIdleGap ?? true);
   return null;
 }

@@ -1,11 +1,11 @@
 import type { LocalDraft } from '../types.js';
-import { collectionQualityLabel, formatCollectionGuidanceLines } from './collection-diagnostics.js';
+import { collectionQualityLabel, formatCollectionGuidanceLines, formatCollectionWindowLine } from './collection-diagnostics.js';
 
 export function formatCollectionExplain(draft: LocalDraft): string {
   const metrics = draft.worklog.metrics;
   const lines = [`Collection quality: ${collectionQualityLabel(metrics)}`];
-  const window = draft.source.collection_window;
-  if (window?.since || window?.until) lines.push(`Collection window: ${window.since ?? 'beginning'} → ${window.until ?? 'now'}`);
+  const windowLine = formatCollectionWindowLine(draft.source.collection_window, draft.source.collection_window_reason);
+  if (windowLine) lines.push(windowLine);
   lines.push('Sources:');
   for (const source of metrics.collection_sources ?? []) {
     lines.push(`- ${source.type}: ${source.name} (${source.quality})`);

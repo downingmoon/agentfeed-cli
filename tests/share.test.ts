@@ -69,4 +69,14 @@ describe('share command helpers', () => {
     expect(output).toContain('Retry with `agentfeed collect --explain --session-file <path>` if your agent log is stored outside the default locations.');
     expect(output).toContain('Without agent evidence, this draft may be mostly git-diff based.');
   });
+
+  it('shows idle-gap inferred collection windows in the share preview', () => {
+    const draft = createEmptyDraft({ projectName: 'agentfeed-cli', projectRoot: '/tmp/agentfeed-cli', source: 'codex' });
+    draft.source.collection_window = { since: '2026-05-20T01:01:00.000Z', until: '2026-05-20T02:00:00.000Z' };
+    draft.source.collection_window_reason = 'idle_gap';
+
+    const output = formatSharePreview(draft);
+
+    expect(output).toContain('Collection window: 2026-05-20T01:01:00.000Z → 2026-05-20T02:00:00.000Z (auto-sliced after idle gap)');
+  });
 });

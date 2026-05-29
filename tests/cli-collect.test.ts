@@ -57,4 +57,43 @@ describe('collect CLI command', () => {
     expect(draft.source.collection_window.until).toBe('2026-05-20T02:00:00.000Z');
     await expect(readCollectionState(dir)).resolves.toEqual({ last_collected_at: '2026-05-20T02:00:00.000Z' });
   });
+
+  it('auto-slices default collect windows after an idle gap', async () => {
+    const sessionFile = join(home, 'codex-idle-gap-session.jsonl');
+    await writeFile(sessionFile, [
+      JSON.stringify({ timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-cli-idle-gap', cwd: dir } }),
+      JSON.stringify({ timestamp: '2026-05-20T00:01:00Z', type: 'event_msg', payload: { type: 'token_count', info: { total_token_usage: { total_tokens: 150 } } } }),
+      JSON.stringify({ timestamp: '2026-05-20T00:02:00Z', type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: {
+        [join(dir, 'src', 'old-codex.ts')]: { type: 'add', content: 'export const oldCodex = true;\n' }
+      } } }),
+      JSON.stringify({ timestamp: '2026-05-20T01:01:00Z', type: 'event_msg', payload: { type: 'token_count', info: { total_token_usage: { total_tokens: 215 } } } }),
+      JSON.stringify({ timestamp: '2026-05-20T01:02:00Z', type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: {
+        [join(dir, 'src', 'new-codex.ts')]: { type: 'add', content: 'export const newCodex = true;\n' }
+      } } })
+    ].join('\n') + '\n');
+
+    const stdout = execFileSync(process.execPath, [
+      cliPath,
+      'collect',
+      '--json',
+      '--source',
+      'codex',
+      '--session-file',
+      sessionFile,
+      '--no-save-cursor'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    const draft = JSON.parse(stdout);
+
+    expect(draft.source.collection_window.since).toBe('2026-05-20T01:01:00.000Z');
+    expect(draft.source.collection_window.until).toBeTruthy();
+    expect(draft.source.collection_window_reason).toBe('idle_gap');
+    expect(draft.worklog.metrics.tokens_used).toBe(65);
+    expect(draft.worklog.metrics.files_changed).toBe(1);
+    expect(draft.worklog.metrics.lines_added).toBe(1);
+  });
 });

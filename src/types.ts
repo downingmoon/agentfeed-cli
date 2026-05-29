@@ -6,6 +6,7 @@ export type PrivacyStatus = 'safe' | 'warning' | 'danger';
 export type PrivacySeverity = 'low' | 'medium' | 'high';
 export type CollectionQuality = 'high' | 'medium' | 'low';
 export type CollectionSourceType = 'agent_session' | 'plugin_metadata' | 'generic_metadata';
+export type CollectionWindowReason = 'idle_gap';
 
 export interface CollectionSource {
   type: CollectionSourceType;
@@ -139,7 +140,7 @@ export interface LocalDraft {
     timeline: WorklogTimelineItem[];
   };
   privacy_scan: PrivacyScanResult;
-  source: { agent: AgentType; session_id?: string | null; tool_version: string; host_label?: string | null; created_at: string; collection_window?: CollectionWindow | null; collection_fingerprint?: string | null };
+  source: { agent: AgentType; session_id?: string | null; tool_version: string; host_label?: string | null; created_at: string; collection_window?: CollectionWindow | null; collection_window_reason?: CollectionWindowReason | null; collection_fingerprint?: string | null };
   upload: { uploaded: boolean; worklog_id?: string | null; review_url?: string | null; uploaded_at?: string | null };
 }
 

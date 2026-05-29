@@ -58,7 +58,8 @@ agentfeed collect
 
 ## P2 — 제품 완성도
 
-- [ ] Projects page를 mock에서 실제 API로 전환한다.
+- [x] Projects page를 mock에서 실제 API로 전환한다.
+  - 2026-05-29 추가 보강: list 응답에도 project stats를 포함해 카드의 worklogs/tokens/files가 0으로 고정되지 않게 함.
 - [ ] Leaderboard page를 mock에서 실제 API로 전환한다.
 - [ ] Worklog comments를 실제 API로 연결한다.
 - [ ] Like/bookmark buttons를 실제 API로 연결한다.

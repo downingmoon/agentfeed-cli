@@ -78,6 +78,7 @@ function formatPrivacyScanReport(input: PublicScanFields, redacted: PublicScanFi
 function applyRedactedPublicFields(draft: LocalDraft, redacted: PublicScanFields): void {
   if (typeof redacted.title === 'string') draft.worklog.title = redacted.title;
   if (typeof redacted.summary === 'string') draft.worklog.summary = redacted.summary;
+  if (typeof redacted.user_note === 'string' || redacted.user_note == null) draft.worklog.user_note = redacted.user_note as string | null;
   if (typeof redacted.public_prompt === 'string' || redacted.public_prompt == null) draft.worklog.public_prompt = redacted.public_prompt as string | null;
   if (Array.isArray(redacted.outcome)) draft.worklog.outcome = redacted.outcome as string[];
   if (Array.isArray(redacted.timeline)) draft.worklog.timeline = redacted.timeline as LocalDraft['worklog']['timeline'];
@@ -266,6 +267,7 @@ async function cmdScan(args: string[]) {
   const input = {
     title: draft.worklog.title,
     summary: draft.worklog.summary,
+    user_note: draft.worklog.user_note ?? null,
     public_prompt: draft.worklog.public_prompt,
     outcome: draft.worklog.outcome,
     timeline: draft.worklog.timeline,

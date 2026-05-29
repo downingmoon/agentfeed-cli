@@ -28,10 +28,10 @@ function normalizeBoundary(value?: string | null): string | null {
   return new Date(millis).toISOString();
 }
 
-function applyUserNote(summary: string, note?: string | null): string {
+function normalizeUserNote(note?: string | null): string | null {
   const trimmed = note?.trim();
-  if (!trimmed) return summary;
-  return `Note: ${trimmed.slice(0, 500)}\n\n${summary}`;
+  if (!trimmed) return null;
+  return trimmed.slice(0, 500);
 }
 
 function relativeProjectPath(cwd: string, filePath?: string | null): string | null {
@@ -54,13 +54,13 @@ export function createEmptyDraft(input: { projectName: string; projectRoot: stri
   const metrics: WorklogMetrics = { files_changed: 0, lines_added: 0, lines_removed: 0, tokens_used: null, estimated_cost_usd: null, tests_run: null, tests_passed: null, failed_commands: null };
   const title = 'Explored project with AI agent';
   const summary = generateSummary(areas, metrics);
-  const publicFields = { title, summary, outcome: generateOutcome(areas), timeline: generateTimeline(), changed_areas: areas, tags: [], project: { name: input.projectName, repository_url: null } };
+  const publicFields = { title, summary, user_note: null, outcome: generateOutcome(areas), timeline: generateTimeline(), changed_areas: areas, tags: [], project: { name: input.projectName, repository_url: null } };
   const { redacted, scan } = scanAndRedactFields(publicFields);
   return {
     schema_version: '0.2',
     id: draftId(),
     project: { name: String((redacted.project as { name: string }).name), repository_url: null, local_path_hash: shortHash(input.projectRoot, 16) },
-    worklog: { title: String(redacted.title), summary: String(redacted.summary), agent: input.source, model: null, category: 'ai_tool', tags: [], visibility: 'private', metrics, changed_areas: redacted.changed_areas as string[], public_prompt: null, outcome: redacted.outcome as string[], timeline: redacted.timeline as LocalDraft['worklog']['timeline'] },
+    worklog: { title: String(redacted.title), summary: String(redacted.summary), user_note: redacted.user_note as string | null, agent: input.source, model: null, category: 'ai_tool', tags: [], visibility: 'private', metrics, changed_areas: redacted.changed_areas as string[], public_prompt: null, outcome: redacted.outcome as string[], timeline: redacted.timeline as LocalDraft['worklog']['timeline'] },
     privacy_scan: scan,
     source: { agent: input.source, tool_version: 'agentfeed-cli/0.2.0', host_label: hostname(), created_at: new Date().toISOString() },
     upload: { uploaded: false }
@@ -233,10 +233,11 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
     collection_sources: session?.collection_sources ?? null
   };
   const title = generateTitle(safeAreas, mergedGit);
-  const summary = applyUserNote(generateSummary(safeAreas, metrics), options.note);
+  const summary = generateSummary(safeAreas, metrics);
   const publicFields = {
     title,
     summary,
+    user_note: normalizeUserNote(options.note),
     public_prompt: null,
     outcome: generateOutcome(safeAreas),
     timeline: generateTimeline(),
@@ -253,6 +254,7 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
     worklog: {
       title: String(redacted.title).slice(0, 120) || 'Explored project with AI agent',
       summary: String(redacted.summary).slice(0, 2000) || 'The AI agent worked on the project.',
+      user_note: typeof redacted.user_note === 'string' ? redacted.user_note.slice(0, 500) : null,
       agent: source,
       model: session?.model ?? null,
       category: 'ai_tool',

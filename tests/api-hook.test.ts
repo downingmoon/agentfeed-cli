@@ -95,6 +95,17 @@ describe('api client', () => {
     expect(payload.source.collection_fingerprint).toBe('agentfeed-window-fingerprint');
   });
 
+  it('sends share notes as user_note instead of folding them into generated summaries', () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.worklog.summary = 'Generated machine summary.';
+    draft.worklog.user_note = 'Human review context.';
+
+    const payload = draftToIngestRequest(draft);
+
+    expect(payload.worklog.summary).toBe('Generated machine summary.');
+    expect(payload.worklog.user_note).toBe('Human review context.');
+  });
+
   it('checks API reachability against the backend health endpoint', async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({ status: 'ok' }), { status: 200, headers: { 'content-type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchMock);

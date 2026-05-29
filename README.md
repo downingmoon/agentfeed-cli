@@ -38,6 +38,8 @@ agentfeed share --source codex
 agentfeed share --source gemini-cli --session-file ./session.jsonl
 ```
 
+`--note` is stored as a separate public-safe author note, not folded into the generated worklog summary.
+
 Use `--json` for automation.
 
 ## Scoped and incremental collection

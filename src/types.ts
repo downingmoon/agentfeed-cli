@@ -128,6 +128,7 @@ export interface LocalDraft {
   worklog: {
     title: string;
     summary: string;
+    user_note?: string | null;
     agent: AgentType;
     model?: string | null;
     category: WorklogCategory;
@@ -180,6 +181,7 @@ export interface IngestWorklogRequest {
   worklog: {
     title: string;
     summary: string;
+    user_note?: string | null;
     category: WorklogCategory;
     tags: string[];
     metrics: WorklogMetrics;

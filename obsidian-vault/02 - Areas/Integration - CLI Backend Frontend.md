@@ -43,6 +43,7 @@ sequenceDiagram
 - collection window reason review evidence 노출
 - review evidence에 `collection_quality` / `collection_sources` 노출
 - Linux review URL clipboard fallback 보강
+- `share --note`를 `summary` prefix가 아닌 `user_note` 별도 계약으로 승격
 
 ## 관련 원본
 
@@ -77,3 +78,25 @@ sequenceDiagram
 - WSL: `clip.exe`
 - Linux: `xclip` → `wl-copy` → `xsel`
 - 검증: `npm test -- tests/clipboard.test.ts --run`, `npm test -- --run`, `npm run build`
+
+## 2026-05-30 user_note 계약
+
+> [!important]
+> 사용자가 `agentfeed share --note`로 입력한 공개 메모는 생성 요약(`summary`)에 섞지 않고 DB column `worklogs.user_note`를 기준으로 Backend → Frontend → CLI 계약을 맞춥니다.
+
+- DB 기준 컬럼: `worklogs.user_note`
+- Backend:
+  - `IngestWorklogPayload.user_note`
+  - `WorklogCard.user_note`
+  - `WorklogReviewResponse.worklog.user_note`
+- CLI:
+  - `LocalDraft.worklog.user_note`
+  - `IngestWorklogRequest.worklog.user_note`
+  - privacy scanner가 `user_note`를 별도 public field로 redaction
+- Frontend:
+  - `ApiWorklogCard.user_note`
+  - adapter의 `Worklog.userNote`
+  - review/detail/feed card에서 author note 표시
+
+> [!note]
+> 이 결정으로 생성 요약은 수집/분석 결과만 담고, 사람의 맥락은 별도 공개 메모로 다뤄집니다.

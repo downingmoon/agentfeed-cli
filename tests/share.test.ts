@@ -54,9 +54,13 @@ describe('share command helpers', () => {
 
   it('renders a user note in the share preview', () => {
     const draft = createEmptyDraft({ projectName: 'agentfeed-cli', projectRoot: '/tmp/agentfeed-cli', source: 'codex' });
-    draft.worklog.summary = 'Note: Refined login flow\n\nCollected agent work.';
+    draft.worklog.summary = 'Collected agent work.';
+    draft.worklog.user_note = 'Refined login flow';
 
-    expect(formatSharePreview(draft)).toContain('Note: Refined login flow');
+    const output = formatSharePreview(draft);
+
+    expect(output).toContain('Note: Refined login flow');
+    expect(output).toContain('Summary: Collected agent work.');
   });
 
   it('warns when share preview has no agent collection evidence', () => {

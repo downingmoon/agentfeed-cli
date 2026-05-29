@@ -77,7 +77,7 @@ describe('duplicate draft guard and draft note', () => {
     expect(await listDrafts(dir)).toHaveLength(1);
   });
 
-  it('redacts secrets in share notes before storing draft summaries', async () => {
+  it('redacts secrets in share notes and stores them separately from generated summaries', async () => {
     const sessionFile = join(dir, 'codex-note.jsonl');
     await writeJsonl(sessionFile, [
       { timestamp: '2026-05-20T01:00:00Z', type: 'session_meta', payload: { id: 'note-session', cwd: dir } }
@@ -85,7 +85,8 @@ describe('duplicate draft guard and draft note', () => {
 
     const draft = await collectDraft({ cwd: dir, source: 'codex', sessionFile, note: 'token sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890' });
 
-    expect(draft.worklog.summary).toContain('Note: token [REDACTED_SECRET]');
+    expect(draft.worklog.user_note).toBe('token [REDACTED_SECRET]');
+    expect(draft.worklog.summary).not.toContain('Note:');
     expect(draft.privacy_scan.status).toBe('danger');
   });
 

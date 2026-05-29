@@ -71,6 +71,7 @@ export function draftToIngestRequest(draft: LocalDraft): IngestWorklogRequest {
     worklog: {
       title: draft.worklog.title,
       summary: draft.worklog.summary,
+      user_note: draft.worklog.user_note ?? null,
       category: draft.worklog.category,
       tags: draft.worklog.tags,
       metrics: draft.worklog.metrics,

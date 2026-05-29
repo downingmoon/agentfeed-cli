@@ -38,6 +38,7 @@ export function formatSharePreview(draft: LocalDraft): string {
     `Project: ${draft.project.name}`,
     `Title: ${draft.worklog.title}`,
     `Summary: ${draft.worklog.summary}`,
+    ...(draft.worklog.user_note ? [`Note: ${draft.worklog.user_note}`] : []),
     `Agent: ${draft.worklog.agent}${model}`,
     `Metrics: ${formatMetricsRow(draft)}`,
     `Changed areas: ${changedAreas}`,

@@ -488,6 +488,7 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?:
   const effectiveWindow = effective.window;
   const files = new Map<string, ChangedFileSummary>();
   const commands = new Map<string, { command: string; test: boolean }>();
+  const pendingFileEdits = new Map<string, { path: string; status: ChangedFileSummary['status']; added: number; removed: number; failed: boolean }>();
   let tokensUsed = 0;
   let durationSeconds: number | null = null;
   let estimatedCostUsd = 0;
@@ -525,6 +526,10 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?:
       if (!item) continue;
       if (item.type === 'tool_result') {
         const toolUseId = asString(item.tool_use_id);
+        const pendingFileEdit = toolUseId ? pendingFileEdits.get(toolUseId) : null;
+        if (pendingFileEdit && (item.is_error === true || commandFailed(toolResultOutput(item)))) {
+          pendingFileEdit.failed = true;
+        }
         const command = toolUseId ? commands.get(toolUseId) : null;
         if (command && (item.is_error === true || commandFailed(toolResultOutput(item)))) {
           failedCommands += 1;
@@ -553,7 +558,10 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?:
             removed += countTextLines(asString(edit.old_string) ?? '');
           }
         }
-        upsertFile(files, rel, { status: name === 'Write' ? 'added' : 'modified', added, removed });
+        const status: ChangedFileSummary['status'] = name === 'Write' ? 'added' : 'modified';
+        const toolUseId = asString(item.id);
+        if (toolUseId) pendingFileEdits.set(toolUseId, { path: rel, status, added, removed, failed: false });
+        else upsertFile(files, rel, { status, added, removed });
       }
       if (name === 'Bash') {
         const command = asString(input.command) ?? '';
@@ -569,6 +577,9 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?:
       }
       if (name === 'Agent' || name === 'Task') subagentsSpawned += 1;
     }
+  }
+  for (const edit of pendingFileEdits.values()) {
+    if (!edit.failed) upsertFile(files, edit.path, { status: edit.status, added: edit.added, removed: edit.removed });
   }
   if (hasCollectionWindowBoundary(effectiveWindow) && !matchedWindowRow) return null;
   const collectionSources: CollectionSource[] = [{ type: 'agent_session', name: 'claude_code', quality: 'high' }];

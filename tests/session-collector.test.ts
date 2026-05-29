@@ -106,6 +106,29 @@ describe('agent session collector', () => {
     expect(metrics?.subagents_spawned).toBe(1);
   });
 
+  it('does not count failed Claude file edits as changed files', async () => {
+    const sessionFile = join(dir, 'claude-failed-edit-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { type: 'assistant', cwd: dir, sessionId: 'claude-failed-edit-session', timestamp: '2026-05-20T00:00:00Z', message: { model: 'claude-sonnet', content: [
+        { type: 'tool_use', id: 'write-failed', name: 'Write', input: { file_path: join(dir, 'src', 'failed-create.ts'), content: 'export const failed = true;\\n' } },
+        { type: 'tool_use', id: 'edit-ok', name: 'Edit', input: { file_path: join(dir, 'src', 'api.ts'), old_string: 'true', new_string: 'false\\n' } }
+      ] } },
+      { type: 'user', cwd: dir, sessionId: 'claude-failed-edit-session', timestamp: '2026-05-20T00:00:02Z', message: { role: 'user', content: [
+        { type: 'tool_result', tool_use_id: 'write-failed', content: 'Permission denied', is_error: true },
+        { type: 'tool_result', tool_use_id: 'edit-ok', content: 'Updated src/api.ts' }
+      ] } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'claude_code', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(2);
+    expect(metrics?.changed_files).toMatchObject([
+      { path: 'src/api.ts', status: 'modified', lines_added: 1, lines_removed: 1 }
+    ]);
+    expect(metrics?.changed_files.map((file) => file.path)).not.toContain('src/failed-create.ts');
+    expect(metrics?.files_changed).toBe(1);
+  });
+
   it('extracts Codex patch files, line counts, tokens, and failed commands from a session file', async () => {
     const sessionFile = join(dir, 'codex-session.jsonl');
     await writeJsonl(sessionFile, [

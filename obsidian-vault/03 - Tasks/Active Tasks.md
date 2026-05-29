@@ -39,6 +39,7 @@ created: 2026-05-30
 - [x] Claude `TaskCreate` todo planning을 subagent로 과대집계하지 않도록 보정
 - [x] Gemini failed `activate_skill` / `invoke_agent`를 성공한 skill/subagent로 과대집계하지 않도록 보정
 - [x] Gemini failed `write_file` / `replace`를 changed file evidence로 과대집계하지 않도록 보정
+- [x] Claude failed `Write` / `Edit` / `MultiEdit`를 changed file evidence로 과대집계하지 않도록 보정
 - [x] 실제 Cursor workspace/session format 추가 조사 후 parser 품질 상향 가능성 판단
 - [x] CLI ingest `worklog.model` → Backend 저장 → Frontend 노출 계약화
 
@@ -67,6 +68,7 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 Feed sort label 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Publish management 계약]]
 - [[Collection System#2026-05-30 Gemini 실패 file edit 과대집계 보정]]
+- [[Collection System#2026-05-30 Claude 실패 file edit 과대집계 보정]]
 - [[Collection System#2026-05-30 Gemini 실패 skill/subagent 과대집계 보정]]
 - [[Collection System#2026-05-30 Claude TaskCreate subagent 과대집계 보정]]
 - [[Collection System#2026-05-30 Codex turn_context model 수집]]

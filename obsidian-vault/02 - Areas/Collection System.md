@@ -100,7 +100,36 @@ created: 2026-05-30
 - [x] Claude `TaskCreate` todo planning을 subagent로 과대집계하지 않도록 보정
 - [x] Gemini failed `activate_skill` / `invoke_agent`를 성공한 skill/subagent로 과대집계하지 않도록 보정
 - [x] Gemini failed `write_file` / `replace`를 changed file evidence로 과대집계하지 않도록 보정
+- [x] Claude failed `Write` / `Edit` / `MultiEdit`를 changed file evidence로 과대집계하지 않도록 보정
 - [ ] Docker 기반 local E2E smoke success path 재검증
+
+## 2026-05-30 Claude 실패 file edit 과대집계 보정
+
+> [!success]
+> Claude Code `Write` / `Edit` / `MultiEdit` tool use가 실패한 경우 changed file evidence로 공개되지 않도록 보정했습니다.
+
+문제:
+
+- Claude Code는 file edit tool use 뒤에 `tool_result`를 남길 수 있습니다.
+- 기존 collector는 `tool_use` 인자만 보고 즉시 changed file evidence를 만들었습니다.
+- 이후 `tool_result.is_error=true`가 와도 이미 추가된 file evidence가 유지되어 실제 변경이 실패했는데도 feed에는 변경된 것처럼 보일 수 있었습니다.
+
+수정:
+
+- id가 있는 Claude file edit tool use는 pending evidence로 보관합니다.
+- 같은 `tool_use_id`의 `tool_result`가 error이면 해당 pending edit을 버립니다.
+- tool result가 없거나 성공이면 기존처럼 file evidence로 반영합니다.
+- id가 없는 legacy row는 기존 호환성을 위해 즉시 반영합니다.
+
+검증:
+
+- `does not count failed Claude file edits as changed files` 회귀 테스트
+- `npm test -- tests/session-collector.test.ts --run -t "does not count failed Claude file edits"`
+- `npm test -- tests/session-collector.test.ts --run`
+- `npm test -- tests/git-draft.test.ts tests/cli-collect.test.ts --run`
+- `npm run build`
+- `npm test -- --run`
+- `../agentfeed-dev/scripts/test-all.sh`
 
 ## 2026-05-30 Gemini 실패 file edit 과대집계 보정
 

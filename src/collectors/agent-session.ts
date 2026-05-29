@@ -520,18 +520,27 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?:
   let endMillis: number | null = null;
   let subagentsSpawned = 0;
   let matchedWindowRow = false;
+  const sinceMillis = parseBoundaryMillis(window?.since);
+  const untilMillis = parseBoundaryMillis(window?.until);
 
   for (const line of (await readFile(sessionFile, 'utf8')).split('\n')) {
     if (!line.trim()) continue;
     const row = asRecord(safeJsonParse(line));
     if (!row) continue;
     sessionId ??= asString(row.sessionId);
-    startMillis ??= parseIsoMillis(row.startTime);
-    const rowEndMillis = parseIsoMillis(row.lastUpdated) ?? parseIsoMillis(row.timestamp);
-    if (rowEndMillis) endMillis = Math.max(endMillis ?? 0, rowEndMillis);
     model ??= asString(row.model);
     if (!rowInCollectionWindow(row, window)) continue;
     matchedWindowRow = true;
+    const rowStartMillis = parseIsoMillis(row.startTime) ?? rowTimestampMillis(row);
+    const rowEndMillis = parseIsoMillis(row.lastUpdated) ?? parseIsoMillis(row.timestamp) ?? rowStartMillis;
+    if (rowStartMillis != null) {
+      const effectiveStart = sinceMillis != null ? Math.max(rowStartMillis, sinceMillis) : rowStartMillis;
+      startMillis = Math.min(startMillis ?? effectiveStart, effectiveStart);
+    }
+    if (rowEndMillis != null) {
+      const effectiveEnd = untilMillis != null ? Math.min(rowEndMillis, untilMillis) : rowEndMillis;
+      endMillis = Math.max(endMillis ?? effectiveEnd, effectiveEnd);
+    }
     const tokens = asRecord(row.tokens);
     if (tokens) tokensUsed += geminiTokenTotal(tokens);
     const calls = Array.isArray(row.toolCalls) ? row.toolCalls : [];

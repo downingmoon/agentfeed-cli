@@ -411,6 +411,19 @@ describe('collection window filtering', () => {
     expect(metrics?.changed_files.map((file) => file.path)).toEqual(['src/new-gemini.ts']);
   });
 
+  it('clamps Gemini session duration to --since collection window', async () => {
+    const sessionFile = join(dir, 'gemini-duration-window.jsonl');
+    await writeJsonl(sessionFile, [
+      { sessionId: 'gemini-duration-window', startTime: '2026-05-20T00:00:00Z', lastUpdated: '2026-05-20T01:20:00Z', kind: 'main' },
+      { id: 'g-new', timestamp: '2026-05-20T01:10:00Z', type: 'gemini', model: 'gemini-3-flash-preview', tokens: { total: 15 }, toolCalls: [] }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile, since: '2026-05-20T01:00:00Z' });
+
+    expect(metrics?.session_id).toBe('gemini-duration-window');
+    expect(metrics?.duration_seconds).toBe(1200);
+  });
+
   it('filters Codex metrics and file edits before --since while preserving session identity', async () => {
     const sessionFile = join(dir, 'codex-window-session.jsonl');
     await writeJsonl(sessionFile, [

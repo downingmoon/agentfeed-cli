@@ -579,6 +579,8 @@ describe('agent session collector', () => {
         [join(dir, '.omx', 'metrics.json')]: { type: 'add', content: '{"session_total_tokens":999}\n' },
         [join(dir, '.cursor', 'session-metrics.json')]: { type: 'add', content: '{"tokens_used":999}\n' },
         [join(dir, '.agentfeed', 'drafts', 'internal.json')]: { type: 'add', content: '{"raw":"internal"}\n' },
+        [join(dir, '.DS_Store')]: { type: 'add', content: 'local finder metadata' },
+        [join(dir, 'obsidian-vault', '.obsidian', 'app.json')]: { type: 'add', content: '{"alwaysUpdateLinks":true}\n' },
         [join(dir, 'src', 'public.ts')]: { type: 'add', content: 'export const publicEvidence = true;\n' }
       } } }
     ]);
@@ -593,6 +595,8 @@ describe('agent session collector', () => {
     expect(JSON.stringify(draft)).not.toContain('.omx');
     expect(JSON.stringify(draft)).not.toContain('.cursor');
     expect(JSON.stringify(draft)).not.toContain('.agentfeed/drafts');
+    expect(JSON.stringify(draft)).not.toContain('.DS_Store');
+    expect(JSON.stringify(draft)).not.toContain('.obsidian');
   });
 
   it('stores explicit collection windows on created drafts', async () => {

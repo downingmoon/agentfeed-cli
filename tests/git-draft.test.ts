@@ -36,6 +36,19 @@ describe('git collector and drafts', () => {
     expect(metrics.lines_removed).toBeGreaterThanOrEqual(1);
   });
 
+  it('ignores local OS and Obsidian runtime files in git evidence', async () => {
+    await mkdir(join(dir, 'obsidian-vault', '.obsidian'), { recursive: true });
+    await writeFile(join(dir, '.DS_Store'), 'local finder metadata');
+    await writeFile(join(dir, 'src', '.DS_Store'), 'local finder metadata');
+    await writeFile(join(dir, 'obsidian-vault', '.obsidian', 'app.json'), '{"alwaysUpdateLinks":true}\n');
+    await writeFile(join(dir, 'src', 'api.ts'), 'one\ntwo changed\nthree\nfour\n');
+
+    const metrics = await collectGitMetrics(dir);
+
+    expect(metrics.changed_files.map((file) => file.path)).toEqual(['src/api.ts']);
+    expect(metrics.files_changed).toBe(1);
+  });
+
   it('handles non-git directory gracefully', async () => {
     const nongit = await mkdtemp(join(tmpdir(), 'agentfeed-nongit-'));
     const metrics = await collectGitMetrics(nongit);

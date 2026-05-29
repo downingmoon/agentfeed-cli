@@ -26,7 +26,7 @@ export async function collectGitMetrics(cwd: string): Promise<GitMetrics> {
   if (!root) return { dirty: false, files_changed: 0, lines_added: 0, lines_removed: 0, changed_files: [] };
 
   const [status, numstat, branch, head, remote] = await Promise.all([
-    run('git', ['status', '--porcelain'], root),
+    run('git', ['status', '--porcelain', '-uall'], root),
     run('git', ['diff', '--numstat'], root),
     run('git', ['rev-parse', '--abbrev-ref', 'HEAD'], root),
     run('git', ['rev-parse', 'HEAD'], root),

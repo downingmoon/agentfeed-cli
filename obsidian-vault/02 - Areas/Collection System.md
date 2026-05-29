@@ -20,6 +20,7 @@ created: 2026-05-30
 - raw transcript / raw diff는 업로드하지 않는다.
 - token, command, tool call, changed file evidence는 가능한 한 session window 안으로 제한한다.
 - `.agentfeed`, `.omx`, `.omc`, `.cursor`, `.codex`, `.claude`, `.gemini` 같은 agent/plugin metadata는 공개 changed-file evidence에서 제외한다.
+- `.DS_Store`, `Thumbs.db`, `.obsidian` 같은 로컬 OS/editor runtime 파일은 작업 evidence에서 제외한다.
 - Cursor/generic metadata는 공식 transcript parser가 아니므로 `low` quality로 표시한다.
 - 비용은 모델 가격표로 추정하지 않고 source/OMC/OMX/plugin metadata가 명시한 USD cost만 보존한다.
 - `collection.include_estimated_cost=true`가 아니면 명시적 cost도 draft/upload metrics에 노출하지 않는다.
@@ -81,7 +82,20 @@ created: 2026-05-30
 - [x] doctor source별 수집 개선 가이드
 - [x] Codex non-shell tool call / subagent / agent turn metrics 보강
 - [x] Claude/Gemini agent turn, Claude Task subagent, Gemini `skill_name` skill signal 보강
+- [x] Obsidian runtime / OS metadata가 git/session evidence에 섞이지 않도록 필터링
 - [ ] Docker 기반 local E2E smoke success path 재검증
+
+## 2026-05-30 Local runtime noise 필터
+
+> [!success]
+> 실제 CLI repo에서 Obsidian Vault를 열면 `.obsidian/*` 설정 파일과 `.DS_Store`가 dirty 상태로 남을 수 있습니다. 이 파일들은 사용자의 제품 작업이 아니므로 AgentFeed 수집 evidence에서 제외합니다.
+
+반영한 기준:
+
+- Git evidence는 `git status --porcelain -uall`로 untracked directory를 파일 단위로 펼친 뒤 필터링
+- `.DS_Store`, `Thumbs.db`는 어느 위치에 있어도 제외
+- `.obsidian` directory 아래 파일은 vault 위치와 무관하게 제외
+- agent session이 이런 파일을 changed file로 보고해도 public changed-file evidence와 fingerprint에서 제외
 
 ## 2026-05-30 Claude/Gemini turn metrics 보강
 

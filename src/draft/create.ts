@@ -1,5 +1,5 @@
 import { hostname } from 'node:os';
-import { join } from 'node:path';
+import { isAbsolute, join, relative, resolve } from 'node:path';
 import type { AgentType, ChangedFileSummary, CollectionWindow, LocalDraft, WorklogMetrics } from '../types.js';
 import { loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
 import { collectGitMetrics } from '../collectors/git.js';
@@ -29,6 +29,14 @@ function applyUserNote(summary: string, note?: string | null): string {
   const trimmed = note?.trim();
   if (!trimmed) return summary;
   return `Note: ${trimmed.slice(0, 500)}\n\n${summary}`;
+}
+
+function relativeProjectPath(cwd: string, filePath?: string | null): string | null {
+  if (!filePath) return null;
+  const absolute = isAbsolute(filePath) ? resolve(filePath) : resolve(cwd, filePath);
+  const rel = relative(resolve(cwd), absolute);
+  if (!rel || rel.startsWith('..') || isAbsolute(rel)) return null;
+  return rel.split('\\').join('/');
 }
 
 function collectionWindow(options: { since?: string | null; until?: string | null }): CollectionWindow | null {
@@ -79,12 +87,37 @@ function normalizedChangedFilesForFingerprint(files: ChangedFileSummary[]): Arra
 
 function collectionFingerprint(input: { source: AgentType; sessionId?: string | null; headCommit?: string | null; window?: CollectionWindow | null; changedFiles?: ChangedFileSummary[] }): string | null {
   if (!input.headCommit) return null;
-  if (input.sessionId) {
-    return shortHash(JSON.stringify({ source: input.source, session_id: input.sessionId, head_commit: input.headCommit, window: input.window ?? null }), 16);
-  }
   const changedFiles = normalizedChangedFilesForFingerprint(input.changedFiles ?? []);
+  if (input.sessionId) {
+    return shortHash(JSON.stringify({ source: input.source, session_id: input.sessionId, head_commit: input.headCommit, window: input.window ?? null, changed_files: changedFiles }), 16);
+  }
   if (!changedFiles.length) return null;
   return shortHash(JSON.stringify({ source: input.source, head_commit: input.headCommit, window: input.window ?? null, changed_files: changedFiles }), 16);
+}
+
+function mergeChangedFiles(gitFiles: ChangedFileSummary[], sessionFiles: ChangedFileSummary[]): ChangedFileSummary[] {
+  const files = new Map<string, ChangedFileSummary>();
+  for (const file of [...gitFiles, ...sessionFiles]) {
+    const current = files.get(file.path);
+    if (!current) {
+      files.set(file.path, { ...file });
+      continue;
+    }
+    files.set(file.path, {
+      ...current,
+      extension: current.extension ?? file.extension ?? null,
+      language: current.language ?? file.language ?? null,
+      status: current.status === 'unknown' ? file.status : current.status,
+      publish_path: current.publish_path || file.publish_path,
+      lines_added: current.lines_added ?? file.lines_added ?? null,
+      lines_removed: current.lines_removed ?? file.lines_removed ?? null
+    });
+  }
+  return [...files.values()];
+}
+
+function sumChangedFileLines(files: ChangedFileSummary[], key: 'lines_added' | 'lines_removed'): number {
+  return files.reduce((sum, file) => sum + (file[key] ?? 0), 0);
 }
 
 export interface CollectDraftStatus {
@@ -121,10 +154,12 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
       session = genericSession;
     }
   }
-  const changedFiles = git.changed_files.length ? git.changed_files : session?.changed_files ?? [];
-  const linesAdded = git.lines_added || session?.lines_added || 0;
-  const linesRemoved = git.lines_removed || session?.lines_removed || 0;
-  const filesChanged = git.files_changed || session?.files_changed || changedFiles.length;
+  const sessionFileRel = relativeProjectPath(root, options.sessionFile);
+  const gitChangedFiles = sessionFileRel ? git.changed_files.filter((file) => file.path !== sessionFileRel) : git.changed_files;
+  const changedFiles = mergeChangedFiles(gitChangedFiles, session?.changed_files ?? []);
+  const linesAdded = sumChangedFileLines(changedFiles, 'lines_added');
+  const linesRemoved = sumChangedFileLines(changedFiles, 'lines_removed');
+  const filesChanged = changedFiles.length;
   const actualWindow = session?.collection_window ?? window;
   const actualWindowReason = session?.collection_window_reason ?? null;
   const mergedGit = { ...git, changed_files: changedFiles, files_changed: filesChanged, lines_added: linesAdded, lines_removed: linesRemoved };

@@ -147,6 +147,28 @@ describe('agent session collector', () => {
     expect(draftJson).not.toContain('export const collector = true');
   });
 
+  it('merges git dirty files with agent session changed files when creating a draft', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });
+    execFileSync('git', ['commit', '-m', 'agentfeed config'], { cwd: dir, stdio: 'ignore' });
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = false;\nexport const apiChanged = true;\n');
+    const sessionFile = join(dir, '.agentfeed', 'codex-mixed-git-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T01:00:00Z', type: 'session_meta', payload: { id: 'codex-mixed-git-session', cwd: dir } },
+      { timestamp: '2026-05-20T01:01:00Z', type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: {
+        [join(dir, 'src', 'worker.ts')]: { type: 'add', content: 'export const worker = true;\n' }
+      } } }
+    ]);
+
+    const draft = await collectDraft({ cwd: dir, source: 'codex', sessionFile, since: '2026-05-20T01:00:00Z', until: '2026-05-20T02:00:00Z' });
+
+    expect(draft.worklog.metrics.files_changed).toBe(2);
+    expect(draft.worklog.metrics.lines_added).toBe(3);
+    expect(draft.worklog.metrics.lines_removed).toBe(1);
+    expect(draft.worklog.changed_areas).toContain('API layer');
+    expect(draft.worklog.changed_areas).toContain('Application code');
+  });
+
   it('auto-detects Codex when collect receives a Codex session file without an explicit source', async () => {
     await initProject({ cwd: dir, noGitCheck: false });
     execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });

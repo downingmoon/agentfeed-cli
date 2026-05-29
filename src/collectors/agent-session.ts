@@ -787,11 +787,15 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?:
         const skill = asString(args.name) ?? asString(args.skill_name) ?? asString(args.skillName);
         if (skill && !failed) skills.add(skill);
       } else if (name === 'write_file') {
-        const rel = relativeProjectPath(cwd, asString(args.file_path) ?? '');
-        if (rel) upsertFile(files, rel, { status: 'added', added: countTextLines(asString(args.content) ?? ''), removed: 0 });
+        if (!failed) {
+          const rel = relativeProjectPath(cwd, asString(args.file_path) ?? '');
+          if (rel) upsertFile(files, rel, { status: 'added', added: countTextLines(asString(args.content) ?? ''), removed: 0 });
+        }
       } else if (name === 'replace') {
-        const rel = relativeProjectPath(cwd, asString(args.file_path) ?? '');
-        if (rel) upsertFile(files, rel, { status: 'modified', added: countTextLines(asString(args.new_string) ?? ''), removed: countTextLines(asString(args.old_string) ?? '') });
+        if (!failed) {
+          const rel = relativeProjectPath(cwd, asString(args.file_path) ?? '');
+          if (rel) upsertFile(files, rel, { status: 'modified', added: countTextLines(asString(args.new_string) ?? ''), removed: countTextLines(asString(args.old_string) ?? '') });
+        }
       } else if (name === 'run_shell_command') {
         commandsRun += 1;
         const command = asString(args.command) ?? '';

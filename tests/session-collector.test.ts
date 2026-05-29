@@ -499,6 +499,27 @@ describe('agent session collector', () => {
     ]);
   });
 
+  it('does not count failed Gemini file edits as changed files', async () => {
+    const sessionFile = join(dir, 'gemini-failed-edit-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { sessionId: 'gemini-failed-edit-session', startTime: '2026-05-20T00:00:00Z', lastUpdated: '2026-05-20T00:01:00Z', kind: 'main' },
+      { id: 'g1', timestamp: '2026-05-20T00:00:10Z', type: 'gemini', model: 'gemini-3-flash-preview', toolCalls: [
+        { id: 'tool-1', name: 'write_file', status: 'error', args: { file_path: join(dir, 'src', 'failed-create.ts'), content: 'export const failed = true;\\n' }, resultDisplay: 'Permission denied' },
+        { id: 'tool-2', name: 'replace', status: 'failed', args: { file_path: join(dir, 'src', 'api.ts'), old_string: 'true', new_string: 'false\\n' }, resultDisplay: 'Old string not found' },
+        { id: 'tool-3', name: 'run_shell_command', status: 'success', args: { command: 'npm test' }, resultDisplay: 'Process exited with code 0\\nPASS' }
+      ] }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(3);
+    expect(metrics?.changed_files).toEqual([]);
+    expect(metrics?.files_changed).toBeNull();
+    expect(metrics?.lines_added).toBeNull();
+    expect(metrics?.lines_removed).toBeNull();
+    expect(metrics?.tests_passed).toBe(1);
+  });
+
   it('auto-detects Gemini CLI when collect receives a Gemini session file without an explicit source', async () => {
     await initProject({ cwd: dir, noGitCheck: false });
     execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });

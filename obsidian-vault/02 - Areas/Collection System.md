@@ -99,7 +99,34 @@ created: 2026-05-30
 - [x] Codex `turn_context.payload.model`에서 model 누락 없이 수집
 - [x] Claude `TaskCreate` todo planning을 subagent로 과대집계하지 않도록 보정
 - [x] Gemini failed `activate_skill` / `invoke_agent`를 성공한 skill/subagent로 과대집계하지 않도록 보정
+- [x] Gemini failed `write_file` / `replace`를 changed file evidence로 과대집계하지 않도록 보정
 - [ ] Docker 기반 local E2E smoke success path 재검증
+
+## 2026-05-30 Gemini 실패 file edit 과대집계 보정
+
+> [!success]
+> Gemini tool call이 실패했는데도 `write_file` / `replace` 인자만 보고 changed file evidence로 세는 문제를 막았습니다.
+
+문제:
+
+- Gemini tool call은 `status`를 포함합니다.
+- 기존 collector는 `write_file` / `replace`의 `status=error|failed`를 확인하지 않고 `changed_files`, `lines_added`, `lines_removed`를 생성했습니다.
+- 실제 파일 변경이 실패했는데 feed에는 변경된 것처럼 보일 수 있었습니다.
+
+수정:
+
+- Gemini `write_file`은 실패 상태가 아닐 때만 added file evidence로 반영합니다.
+- Gemini `replace`는 실패 상태가 아닐 때만 modified file evidence로 반영합니다.
+- 실패한 파일 편집 시도는 여전히 `tool_calls`에 남겨 작업 시도량은 보존합니다.
+
+검증:
+
+- `does not count failed Gemini file edits as changed files` 회귀 테스트
+- `npm test -- tests/session-collector.test.ts --run -t "does not count failed Gemini file edits"`
+- `npm test -- tests/session-collector.test.ts --run`
+- `npm test -- tests/git-draft.test.ts tests/cli-collect.test.ts --run`
+- `npm run build`
+- `npm test -- --run`
 
 ## 2026-05-30 Gemini 실패 skill/subagent 과대집계 보정
 

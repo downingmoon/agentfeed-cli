@@ -38,6 +38,7 @@ created: 2026-05-30
 - [x] 비용 정보는 추정 금지 원칙 유지, explicit cost field만 opt-in 보존
 - [x] `doctor` 출력에 source별 개선 가이드 더 구체화
 - [x] privacy redaction dry-run 상세 표시
+- [x] Public Feed sort 라벨 `Most shipped` → `Most discussed` 계약 정리
 
 ## 관련 링크
 
@@ -53,6 +54,7 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 E2E smoke gate 보강]]
 - [[Integration - CLI Backend Frontend#2026-05-30 test-all gate 보강]]
 - [[Integration - CLI Backend Frontend#2026-05-30 worklog.model ingest 계약]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Feed sort label 계약]]
 - [[Collection System#2026-05-30 Collection hardening pass]]
 - [[Collection System#2026-05-30 Session file project guard]]
 - [[Collection System#2026-05-30 Local runtime noise 필터]]

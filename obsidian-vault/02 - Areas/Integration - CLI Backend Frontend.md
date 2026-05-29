@@ -76,8 +76,22 @@ P1로 남길 계약 gap:
 
 추가 P2 후보:
 
-- Frontend feed 정렬 라벨 `Most shipped`가 실제 UI에서 `most_discussed`로 매핑되는지 재확인 후 수정
+- [x] Frontend feed 정렬 라벨 `Most shipped`가 실제 UI에서 `most_discussed`로 매핑되는지 재확인 후 수정
 - Backend `/worklogs/{id}/unpublish`를 Frontend review/detail action에 연결할지 제품 정책 결정
+
+## 2026-05-30 Feed sort label 계약
+
+> [!success]
+> Frontend Public Feed의 마지막 sort option은 Backend feed API의 `most_discussed` aggregate sort를 호출하므로 UI 라벨을 `Most shipped`에서 `Most discussed`로 맞췄습니다.
+
+- Backend feed sort 계약: `latest`, `trending`, `most_liked`, `most_discussed`
+- Frontend:
+  - `FEED_SORT_OPTIONS = Latest / Trending / Most liked / Most discussed`
+  - `feedSortParamFromLabel('Most discussed') = 'most_discussed'`
+  - `FeedParams.sort`에서 feed용 `most_shipped`를 제거해 leaderboard 용어와 혼동을 줄임
+
+> [!note]
+> `most_shipped`는 leaderboard type에서는 계속 사용하지만, public feed sort UI에서는 comment aggregate가 필요한 위치이므로 `Most discussed`가 맞습니다.
 
 ## 2026-05-30 worklog.model ingest 계약
 

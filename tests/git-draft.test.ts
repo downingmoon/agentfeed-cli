@@ -84,6 +84,20 @@ describe('git collector and drafts', () => {
     expect(payload.worklog.metrics.lines_removed).toBeNull();
   });
 
+  it('prefers a detected enabled agent for git-only auto collection', async () => {
+    await mkdir(join(dir, '.omx', 'state'), { recursive: true });
+    await initProject({ cwd: dir, noGitCheck: false });
+    execFileSync('git', ['add', '.omx', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });
+    execFileSync('git', ['commit', '-m', 'agentfeed codex config'], { cwd: dir, stdio: 'ignore' });
+    await writeFile(join(dir, 'src', 'api.ts'), 'one\ntwo changed by codex\nthree\n');
+
+    const draft = await collectDraft({ cwd: dir });
+
+    expect(draft.worklog.agent).toBe('codex');
+    expect(draft.source.agent).toBe('codex');
+    expect(draft.worklog.metrics.collection_quality).toBeNull();
+  });
+
   it('runs the configured test command when run_tests_on_collect is true', async () => {
     await initProject({ cwd: dir, noGitCheck: false });
     const configPath = join(dir, '.agentfeed', 'config.json');

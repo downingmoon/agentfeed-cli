@@ -26,6 +26,7 @@ describe('agent discovery', () => {
     await mkdir(join(home, '.claude', 'projects'), { recursive: true });
     await mkdir(join(home, '.codex', 'sessions'), { recursive: true });
     await mkdir(join(home, '.gemini', 'tmp', 'project', 'chats'), { recursive: true });
+    await mkdir(join(dir, '.cursor'), { recursive: true });
     await mkdir(join(dir, '.omc', 'sessions'), { recursive: true });
     await mkdir(join(dir, '.omx', 'state'), { recursive: true });
 
@@ -33,6 +34,7 @@ describe('agent discovery', () => {
 
     expect(signals.claude_code.detected).toBe(true);
     expect(signals.codex.detected).toBe(true);
+    expect(signals.cursor.detected).toBe(true);
     expect(signals.gemini_cli.detected).toBe(true);
     expect(signals.omc.detected).toBe(true);
     expect(signals.omx.detected).toBe(true);
@@ -51,12 +53,14 @@ describe('agent discovery', () => {
 
   it('auto-enables detected agents during init', async () => {
     await mkdir(join(home, '.codex', 'sessions'), { recursive: true });
+    await mkdir(join(dir, '.cursor'), { recursive: true });
     await mkdir(join(home, '.gemini', 'tmp', 'project', 'chats'), { recursive: true });
 
     await initProject({ cwd: dir, noGitCheck: true });
 
     const config = JSON.parse(await readFile(join(dir, '.agentfeed', 'config.json'), 'utf8'));
     expect(config.agents.codex.enabled).toBe(true);
+    expect(config.agents.cursor.enabled).toBe(true);
     expect(config.agents.gemini_cli.enabled).toBe(true);
   });
 });

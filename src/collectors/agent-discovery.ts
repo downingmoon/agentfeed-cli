@@ -2,7 +2,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { pathExists } from '../utils/fs.js';
 
-export type AgentSignalKey = 'claude_code' | 'codex' | 'gemini_cli' | 'omc' | 'omx' | 'superpowers';
+export type AgentSignalKey = 'claude_code' | 'codex' | 'cursor' | 'gemini_cli' | 'omc' | 'omx' | 'superpowers';
 
 export interface AgentSignal {
   detected: boolean;
@@ -30,6 +30,7 @@ export async function detectAgentSignals(options: { cwd: string; home?: string }
   const cwd = options.cwd;
   const claude = await existing([join(home, '.claude', 'projects'), join(cwd, '.claude', 'settings.json')]);
   const codex = await existing([join(home, '.codex', 'sessions'), join(cwd, '.codex'), join(cwd, '.omx')]);
+  const cursor = await existing([join(cwd, '.cursor'), join(home, '.cursor'), join(home, 'Library', 'Application Support', 'Cursor', 'User', 'workspaceStorage')]);
   const gemini = await existing([join(home, '.gemini', 'tmp'), join(cwd, '.gemini')]);
   const omc = await existing([join(cwd, '.omc'), join(home, '.claude', '.session-stats.json')]);
   const omx = await existing([join(cwd, '.omx')]);
@@ -37,6 +38,7 @@ export async function detectAgentSignals(options: { cwd: string; home?: string }
   return {
     claude_code: signal('Claude Code', claude, claude.length ? 'Claude Code session signals found.' : 'Run Claude Code in this project or install the AgentFeed hook.'),
     codex: signal('Codex CLI', codex, codex.length ? 'Codex/OMX signals found.' : 'Run Codex CLI in this project.'),
+    cursor: signal('Cursor', cursor, cursor.length ? 'Cursor workspace signals found.' : 'Run Cursor in this project.'),
     gemini_cli: signal('Gemini CLI', gemini, gemini.length ? 'Gemini CLI signals found.' : 'Run Gemini CLI in this project.'),
     omc: signal('OMC', omc, omc.length ? 'OMC plugin metadata found.' : 'No OMC plugin metadata found.'),
     omx: signal('OMX', omx, omx.length ? 'OMX plugin metadata found.' : 'No OMX plugin metadata found.'),
@@ -46,7 +48,7 @@ export async function detectAgentSignals(options: { cwd: string; home?: string }
 
 export function formatAgentSignalLines(signals: AgentSignals): string[] {
   const lines = ['Agent signals:'];
-  const order: AgentSignalKey[] = ['claude_code', 'codex', 'gemini_cli', 'omc', 'omx', 'superpowers'];
+  const order: AgentSignalKey[] = ['claude_code', 'codex', 'cursor', 'gemini_cli', 'omc', 'omx', 'superpowers'];
   for (const key of order) {
     const row = signals[key];
     lines.push(`${row.label}: ${row.detected ? 'detected' : 'not found'}`);

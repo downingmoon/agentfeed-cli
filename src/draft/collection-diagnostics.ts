@@ -13,7 +13,7 @@ export function formatCollectionGuidanceLines(metrics: WorklogMetrics): string[]
 
   const lines = [
     'Collection guidance:',
-    '- Run `agentfeed doctor` to verify Claude/Codex/Gemini session and plugin detection.',
+    '- Run `agentfeed doctor` to verify Claude/Codex/Cursor/Gemini session and plugin detection.',
     '- Retry with `agentfeed collect --explain --session-file <path>` if your agent log is stored outside the default locations.'
   ];
   if (sources.length === 0) {

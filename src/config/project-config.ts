@@ -50,6 +50,7 @@ export async function initProject(options: { cwd?: string; projectName?: string;
   const signals = await detectAgentSignals({ cwd: root });
   config.agents.claude_code.enabled = signals.claude_code.detected || signals.omc.detected || config.agents.claude_code.enabled;
   config.agents.codex.enabled = signals.codex.detected || signals.omx.detected;
+  config.agents.cursor.enabled = signals.cursor.detected;
   config.agents.gemini_cli.enabled = signals.gemini_cli.detected || signals.superpowers.detected;
   const afDir = join(root, '.agentfeed');
   await Promise.all(['drafts', 'logs', 'cache', 'backups'].map((d) => ensureDir(join(afDir, d))));

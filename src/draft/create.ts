@@ -5,6 +5,7 @@ import { loadProjectConfig, resolveProjectRoot } from '../config/project-config.
 import { collectGitMetrics } from '../collectors/git.js';
 import { collectAgentSessionMetrics } from '../collectors/agent-session.js';
 import { collectConfiguredTestMetrics } from '../collectors/test-command.js';
+import { detectAgentSignals } from '../collectors/agent-discovery.js';
 import { changedAreas } from '../summary/changed-areas.js';
 import { generateOutcome, generateSummary, generateTimeline, generateTitle } from '../summary/rule-based.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
@@ -132,12 +133,30 @@ function addOptionalCounts(...values: Array<number | null | undefined>): number 
   return seen ? total : null;
 }
 
-function enabledAutoAgentSources(config: AgentFeedProjectConfig): AgentType[] {
+async function enabledAutoAgentSources(cwd: string, config: AgentFeedProjectConfig): Promise<AgentType[]> {
   const sources: AgentType[] = [];
   if (config.agents.claude_code.enabled) sources.push('claude_code');
   if (config.agents.codex.enabled) sources.push('codex');
+  if (config.agents.cursor.enabled) sources.push('cursor');
   if (config.agents.gemini_cli.enabled) sources.push('gemini_cli');
-  return sources;
+  const signals = await detectAgentSignals({ cwd }).catch(() => null);
+  if (!signals) return sources;
+  const signalScore = (paths: string[]): number => {
+    if (!paths.length) return 0;
+    const root = resolve(cwd);
+    return paths.some((path) => {
+      const rel = relative(root, resolve(path));
+      return rel && !rel.startsWith('..') && !isAbsolute(rel);
+    }) ? 2 : 1;
+  };
+  const scores: Record<AgentType, number> = {
+    claude_code: Math.max(signalScore(signals.claude_code.paths), signalScore(signals.omc.paths)),
+    codex: Math.max(signalScore(signals.codex.paths), signalScore(signals.omx.paths)),
+    cursor: signalScore(signals.cursor.paths),
+    gemini_cli: Math.max(signalScore(signals.gemini_cli.paths), signalScore(signals.superpowers.paths)),
+    other: 0
+  };
+  return [...sources].sort((a, b) => scores[b] - scores[a]);
 }
 
 export interface CollectDraftStatus {
@@ -148,7 +167,7 @@ export interface CollectDraftStatus {
 export async function collectDraftWithStatus(options: { cwd: string; source?: AgentType; sessionFile?: string | null; since?: string | null; until?: string | null; force?: boolean; note?: string | null; inferIdleGap?: boolean }): Promise<CollectDraftStatus> {
   const root = await resolveProjectRoot(options.cwd);
   const config = await loadProjectConfig(root);
-  const enabledSources = enabledAutoAgentSources(config);
+  const enabledSources = await enabledAutoAgentSources(root, config);
   let source = options.source ?? enabledSources[0] ?? 'other';
   const git = await collectGitMetrics(root);
   const window = collectionWindow(options);

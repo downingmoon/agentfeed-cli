@@ -139,16 +139,27 @@ function canonicalPath(path: string): string {
   }
 }
 
-export async function sessionFileBelongsToProject(sessionFile: string, cwd: string): Promise<boolean> {
+async function structuredCwdMatchState(sessionFile: string, cwd: string): Promise<{ sawStructuredCwd: boolean; matchedProject: boolean }> {
   const projectRoot = canonicalPath(cwd);
+  let sawStructuredCwd = false;
   for (const line of (await readFile(sessionFile, 'utf8')).split('\n')) {
     if (!line.trim()) continue;
     const structuredCwd = findStructuredCwd(safeJsonParse(line));
     if (!structuredCwd) continue;
+    sawStructuredCwd = true;
     const absoluteCwd = canonicalPath(structuredCwd);
-    if (absoluteCwd === projectRoot || absoluteCwd.startsWith(`${projectRoot}/`)) return true;
+    if (absoluteCwd === projectRoot || absoluteCwd.startsWith(`${projectRoot}/`)) return { sawStructuredCwd, matchedProject: true };
   }
-  return false;
+  return { sawStructuredCwd, matchedProject: false };
+}
+
+export async function sessionFileBelongsToProject(sessionFile: string, cwd: string): Promise<boolean> {
+  return (await structuredCwdMatchState(sessionFile, cwd)).matchedProject;
+}
+
+async function sessionFileMayBelongToProject(sessionFile: string, cwd: string): Promise<boolean> {
+  const state = await structuredCwdMatchState(sessionFile, cwd);
+  return !state.sawStructuredCwd || state.matchedProject;
 }
 
 function languageFor(path: string): string | null {
@@ -981,6 +992,7 @@ async function discoverSessionFile(cwd: string, source: AgentType): Promise<stri
 
 export async function collectAgentSessionMetrics(options: CollectAgentSessionOptions): Promise<AgentSessionMetrics | null> {
   const sessionFile = options.sessionFile ? resolve(options.cwd, options.sessionFile) : await discoverSessionFile(options.cwd, options.source);
+  if (sessionFile && !(await sessionFileMayBelongToProject(sessionFile, options.cwd))) return null;
   if (options.source === 'other') return parseGenericMetadata(options.cwd, sessionFile, { since: options.since, until: options.until });
   if (options.source === 'cursor') return parseGenericMetadata(options.cwd, sessionFile, { since: options.since, until: options.until }, { sourceName: 'cursor', roots: ['.cursor'] });
   if (!sessionFile || basename(sessionFile).startsWith('.')) return null;

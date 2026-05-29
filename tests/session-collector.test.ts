@@ -191,6 +191,17 @@ describe('agent session collector', () => {
     await expect(sessionFileBelongsToProject(sessionFile, dir)).resolves.toBe(false);
   });
 
+  it('rejects explicit session files whose structured cwd belongs to another project', async () => {
+    const sessionFile = join(dir, 'wrong-project-codex-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'wrong-project-codex', cwd: '/tmp/other-project' } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'event_msg', payload: { type: 'token_count', info: { total_tokens: 9999 } } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'npm test', workdir: '/tmp/other-project' }), call_id: 'other-test' } }
+    ]);
+
+    await expect(collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile })).resolves.toBeNull();
+  });
+
   it('uses session metrics when creating a draft from a clean git tree', async () => {
     await initProject({ cwd: dir, noGitCheck: false });
     execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });

@@ -19,6 +19,7 @@ created: 2026-05-30
 
 - raw transcript / raw diff는 업로드하지 않는다.
 - token, command, tool call, changed file evidence는 가능한 한 session window 안으로 제한한다.
+- structured `cwd`가 현재 project root와 맞지 않는 session file은 명시적으로 전달되어도 수집하지 않는다.
 - `.agentfeed`, `.omx`, `.omc`, `.cursor`, `.codex`, `.claude`, `.gemini` 같은 agent/plugin metadata는 공개 changed-file evidence에서 제외한다.
 - `.DS_Store`, `Thumbs.db`, `.obsidian` 같은 로컬 OS/editor runtime 파일은 작업 evidence에서 제외한다.
 - Cursor/generic metadata는 공식 transcript parser가 아니므로 `low` quality로 표시한다.
@@ -83,7 +84,19 @@ created: 2026-05-30
 - [x] Codex non-shell tool call / subagent / agent turn metrics 보강
 - [x] Claude/Gemini agent turn, Claude Task subagent, Gemini `skill_name` skill signal 보강
 - [x] Obsidian runtime / OS metadata가 git/session evidence에 섞이지 않도록 필터링
+- [x] 잘못된 project의 explicit `--session-file` metrics 혼입 방지
 - [ ] Docker 기반 local E2E smoke success path 재검증
+
+## 2026-05-30 Session file project guard
+
+> [!success]
+> 사용자가 `--session-file`을 직접 지정하더라도, 파일 내부 structured `cwd`가 현재 project root와 맞지 않으면 token/tool/test metrics를 수집하지 않습니다.
+
+- Claude: top-level `cwd` 기준
+- Codex: `payload.cwd` 기준
+- structured cwd가 없으면 기존처럼 보수적으로 허용
+- structured cwd가 하나라도 현재 project root 또는 하위 경로와 일치하면 허용
+- structured cwd가 있지만 모두 다른 project이면 `null` session metrics로 처리
 
 ## 2026-05-30 Local runtime noise 필터
 

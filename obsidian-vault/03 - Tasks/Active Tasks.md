@@ -26,6 +26,7 @@ created: 2026-05-30
 - [x] 실제 Codex session schema 기반 tool call / subagent / agent turn 과소집계 보강
 - [x] 실제 Claude/Gemini session schema 기반 turn / skill / Task subagent 과소집계 보강
 - [x] `.obsidian` / `.DS_Store` 로컬 런타임 파일 수집 노이즈 제거
+- [x] explicit `--session-file`이 다른 project 로그일 때 metrics 혼입 방지
 - [ ] 실제 Cursor workspace/session format 추가 조사 후 parser 품질 상향 가능성 판단
 
 ## P2 후보
@@ -47,6 +48,7 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 user_note 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 E2E smoke gate 보강]]
 - [[Integration - CLI Backend Frontend#2026-05-30 test-all gate 보강]]
+- [[Collection System#2026-05-30 Session file project guard]]
 - [[Collection System#2026-05-30 Local runtime noise 필터]]
 - [[Collection System#2026-05-30 Claude/Gemini turn metrics 보강]]
 - [[Collection System#2026-05-30 Codex tool metrics 보강]]

@@ -463,6 +463,33 @@ describe('agent session collector', () => {
     expect(draft.worklog.metrics.collection_quality).toBe('low');
   });
 
+  it('excludes agent metadata paths reported by session files from public changed-file evidence', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });
+    execFileSync('git', ['commit', '-m', 'agentfeed config'], { cwd: dir, stdio: 'ignore' });
+    const sessionFile = join(dir, '.agentfeed', 'codex-metadata-paths.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T01:00:00Z', type: 'session_meta', payload: { id: 'codex-metadata-paths', cwd: dir } },
+      { timestamp: '2026-05-20T01:01:00Z', type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: {
+        [join(dir, '.omx', 'metrics.json')]: { type: 'add', content: '{"session_total_tokens":999}\n' },
+        [join(dir, '.cursor', 'session-metrics.json')]: { type: 'add', content: '{"tokens_used":999}\n' },
+        [join(dir, '.agentfeed', 'drafts', 'internal.json')]: { type: 'add', content: '{"raw":"internal"}\n' },
+        [join(dir, 'src', 'public.ts')]: { type: 'add', content: 'export const publicEvidence = true;\n' }
+      } } }
+    ]);
+
+    const draft = await collectDraft({ cwd: dir, source: 'codex', sessionFile, since: '2026-05-20T01:00:00Z', until: '2026-05-20T02:00:00Z' });
+
+    expect(draft.worklog.metrics.files_changed).toBe(1);
+    expect(draft.worklog.metrics.lines_added).toBe(1);
+    expect(draft.worklog.changed_areas).toContain('Application code');
+    expect(draft.source.collection_fingerprint).toBeTruthy();
+    expect(draft.worklog.metrics.collection_sources).toContainEqual({ type: 'agent_session', name: 'codex', quality: 'high' });
+    expect(JSON.stringify(draft)).not.toContain('.omx');
+    expect(JSON.stringify(draft)).not.toContain('.cursor');
+    expect(JSON.stringify(draft)).not.toContain('.agentfeed/drafts');
+  });
+
   it('stores explicit collection windows on created drafts', async () => {
     await initProject({ cwd: dir, noGitCheck: false });
     execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });

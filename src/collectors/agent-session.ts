@@ -3,6 +3,7 @@ import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 
 import { realpathSync } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import type { AgentType, ChangedFileSummary, CollectionQuality, CollectionSource, CollectionWindow, CollectionWindowReason, WorklogMetrics } from '../types.js';
+import { shouldIgnoreEvidencePath } from './path-filter.js';
 
 export interface AgentSessionMetrics extends WorklogMetrics {
   session_id?: string | null;
@@ -140,6 +141,7 @@ function upsertFile(
   path: string,
   input: { status?: ChangedFileSummary['status']; added?: number | null; removed?: number | null }
 ) {
+  if (shouldIgnoreEvidencePath(path)) return;
   const current = files.get(path) ?? {
     path,
     extension: extname(path) || null,

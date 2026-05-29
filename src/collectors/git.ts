@@ -2,6 +2,7 @@ import { extname } from 'node:path';
 import type { ChangedFileSummary, GitMetrics } from '../types.js';
 import { findGitRoot } from '../config/project-config.js';
 import { run } from '../utils/shell.js';
+import { shouldIgnoreEvidencePath } from './path-filter.js';
 
 function statusFromCode(code: string): ChangedFileSummary['status'] {
   if (code.includes('A') || code === '??') return 'added';
@@ -11,10 +12,8 @@ function statusFromCode(code: string): ChangedFileSummary['status'] {
   return 'unknown';
 }
 
-const METADATA_ROOTS = ['.agentfeed', '.claude', '.codex', '.cursor', '.gemini', '.omc', '.omx', '.ai', '.agent', '.agents', '.aider'];
-
 function shouldIgnorePath(path: string): boolean {
-  return METADATA_ROOTS.some((root) => path === root || path.startsWith(`${root}/`));
+  return shouldIgnoreEvidencePath(path);
 }
 
 function languageFor(path: string): string | null {

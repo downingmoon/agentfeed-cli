@@ -6,6 +6,7 @@ import { collectGitMetrics } from '../collectors/git.js';
 import { collectAgentSessionMetrics } from '../collectors/agent-session.js';
 import { collectConfiguredCommandMetrics } from '../collectors/test-command.js';
 import { detectAgentSignals } from '../collectors/agent-discovery.js';
+import { shouldIgnoreEvidencePath } from '../collectors/path-filter.js';
 import { changedAreas } from '../summary/changed-areas.js';
 import { generateOutcome, generateSummary, generateTimeline, generateTitle } from '../summary/rule-based.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
@@ -77,7 +78,7 @@ async function findDraftByFingerprint(cwd: string, fingerprint: string): Promise
 
 function normalizedChangedFilesForFingerprint(files: ChangedFileSummary[]): Array<Pick<ChangedFileSummary, 'path' | 'status' | 'lines_added' | 'lines_removed'>> {
   return files
-    .filter((file) => file.path && file.path !== '.agentfeed' && !file.path.startsWith('.agentfeed/'))
+    .filter((file) => file.path && !shouldIgnoreEvidencePath(file.path))
     .map((file) => ({
       path: file.path,
       status: file.status,
@@ -100,6 +101,7 @@ function collectionFingerprint(input: { source: AgentType; sessionId?: string | 
 function mergeChangedFiles(gitFiles: ChangedFileSummary[], sessionFiles: ChangedFileSummary[]): ChangedFileSummary[] {
   const files = new Map<string, ChangedFileSummary>();
   for (const file of [...gitFiles, ...sessionFiles]) {
+    if (shouldIgnoreEvidencePath(file.path)) continue;
     const current = files.get(file.path);
     if (!current) {
       files.set(file.path, { ...file });

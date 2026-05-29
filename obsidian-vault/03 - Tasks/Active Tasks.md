@@ -41,3 +41,5 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#남은 검증 리스크]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Clipboard fallback 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 user_note 계약]]
+- [[Integration - CLI Backend Frontend#2026-05-30 E2E smoke gate 보강]]
+- [[Collection System#2026-05-30 Cursor 실제 저장소 조사]]

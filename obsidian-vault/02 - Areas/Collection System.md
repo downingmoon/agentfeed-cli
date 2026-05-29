@@ -80,3 +80,20 @@ created: 2026-05-30
 - [x] explicit source cost opt-in 보존
 - [x] doctor source별 수집 개선 가이드
 - [ ] Docker 기반 local E2E smoke success path 재검증
+
+## 2026-05-30 Cursor 실제 저장소 조사
+
+> [!warning]
+> 현재 로컬에는 Cursor 기본 저장 경로가 없어 실제 workspace/session format을 더 분석하지 못했습니다.
+
+확인한 경로:
+
+- `/Users/downing/Library/Application Support/Cursor/User/workspaceStorage`
+- `/Users/downing/.cursor`
+- `AgentFeed-CLI/.cursor`
+
+현재 대응:
+
+- 명시적 `--session-file` 또는 project-local `.cursor/*.json|jsonl|log`는 low-quality generic metadata로 수집
+- raw Cursor transcript parser는 확인 가능한 실제 sample이 생길 때까지 보수적으로 보류
+- `agentfeed doctor` / `collect --source cursor --explain`로 low-quality 근거와 수동 session-file 경로를 안내

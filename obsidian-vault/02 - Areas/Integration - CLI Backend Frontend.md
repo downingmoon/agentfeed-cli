@@ -60,6 +60,15 @@ sequenceDiagram
 - [ ] 실제 GitHub OAuth / CLI browser login happy path 재확인
 - [ ] 실제 사용자 작업 repo에서 `agentfeed share --open-review` smoke
 
+## 2026-05-30 E2E smoke gate 보강
+
+> [!info]
+> `agentfeed-dev/scripts/smoke-e2e.sh`는 Docker dev stack이 켜진 상태에서 CLI `share --json` → Backend ingest/review → Frontend review route → publish → public feed까지 검증합니다.
+
+- Cursor-style 수집 payload의 `collection_quality=low`, `collection_sources[0].name=cursor` 확인
+- `share --note`가 `summary`에 섞이지 않고 `user_note`로 draft/review/detail/feed까지 보존되는지 확인
+- 현재 로컬 검증 상태: Docker daemon 미실행으로 syntax/static check만 가능
+
 ## 2026-05-30 Review evidence 계약
 
 > [!success]

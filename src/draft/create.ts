@@ -4,6 +4,7 @@ import type { AgentFeedProjectConfig, AgentType, ChangedFileSummary, CollectionW
 import { loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { collectAgentSessionMetrics } from '../collectors/agent-session.js';
+import { collectConfiguredTestMetrics } from '../collectors/test-command.js';
 import { changedAreas } from '../summary/changed-areas.js';
 import { generateOutcome, generateSummary, generateTimeline, generateTitle } from '../summary/rule-based.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
@@ -120,6 +121,17 @@ function sumChangedFileLines(files: ChangedFileSummary[], key: 'lines_added' | '
   return files.reduce((sum, file) => sum + (file[key] ?? 0), 0);
 }
 
+function addOptionalCounts(...values: Array<number | null | undefined>): number | null {
+  let total = 0;
+  let seen = false;
+  for (const value of values) {
+    if (value == null) continue;
+    total += value;
+    seen = true;
+  }
+  return seen ? total : null;
+}
+
 function enabledAutoAgentSources(config: AgentFeedProjectConfig): AgentType[] {
   const sources: AgentType[] = [];
   if (config.agents.claude_code.enabled) sources.push('claude_code');
@@ -171,6 +183,12 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
   const mergedGit = { ...git, changed_files: changedFiles, files_changed: filesChanged, lines_added: linesAdded, lines_removed: linesRemoved };
   const areas = changedAreas(changedFiles);
   const safeAreas = areas.length ? areas : ['Application code'];
+  const fingerprint = collectionFingerprint({ source, sessionId: session?.session_id, headCommit: git.head_commit, window: actualWindow, changedFiles });
+  if (fingerprint && !options.force) {
+    const existing = await findDraftByFingerprint(root, fingerprint);
+    if (existing) return { draft: existing, reusedExisting: true };
+  }
+  const configuredTestMetrics = await collectConfiguredTestMetrics(root, config);
   const includeFileStats = config.collection.include_file_stats;
   const metrics: WorklogMetrics = {
     tokens_used: config.collection.include_token_usage ? session?.tokens_used ?? null : null,
@@ -179,11 +197,11 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
     files_changed: includeFileStats ? filesChanged : null,
     lines_added: includeFileStats ? linesAdded : null,
     lines_removed: includeFileStats ? linesRemoved : null,
-    tests_run: config.collection.include_test_results ? session?.tests_run ?? null : null,
-    tests_passed: config.collection.include_test_results ? session?.tests_passed ?? null : null,
+    tests_run: config.collection.include_test_results ? addOptionalCounts(session?.tests_run, configuredTestMetrics?.tests_run) : null,
+    tests_passed: config.collection.include_test_results ? addOptionalCounts(session?.tests_passed, configuredTestMetrics?.tests_passed) : null,
     commits_created: null,
-    failed_commands: session?.failed_commands ?? null,
-    commands_run: session?.commands_run ?? null,
+    failed_commands: addOptionalCounts(session?.failed_commands, configuredTestMetrics?.failed_commands),
+    commands_run: addOptionalCounts(session?.commands_run, configuredTestMetrics?.commands_run),
     tool_calls: session?.tool_calls ?? null,
     skills_used: session?.skills_used ?? null,
     subagents_spawned: session?.subagents_spawned ?? null,
@@ -193,11 +211,6 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
     collection_quality: session?.collection_quality ?? null,
     collection_sources: session?.collection_sources ?? null
   };
-  const fingerprint = collectionFingerprint({ source, sessionId: session?.session_id, headCommit: git.head_commit, window: actualWindow, changedFiles });
-  if (fingerprint && !options.force) {
-    const existing = await findDraftByFingerprint(root, fingerprint);
-    if (existing) return { draft: existing, reusedExisting: true };
-  }
   const title = generateTitle(safeAreas, mergedGit);
   const summary = applyUserNote(generateSummary(safeAreas, metrics), options.note);
   const publicFields = {

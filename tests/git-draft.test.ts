@@ -79,4 +79,57 @@ describe('git collector and drafts', () => {
     expect(payload.worklog.metrics.lines_added).toBeNull();
     expect(payload.worklog.metrics.lines_removed).toBeNull();
   });
+
+  it('runs the configured test command when run_tests_on_collect is true', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.collection.run_tests_on_collect = true;
+    config.commands.test = 'node .agentfeed/test-pass.mjs';
+    await writeFile(configPath, JSON.stringify(config, null, 2));
+    await writeFile(join(dir, '.agentfeed', 'test-pass.mjs'), 'process.exit(0);\n');
+
+    const draft = await collectDraft({ cwd: dir, source: 'claude_code' });
+
+    expect(draft.worklog.metrics.tests_run).toBe(1);
+    expect(draft.worklog.metrics.tests_passed).toBe(1);
+    expect(draft.worklog.metrics.commands_run).toBe(1);
+    expect(draft.worklog.metrics.failed_commands).toBeNull();
+  });
+
+  it('records configured test command failures without uploading raw output', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.collection.run_tests_on_collect = true;
+    config.commands.test = 'node .agentfeed/test-fail.mjs';
+    await writeFile(configPath, JSON.stringify(config, null, 2));
+    await writeFile(join(dir, '.agentfeed', 'test-fail.mjs'), 'console.error("SECRET_RAW_TEST_OUTPUT"); process.exit(1);\n');
+
+    const draft = await collectDraft({ cwd: dir, source: 'claude_code' });
+    const payloadText = JSON.stringify(draftToIngestRequest(draft));
+
+    expect(draft.worklog.metrics.tests_run).toBe(1);
+    expect(draft.worklog.metrics.tests_passed).toBe(0);
+    expect(draft.worklog.metrics.commands_run).toBe(1);
+    expect(draft.worklog.metrics.failed_commands).toBe(1);
+    expect(payloadText).not.toContain('SECRET_RAW_TEST_OUTPUT');
+  });
+
+  it('infers npm test when run_tests_on_collect uses auto command detection', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.collection.run_tests_on_collect = true;
+    config.commands.test = 'auto';
+    await writeFile(configPath, JSON.stringify(config, null, 2));
+    await writeFile(join(dir, 'package.json'), JSON.stringify({ scripts: { test: 'node .agentfeed/test-auto.mjs' } }, null, 2));
+    await writeFile(join(dir, '.agentfeed', 'test-auto.mjs'), 'process.exit(0);\n');
+
+    const draft = await collectDraft({ cwd: dir, source: 'claude_code' });
+
+    expect(draft.worklog.metrics.tests_run).toBe(1);
+    expect(draft.worklog.metrics.tests_passed).toBe(1);
+    expect(draft.worklog.metrics.commands_run).toBe(1);
+  });
 });

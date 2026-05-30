@@ -12,6 +12,7 @@ import { formatCollectionExplain } from '../draft/explain.js';
 import { checkApiReachability, checkIngestionToken, previewDraftRemote, publishDraft } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
+import { applyRedactedPublicFields, publicScanFieldsFromDraft, type PublicScanFields } from '../privacy/draft-sanitizer.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { detectAgentSignals, formatAgentSignalLines } from '../collectors/agent-discovery.js';
 import { changedAreas } from '../summary/changed-areas.js';
@@ -23,12 +24,9 @@ import { readJson, pathExists } from '../utils/fs.js';
 import { openBrowser } from '../utils/open-browser.js';
 import { copyToClipboard } from '../utils/clipboard.js';
 import { AGENTFEED_CLI_VERSION } from '../version.js';
-import type { LocalDraft } from '../types.js';
 
 function print(text = '') { process.stdout.write(`${text}\n`); }
 function err(text = '') { process.stderr.write(`${text}\n`); }
-
-type PublicScanFields = Record<string, unknown>;
 
 function flattenStringFields(input: PublicScanFields, prefix = ''): Array<[string, string]> {
   const entries: Array<[string, string]> = [];
@@ -74,18 +72,6 @@ function formatPrivacyScanReport(input: PublicScanFields, redacted: PublicScanFi
     for (const preview of previews) lines.push(`- ${preview.field}: ${preview.value}`);
   }
   return lines.join('\n');
-}
-
-function applyRedactedPublicFields(draft: LocalDraft, redacted: PublicScanFields): void {
-  if (typeof redacted.title === 'string') draft.worklog.title = redacted.title;
-  if (typeof redacted.summary === 'string') draft.worklog.summary = redacted.summary;
-  if (typeof redacted.user_note === 'string' || redacted.user_note == null) draft.worklog.user_note = redacted.user_note as string | null;
-  if (typeof redacted.public_prompt === 'string' || redacted.public_prompt == null) draft.worklog.public_prompt = redacted.public_prompt as string | null;
-  if (Array.isArray(redacted.outcome)) draft.worklog.outcome = redacted.outcome as string[];
-  if (Array.isArray(redacted.timeline)) draft.worklog.timeline = redacted.timeline as LocalDraft['worklog']['timeline'];
-  if (Array.isArray(redacted.changed_areas)) draft.worklog.changed_areas = redacted.changed_areas as string[];
-  if (Array.isArray(redacted.tags)) draft.worklog.tags = redacted.tags as string[];
-  if (redacted.project && typeof redacted.project === 'object') draft.project = redacted.project as LocalDraft['project'];
 }
 
 async function resolveDraftId(cwd: string, args: string[]): Promise<string> {
@@ -266,17 +252,7 @@ async function cmdScan(args: string[]) {
   }
   const id = await resolveDraftId(process.cwd(), args);
   const draft = await readDraft(process.cwd(), id);
-  const input = {
-    title: draft.worklog.title,
-    summary: draft.worklog.summary,
-    user_note: draft.worklog.user_note ?? null,
-    public_prompt: draft.worklog.public_prompt,
-    outcome: draft.worklog.outcome,
-    timeline: draft.worklog.timeline,
-    changed_areas: draft.worklog.changed_areas,
-    tags: draft.worklog.tags,
-    project: draft.project
-  };
+  const input = publicScanFieldsFromDraft(draft);
   const result = scanAndRedactFields(input);
   if (!dryRun) {
     applyRedactedPublicFields(draft, result.redacted);

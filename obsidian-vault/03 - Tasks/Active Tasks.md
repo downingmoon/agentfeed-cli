@@ -58,6 +58,8 @@ created: 2026-05-30
 - [x] Projects/Profile/ProjectDetail cursor pagination UX 보강
 - [x] Project slug lookup이 첫 페이지 밖 프로젝트를 false 404 처리하지 않도록 보강
 - [x] CLI browser login/token path를 no-OAuth test와 dev smoke token preflight로 검증
+- [x] publish/upload 직전 draft public field 재-scan으로 수동 편집 secret 누출 방지
+- [x] generic/Cursor `--until` 단독 window에서 timestamp 없는 row 반복 집계 방지
 
 ## P2 후보
 
@@ -91,6 +93,8 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI login/token smoke 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Feed sort label 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Publish management 계약]]
+- [[Privacy Safety#2026-05-30 Upload-time privacy re-scan]]
+- [[Collection System#2026-05-30 Generic until-window timestamp-less evidence 보정]]
 - [[Collection System#2026-05-30 Agent window timestamp-less evidence 보정]]
 - [[Collection System#2026-05-30 Codex failed spawn_agent 보정]]
 - [[Collection System#2026-05-30 Codex failed apply_patch evidence 보정]]

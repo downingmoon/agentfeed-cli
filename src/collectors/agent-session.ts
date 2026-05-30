@@ -1005,7 +1005,7 @@ async function parseGenericMetadata(cwd: string, sessionFile?: string | null, wi
   const acc = { sessionId: null as string | null, model: null as string | null, tokensUsed: 0, estimatedCostUsd: 0, commandsRun: 0, toolCalls: 0, agentTurns: 0, agentModes: new Set<string>() };
   const changedFiles = new Map<string, ChangedFileSummary>();
   const metadataFiles = sessionFile ? [sessionFile] : await genericMetadataFiles(cwd, options.roots);
-  const includeMissingTimestamp = !window?.since;
+  const includeMissingTimestamp = !hasCollectionWindowBoundary(window);
   for (const file of metadataFiles) {
     for (const record of await genericRecordsFromFile(file)) {
       if (rowInCollectionWindow(record, window, { includeMissingTimestamp })) applyGenericRecord(record, acc, cwd, changedFiles);

@@ -91,6 +91,7 @@ created: 2026-05-30
 - [x] 하위 디렉터리 실행 시 relative `--session-file` 경로를 invocation cwd 기준으로 해석
 - [x] Codex/OMX session id 불일치 시 다른 세션의 subagent/turn metrics 병합 방지
 - [x] generic/Cursor metadata 증분 window에서 timestamp 없는 row 제외
+- [x] generic/Cursor metadata `--until` 단독 window에서 timestamp 없는 row 제외
 - [x] Codex mixed `apply_patch` / `patch_apply_end` evidence에서 fallback-only 파일 누락 방지
 - [x] `uv run pytest`, `python -m pytest`, `make test` 같은 wrapped test command 인식
 - [x] generic/Cursor metadata의 `created_at`, `createdAt`, `ts` timestamp alias window 필터링
@@ -107,6 +108,27 @@ created: 2026-05-30
 - [x] 실패한 Codex `spawn_agent` function call을 spawned subagent로 과대집계하지 않도록 보정
 - [x] explicit collection window에서 timestamp 없는 agent evidence row를 제외하도록 보정
 - [x] Docker 기반 local E2E smoke success path 재검증
+
+## 2026-05-30 Generic until-window timestamp-less evidence 보정
+
+> [!success]
+> generic/Cursor metadata도 `--until`만 지정된 collection window에서 timestamp 없는 row를 포함하지 않도록 보정했습니다.
+
+문제:
+
+- 기존 generic metadata parser는 `since`가 없으면 timestamp 없는 row를 포함했습니다.
+- 따라서 `--until <time>`만 지정한 재수집에서 오래된 timestamp-less row가 window 안 evidence처럼 집계될 수 있었습니다.
+
+수정:
+
+- generic metadata도 `since` 또는 `until` 중 하나라도 있으면 timestamp 없는 row를 제외합니다.
+- collection boundary가 전혀 없는 기본 best-effort 수집에서는 기존 호환성을 유지합니다.
+
+검증:
+
+- `excludes timestamp-less generic metadata rows when only an until window is active` 회귀 테스트
+- `npm test -- tests/session-collector.test.ts --run`
+- `npm test -- --run`
 
 ## 2026-05-30 Local E2E smoke 검증
 

@@ -807,6 +807,28 @@ describe('agent session collector', () => {
     expect(metrics?.lines_added).toBe(1);
   });
 
+  it('excludes timestamp-less generic metadata rows when only an until window is active', async () => {
+    const sessionFile = join(dir, 'generic-window-until-missing-timestamp.jsonl');
+    await writeJsonl(sessionFile, [
+      { session_id: 'generic-window-until-missing-timestamp', tokens_used: 999, commands_run: 8, changed_files: [
+        { path: join(dir, 'src', 'untimestamped-generic.ts'), lines_added: 10 }
+      ] },
+      { timestamp: '2026-05-20T00:30:00Z', session_id: 'generic-window-until-missing-timestamp', tokens_used: 10, commands_run: 1, changed_files: [
+        { path: join(dir, 'src', 'inside-until-generic.ts'), lines_added: 1 }
+      ] },
+      { timestamp: '2026-05-20T02:00:00Z', session_id: 'generic-window-until-missing-timestamp', tokens_used: 500, commands_run: 4, changed_files: [
+        { path: join(dir, 'src', 'future-generic.ts'), lines_added: 5 }
+      ] }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'other', sessionFile, until: '2026-05-20T01:00:00Z' });
+
+    expect(metrics?.tokens_used).toBe(10);
+    expect(metrics?.commands_run).toBe(1);
+    expect(metrics?.changed_files.map((file) => file.path)).toEqual(['src/inside-until-generic.ts']);
+    expect(metrics?.lines_added).toBe(1);
+  });
+
   it('filters generic plugin metadata by collection window when timestamps are present', async () => {
     const sessionFile = join(dir, 'generic-window.jsonl');
     await writeJsonl(sessionFile, [

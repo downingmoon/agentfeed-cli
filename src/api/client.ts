@@ -1,6 +1,7 @@
 import type { AgentFeedCredentials, CliAuthExchangeResult, CliAuthSession, IngestWorklogRequest, LocalDraft, WorklogStatus } from '../types.js';
 import { readDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
+import { sanitizedDraftForUpload, scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
 
 export class AgentFeedApiError extends Error {
   constructor(public status: number, public code: string, message: string, public details?: Record<string, unknown>) {
@@ -52,36 +53,37 @@ export async function checkIngestionToken(credentials: AgentFeedCredentials): Pr
 }
 
 export function draftToIngestRequest(draft: LocalDraft): IngestWorklogRequest {
+  const safeDraft = sanitizedDraftForUpload(draft);
   return {
     source: {
-      agent: draft.source.agent,
-      tool_version: draft.source.tool_version,
-      host_label: draft.source.host_label,
-      session_id: draft.source.session_id,
-      local_draft_id: draft.id,
-      collection_window: draft.source.collection_window ?? null,
-      collection_window_reason: draft.source.collection_window_reason ?? null,
-      collection_fingerprint: draft.source.collection_fingerprint ?? null
+      agent: safeDraft.source.agent,
+      tool_version: safeDraft.source.tool_version,
+      host_label: safeDraft.source.host_label,
+      session_id: safeDraft.source.session_id,
+      local_draft_id: safeDraft.id,
+      collection_window: safeDraft.source.collection_window ?? null,
+      collection_window_reason: safeDraft.source.collection_window_reason ?? null,
+      collection_fingerprint: safeDraft.source.collection_fingerprint ?? null
     },
     project: {
-      name: draft.project.name,
-      repository_url: draft.project.repository_url ?? null,
-      local_path_hash: draft.project.local_path_hash
+      name: safeDraft.project.name,
+      repository_url: safeDraft.project.repository_url ?? null,
+      local_path_hash: safeDraft.project.local_path_hash
     },
     worklog: {
-      title: draft.worklog.title,
-      summary: draft.worklog.summary,
-      user_note: draft.worklog.user_note ?? null,
-      model: draft.worklog.model ?? null,
-      category: draft.worklog.category,
-      tags: draft.worklog.tags,
-      metrics: draft.worklog.metrics,
-      changed_areas: draft.worklog.changed_areas,
-      public_prompt: draft.worklog.public_prompt ?? null,
-      outcome: draft.worklog.outcome,
-      timeline: draft.worklog.timeline
+      title: safeDraft.worklog.title,
+      summary: safeDraft.worklog.summary,
+      user_note: safeDraft.worklog.user_note ?? null,
+      model: safeDraft.worklog.model ?? null,
+      category: safeDraft.worklog.category,
+      tags: safeDraft.worklog.tags,
+      metrics: safeDraft.worklog.metrics,
+      changed_areas: safeDraft.worklog.changed_areas,
+      public_prompt: safeDraft.worklog.public_prompt ?? null,
+      outcome: safeDraft.worklog.outcome,
+      timeline: safeDraft.worklog.timeline
     },
-    privacy_scan: draft.privacy_scan
+    privacy_scan: safeDraft.privacy_scan
   };
 }
 
@@ -176,6 +178,7 @@ export async function publishDraft(options: { cwd: string; id: string; credentia
       reused_existing: true
     };
   }
+  scanAndRedactDraftPublicFields(draft);
   const result = await uploadDraft(draft, options.credentials);
   draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, uploaded_at: result.created_at };
   await writeDraft(options.cwd, draft);

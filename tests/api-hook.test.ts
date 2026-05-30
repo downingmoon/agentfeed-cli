@@ -42,6 +42,32 @@ describe('api client', () => {
     expect(saved.upload).toMatchObject({ uploaded: true, worklog_id: 'worklog_1', review_url: 'https://agentfeed.dev/review/1' });
   });
 
+  it('re-scans manually edited draft fields before upload and persists redactions', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    draft.worklog.summary = 'Deploy with sk-abcdefghijklmnopqrstuvwxyz1234567890';
+    draft.worklog.public_prompt = 'Use ghp_abcdefghijklmnopqrstuvwxyz1234567890 carefully';
+    draft.project.repository_url = 'http://localhost:3000/private-repo';
+    await writeDraft(dir, draft);
+    let ingestPayload: Record<string, any> | null = null;
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      ingestPayload = JSON.parse(String(init?.body ?? '{}')) as Record<string, any>;
+      return new Response(JSON.stringify({ data: { id: 'worklog_redacted', status: 'needs_review', visibility: 'private', review_url: 'https://agentfeed.dev/review/redacted', created_at: '2026-05-19T00:00:00Z' } }), { status: 200, headers: { 'content-type': 'application/json' } });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } });
+
+    expect(ingestPayload?.worklog.summary).toBe('Deploy with [REDACTED_SECRET]');
+    expect(ingestPayload?.worklog.public_prompt).toBe('Use [REDACTED_SECRET] carefully');
+    expect(ingestPayload?.project.repository_url).toBe('[REDACTED_URL]');
+    expect(ingestPayload?.privacy_scan.status).toBe('danger');
+    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+    expect(saved.worklog.summary).toBe('Deploy with [REDACTED_SECRET]');
+    expect(saved.worklog.public_prompt).toBe('Use [REDACTED_SECRET] carefully');
+    expect(saved.project.repository_url).toBe('[REDACTED_URL]');
+    expect(saved.privacy_scan.status).toBe('danger');
+  });
+
   it('publish reuses an already uploaded draft instead of uploading again', async () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
     draft.upload = {

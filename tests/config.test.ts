@@ -1,10 +1,10 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { initProject, loadProjectConfig } from '../src/config/project-config.js';
 import { resolveApiBaseUrl, resolveApiBaseUrlWithMetadata } from '../src/config/api-base.js';
-import { credentialsFromToken, credentialsPath, globalAgentFeedDir, loadCredentialsWithMetadata, resolveCredentials, resolveHomeDir, saveCredentials } from '../src/config/credentials.js';
+import { credentialsFromToken, credentialsPath, globalAgentFeedDir, loadCredentialsWithMetadata, resolveCredentials, resolveHomeDir, saveCredentials, type SecretStore } from '../src/config/credentials.js';
 import { pathExists } from '../src/utils/fs.js';
 
 let dir: string;
@@ -15,6 +15,7 @@ const oldBase = process.env.AGENTFEED_API_BASE_URL;
 const oldToken = process.env.AGENTFEED_TOKEN;
 const oldAllowInsecure = process.env.AGENTFEED_ALLOW_INSECURE_API;
 const oldTrustRepoApiBase = process.env.AGENTFEED_TRUST_REPO_API_BASE;
+const oldCredentialStore = process.env.AGENTFEED_CREDENTIAL_STORE;
 
 beforeEach(async () => {
   dir = await mkdtemp(join(tmpdir(), 'agentfeed-config-'));
@@ -24,6 +25,7 @@ beforeEach(async () => {
   delete process.env.AGENTFEED_API_BASE_URL;
   delete process.env.AGENTFEED_ALLOW_INSECURE_API;
   delete process.env.AGENTFEED_TRUST_REPO_API_BASE;
+  delete process.env.AGENTFEED_CREDENTIAL_STORE;
 });
 
 afterEach(async () => {
@@ -38,6 +40,8 @@ afterEach(async () => {
   else process.env.AGENTFEED_ALLOW_INSECURE_API = oldAllowInsecure;
   if (oldTrustRepoApiBase === undefined) delete process.env.AGENTFEED_TRUST_REPO_API_BASE;
   else process.env.AGENTFEED_TRUST_REPO_API_BASE = oldTrustRepoApiBase;
+  if (oldCredentialStore === undefined) delete process.env.AGENTFEED_CREDENTIAL_STORE;
+  else process.env.AGENTFEED_CREDENTIAL_STORE = oldCredentialStore;
   await rm(dir, { recursive: true, force: true });
   await rm(home, { recursive: true, force: true });
 });
@@ -85,6 +89,75 @@ describe('project config', () => {
     const fileMode = (await stat(credentialsPath())).mode & 0o777;
     expect(dirMode).toBe(0o700);
     expect(fileMode).toBe(0o600);
+  });
+
+  it('can store the token in an injected keychain backend without plaintext credential-file leakage', async () => {
+    let savedSecret: string | null = null;
+    const keychain: SecretStore = {
+      service: 'AgentFeed CLI Test',
+      account: 'test-account',
+      async isAvailable() { return true; },
+      async read() { return savedSecret; },
+      async write(secret: string) { savedSecret = secret; },
+    };
+
+    await saveCredentials('af_live_keychain_secret', {
+      apiBaseUrl: 'http://localhost:8001/v1',
+      credentialStore: 'keychain',
+      secretStore: keychain,
+    });
+
+    const metadataFile = await readFile(credentialsPath(), 'utf8');
+    expect(metadataFile).toContain('"credential_store": "keychain"');
+    expect(metadataFile).not.toContain('af_live_keychain_secret');
+
+    const resolved = await loadCredentialsWithMetadata({ cwd: dir, secretStore: keychain });
+    expect(resolved.token_source).toBe('keychain');
+    expect(resolved.credential_store).toBe('keychain');
+    expect(resolved.credentials).toMatchObject({
+      api_base_url: 'http://localhost:8001/v1',
+      ingestion_token: 'af_live_keychain_secret'
+    });
+  });
+
+  it('falls back to private file credentials when auto keychain storage is unavailable', async () => {
+    const unavailableKeychain: SecretStore = {
+      service: 'AgentFeed CLI Test',
+      account: 'unavailable',
+      async isAvailable() { return false; },
+      async read() { return null; },
+      async write() { throw new Error('unavailable'); },
+    };
+
+    await saveCredentials('af_live_file_fallback', {
+      apiBaseUrl: 'http://localhost:8001/v1',
+      credentialStore: 'auto',
+      secretStore: unavailableKeychain,
+    });
+
+    const metadataFile = await readFile(credentialsPath(), 'utf8');
+    expect(metadataFile).toContain('"credential_store": "file"');
+    expect(metadataFile).toContain('af_live_file_fallback');
+
+    const resolved = await loadCredentialsWithMetadata({ cwd: dir, secretStore: unavailableKeychain });
+    expect(resolved.token_source).toBe('credentials_file');
+    expect(resolved.credential_store).toBe('file');
+  });
+
+  it('requires explicit fallback when keychain-only storage is unavailable', async () => {
+    const unavailableKeychain: SecretStore = {
+      service: 'AgentFeed CLI Test',
+      account: 'unavailable',
+      async isAvailable() { return false; },
+      async read() { return null; },
+      async write() { throw new Error('unavailable'); },
+    };
+
+    await expect(saveCredentials('af_live_keychain_required', {
+      apiBaseUrl: 'http://localhost:8001/v1',
+      credentialStore: 'keychain',
+      secretStore: unavailableKeychain,
+    })).rejects.toThrow(/OS keychain credential storage is not available/i);
   });
 
   it('discovers the dev orchestration .env when AGENTFEED_API_BASE_URL is not exported', async () => {

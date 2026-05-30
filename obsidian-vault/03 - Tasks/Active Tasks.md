@@ -120,6 +120,11 @@ created: 2026-05-30
 - [x] Backend integrations/profile-project/review/me-token route rate-limit coverage 보강
 - [x] Frontend auth outage review/header UX, CSP fallback, search load-more dedup 보강
 
+- [x] CLI optional OS keychain credential backend 및 status/doctor provenance 보강
+- [x] Backend publish follower notification race를 row lock/transition edge로 보강
+- [x] Backend leaderboard following-state N+1 제거 및 public worklog partial index 추가
+- [x] Frontend profile/project/explore pagination/partial-failure contract regression 보강
+
 ## P2 후보
 
 - [x] 비용 정보는 추정 금지 원칙 유지, explicit cost field만 opt-in 보존
@@ -130,6 +135,8 @@ created: 2026-05-30
 - [x] Frontend unpublish control을 실제 published status 기준으로 축소
 
 ## 관련 링크
+
+- [[Commercial Readiness Hardening - Keychain Publish Race Leaderboard Scale and Frontend Contracts 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Soft Delete Auth Intent and CLI Upload Safety 2026-05-30]]
 - [[CLI Product Improvements Roadmap#남은 P1 후보]]

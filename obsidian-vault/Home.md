@@ -12,7 +12,20 @@ created: 2026-05-30
 > [!tip] 열기
 > Obsidian에서 `AgentFeed-CLI/obsidian-vault` 폴더를 **Open folder as vault**로 열면 됩니다.
 
+
+## 문서 작성 정책
+
+> [!important]
+> 앞으로 AgentFeed 작업 문서, TODO, 분석/검증 기록은 `obsidian-vault/`에 Obsidian Markdown 형식으로 작성합니다.
+
+- 신규 작업 노트는 frontmatter(`title`, `tags`, `status`, `created`)를 포함합니다.
+- 관련 문서는 [[AgentFeed CLI MOC]]와 [[Active Tasks]]에 wikilink로 연결합니다.
+- 내부 문서 연결은 Markdown 링크 대신 `[[wikilink]]`를 우선 사용합니다.
+- 강조가 필요한 결정/리스크/검증 결과는 Obsidian callout을 사용합니다.
+
 ## 시작점
+
+- [[Commercial Readiness Hardening - Keychain Publish Race Leaderboard Scale and Frontend Contracts 2026-05-31]] — keychain, publish race, leaderboard scale, frontend contracts
 
 - [[Commercial Readiness Hardening - CSRF Token Capture and Search Pagination 2026-05-30]] — CSRF Origin gate, one-time token capture, search pagination, CLI rotation recovery
 

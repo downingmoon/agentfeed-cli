@@ -34,6 +34,16 @@ function credentialSourceLabel(source: CredentialTokenSource): string {
   switch (source) {
     case 'environment': return 'environment (AGENTFEED_TOKEN)';
     case 'credentials_file': return 'saved credentials file';
+    case 'keychain': return 'OS keychain';
+    case 'missing': return 'missing';
+  }
+}
+
+function credentialStoreLabel(source: Awaited<ReturnType<typeof loadCredentialsWithMetadata>>['credential_store']): string {
+  switch (source) {
+    case 'environment': return 'environment (AGENTFEED_TOKEN)';
+    case 'file': return 'private credentials file';
+    case 'keychain': return 'OS keychain';
     case 'missing': return 'missing';
   }
 }
@@ -267,6 +277,7 @@ async function cmdStatus() {
   const hook = settingsPath && await pathExists(settingsPath) ? hasAgentFeedHook(await readJson<Record<string, unknown>>(settingsPath)) ? 'installed' : 'not installed' : 'unknown';
   print(`User/token: ${creds ? 'configured' : 'missing'}`);
   print(`User/token source: ${credentialSourceLabel(credentialResolution.token_source)}`);
+  print(`Credential store: ${credentialStoreLabel(credentialResolution.credential_store)}`);
   print(`Credentials file: ${credentialResolution.credentials_file_exists ? credentialResolution.credentials_file_path : 'missing'}`);
   print(`API base URL: ${credentialResolution.api_base_url ?? creds?.api_base_url ?? await resolveApiBaseUrl()}`);
   if (credentialResolution.api_base_url_source) {
@@ -467,6 +478,7 @@ async function cmdDoctor() {
   checks.push(['global credentials file exists', creds ? 'yes' : 'no']);
   checks.push(['credentials file path', credentialResolution.credentials_file_path]);
   checks.push(['credential source', credentialSourceLabel(credentialResolution.token_source)]);
+  checks.push(['credential store', credentialStoreLabel(credentialResolution.credential_store)]);
   checks.push(['ingestion token exists', creds?.ingestion_token ? 'yes' : 'no']);
   checks.push(['API base URL configured', apiBaseUrl]);
   checks.push([

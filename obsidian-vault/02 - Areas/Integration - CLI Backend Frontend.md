@@ -1444,3 +1444,19 @@ Frontend 표시:
 - contract test가 native share와 clipboard fallback URL을 검증합니다.
 
 관련 구현: [[Commercial Readiness Hardening - Token Quotas Privacy Tags and Card Actions 2026-05-30]]
+
+
+## 2026-05-30 Worklog comment capability contract
+
+> [!success]
+> Worklog detail comment composer가 Backend permission contract를 선반영하도록 `viewer_state.can_comment`를 추가했습니다.
+
+계약:
+
+- source of truth는 `user_settings.allow_comments`입니다.
+- Backend detail payload는 viewer 기준 `viewer_state.can_comment`를 반환합니다.
+- author는 자신의 worklog에 항상 comment 가능하고, anonymous viewer는 comment 불가입니다.
+- Frontend detail composer는 `currentUser && viewerState.canComment`일 때만 input/submit을 활성화합니다.
+- permission-disabled 상태는 API 실패 후에야 알리는 대신 disabled placeholder/notice로 먼저 안내합니다.
+
+관련 구현: [[Commercial Readiness Hardening - Comment Capability and Theme Hydration 2026-05-30]]

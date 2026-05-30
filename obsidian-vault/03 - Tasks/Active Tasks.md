@@ -225,6 +225,9 @@ created: 2026-05-30
 - [x] Backend production API docs 비활성화, tags search-indexing privacy gate, malformed JWT sub 방어
 - [x] Frontend WorklogCardA comment/share inert control 제거
 - [[Commercial Readiness Hardening - Token Quotas Privacy Tags and Card Actions 2026-05-30]]
+- [x] Backend `viewer_state.can_comment`와 Frontend Worklog detail composer permission gating 보강
+- [x] Frontend persisted theme bootstrap으로 SSR/client theme mismatch window 축소
+- [[Commercial Readiness Hardening - Comment Capability and Theme Hydration 2026-05-30]]
 - [[Commercial Readiness Hardening - Auth Race and Login Smoke 2026-05-30]]
 
 

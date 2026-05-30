@@ -206,3 +206,18 @@ created: 2026-05-30
 - JWT `sub` malformed value는 authenticated user로 처리하지 않고 anonymous로 degrade합니다.
 
 관련 구현: [[Commercial Readiness Hardening - Token Quotas Privacy Tags and Card Actions 2026-05-30]]
+
+
+## 2026-05-30 Frontend theme hydration bootstrap
+
+> [!success]
+> Theme preference를 hydration 전에 `<html data-theme>`에 반영해 hard refresh/light theme mismatch window를 줄였습니다.
+
+계약:
+
+- `agentfeed-theme` localStorage key가 theme preference의 browser-local source입니다.
+- SSR fallback은 dark이지만, head bootstrap script가 hydration 전에 persisted `dark|light` 값을 적용합니다.
+- AppProvider는 DOM/localStorage에서 initial theme을 읽고, state change를 DOM + localStorage에 동기화합니다.
+- `<html suppressHydrationWarning>`으로 bootstrap이 바꾼 `data-theme` attribute mismatch warning을 방지합니다.
+
+관련 구현: [[Commercial Readiness Hardening - Comment Capability and Theme Hydration 2026-05-30]]

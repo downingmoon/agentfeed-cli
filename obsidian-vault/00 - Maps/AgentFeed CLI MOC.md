@@ -32,6 +32,7 @@ graph LR
 - [[Commercial Readiness Hardening - Auth Race and Login Smoke 2026-05-30]]
 - [[Commercial Readiness Hardening - Auth Maintenance and Rendered Smoke 2026-05-30]]
 - [[Commercial Readiness Hardening - Token Quotas Privacy Tags and Card Actions 2026-05-30]]
+- [[Commercial Readiness Hardening - Comment Capability and Theme Hydration 2026-05-30]]
 
 - [[Collection System]]
 - [[Privacy Safety]]

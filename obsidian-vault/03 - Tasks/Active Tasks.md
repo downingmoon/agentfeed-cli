@@ -19,6 +19,7 @@ created: 2026-05-30
 - [x] Docker daemon 실행 후 `agentfeed-dev`에서 `make smoke-e2e` 성공 경로 확인
 - [x] CLI → Backend → Frontend review/publish/feed smoke 재확인
 - [x] Ingestion token `/v1/ingest/status` preflight가 포함된 smoke 재확인
+- [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
 
@@ -205,6 +206,8 @@ created: 2026-05-30
 - [[Privacy Safety#2026-05-30 Soft-deleted project metadata gate]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Backend critical path rate-limit]]
 - [[Auth & Credential Safety#2026-05-30 Backend critical path rate-limit]]
+- [[Live E2E Smoke Gate Hardening 2026-05-30]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Live E2E smoke gate hardening]]
 
 ## 새로 발견한 P1 후보 / 다음 루프
 
@@ -218,6 +221,7 @@ created: 2026-05-30
 - [x] Backend production ENV fail-closed 정책 보강
 - [x] Frontend Next/PostCSS moderate audit advisory를 PostCSS override와 audit gate로 보정
 - [x] `agentfeed-dev/scripts/test-all.sh`에 CLI/Frontend `npm audit --omit=dev --audit-level=moderate` gate 추가
+- [x] `agentfeed-dev/scripts/smoke-e2e.sh`를 실제 dev stack 기준 live E2E gate로 안정화
 - [x] Backend repo-wide `ruff check .` cleanup 및 FastAPI B008 project ignore 명시
 - [x] `agentfeed-dev/scripts/test-all.sh`에 Backend repo-wide `ruff check .` gate 추가
 

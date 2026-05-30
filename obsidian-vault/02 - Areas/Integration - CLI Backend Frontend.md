@@ -1393,3 +1393,23 @@ Frontend 표시:
 - `NEXT_PUBLIC_API_URL=http://localhost:8000 npm run build`
 
 관련: [[Commercial Readiness Audit 2026-05-30#Frontend user-facing safety / runtime config]]
+
+## 2026-05-30 Live E2E smoke gate hardening
+
+> [!success]
+> `agentfeed-dev/scripts/smoke-e2e.sh`가 실제 dev Compose stack 기준으로 CLI → API → Frontend 연결을 검증하도록 보강되었습니다.
+
+계약:
+
+- Backend helper는 running container의 dev environment를 그대로 사용합니다.
+- Backend/frontend readiness는 deadline 기반 wait로 확인합니다.
+- dev SQL echo 로그가 helper stdout에 섞여도 seed JSON은 마지막 line으로 안전하게 파싱합니다.
+- CLI upload source의 `session_id`는 raw local session id가 아니라 hashed alias임을 검증합니다.
+- `RATE_LIMIT_STORE` / `TRUSTED_PROXY_IPS`는 dev Compose env surface에 포함합니다.
+
+검증:
+
+- `./scripts/smoke-e2e.sh` → passed
+- `../agentfeed-dev/scripts/test-all.sh` → passed
+
+관련: [[Live E2E Smoke Gate Hardening 2026-05-30]], [[Commercial Readiness Audit 2026-05-30#2026-05-30 live E2E smoke hardening 루프]]

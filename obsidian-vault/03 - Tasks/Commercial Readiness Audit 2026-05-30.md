@@ -92,8 +92,23 @@ aliases:
 - `uv run --python 3.12 --with pytest --with pytest-asyncio pytest tests -q` → 95 passed
 - `../agentfeed-dev/scripts/test-all.sh` → Backend `ruff check .`, Backend 95 tests, Alembic offline chain 포함
 
+## 2026-05-30 live E2E smoke hardening 루프
+
+> [!success]
+> 실제 Docker Compose dev stack에서 CLI upload → Backend review/publish API → Frontend review route → public feed까지 이어지는 smoke gate를 재검증했습니다.
+
+- smoke backend helper가 `ENVIRONMENT=test`를 강제로 주입하지 않고 실행 중인 dev backend 환경을 그대로 사용합니다.
+- backend/frontend one-shot health check를 deadline 기반 readiness wait로 바꿔 dev server compile/startup flake를 줄였습니다.
+- development SQL echo 로그가 seed JSON 앞에 섞여도 마지막 JSON line만 파싱하도록 보정했습니다.
+- CLI source `session_id`는 raw id가 아니라 hash alias로 업로드되는 privacy contract를 smoke에서 검증합니다.
+- `agentfeed-dev` Compose/.env 예시에 `RATE_LIMIT_STORE`, `TRUSTED_PROXY_IPS`를 노출했습니다.
+
+관련: [[Live E2E Smoke Gate Hardening 2026-05-30]], [[Integration - CLI Backend Frontend#2026-05-30 Live E2E smoke gate hardening]]
+
 ## 검증 로그
 
+- Dev live E2E: `./scripts/smoke-e2e.sh` → passed
+- Shared release gate: `../agentfeed-dev/scripts/test-all.sh` → CLI 154 tests + Frontend build/audit + Backend Ruff/95 tests/Alembic offline chain passed
 - Backend 추가 targeted: `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q -k 'production_settings or development_settings or non_development_settings or rate_limit_identity'` → 10 passed
 - Backend full: `uv run --with pytest --with pytest-asyncio pytest -q` → 89 passed
 - Backend targeted ruff: `uv run --with ruff ruff check --select F,I app/config.py app/middleware/rate_limit.py tests/test_contracts.py` → passed

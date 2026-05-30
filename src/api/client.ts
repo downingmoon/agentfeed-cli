@@ -20,10 +20,23 @@ export interface ApiCheckResult {
 }
 
 const DEFAULT_API_REQUEST_TIMEOUT_MS = 30_000;
+const DEFAULT_API_RETRY_ATTEMPTS = 3;
+const DEFAULT_API_RETRY_BASE_DELAY_MS = 250;
 
 function apiRequestTimeoutMs(): number {
   const configured = Number(process.env.AGENTFEED_API_TIMEOUT_MS);
   return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_API_REQUEST_TIMEOUT_MS;
+}
+
+function apiRetryAttempts(): number {
+  const configured = Number(process.env.AGENTFEED_API_RETRY_ATTEMPTS);
+  if (!Number.isFinite(configured)) return DEFAULT_API_RETRY_ATTEMPTS;
+  return Math.max(1, Math.min(5, Math.floor(configured)));
+}
+
+function apiRetryBaseDelayMs(): number {
+  const configured = Number(process.env.AGENTFEED_API_RETRY_BASE_DELAY_MS);
+  return Number.isFinite(configured) && configured >= 0 ? configured : DEFAULT_API_RETRY_BASE_DELAY_MS;
 }
 
 function apiUrl(apiBaseUrl: string, path: string): string {
@@ -160,6 +173,39 @@ async function fetchWithTimeout(url: string, init: RequestInit, options: { local
   }
 }
 
+function retryAfterMs(details?: Record<string, unknown>): number | null {
+  const seconds = Number(details?.retry_after_seconds);
+  if (!Number.isFinite(seconds) || seconds < 0) return null;
+  return Math.min(2_000, seconds * 1000);
+}
+
+function isRetryableApiError(error: unknown): error is AgentFeedApiError {
+  return error instanceof AgentFeedApiError
+    && (error.status === 0 || error.status === 408 || error.status === 429 || error.status === 500 || error.status === 502 || error.status === 503 || error.status === 504);
+}
+
+async function sleep(ms: number): Promise<void> {
+  if (ms <= 0) return;
+  await new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function withTransientRetry<T>(operation: () => Promise<T>): Promise<T> {
+  const attempts = apiRetryAttempts();
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (attempt >= attempts || !isRetryableApiError(error)) throw error;
+      const retryAfter = retryAfterMs(error.details);
+      const delayMs = retryAfter ?? apiRetryBaseDelayMs() * (2 ** (attempt - 1));
+      await sleep(delayMs);
+    }
+  }
+  throw lastError;
+}
+
 export interface RemotePreviewResult {
   valid: boolean;
   preview: Record<string, unknown>;
@@ -184,7 +230,8 @@ function stringField(value: unknown): string | null {
 }
 
 function isLocalHostname(hostname: string): boolean {
-  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname.endsWith('.localhost');
+  const host = hostname.toLowerCase().replace(/^\[(.*)\]$/, '$1');
+  return host === 'localhost' || host.endsWith('.localhost') || host === '::1' || host === '0.0.0.0' || host.startsWith('127.');
 }
 
 function isAgentFeedHostname(hostname: string): boolean {
@@ -215,6 +262,62 @@ function validateReviewUrl(reviewUrl: string, apiBaseUrl: string): boolean {
   } catch {
     return false;
   }
+}
+
+function isExpectedAuthorizePath(pathname: string): boolean {
+  return pathname.replace(/\/+$/, '') === '/cli/authorize';
+}
+
+function hasOnlyExpectedAuthorizeQuery(url: URL, sessionId: string): boolean {
+  const entries = Array.from(url.searchParams.entries());
+  return entries.length === 1 && entries[0]?.[0] === 'session_id' && entries[0][1] === sessionId;
+}
+
+function validateAuthorizeUrl(authorizeUrl: string, apiBaseUrl: string, sessionId: string): boolean {
+  try {
+    const authorize = new URL(authorizeUrl);
+    const api = new URL(apiBaseUrl);
+    if (!['http:', 'https:'].includes(authorize.protocol)) return false;
+    if (authorize.username || authorize.password || authorize.hash) return false;
+    if (!isExpectedAuthorizePath(authorize.pathname)) return false;
+    if (!hasOnlyExpectedAuthorizeQuery(authorize, sessionId)) return false;
+    if (isLocalHostname(api.hostname)) {
+      return isLocalHostname(authorize.hostname);
+    }
+    if (authorize.protocol !== 'https:') return false;
+    if (isAgentFeedHostname(api.hostname)) {
+      return isAgentFeedReviewHostname(authorize.hostname);
+    }
+    return authorize.hostname === api.hostname;
+  } catch {
+    return false;
+  }
+}
+
+function parseCliAuthSession(value: unknown, apiBaseUrl: string): CliAuthSession {
+  if (!isRecord(value)) throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid CLI auth session.');
+  const sessionId = stringField(value.session_id);
+  const authorizeUrl = stringField(value.authorize_url);
+  const expiresAt = stringField(value.expires_at);
+  const pollIntervalSeconds = Number(value.poll_interval_seconds);
+  if (
+    !sessionId
+    || !authorizeUrl
+    || !expiresAt
+    || !Number.isFinite(Date.parse(expiresAt))
+    || !Number.isFinite(pollIntervalSeconds)
+    || pollIntervalSeconds < 1
+    || pollIntervalSeconds > 60
+    || !validateAuthorizeUrl(authorizeUrl, apiBaseUrl, sessionId)
+  ) {
+    throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid CLI auth session.');
+  }
+  return {
+    session_id: sessionId,
+    authorize_url: authorizeUrl,
+    expires_at: expiresAt,
+    poll_interval_seconds: pollIntervalSeconds
+  };
 }
 
 const VALID_UPLOAD_STATUSES = new Set<string>([
@@ -272,10 +375,11 @@ async function postJson<T>(apiBaseUrl: string, path: string, body: Record<string
 }
 
 export async function createCliAuthSession(apiBaseUrl: string, input: { verifier: string; deviceName?: string }): Promise<CliAuthSession> {
-  return postJson<CliAuthSession>(apiBaseUrl, '/auth/cli/sessions', {
+  const data = await postJson<unknown>(apiBaseUrl, '/auth/cli/sessions', {
     verifier: input.verifier,
     device_name: input.deviceName
   });
+  return parseCliAuthSession(data, apiBaseUrl);
 }
 
 export async function exchangeCliAuthSession(apiBaseUrl: string, sessionId: string, verifier: string): Promise<CliAuthExchangeResult> {
@@ -286,19 +390,25 @@ async function postIngest<T>(path: string, draft: LocalDraft, credentials: Agent
   const payload = draftToIngestRequest(draft);
   const body = JSON.stringify(payload);
   if (Buffer.byteLength(body, 'utf8') > 512 * 1024) throw new AgentFeedApiError(413, 'INGESTION_PAYLOAD_TOO_LARGE', 'Draft payload is too large.');
-  const response = await fetchWithTimeout(apiUrl(credentials.api_base_url, path), {
-    method: 'POST',
-    headers: { authorization: `Bearer ${credentials.ingestion_token}`, 'content-type': 'application/json' },
-    body
-  }, { localDraftKept: true });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const api = data as { error?: { code?: string; message?: string; details?: Record<string, unknown> } };
-    const code = api.error?.code ?? `HTTP_${response.status}`;
-    const msg = friendlyError(response.status, code, api.error?.message ?? response.statusText, api.error?.details);
-    throw new AgentFeedApiError(response.status, code, msg, api.error?.details);
-  }
-  return (data as { data: T }).data;
+  return withTransientRetry(async () => {
+    const response = await fetchWithTimeout(apiUrl(credentials.api_base_url, path), {
+      method: 'POST',
+      headers: { authorization: `Bearer ${credentials.ingestion_token}`, 'content-type': 'application/json' },
+      body
+    }, { localDraftKept: true });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const api = data as { error?: { code?: string; message?: string; details?: Record<string, unknown> } };
+      const retryAfterHeader = Number(response.headers.get('retry-after'));
+      const details = Number.isFinite(retryAfterHeader) && retryAfterHeader >= 0 && api.error?.details?.retry_after_seconds == null
+        ? { ...(api.error?.details ?? {}), retry_after_seconds: retryAfterHeader }
+        : api.error?.details;
+      const code = api.error?.code ?? `HTTP_${response.status}`;
+      const msg = friendlyError(response.status, code, api.error?.message ?? response.statusText, details);
+      throw new AgentFeedApiError(response.status, code, msg, details);
+    }
+    return (data as { data: T }).data;
+  });
 }
 
 

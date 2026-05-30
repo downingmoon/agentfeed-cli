@@ -59,6 +59,10 @@ function isLoopbackHostname(hostname: string): boolean {
   return false;
 }
 
+function allowInsecureRemoteApi(): boolean {
+  return process.env.AGENTFEED_ALLOW_INSECURE_API === '1';
+}
+
 export type ApiBaseUrlSource = 'explicit' | 'environment' | 'stored_credentials' | 'env_file' | 'default';
 
 export interface ApiBaseUrlResolution {
@@ -111,6 +115,9 @@ export function normalizeApiBaseUrl(value: string): string {
   }
   if (url.username || url.password) {
     throw new Error('Invalid AgentFeed API base URL: credentials are not allowed in the URL.');
+  }
+  if (url.protocol === 'http:' && !isLoopbackHostname(url.hostname) && !allowInsecureRemoteApi()) {
+    throw new Error('Invalid AgentFeed API base URL: http is allowed only for localhost. Use https or set AGENTFEED_ALLOW_INSECURE_API=1 for an explicit development-only override.');
   }
   if (url.search || url.hash) {
     throw new Error('Invalid AgentFeed API base URL: do not include query or hash fragments.');

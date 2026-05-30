@@ -13,6 +13,7 @@ const oldHome = process.env.HOME;
 const oldAgentFeedHome = process.env.AGENTFEED_HOME;
 const oldBase = process.env.AGENTFEED_API_BASE_URL;
 const oldToken = process.env.AGENTFEED_TOKEN;
+const oldAllowInsecure = process.env.AGENTFEED_ALLOW_INSECURE_API;
 
 beforeEach(async () => {
   dir = await mkdtemp(join(tmpdir(), 'agentfeed-config-'));
@@ -20,6 +21,7 @@ beforeEach(async () => {
   process.env.HOME = home;
   delete process.env.AGENTFEED_HOME;
   delete process.env.AGENTFEED_API_BASE_URL;
+  delete process.env.AGENTFEED_ALLOW_INSECURE_API;
 });
 
 afterEach(async () => {
@@ -30,6 +32,8 @@ afterEach(async () => {
   else process.env.AGENTFEED_API_BASE_URL = oldBase;
   if (oldToken === undefined) delete process.env.AGENTFEED_TOKEN;
   else process.env.AGENTFEED_TOKEN = oldToken;
+  if (oldAllowInsecure === undefined) delete process.env.AGENTFEED_ALLOW_INSECURE_API;
+  else process.env.AGENTFEED_ALLOW_INSECURE_API = oldAllowInsecure;
   await rm(dir, { recursive: true, force: true });
   await rm(home, { recursive: true, force: true });
 });
@@ -139,6 +143,7 @@ describe('project config', () => {
   it('rejects malformed or unsafe API base URLs before network calls', async () => {
     await expect(resolveApiBaseUrl({ explicitApiBaseUrl: 'http//:bad' })).rejects.toThrow(/Invalid AgentFeed API base URL/i);
     await expect(resolveApiBaseUrl({ explicitApiBaseUrl: 'ftp://api.agentfeed.dev/v1' })).rejects.toThrow(/http or https/i);
+    await expect(resolveApiBaseUrl({ explicitApiBaseUrl: 'http://evil.example/v1' })).rejects.toThrow(/http is allowed only for localhost/i);
     await expect(resolveApiBaseUrl({ explicitApiBaseUrl: 'https://api.agentfeed.dev/v1?debug=true' })).rejects.toThrow(/query or hash/i);
   });
 
@@ -149,6 +154,15 @@ describe('project config', () => {
     delete process.env.AGENTFEED_API_BASE_URL;
     await writeFile(join(dir, '.env'), 'AGENTFEED_API_BASE_URL=\"http://localhost:8001/v1/\"\n');
     await expect(resolveApiBaseUrl({ cwd: dir })).resolves.toBe('http://localhost:8001/v1');
+  });
+
+  it('requires an explicit opt-in before accepting cleartext non-local API URLs', async () => {
+    await expect(resolveApiBaseUrl({ explicitApiBaseUrl: 'http://api.internal.example/v1' })).rejects.toThrow(/AGENTFEED_ALLOW_INSECURE_API=1/);
+
+    process.env.AGENTFEED_ALLOW_INSECURE_API = '1';
+    await expect(resolveApiBaseUrl({ explicitApiBaseUrl: 'http://api.internal.example/v1/' })).resolves.toBe('http://api.internal.example/v1');
+    await expect(resolveApiBaseUrl({ explicitApiBaseUrl: 'http://localhost:8001/v1' })).resolves.toBe('http://localhost:8001/v1');
+    await expect(resolveApiBaseUrl({ explicitApiBaseUrl: 'https://custom.example/v1' })).resolves.toBe('https://custom.example/v1');
   });
 
   it('ignores malformed credentials files with a warning instead of crashing', async () => {

@@ -218,6 +218,13 @@ created: 2026-05-30
 
 
 - [x] Cookie-authenticated browser mutation Origin/Referer gate 보강
+- [x] CLI transient upload retry/backoff 및 remote cleartext API token 전송 차단
+- [x] CLI browser-login authorize URL trust boundary 검증
+- [x] Backend published worklog post-privacy-gate in-place edit 차단
+- [x] Backend notification mutation rate-limit 실제 route 정합성 보강
+- [x] Backend public comments soft-deleted author filter 보강
+- [x] Frontend dynamic route segment encoding 및 project repo URL sanitizer 보강
+- [[Commercial Readiness Hardening - Retry Trust Boundary and Route Safety 2026-05-30]]
 - [x] Settings rotated token one-time copy/reveal/auto-clear UX 보강
 - [x] Backend `/v1/search` cursor/has_more 계약과 Frontend Load more 연결
 - [x] CLI invalid token upload recovery 안내를 `agentfeed rotate` 중심으로 보정

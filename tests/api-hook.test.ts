@@ -147,6 +147,61 @@ describe('api client', () => {
     });
   });
 
+  it('retries transient ingest upload failures before marking the draft uploaded', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    await writeDraft(dir, draft);
+    const oldRetryDelay = process.env.AGENTFEED_API_RETRY_BASE_DELAY_MS;
+    process.env.AGENTFEED_API_RETRY_BASE_DELAY_MS = '0';
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: { code: 'SERVICE_UNAVAILABLE', message: 'try again' } }), { status: 503, headers: { 'content-type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { id: 'worklog_retry', status: 'needs_review', visibility: 'private', review_url: 'https://agentfeed.dev/review/retry', created_at: '2026-05-19T00:00:00Z' } }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      const result = await publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } });
+
+      expect(result.id).toBe('worklog_retry');
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+      expect(saved.upload).toMatchObject({ uploaded: true, worklog_id: 'worklog_retry' });
+    } finally {
+      if (oldRetryDelay === undefined) delete process.env.AGENTFEED_API_RETRY_BASE_DELAY_MS;
+      else process.env.AGENTFEED_API_RETRY_BASE_DELAY_MS = oldRetryDelay;
+    }
+  });
+
+  it('does not retry validation errors during ingest upload', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    await writeDraft(dir, draft);
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ error: { code: 'VALIDATION_ERROR', message: 'bad draft' } }), { status: 422, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
+      .rejects.toThrow(/validation/i);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries rate-limited ingest uploads when the API provides a retry window', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    await writeDraft(dir, draft);
+    const oldRetryDelay = process.env.AGENTFEED_API_RETRY_BASE_DELAY_MS;
+    process.env.AGENTFEED_API_RETRY_BASE_DELAY_MS = '0';
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: { code: 'RATE_LIMITED', message: 'try later', details: { retry_after_seconds: 0 } } }), { status: 429, headers: { 'content-type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { id: 'worklog_rate_limit_retry', status: 'needs_review', visibility: 'private', review_url: 'https://agentfeed.dev/review/rate-limit-retry', created_at: '2026-05-19T00:00:00Z' } }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      const result = await publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } });
+
+      expect(result.id).toBe('worklog_rate_limit_retry');
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    } finally {
+      if (oldRetryDelay === undefined) delete process.env.AGENTFEED_API_RETRY_BASE_DELAY_MS;
+      else process.env.AGENTFEED_API_RETRY_BASE_DELAY_MS = oldRetryDelay;
+    }
+  });
+
 
   it('rotates the current ingestion token without printing or uploading draft data', async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({
@@ -314,7 +369,7 @@ describe('api client', () => {
         return new Response(JSON.stringify({
           data: {
             session_id: 'session-1',
-            authorize_url: 'http://localhost:3000/cli/authorize?session_id=session-1',
+            authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-1',
             expires_at: '2026-05-20T00:05:00Z',
             poll_interval_seconds: 2
           }
@@ -338,6 +393,34 @@ describe('api client', () => {
     expect(exchange.token_expires_at).toBe('2026-06-15T00:00:00Z');
     expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.agentfeed.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
     expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://api.agentfeed.dev/v1/auth/cli/sessions/session-1/exchange', expect.objectContaining({ method: 'POST' }));
+  });
+
+  it('rejects untrusted browser login authorize URLs before opening them', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      data: {
+        session_id: 'session-evil',
+        authorize_url: 'https://evil.example/cli/authorize?session_id=session-evil',
+        expires_at: '2026-05-20T00:05:00Z',
+        poll_interval_seconds: 2
+      }
+    }), { status: 200, headers: { 'content-type': 'application/json' } })));
+
+    await expect(createCliAuthSession('https://api.agentfeed.dev/v1', { verifier: 'verifier-1', deviceName: 'devbox' }))
+      .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
+  });
+
+  it('allows local authorize URLs only for local API bases', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      data: {
+        session_id: 'session-local',
+        authorize_url: 'http://localhost:3001/cli/authorize?session_id=session-local',
+        expires_at: '2026-05-20T00:05:00Z',
+        poll_interval_seconds: 1
+      }
+    }), { status: 200, headers: { 'content-type': 'application/json' } })));
+
+    await expect(createCliAuthSession('http://localhost:8001/v1', { verifier: 'verifier-local' }))
+      .resolves.toMatchObject({ session_id: 'session-local' });
   });
 
   it('times out upload requests and keeps the draft pending', async () => {
@@ -461,7 +544,7 @@ describe('api client', () => {
         return new Response(JSON.stringify({
           data: {
             session_id: 'session-no-open',
-            authorize_url: 'http://localhost:3000/cli/authorize?session_id=session-no-open',
+            authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-no-open',
             expires_at: '2026-05-20T00:05:00Z',
             poll_interval_seconds: 1
           }
@@ -509,7 +592,7 @@ describe('api client', () => {
         return new Response(JSON.stringify({
           data: {
             session_id: 'session-ephemeral',
-            authorize_url: 'http://localhost:3000/cli/authorize?session_id=session-ephemeral',
+            authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-ephemeral',
             expires_at: '2026-05-20T00:05:00Z',
             poll_interval_seconds: 1
           }
@@ -577,9 +660,16 @@ describe('api client', () => {
   ])('publish handles API error %s', async (status, code, message) => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
     await writeDraft(dir, draft);
+    const oldRetryAttempts = process.env.AGENTFEED_API_RETRY_ATTEMPTS;
+    process.env.AGENTFEED_API_RETRY_ATTEMPTS = '1';
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ error: { code, message: 'boom', details: { retry_after_seconds: 10 } } }), { status, headers: { 'content-type': 'application/json' } })));
 
-    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } })).rejects.toThrow(message);
+    try {
+      await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } })).rejects.toThrow(message);
+    } finally {
+      if (oldRetryAttempts === undefined) delete process.env.AGENTFEED_API_RETRY_ATTEMPTS;
+      else process.env.AGENTFEED_API_RETRY_ATTEMPTS = oldRetryAttempts;
+    }
   });
 });
 

@@ -239,3 +239,23 @@ created: 2026-05-30
 - unsafe path matrix가 `/` fallback 및 top-level OAuth `next` 생략을 확인합니다.
 
 관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 Frontend OAuth next allowlist + runtime API config UI]]
+
+## 2026-05-30 CLI credential trust boundary hardening
+
+> [!success]
+> 저장된 ingestion token은 더 이상 repo-local `.env`가 가리키는 임의 API host로 조용히 전송되지 않습니다.
+
+보안 계약:
+
+- 명시 CLI option / `AGENTFEED_API_BASE_URL` 환경변수는 여전히 최우선 override입니다.
+- 저장된 credential에 `api_base_url`이 있으면 repo-local `.env` discovery보다 우선합니다.
+- credential 저장 위치는 `AGENTFEED_HOME` / `HOME` / `USERPROFILE` / `os.homedir()` 중 안전한 home만 사용합니다.
+- 안전한 home을 찾지 못하면 project cwd에 fallback하지 않고 저장을 실패시킵니다.
+- upload success와 duplicate response는 `review_url` origin/shape 검증을 통과해야 local draft를 uploaded로 표시합니다.
+
+검증:
+
+- `npm test -- --run tests/config.test.ts tests/privacy.test.ts tests/api-hook.test.ts`
+- `npm run typecheck && npm test`
+
+관련: [[Commercial Readiness Audit 2026-05-30#CLI token / local privacy boundary]]

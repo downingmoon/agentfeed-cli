@@ -1,11 +1,20 @@
 import { chmod, mkdir, writeFile } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { AgentFeedCredentials } from '../types.js';
 import { pathExists, readJson } from '../utils/fs.js';
 import { resolveApiBaseUrl } from './api-base.js';
 
+export function resolveHomeDir(env: NodeJS.ProcessEnv = process.env, osHome = homedir()): string {
+  const home = env.AGENTFEED_HOME || env.HOME || env.USERPROFILE || osHome;
+  if (!home?.trim()) {
+    throw new Error('Unable to determine a safe AgentFeed home directory. Set AGENTFEED_HOME or HOME before saving credentials.');
+  }
+  return home;
+}
+
 export function homeDir(): string {
-  return process.env.HOME || process.env.USERPROFILE || process.cwd();
+  return resolveHomeDir();
 }
 
 export function globalAgentFeedDir(): string {

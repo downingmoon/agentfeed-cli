@@ -14,6 +14,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Audit 2026-05-30]] — 상용화 readiness 감사와 P1 보정 현황
+
 - [[AgentFeed CLI MOC]] — 전체 문서 지도
 - [[Collection System]] — 핵심 수집 파트 정리
 - [[Privacy Safety]] — 공개 전 redaction / scan 안전장치

@@ -141,6 +141,8 @@ describe('api client', () => {
 
   it('preserves collection window and fingerprint in ingest source payload', () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.source.host_label = 'Downing MacBook';
+    draft.source.session_id = 'raw-agent-session-id';
     draft.source.collection_window = {
       since: '2026-05-24T00:00:00.000Z',
       until: '2026-05-24T00:10:00.000Z'
@@ -153,6 +155,31 @@ describe('api client', () => {
     expect(payload.source.collection_window).toEqual(draft.source.collection_window);
     expect(payload.source.collection_window_reason).toBe('idle_gap');
     expect(payload.source.collection_fingerprint).toBe('agentfeed-window-fingerprint');
+    expect(payload.source.host_label).toBeUndefined();
+    expect(payload.source.session_id).not.toBe('raw-agent-session-id');
+    expect(payload.source.session_id).toMatch(/^session_[a-f0-9]{16}$/);
+    expect(payload.source.local_draft_id).not.toBe(draft.id);
+    expect(payload.source.local_draft_id).toMatch(/^draft_[a-f0-9]{16}$/);
+  });
+
+  it('strips credentials from repository URLs before upload', () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.project.repository_url = 'https://oauth2:secret-token@gitlab.example/group/repo.git';
+
+    const payload = draftToIngestRequest(draft);
+
+    expect(payload.project.repository_url).toBe('https://gitlab.example/group/repo.git');
+    expect(JSON.stringify(payload)).not.toContain('secret-token');
+  });
+
+  it('strips URL userinfo from non-HTTP repository URLs before upload', () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.project.repository_url = 'ssh://deploy:secret-token@git.example/group/repo.git';
+
+    const payload = draftToIngestRequest(draft);
+
+    expect(payload.project.repository_url).toBe('ssh://git.example/group/repo.git');
+    expect(JSON.stringify(payload)).not.toContain('secret-token');
   });
 
   it('includes the collected model in the ingest worklog payload', () => {
@@ -263,6 +290,64 @@ describe('api client', () => {
       if (oldTimeout === undefined) delete process.env.AGENTFEED_API_TIMEOUT_MS;
       else process.env.AGENTFEED_API_TIMEOUT_MS = oldTimeout;
     }
+
+    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+    expect(saved.upload.uploaded).toBe(false);
+  });
+
+  it('rejects malformed upload success responses and keeps the draft pending', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    await writeDraft(dir, draft);
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      data: {
+        id: 'worklog_bad',
+        status: 'needs_review',
+        visibility: 'private',
+        created_at: '2026-05-19T00:00:00Z'
+      }
+    }), { status: 200, headers: { 'content-type': 'application/json' } })));
+
+    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
+      .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
+
+    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+    expect(saved.upload.uploaded).toBe(false);
+  });
+
+  it('rejects upload success responses with unknown statuses', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    await writeDraft(dir, draft);
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      data: {
+        id: 'worklog_bad_status',
+        status: 'surprise_public',
+        visibility: 'private',
+        review_url: 'https://agentfeed.dev/review/bad-status',
+        created_at: '2026-05-19T00:00:00Z'
+      }
+    }), { status: 200, headers: { 'content-type': 'application/json' } })));
+
+    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
+      .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
+  });
+
+  it('does not trust duplicate upload review URLs outside the expected origin', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    await writeDraft(dir, draft);
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      error: {
+        code: 'DUPLICATE_INGESTION_SESSION',
+        message: 'Duplicate ingestion session.',
+        details: {
+          worklog_id: 'worklog_existing',
+          review_url: 'https://evil.example/worklogs/worklog_existing/review',
+          created_at: '2026-05-19T00:00:00Z'
+        }
+      }
+    }), { status: 409, headers: { 'content-type': 'application/json' } })));
+
+    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
+      .rejects.toMatchObject({ code: 'DUPLICATE_INGESTION_SESSION' });
 
     const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
     expect(saved.upload.uploaded).toBe(false);

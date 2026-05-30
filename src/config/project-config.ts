@@ -5,6 +5,7 @@ import { defaultProjectConfig, defaultRedactionRules } from './defaults.js';
 import { ensureDir, pathExists, readJson, writeJson } from '../utils/fs.js';
 import { run } from '../utils/shell.js';
 import { detectAgentSignals } from '../collectors/agent-discovery.js';
+import { stripUrlUserInfo } from '../privacy/url.js';
 
 export function slugify(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'my-project';
@@ -46,7 +47,7 @@ export async function initProject(options: { cwd?: string; projectName?: string;
   const root = gitRoot ?? cwd;
   const repository = await run('git', ['remote', 'get-url', 'origin'], root);
   const name = options.projectName ?? basename(root);
-  const config = defaultProjectConfig({ name, slug: slugify(name), repositoryUrl: repository.ok ? repository.stdout.trim() || null : null });
+  const config = defaultProjectConfig({ name, slug: slugify(name), repositoryUrl: repository.ok ? stripUrlUserInfo(repository.stdout) : null });
   const signals = await detectAgentSignals({ cwd: root });
   config.agents.claude_code.enabled = signals.claude_code.detected || signals.omc.detected || config.agents.claude_code.enabled;
   config.agents.codex.enabled = signals.codex.detected || signals.omx.detected;

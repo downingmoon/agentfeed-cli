@@ -27,6 +27,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Audit 2026-05-30]]
+
 - [[Collection System]]
 - [[Privacy Safety]]
 - [[Auth & Credential Safety]]

@@ -4,6 +4,7 @@ import type { ChangedFileSummary, GitMetrics } from '../types.js';
 import { findGitRoot } from '../config/project-config.js';
 import { run } from '../utils/shell.js';
 import { shouldIgnoreEvidencePath } from './path-filter.js';
+import { stripUrlUserInfo } from '../privacy/url.js';
 
 function statusFromCode(code: string): ChangedFileSummary['status'] {
   if (code.includes('A') || code === '??') return 'added';
@@ -100,7 +101,7 @@ export async function collectGitMetrics(cwd: string): Promise<GitMetrics> {
   }
 
   return {
-    repository_url: remote.ok ? remote.stdout.trim() || null : null,
+    repository_url: remote.ok ? stripUrlUserInfo(remote.stdout) : null,
     branch: branch.ok ? branch.stdout.trim() || null : null,
     head_commit: head.ok ? head.stdout.trim() || null : null,
     dirty: files.size > 0,

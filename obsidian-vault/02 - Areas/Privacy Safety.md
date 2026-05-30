@@ -211,3 +211,40 @@ Redacted preview:
 - aggregate는 숨김 row를 빼고 합산하지 않고, 해당 metric 전체를 `null`로 반환합니다. 이는 partial sum을 실제 total로 오해하지 않게 하기 위한 선택입니다.
 
 관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 Public metric privacy settings]]
+
+## 2026-05-30 CLI token/path/repository redaction hardening
+
+> [!success]
+> AgentFeed 자체 token, userinfo가 포함된 Git remote URL, 공백/유니코드 local path가 public draft/upload payload에 남지 않도록 보강했습니다.
+
+계약:
+
+- `af_live_*`, `af_test_*`, `af_dev_*`는 high severity secret으로 탐지해 `[REDACTED_SECRET]` 처리합니다.
+- POSIX/Windows/UNC absolute path는 공백과 유니코드 segment를 포함해 `[REDACTED_PATH]`로 치환합니다.
+- `https://user:pass@host/repo.git` 형태 repository URL은 저장/수집/upload 전에 userinfo를 제거합니다.
+- upload source payload는 raw `host_label`을 전송하지 않고, `session_id` / `local_draft_id`는 hash alias만 전송합니다.
+
+검증:
+
+- `npm test -- --run tests/config.test.ts tests/privacy.test.ts tests/api-hook.test.ts`
+- `npm run typecheck && npm test`
+
+## 2026-05-30 Public source/privacy discovery boundary
+
+> [!success]
+> Public/card/detail/search/bookmark surface에서 raw source metadata와 privacy scan detail이 외부 사용자에게 노출되지 않도록 축소했습니다.
+
+계약:
+
+- public worklog `source`는 `agent`, `tool_version`, `collection_quality`만 반환합니다.
+- `host_label`, `session_id`, `local_draft_id`, `collection_fingerprint`, `collection_window`는 public payload에서 제외합니다.
+- public detail의 `privacy_scan`은 status와 빈 findings만 반환합니다.
+- owner review endpoint는 기존처럼 상세 findings를 유지합니다.
+- `allow_search_indexing=false` 작성자의 worklog/user/project/prompt/suggestion은 discovery에서 제외합니다.
+- 타인이 bookmark한 worklog가 private/unpublished로 바뀌면 `/me/bookmarks`에서 제외합니다.
+
+검증:
+
+- `uv run --with pytest --with pytest-asyncio pytest -q` → 84 passed
+
+관련: [[Commercial Readiness Audit 2026-05-30#Backend public/privacy boundary]]

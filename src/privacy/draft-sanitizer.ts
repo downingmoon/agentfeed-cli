@@ -1,5 +1,6 @@
 import type { LocalDraft, PrivacyScanResult } from '../types.js';
 import { scanAndRedactFields } from './scan.js';
+import { stripUrlUserInfo } from './url.js';
 
 export type PublicScanFields = Record<string, unknown>;
 
@@ -13,7 +14,7 @@ export function publicScanFieldsFromDraft(draft: LocalDraft): PublicScanFields {
     timeline: draft.worklog.timeline,
     changed_areas: draft.worklog.changed_areas,
     tags: draft.worklog.tags,
-    project: draft.project
+    project: { ...draft.project, repository_url: stripUrlUserInfo(draft.project.repository_url) }
   };
 }
 
@@ -26,7 +27,10 @@ export function applyRedactedPublicFields(draft: LocalDraft, redacted: PublicSca
   if (Array.isArray(redacted.timeline)) draft.worklog.timeline = redacted.timeline as LocalDraft['worklog']['timeline'];
   if (Array.isArray(redacted.changed_areas)) draft.worklog.changed_areas = redacted.changed_areas as string[];
   if (Array.isArray(redacted.tags)) draft.worklog.tags = redacted.tags as string[];
-  if (redacted.project && typeof redacted.project === 'object') draft.project = redacted.project as LocalDraft['project'];
+  if (redacted.project && typeof redacted.project === 'object') {
+    draft.project = redacted.project as LocalDraft['project'];
+    draft.project.repository_url = stripUrlUserInfo(draft.project.repository_url);
+  }
 }
 
 export function scanAndRedactDraftPublicFields(draft: LocalDraft, options: { preserveResolvedFindings?: boolean } = {}): PrivacyScanResult {

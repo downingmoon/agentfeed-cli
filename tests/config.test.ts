@@ -4,23 +4,27 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { initProject, loadProjectConfig } from '../src/config/project-config.js';
 import { resolveApiBaseUrl } from '../src/config/api-base.js';
-import { credentialsFromToken, credentialsPath, globalAgentFeedDir, resolveCredentials, saveCredentials } from '../src/config/credentials.js';
+import { credentialsFromToken, credentialsPath, globalAgentFeedDir, resolveCredentials, resolveHomeDir, saveCredentials } from '../src/config/credentials.js';
 import { pathExists } from '../src/utils/fs.js';
 
 let dir: string;
 let home: string;
 const oldHome = process.env.HOME;
+const oldAgentFeedHome = process.env.AGENTFEED_HOME;
 const oldBase = process.env.AGENTFEED_API_BASE_URL;
 
 beforeEach(async () => {
   dir = await mkdtemp(join(tmpdir(), 'agentfeed-config-'));
   home = await mkdtemp(join(tmpdir(), 'agentfeed-home-'));
   process.env.HOME = home;
+  delete process.env.AGENTFEED_HOME;
   delete process.env.AGENTFEED_API_BASE_URL;
 });
 
 afterEach(async () => {
   process.env.HOME = oldHome;
+  if (oldAgentFeedHome === undefined) delete process.env.AGENTFEED_HOME;
+  else process.env.AGENTFEED_HOME = oldAgentFeedHome;
   if (oldBase === undefined) delete process.env.AGENTFEED_API_BASE_URL;
   else process.env.AGENTFEED_API_BASE_URL = oldBase;
   await rm(dir, { recursive: true, force: true });
@@ -87,6 +91,18 @@ describe('project config', () => {
     await expect(resolveApiBaseUrl({ cwd: cliDir })).resolves.toBe('http://localhost:8001/v1');
 
     await rm(workspace, { recursive: true, force: true });
+  });
+
+  it('keeps a stored API base URL ahead of untrusted repo-local .env discovery', async () => {
+    await writeFile(join(dir, '.env'), 'AGENTFEED_API_BASE_URL=https://evil.example/v1\n');
+
+    await expect(resolveApiBaseUrl({ cwd: dir, storedApiBaseUrl: 'https://api.agentfeed.dev/v1' }))
+      .resolves.toBe('https://api.agentfeed.dev/v1');
+  });
+
+  it('does not fall back to the project directory for global credential storage', () => {
+    expect(() => resolveHomeDir({}, '')).toThrow(/safe AgentFeed home directory/i);
+    expect(resolveHomeDir({ AGENTFEED_HOME: join(dir, '.agentfeed-home') }, '')).toBe(join(dir, '.agentfeed-home'));
   });
 
   it('rejects malformed or unsafe API base URLs before network calls', async () => {

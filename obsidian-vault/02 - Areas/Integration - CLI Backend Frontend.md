@@ -1344,3 +1344,23 @@ Frontend 표시:
 - `npx tsc --noEmit --incremental false`
 
 관련: [[Privacy Safety#2026-05-30 Public metric privacy settings]]
+
+## 2026-05-30 Review preview and project detail contract
+
+> [!success]
+> Review 화면과 project detail route가 Backend 계약을 더 직접적으로 따르도록 보정했습니다.
+
+계약:
+
+- Worklog review의 첫 public preview card는 `review.preview.card_title` / `review.preview.card_summary`를 렌더합니다.
+- raw draft title/summary/user note는 private draft/source context로 분리해 표시합니다.
+- Project detail page는 slug/id route에서 `projects.get(slugOrId)`를 먼저 호출합니다.
+- public listing lookup은 direct detail 404 후 legacy fallback으로만 사용합니다.
+- global security headers는 `/cli/authorize`를 포함한 모든 route에 anti-clickjacking policy를 적용합니다.
+
+검증:
+
+- `npm run test:contracts && npm run lint`
+- `NEXT_PUBLIC_API_URL=http://localhost:8000 npm run build`
+
+관련: [[Commercial Readiness Audit 2026-05-30#Frontend user-facing safety / runtime config]]

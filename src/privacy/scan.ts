@@ -9,12 +9,14 @@ const patterns: PatternRule[] = [
   { type: 'database_url', severity: 'high', regex: /\b(?:postgres|postgresql|mysql|mongodb|redis):\/\/[^\s'"<>]+/gi, replacement: '[REDACTED_DATABASE_URL]', message: 'Possible database URL detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\bsk-ant-[A-Za-z0-9_-]{20,}\b/gi, replacement: '[REDACTED_SECRET]', message: 'Possible Anthropic API key detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\bsk-[A-Za-z0-9_-]{20,}\b/gi, replacement: '[REDACTED_SECRET]', message: 'Possible API key detected.' },
+  { type: 'api_key_pattern', severity: 'high', regex: /\baf_(?:live|test|dev)_[A-Za-z0-9_-]{8,}\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible AgentFeed token detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\b(?:ghp_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{20,})\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible token detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible JWT detected.' },
   { type: 'email_address', severity: 'medium', regex: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, replacement: '[REDACTED_EMAIL]', message: 'Email address detected.' },
   { type: 'private_url', severity: 'medium', regex: /https?:\/\/(?:localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(?:1[6-9]|2\d|3[01])\.\d+\.\d+)(?::\d+)?[^\s'"<>]*/gi, replacement: '[REDACTED_URL]', message: 'Private or localhost URL detected.' },
-  { type: 'sensitive_path', severity: 'medium', regex: /(?<!\S)[A-Za-z]:\\(?:[^\s\\/:*?"<>|]+\\){1,}[^\s\\/:*?"<>|]+/g, replacement: '[REDACTED_PATH]', message: 'Windows absolute local path detected.' },
-  { type: 'sensitive_path', severity: 'medium', regex: /(?<!\S)(?:\/[A-Za-z0-9._-]+){2,}(?:\/[A-Za-z0-9._-]+)?/g, replacement: '[REDACTED_PATH]', message: 'Absolute local path detected.' },
+  { type: 'sensitive_path', severity: 'medium', regex: /(?<!\S)[A-Za-z]:\\(?:[^\\\r\n/:*?"<>|]+\\){1,}[^\\\s\r\n/:*?"<>|]+/g, replacement: '[REDACTED_PATH]', message: 'Windows absolute local path detected.' },
+  { type: 'sensitive_path', severity: 'medium', regex: /(?<!\S)\\\\(?:[^\\\r\n/:*?"<>|]+\\){2,}[^\\\s\r\n/:*?"<>|]+/g, replacement: '[REDACTED_PATH]', message: 'UNC local path detected.' },
+  { type: 'sensitive_path', severity: 'medium', regex: /(?<!\S)(?:~|\/)(?:[^/\r\n'"<>]+\/){1,}[^/\s\r\n'"<>]+/gu, replacement: '[REDACTED_PATH]', message: 'Absolute local path detected.' },
   { type: 'env_file_reference', severity: 'low', regex: /(?:^|\b)(?:\.env|id_rsa|credentials\.json)(?:\b|$)/gi, replacement: '[REDACTED_PATH]', message: 'Sensitive filename reference detected.' }
 ];
 

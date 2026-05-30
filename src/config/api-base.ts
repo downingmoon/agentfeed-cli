@@ -87,8 +87,8 @@ export async function resolveApiBaseUrl(options: { cwd?: string; explicitApiBase
   return normalizeApiBaseUrl(
     options.explicitApiBaseUrl ||
     process.env.AGENTFEED_API_BASE_URL ||
-    await discoverApiBaseUrl(options.cwd) ||
     options.storedApiBaseUrl ||
+    await discoverApiBaseUrl(options.cwd) ||
     DEFAULT_API_BASE_URL
   );
 }

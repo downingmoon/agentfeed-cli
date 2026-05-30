@@ -2,6 +2,8 @@ import type { AgentFeedCredentials, CliAuthExchangeResult, CliAuthSession, Inges
 import { readDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 import { sanitizedDraftForUpload, scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
+import { stripUrlUserInfo } from '../privacy/url.js';
+import { shortHash } from '../utils/hash.js';
 
 export class AgentFeedApiError extends Error {
   constructor(public status: number, public code: string, message: string, public details?: Record<string, unknown>) {
@@ -61,20 +63,20 @@ export async function checkIngestionToken(credentials: AgentFeedCredentials): Pr
 
 export function draftToIngestRequest(draft: LocalDraft): IngestWorklogRequest {
   const safeDraft = sanitizedDraftForUpload(draft);
+  const source: IngestWorklogRequest['source'] = {
+    agent: safeDraft.source.agent,
+    tool_version: safeDraft.source.tool_version,
+    local_draft_id: `draft_${shortHash(`draft:${safeDraft.id}`, 16)}`,
+    collection_window: safeDraft.source.collection_window ?? null,
+    collection_window_reason: safeDraft.source.collection_window_reason ?? null,
+    collection_fingerprint: safeDraft.source.collection_fingerprint ?? null
+  };
+  if (safeDraft.source.session_id) source.session_id = `session_${shortHash(`session:${safeDraft.source.session_id}`, 16)}`;
   return {
-    source: {
-      agent: safeDraft.source.agent,
-      tool_version: safeDraft.source.tool_version,
-      host_label: safeDraft.source.host_label,
-      session_id: safeDraft.source.session_id,
-      local_draft_id: safeDraft.id,
-      collection_window: safeDraft.source.collection_window ?? null,
-      collection_window_reason: safeDraft.source.collection_window_reason ?? null,
-      collection_fingerprint: safeDraft.source.collection_fingerprint ?? null
-    },
+    source,
     project: {
       name: safeDraft.project.name,
-      repository_url: safeDraft.project.repository_url ?? null,
+      repository_url: stripUrlUserInfo(safeDraft.project.repository_url),
       local_path_hash: safeDraft.project.local_path_hash
     },
     worklog: {
@@ -145,6 +147,68 @@ export interface PublishDraftResult {
   reused_existing?: boolean;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function stringField(value: unknown): string | null {
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function isLocalHostname(hostname: string): boolean {
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname.endsWith('.localhost');
+}
+
+function isAgentFeedHostname(hostname: string): boolean {
+  return hostname === 'agentfeed.dev' || hostname.endsWith('.agentfeed.dev');
+}
+
+function validateReviewUrl(reviewUrl: string, apiBaseUrl: string): boolean {
+  try {
+    const review = new URL(reviewUrl);
+    const api = new URL(apiBaseUrl);
+    if (!['http:', 'https:'].includes(review.protocol)) return false;
+    if (review.username || review.password) return false;
+    if (isLocalHostname(api.hostname)) return isLocalHostname(review.hostname);
+    if (review.protocol !== 'https:') return false;
+    if (api.hostname === 'api.agentfeed.dev') return isAgentFeedHostname(review.hostname);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const VALID_UPLOAD_STATUSES = new Set<string>([
+  'draft',
+  'needs_review',
+  'private',
+  'unlisted',
+  'public',
+  'rejected',
+  'deleted',
+  'already_uploaded'
+]);
+
+function parsePublishDraftResult(value: unknown, apiBaseUrl: string): PublishDraftResult {
+  if (!isRecord(value)) throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid upload response.');
+  const id = stringField(value.id);
+  const status = stringField(value.status);
+  const visibility = stringField(value.visibility);
+  const reviewUrl = stringField(value.review_url);
+  const createdAt = stringField(value.created_at);
+  if (!id || !status || !VALID_UPLOAD_STATUSES.has(status) || visibility !== 'private' || !reviewUrl || !createdAt || !Number.isFinite(Date.parse(createdAt)) || !validateReviewUrl(reviewUrl, apiBaseUrl)) {
+    throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid upload response. Local draft was kept.');
+  }
+  return {
+    id,
+    status: status as PublishDraftResult['status'],
+    visibility: 'private',
+    review_url: reviewUrl,
+    created_at: createdAt,
+    reused_existing: value.reused_existing === true ? true : undefined
+  };
+}
+
 async function postJson<T>(apiBaseUrl: string, path: string, body: Record<string, unknown>): Promise<T> {
   const response = await fetchWithTimeout(`${apiBaseUrl.replace(/\/$/, '')}${path}`, {
     method: 'POST',
@@ -196,7 +260,7 @@ export async function previewDraftRemote(draft: LocalDraft, credentials: AgentFe
 }
 
 export async function uploadDraft(draft: LocalDraft, credentials: AgentFeedCredentials): Promise<PublishDraftResult> {
-  return postIngest<PublishDraftResult>('/ingest/worklogs', draft, credentials);
+  return parsePublishDraftResult(await postIngest<unknown>('/ingest/worklogs', draft, credentials), credentials.api_base_url);
 }
 
 function detailString(details: Record<string, unknown> | undefined, key: string): string | null {
@@ -214,7 +278,7 @@ function worklogIdFromReviewUrl(reviewUrl: string): string | null {
   }
 }
 
-function duplicateIngestResult(error: AgentFeedApiError, fallbackCreatedAt: string): PublishDraftResult | null {
+function duplicateIngestResult(error: AgentFeedApiError, fallbackCreatedAt: string, apiBaseUrl: string): PublishDraftResult | null {
   if (error.status !== 409 || error.code !== 'DUPLICATE_INGESTION_SESSION') return null;
   const reviewUrl = detailString(error.details, 'review_url');
   if (!reviewUrl) return null;
@@ -222,7 +286,7 @@ function duplicateIngestResult(error: AgentFeedApiError, fallbackCreatedAt: stri
     ?? detailString(error.details, 'id')
     ?? worklogIdFromReviewUrl(reviewUrl);
   if (!worklogId) return null;
-  return {
+  const result = {
     id: worklogId,
     status: 'already_uploaded',
     visibility: 'private',
@@ -230,6 +294,11 @@ function duplicateIngestResult(error: AgentFeedApiError, fallbackCreatedAt: stri
     created_at: detailString(error.details, 'created_at') ?? fallbackCreatedAt,
     reused_existing: true
   };
+  try {
+    return parsePublishDraftResult(result, apiBaseUrl);
+  } catch {
+    return null;
+  }
 }
 
 export async function publishDraft(options: { cwd: string; id: string; credentials: AgentFeedCredentials }): Promise<PublishDraftResult> {
@@ -250,7 +319,7 @@ export async function publishDraft(options: { cwd: string; id: string; credentia
     result = await uploadDraft(draft, options.credentials);
   } catch (error) {
     if (error instanceof AgentFeedApiError) {
-      const duplicate = duplicateIngestResult(error, draft.source.created_at);
+      const duplicate = duplicateIngestResult(error, draft.source.created_at, options.credentials.api_base_url);
       if (duplicate) result = duplicate;
       else throw error;
     } else {

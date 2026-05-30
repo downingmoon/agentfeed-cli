@@ -127,3 +127,23 @@ created: 2026-05-30
 - `scripts/check-env.mjs` negative smoke에서 unset/invalid protocol/credential/query-hash가 모두 exit 1로 실패
 
 관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 Frontend OAuth next allowlist + runtime API config UI]]
+
+## 2026-05-30 Frontend production HTTPS API gate
+
+> [!success]
+> Production frontend는 non-local API URL을 HTTP로 빌드/실행하지 않도록 차단합니다.
+
+계약:
+
+- `NEXT_PUBLIC_API_URL=http://api.agentfeed.dev` 같은 non-local HTTP URL은 production/runtime validation에서 실패합니다.
+- `http://localhost:*`, `http://127.0.0.1:*`는 local/dev smoke를 위해 허용합니다.
+- user-facing `ApiError.message`는 backend raw body를 그대로 노출하지 않고 status/category 기반 safe message를 사용합니다.
+- raw response body는 `diagnosticBody` / `body`에만 보존합니다.
+- frontend lint gate는 interactive `next lint` 대신 `tsc --noEmit`으로 deterministic하게 동작합니다.
+
+검증:
+
+- `npm run test:contracts && npm run lint`
+- `NEXT_PUBLIC_API_URL=http://localhost:8000 npm run build`
+
+관련: [[Commercial Readiness Audit 2026-05-30#Frontend user-facing safety / runtime config]]

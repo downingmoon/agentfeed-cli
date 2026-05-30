@@ -16,13 +16,17 @@ export function credentialsPath(): string {
   return join(globalAgentFeedDir(), 'credentials.json');
 }
 
-export async function saveCredentials(token: string, options: { apiBaseUrl?: string; user?: AgentFeedCredentials['user'] } = {}): Promise<AgentFeedCredentials> {
-  const credentials: AgentFeedCredentials = {
+export async function credentialsFromToken(token: string, options: { apiBaseUrl?: string; user?: AgentFeedCredentials['user'] } = {}): Promise<AgentFeedCredentials> {
+  return {
     api_base_url: await resolveApiBaseUrl({ explicitApiBaseUrl: options.apiBaseUrl }),
     ingestion_token: token,
     user: options.user,
     created_at: new Date().toISOString()
   };
+}
+
+export async function saveCredentials(token: string, options: { apiBaseUrl?: string; user?: AgentFeedCredentials['user'] } = {}): Promise<AgentFeedCredentials> {
+  const credentials = await credentialsFromToken(token, options);
   await ensureDir(globalAgentFeedDir());
   await writeJson(credentialsPath(), credentials);
   try { await chmod(credentialsPath(), 0o600); } catch { /* warn at command layer if needed */ }

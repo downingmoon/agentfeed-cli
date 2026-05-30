@@ -253,6 +253,42 @@ describe('api client', () => {
     });
   });
 
+  it('completes no-open browser login without saving credentials when requested', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.endsWith('/auth/cli/sessions')) {
+        return new Response(JSON.stringify({
+          data: {
+            session_id: 'session-ephemeral',
+            authorize_url: 'http://localhost:3000/cli/authorize?session_id=session-ephemeral',
+            expires_at: '2026-05-20T00:05:00Z',
+            poll_interval_seconds: 1
+          }
+        }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+
+      if (url.endsWith('/auth/cli/sessions/session-ephemeral/exchange')) {
+        return new Response(JSON.stringify({
+          data: {
+            token: 'af_live_ephemeral',
+            user: { id: 'user-ephemeral', username: 'no-save-user' }
+          }
+        }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404, headers: { 'content-type': 'application/json' } });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const creds = await browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1/', noOpen: true, waitMs: 50, save: false });
+
+    expect(creds).toMatchObject({
+      api_base_url: 'https://api.agentfeed.dev/v1',
+      ingestion_token: 'af_live_ephemeral',
+      user: { id: 'user-ephemeral', username: 'no-save-user' }
+    });
+    await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
   it('keeps polling the browser login session until it is approved', async () => {
     let attempts = 0;
     const exchange = vi.fn(async () => {

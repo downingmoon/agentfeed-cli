@@ -3,7 +3,7 @@ import { hostname } from 'node:os';
 import { stdin as input, stdout as output } from 'node:process';
 import { createCliAuthSession, exchangeCliAuthSession, AgentFeedApiError } from '../api/client.js';
 import { resolveApiBaseUrl } from '../config/api-base.js';
-import { saveCredentials } from '../config/credentials.js';
+import { credentialsFromToken, saveCredentials } from '../config/credentials.js';
 import { openBrowser } from '../utils/open-browser.js';
 import type { CliAuthExchangeResult, CliAuthSession } from '../types.js';
 
@@ -40,7 +40,7 @@ export async function waitForCliAuthExchange(options: {
   throw lastError instanceof Error ? lastError : new Error('CLI authorization was not completed.');
 }
 
-export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: boolean; waitMs?: number } = {}) {
+export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: boolean; waitMs?: number; save?: boolean } = {}) {
   const apiBaseUrl = await resolveApiBaseUrl({ explicitApiBaseUrl: options.apiBaseUrl });
   const verifier = randomBytes(32).toString('hex');
   const session = await createCliAuthSession(apiBaseUrl, {
@@ -57,5 +57,6 @@ export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: bool
   if (input.isTTY) output.write('Keep this command running; no Enter key is required.\n');
 
   const exchange = await waitForCliAuthExchange({ apiBaseUrl, session, verifier, waitMs: options.waitMs });
+  if (options.save === false) return credentialsFromToken(exchange.token, { apiBaseUrl, user: exchange.user });
   return saveCredentials(exchange.token, { apiBaseUrl, user: exchange.user });
 }

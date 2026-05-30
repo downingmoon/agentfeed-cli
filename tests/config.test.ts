@@ -4,7 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { initProject, loadProjectConfig } from '../src/config/project-config.js';
 import { resolveApiBaseUrl } from '../src/config/api-base.js';
-import { resolveCredentials } from '../src/config/credentials.js';
+import { credentialsFromToken, credentialsPath, resolveCredentials } from '../src/config/credentials.js';
+import { pathExists } from '../src/utils/fs.js';
 
 let dir: string;
 let home: string;
@@ -48,6 +49,16 @@ describe('project config', () => {
     process.env.AGENTFEED_API_BASE_URL = 'http://localhost:8000/v1';
     const creds = await resolveCredentials({ ingestion_token: 'stored', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' });
     expect(creds.api_base_url).toBe('http://localhost:8000/v1');
+  });
+
+  it('builds ephemeral credentials without writing the credentials file', async () => {
+    const creds = await credentialsFromToken('af_live_ephemeral', { apiBaseUrl: 'http://localhost:8001/v1/' });
+
+    expect(creds).toMatchObject({
+      api_base_url: 'http://localhost:8001/v1',
+      ingestion_token: 'af_live_ephemeral'
+    });
+    await expect(pathExists(credentialsPath())).resolves.toBe(false);
   });
 
   it('discovers the dev orchestration .env when AGENTFEED_API_BASE_URL is not exported', async () => {

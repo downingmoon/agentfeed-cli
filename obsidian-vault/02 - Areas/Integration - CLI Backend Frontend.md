@@ -187,6 +187,27 @@ sequenceDiagram
 > [!warning] 운영 메모
 > `SECRET_KEY`가 바뀌면 새 encrypted provider token 복호화가 불가능합니다. 운영에서는 secret rotation 전에 별도 provider-token migration/rotation 절차가 필요합니다.
 
+## 2026-05-30 CLI ephemeral login --no-save
+
+> [!success]
+> CLI token/browser login에 credential file을 남기지 않는 `--no-save` 경로를 추가했습니다. 자세한 보안 계약은 [[Auth & Credential Safety#2026-05-30 CLI ephemeral login --no-save]]에 정리합니다.
+
+계약:
+
+- `agentfeed login --token <token> --no-save`는 API base URL만 검증/정규화하고 `~/.agentfeed/credentials.json`을 생성하지 않습니다.
+- `agentfeed login --no-save` browser flow도 CLI auth exchange 후 credential을 저장하지 않습니다.
+- 저장 로그인 경로는 기존처럼 credentials file을 만들고 `agentfeed status`에서 configured로 표시됩니다.
+- `--no-save`는 token을 출력하지 않으며, 다음 명령에서 쓰려면 `AGENTFEED_TOKEN` 또는 저장 로그인을 사용해야 합니다.
+
+검증:
+
+- `npx vitest run tests/config.test.ts tests/api-hook.test.ts`
+- `npm run typecheck`
+- `npm test -- --run`
+- `npm run build`
+- `../agentfeed-dev/scripts/test-all.sh`
+- `HOME=$(mktemp -d) node dist/cli/index.js login --token af_live_ephemeral --api-base-url http://localhost:8001/v1 --no-save` 후 credential file 미생성 확인
+
 ## 관련 원본
 
 - [[Cross Repo Integration Fixes#목표 end-to-end 흐름]]

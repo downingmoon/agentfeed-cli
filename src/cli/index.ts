@@ -2,7 +2,7 @@
 import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { initProject, loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
-import { loadCredentials, saveCredentials } from '../config/credentials.js';
+import { credentialsFromToken, loadCredentials, saveCredentials } from '../config/credentials.js';
 import { resolveApiBaseUrl } from '../config/api-base.js';
 import { markCollectionComplete, resolveCollectionWindow } from '../config/collection-state.js';
 import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
@@ -94,17 +94,22 @@ async function cmdInit(args: string[]) {
 async function cmdLogin(args: string[]) {
   const token = option(args, '--token');
   const apiBaseUrl = option(args, '--api-base-url');
+  const noSave = flag(args, '--no-save');
   if (!token) {
-    const creds = await browserLogin({ apiBaseUrl, noOpen: flag(args, '--no-open') });
-    print('\nAgentFeed browser login complete.\n');
+    const creds = await browserLogin({ apiBaseUrl, noOpen: flag(args, '--no-open'), save: !noSave });
+    print(noSave ? '\nAgentFeed browser login complete (not saved).\n' : '\nAgentFeed browser login complete.\n');
     print(`API: ${creds.api_base_url}`);
-    print('Next:\n  agentfeed status');
+    print(noSave
+      ? 'No credentials file was written. Future commands need AGENTFEED_TOKEN or a saved login.'
+      : 'Next:\n  agentfeed status');
     return;
   }
-  const creds = await saveCredentials(token, { apiBaseUrl });
-  print('AgentFeed credentials saved.\n');
+  const creds = noSave ? await credentialsFromToken(token, { apiBaseUrl }) : await saveCredentials(token, { apiBaseUrl });
+  print(noSave ? 'AgentFeed token loaded for this command only (not saved).\n' : 'AgentFeed credentials saved.\n');
   print(`API: ${creds.api_base_url}`);
-  print('Next:\n  agentfeed status');
+  print(noSave
+    ? 'No credentials file was written. Future commands need AGENTFEED_TOKEN or a saved login.'
+    : 'Next:\n  agentfeed status');
 }
 
 async function cmdStatus() {
@@ -347,7 +352,7 @@ async function main() {
     case '--help':
     case '-h':
       print('Usage: agentfeed <init|login|status|collect|share|preview|publish|scan|hook|doctor|drafts|discard|open>');
-      print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --token <token>');
+      print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --no-save\n  agentfeed login --token <token>\n  agentfeed login --token <token> --no-save');
       print('\nCollect:\n  agentfeed collect\n  agentfeed collect --explain\n  agentfeed collect --source codex\n  agentfeed collect --source gemini-cli\n  agentfeed collect --source claude-code --session-file <path>\n  agentfeed collect --since 2026-05-20T01:00:00Z\n  agentfeed collect --all');
       print('\nShare:\n  agentfeed share\n  agentfeed share --dry\n  agentfeed share --open-review\n  agentfeed share --since 2026-05-20T01:00:00Z\n  agentfeed share --all\n  agentfeed share --note "Fixed auth flow"\n  agentfeed share --no-clipboard');
       print('\nScan:\n  agentfeed scan --id <draft_id>\n  agentfeed scan --id <draft_id> --dry-run\n  agentfeed scan --path . --json');

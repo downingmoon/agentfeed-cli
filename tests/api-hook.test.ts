@@ -826,6 +826,35 @@ describe('api client', () => {
     expect(exchange).toHaveBeenCalledTimes(2);
   });
 
+  it('caps browser login polling sleep to the remaining timeout window', async () => {
+    const sleeps: number[] = [];
+    const exchange = vi.fn(async () => {
+      throw new Error('pending');
+    });
+
+    await expect(waitForCliAuthExchange({
+      apiBaseUrl: 'https://api.agentfeed.dev/v1',
+      session: {
+        session_id: 'session-timeout',
+        authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-timeout',
+        expires_at: '2026-05-20T00:05:00Z',
+        poll_interval_seconds: 60
+      },
+      verifier: 'verifier-timeout',
+      waitMs: 20,
+      exchange,
+      sleep: async (ms) => {
+        sleeps.push(ms);
+        await new Promise((resolve) => setTimeout(resolve, ms));
+      },
+      isPendingError: (error) => error instanceof Error && error.message === 'pending'
+    })).rejects.toThrow(/timed out/i);
+
+    expect(sleeps).toHaveLength(1);
+    expect(sleeps[0]).toBeLessThanOrEqual(20);
+    expect(sleeps[0]).toBeGreaterThan(0);
+  });
+
   it.each([
     [401, 'INGESTION_TOKEN_INVALID', /agentfeed rotate.*AGENTFEED_TOKEN.*rotate --browser/i],
     [413, 'INGESTION_PAYLOAD_TOO_LARGE', /too large/i],

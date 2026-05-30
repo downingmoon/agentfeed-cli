@@ -113,6 +113,13 @@ created: 2026-05-30
 - [x] Backend public URL private host 차단과 search wildcard escaping 보강
 - [x] Frontend nonce 기반 CSP, auth outage redirect loop 방지, GET Content-Type 제거
 
+- [x] CLI privacy scanner가 npm/Slack/PEM/secret assignment 패턴을 redaction
+- [x] CLI browser-login polling timeout UX와 CI auto-open side effect 보강
+- [x] CLI npm package bin executable mode를 postbuild/prepack에서 보장
+- [x] Backend browser JWT logout revocation cutoff 추가
+- [x] Backend integrations/profile-project/review/me-token route rate-limit coverage 보강
+- [x] Frontend auth outage review/header UX, CSP fallback, search load-more dedup 보강
+
 ## P2 후보
 
 - [x] 비용 정보는 추정 금지 원칙 유지, explicit cost field만 opt-in 보존
@@ -383,3 +390,4 @@ created: 2026-05-30
 - [x] Backend Bearer+cookie mutation도 CSRF Origin gate를 우회하지 않도록 계약 테스트 고정
 - [[Commercial Readiness Hardening - Auth Validation Pagination CSP and CSRF Contract 2026-05-31]]
 - [[Commercial Readiness Hardening - CI Automation CSP Auth Recovery Rate Limits and Search Safety 2026-05-31]]
+- [[Commercial Readiness Hardening - Secret Scanner Session Revocation Frontend Outage UX 2026-05-31]]

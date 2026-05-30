@@ -66,6 +66,28 @@ function shouldCopyReviewUrl(options: { json?: boolean; noClipboard?: boolean; c
   return true;
 }
 
+const CI_ENVIRONMENT_VARIABLES = [
+  'AGENTFEED_CI',
+  'CI',
+  'GITHUB_ACTIONS',
+  'GITLAB_CI',
+  'BUILDKITE',
+  'CIRCLECI',
+  'JENKINS_URL',
+  'TF_BUILD',
+  'TEAMCITY_VERSION',
+  'VERCEL',
+  'NETLIFY',
+];
+
+function isTruthyEnvironmentValue(value: string | undefined): boolean {
+  return value !== undefined && value !== '' && value !== '0' && value.toLowerCase() !== 'false';
+}
+
+function isCiEnvironment(): boolean {
+  return CI_ENVIRONMENT_VARIABLES.some((name) => isTruthyEnvironmentValue(process.env[name]));
+}
+
 function tokenExpiryWarning(expiresAt?: string | null, expiringSoon?: boolean): string | null {
   if (!expiresAt) return null;
   const expires = Date.parse(expiresAt);
@@ -112,6 +134,7 @@ function redactedFieldPreviews(original: PublicScanFields, redacted: PublicScanF
 
 async function shouldOpenReviewAfterUpload(openFlag: boolean, options: { respectConfig?: boolean } = {}): Promise<boolean> {
   if (openFlag) return true;
+  if (isCiEnvironment()) return false;
   if (options.respectConfig === false) return false;
   try {
     const config = await loadProjectConfig(process.cwd());

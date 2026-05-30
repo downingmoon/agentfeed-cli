@@ -25,19 +25,19 @@ export async function waitForCliAuthExchange(options: {
   const isPendingError = options.isPendingError ?? ((error: unknown) => error instanceof AgentFeedApiError && error.code === 'CLI_AUTH_SESSION_PENDING');
   const deadline = Date.now() + (options.waitMs ?? 120_000);
   const intervalMs = Math.max(1, options.session.poll_interval_seconds) * 1000;
-  let lastError: unknown;
 
-  do {
+  while (Date.now() < deadline) {
     try {
       return await exchange(options.apiBaseUrl, options.session.session_id, options.verifier);
     } catch (error) {
-      lastError = error;
       if (!isPendingError(error)) throw error;
-      await sleepFn(intervalMs);
+      const remainingMs = deadline - Date.now();
+      if (remainingMs <= 0) break;
+      await sleepFn(Math.min(intervalMs, remainingMs));
     }
-  } while (Date.now() < deadline);
+  }
 
-  throw lastError instanceof Error ? lastError : new Error('CLI authorization was not completed.');
+  throw new Error('CLI authorization timed out. Re-run agentfeed login and approve the browser prompt before the session expires.');
 }
 
 const CI_ENVIRONMENT_VARIABLES = [

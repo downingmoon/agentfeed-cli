@@ -28,6 +28,7 @@ describe('CLI version metadata', () => {
     expect(packageJson.name).toBe('agentfeed-cli');
     expect(packageJson.bin?.agentfeed).toBe('./dist/cli/index.js');
     expect(packageJson.files).toContain('dist');
+    expect(packageJson.scripts?.postbuild).toBe('node scripts/ensure-bin-executable.mjs');
     expect(packageJson.scripts?.prepack).toBe('npm run clean && npm run build && npm run typecheck && npm test -- --run');
   });
 });

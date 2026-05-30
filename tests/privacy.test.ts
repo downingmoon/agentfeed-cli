@@ -7,6 +7,8 @@ describe('privacy scanner', () => {
     ['Anthropic key', 'sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890', 'api_key_pattern'],
     ['AgentFeed token', 'af_live_abcdefghijklmnopqrstuvwxyz1234567890', 'api_key_pattern'],
     ['GitHub token', 'ghp_abcdefghijklmnopqrstuvwxyz1234567890', 'api_key_pattern'],
+    ['npm token', 'npm_abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJ', 'api_key_pattern'],
+    ['Slack token', 'xoxb-123456789012-123456789012-abcdefghijklmnopqrstuvwxyz', 'api_key_pattern'],
     ['Discord bot token', 'MTAwMDAwMDAwMDAwMDAwMDAw.XyZ_12.abcdefghijklmnopqrstuvwxyz1', 'api_key_pattern'],
     ['email', 'dev@example.com', 'email_address'],
     ['localhost URL', 'http://localhost:3000/callback', 'private_url'],
@@ -55,14 +57,14 @@ describe('privacy scanner', () => {
     expect(result.redacted.user_note).toBe('Accidentally pasted [REDACTED_SECRET]');
     expect(result.redacted.public_prompt).toBe('Use token=[REDACTED_SECRET]');
     expect(result.scan.status).toBe('danger');
-    expect(result.scan.findings).toHaveLength(3);
-    expect(result.scan.findings.every((finding) =>
+    const discordFindings = result.scan.findings.filter((finding) => finding.message === 'Possible Discord bot token detected.');
+    expect(discordFindings).toHaveLength(3);
+    expect(discordFindings.every((finding) =>
       finding.type === 'api_key_pattern' &&
       finding.severity === 'high' &&
       finding.resolved === true &&
       finding.resolution === 'redacted' &&
-      finding.sample_redacted === '[REDACTED_SECRET]' &&
-      finding.message === 'Possible Discord bot token detected.'
+      finding.sample_redacted === '[REDACTED_SECRET]'
     )).toBe(true);
   });
 
@@ -78,5 +80,31 @@ describe('privacy scanner', () => {
     const result = scanAndRedactFields({ title: 'Use sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890' });
     expect(result.redacted.title).toContain('[REDACTED_SECRET]');
     expect(result.scan.status).toBe('danger');
+  });
+
+  it.each([
+    ['DATABASE_PASSWORD=swordfish-secret', 'DATABASE_PASSWORD=[REDACTED_SECRET]'],
+    ['api_key: "abcdef1234567890"', 'api_key: "[REDACTED_SECRET]"'],
+    ['refresh-token=abcdef1234567890', 'refresh-token=[REDACTED_SECRET]']
+  ])('redacts secret assignments while preserving the setting name: %s', (input, expected) => {
+    const result = scanAndRedactFields({ summary: input });
+
+    expect(result.redacted.summary).toBe(expected);
+    expect(result.scan.status).toBe('danger');
+    expect(result.scan.findings.some((finding) =>
+      finding.type === 'api_key_pattern' &&
+      finding.sample_redacted === '[REDACTED_SECRET]' &&
+      finding.message === 'Possible secret assignment detected.'
+    )).toBe(true);
+  });
+
+  it('redacts PEM private key blocks from public text fields', () => {
+    const result = scanAndRedactFields({
+      summary: 'Key:\n-----BEGIN PRIVATE KEY-----\nabcdefghijklmnopqrstuvwxyz1234567890\n-----END PRIVATE KEY-----\nDone'
+    });
+
+    expect(result.redacted.summary).toBe('Key:\n[REDACTED_SECRET]\nDone');
+    expect(result.scan.status).toBe('danger');
+    expect(result.scan.findings.some((finding) => finding.message === 'Possible private key block detected.')).toBe(true);
   });
 });

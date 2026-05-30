@@ -3,7 +3,14 @@ import { shortHash } from '../utils/hash.js';
 
 type ScanInput = Record<string, unknown>;
 
-interface PatternRule { type: PrivacyFinding['type']; severity: PrivacyFinding['severity']; regex: RegExp; replacement: string; message: string }
+interface PatternRule {
+  type: PrivacyFinding['type'];
+  severity: PrivacyFinding['severity'];
+  regex: RegExp;
+  replacement: string;
+  message: string;
+  sampleRedacted?: string;
+}
 
 const patterns: PatternRule[] = [
   { type: 'database_url', severity: 'high', regex: /\b(?:postgres|postgresql|mysql|mongodb|redis):\/\/[^\s'"<>]+/gi, replacement: '[REDACTED_DATABASE_URL]', message: 'Possible database URL detected.' },
@@ -11,8 +18,12 @@ const patterns: PatternRule[] = [
   { type: 'api_key_pattern', severity: 'high', regex: /\bsk-[A-Za-z0-9_-]{20,}\b/gi, replacement: '[REDACTED_SECRET]', message: 'Possible API key detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\baf_(?:live|test|dev)_[A-Za-z0-9_-]{8,}\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible AgentFeed token detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\b(?:ghp_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{20,})\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible token detected.' },
+  { type: 'api_key_pattern', severity: 'high', regex: /\bnpm_[A-Za-z0-9]{36,}\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible npm token detected.' },
+  { type: 'api_key_pattern', severity: 'high', regex: /\bxox[baprs]-[A-Za-z0-9-]{20,}\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible Slack token detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\b[MN][A-Za-z0-9_-]{23}\.[A-Za-z0-9_-]{6}\.[A-Za-z0-9_-]{27,}\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible Discord bot token detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible JWT detected.' },
+  { type: 'api_key_pattern', severity: 'high', regex: /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g, replacement: '[REDACTED_SECRET]', message: 'Possible private key block detected.' },
+  { type: 'api_key_pattern', severity: 'high', regex: /\b((?:[A-Z][A-Z0-9_]*_)?(?:API[_-]?KEY|SECRET|TOKEN|PASSWORD|PASSWD|PRIVATE[_-]?KEY|ACCESS[_-]?TOKEN|REFRESH[_-]?TOKEN)\s*[:=]\s*)(["']?)[^\s'"`<>]{8,}\2/gi, replacement: '$1$2[REDACTED_SECRET]$2', sampleRedacted: '[REDACTED_SECRET]', message: 'Possible secret assignment detected.' },
   { type: 'email_address', severity: 'medium', regex: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, replacement: '[REDACTED_EMAIL]', message: 'Email address detected.' },
   { type: 'private_url', severity: 'medium', regex: /https?:\/\/(?:localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(?:1[6-9]|2\d|3[01])\.\d+\.\d+)(?::\d+)?[^\s'"<>]*/gi, replacement: '[REDACTED_URL]', message: 'Private or localhost URL detected.' },
   { type: 'sensitive_path', severity: 'medium', regex: /(?<!\S)[A-Za-z]:\\(?:[^\\\r\n/:*?"<>|]+\\){1,}[^\\\s\r\n/:*?"<>|]+/g, replacement: '[REDACTED_PATH]', message: 'Windows absolute local path detected.' },
@@ -63,7 +74,7 @@ export function scanAndRedactFields<T extends ScanInput>(input: T): { scan: Priv
           severity: pattern.severity,
           message: pattern.message,
           field,
-          sample_redacted: pattern.replacement,
+          sample_redacted: pattern.sampleRedacted ?? pattern.replacement,
           resolved: true,
           resolution: 'redacted'
         });

@@ -363,7 +363,10 @@ describe('share CLI command', () => {
           PATH: `${fakeBin}:${process.env.PATH ?? ''}`,
           AGENTFEED_TEST_BROWSER_LOG: browserLog,
           AGENTFEED_TOKEN: 'af_live_test_token',
-          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`,
+          CI: '0',
+          GITHUB_ACTIONS: '0',
+          AGENTFEED_CI: '0'
         }
       });
 
@@ -372,6 +375,35 @@ describe('share CLI command', () => {
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
+  });
+
+  it('does not auto-open review URLs in CI unless explicitly requested', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.upload = {
+      uploaded: true,
+      worklog_id: 'worklog_ci_no_open',
+      review_url: 'https://agentfeed.dev/worklogs/worklog_ci_no_open/review',
+      uploaded_at: '2026-05-31T00:00:00.000Z'
+    };
+    await writeDraft(dir, draft);
+    const fakeBin = join(dir, '.agentfeed', 'fake-ci-bin');
+    const browserLog = await installFakeBrowserOpener(fakeBin);
+
+    const publish = await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        HOME: home,
+        PATH: `${fakeBin}:${process.env.PATH ?? ''}`,
+        AGENTFEED_TEST_BROWSER_LOG: browserLog,
+        AGENTFEED_TOKEN: 'af_live_test_token',
+        CI: '1'
+      }
+    });
+
+    expect(publish.stdout).toContain('Review URL:');
+    await expect(readFile(browserLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
   it('prints machine-readable publish JSON and copies the review URL only when requested', async () => {

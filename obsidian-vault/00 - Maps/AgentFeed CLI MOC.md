@@ -33,6 +33,7 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Native Keychain Smoke Notification Gates and Social Action Contracts 2026-05-31]]
 - [[Commercial Readiness Hardening - Session Parser Bounds Notification Dedupe and Comment Contracts 2026-05-31]]
 - [[Commercial Readiness Hardening - Keychain Publish Race Leaderboard Scale and Frontend Contracts 2026-05-31]]
 
@@ -122,6 +123,8 @@ graph LR
 - [[Integration - CLI Backend Frontend#2026-05-30 Worklog card can_comment propagation|Card can_comment propagation]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Unauthenticated social action guard|Unauthenticated social guard]]
 - [[Auth & Credential Safety#2026-05-30 Worklog and project mutation rate-limit coverage|Mutation rate-limit coverage]]
+- [[Auth & Credential Safety#2026-05-31 Native macOS keychain smoke|Native macOS keychain smoke]]
+- [[Integration - CLI Backend Frontend#2026-05-31 Notification settings gate and social action contracts|Notification gate + social action contracts]]
 - [[Collection System#2026-05-31 Session parser bounded input guard|Session parser bounds]]
 - [[Integration - CLI Backend Frontend#2026-05-31 Notification dedupe and frontend comment contracts|Notification dedupe + comment contracts]]
 - [[Collection System#2026-05-30 share dry-run command execution guard|share dry-run command guard]]

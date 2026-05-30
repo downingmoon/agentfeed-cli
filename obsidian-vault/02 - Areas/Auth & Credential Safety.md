@@ -496,3 +496,16 @@ created: 2026-05-30
 - CLI browser auth exchange와 ingestion token rotation response는 credential 저장 전에 token/date/user shape를 검증한다.
 - malformed 200 response는 `API_RESPONSE_INVALID`로 실패하며 기존 credentials를 유지한다.
 - `AGENTFEED_CI=1`에서는 browser login을 기본 차단하고 token-based login을 안내한다. 명시적 interactive override는 `--browser`다.
+## 2026-05-31 Native macOS keychain smoke
+
+> [!success]
+> CLI keychain storage는 injected unit test뿐 아니라 opt-in native macOS `security` round-trip smoke로도 검증되었습니다.
+
+계약:
+
+- 기본 test suite는 사용자 keychain을 건드리지 않습니다.
+- `AGENTFEED_RUN_NATIVE_KEYCHAIN_TESTS=1`인 macOS local 환경에서만 native smoke가 실행됩니다.
+- Smoke token은 dummy fixture이며 `credentials.json`에는 저장되지 않습니다.
+- 테스트 후 `security delete-generic-password`로 smoke credential을 삭제합니다.
+
+검증: [[Commercial Readiness Hardening - Native Keychain Smoke Notification Gates and Social Action Contracts 2026-05-31#검증 증거]]

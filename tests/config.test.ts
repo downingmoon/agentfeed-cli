@@ -1,4 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
+import { execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -90,6 +91,39 @@ describe('project config', () => {
     expect(dirMode).toBe(0o700);
     expect(fileMode).toBe(0o600);
   });
+
+  it('can round-trip credentials through the native macOS keychain when explicitly enabled', async () => {
+    if (process.platform !== 'darwin' || process.env.CI || process.env.AGENTFEED_RUN_NATIVE_KEYCHAIN_TESTS !== '1') return;
+
+    let metadata: { keychain_account?: string; keychain_service?: string } | null = null;
+    const token = 'af_live_keychain_native_smoke';
+    if (oldHome) process.env.HOME = oldHome;
+    process.env.AGENTFEED_HOME = home;
+    try {
+      await saveCredentials(token, {
+        apiBaseUrl: 'http://localhost:8001/v1',
+        credentialStore: 'keychain',
+      });
+
+      metadata = JSON.parse(await readFile(credentialsPath(), 'utf8'));
+      expect(metadata?.keychain_account).toBeTruthy();
+      expect(metadata?.keychain_service).toBe('AgentFeed CLI');
+      expect(JSON.stringify(metadata)).not.toContain(token);
+
+      const resolved = await loadCredentialsWithMetadata({ cwd: dir });
+      expect(resolved.token_source).toBe('keychain');
+      expect(resolved.credential_store).toBe('keychain');
+      expect(resolved.credentials?.ingestion_token).toBe(token);
+    } finally {
+      if (metadata?.keychain_account && metadata.keychain_service) {
+        try {
+          execFileSync('security', ['delete-generic-password', '-a', metadata.keychain_account, '-s', metadata.keychain_service], { stdio: 'ignore' });
+        } catch {
+          // The smoke credential may not have been created if the keychain write failed.
+        }
+      }
+    }
+  }, 20_000);
 
   it('can store the token in an injected keychain backend without plaintext credential-file leakage', async () => {
     let savedSecret: string | null = null;

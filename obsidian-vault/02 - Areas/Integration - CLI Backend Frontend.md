@@ -1714,3 +1714,22 @@ Frontend 계약:
 - Projects/search/leaderboard/me pagination/action URL contract가 no-dependency test로 잠겼습니다.
 
 검증: [[Commercial Readiness Hardening - Session Parser Bounds Notification Dedupe and Comment Contracts 2026-05-31#검증 증거]]
+## 2026-05-31 Notification settings gate and social action contracts
+
+> [!success]
+> Backend notification dedupe insert는 사용자 설정 gate 뒤에서만 실행되고, Frontend optimistic social actions는 pure helper contract로 회귀 방어됩니다.
+
+Backend 계약:
+
+- Notification setting이 disabled이면 `dedupe_key`가 있어도 insert를 시도하지 않습니다.
+- `015_notification_dedupe_key` migration은 nullable column + unique index + downgrade drop을 유지해야 합니다.
+
+Frontend 계약:
+
+- Auth loading 상태는 action을 대기시킵니다.
+- Signed-out 상태는 GitHub auth funnel로 보냅니다.
+- Pending item은 중복 action을 차단합니다.
+- API failure는 optimistic state를 이전 값으로 rollback합니다.
+- Settled request는 pending state를 해제합니다.
+
+검증: [[Commercial Readiness Hardening - Native Keychain Smoke Notification Gates and Social Action Contracts 2026-05-31#검증 증거]]

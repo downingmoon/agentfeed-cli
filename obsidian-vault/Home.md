@@ -25,6 +25,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - Native Keychain Smoke Notification Gates and Social Action Contracts 2026-05-31]] — native keychain smoke, notification gates, optimistic social action contracts
+
 - [[Commercial Readiness Hardening - Session Parser Bounds Notification Dedupe and Comment Contracts 2026-05-31]] — session parser bounds, notification dedupe, frontend comment/API contracts
 
 - [[Commercial Readiness Hardening - Keychain Publish Race Leaderboard Scale and Frontend Contracts 2026-05-31]] — keychain, publish race, leaderboard scale, frontend contracts

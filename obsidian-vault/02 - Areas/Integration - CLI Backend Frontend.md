@@ -1413,3 +1413,19 @@ Frontend 표시:
 - `../agentfeed-dev/scripts/test-all.sh` → passed
 
 관련: [[Live E2E Smoke Gate Hardening 2026-05-30]], [[Commercial Readiness Audit 2026-05-30#2026-05-30 live E2E smoke hardening 루프]]
+
+
+## 2026-05-30 Review and feed rendered smoke gate
+
+> [!success]
+> Live E2E smoke가 API semantic assertion뿐 아니라 Frontend review/feed route의 server-rendered shell도 확인합니다.
+
+계약:
+
+- CLI share upload 후 review API에서 source hashed session id, model, user note, `needs_review` status, public preview fields를 검증합니다.
+- `/worklogs/{id}/review`는 curl 기준 HTTP 200과 app title/loading shell을 검증합니다.
+- publish 후 public detail/feed API에서 seeded worklog가 노출되는지 검증합니다.
+- `/feed`는 curl 기준 HTTP 200과 `Public Feed` metadata/page shell을 검증합니다.
+- client-side hydrated card 내용은 browser automation 없이 HTML에 존재한다고 가정하지 않습니다.
+
+관련 구현: [[Commercial Readiness Hardening - Auth Maintenance and Rendered Smoke 2026-05-30]]

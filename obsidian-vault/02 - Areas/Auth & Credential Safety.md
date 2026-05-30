@@ -180,6 +180,22 @@ created: 2026-05-30
 
 관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 Backend critical path rate-limit]]
 
+
+## 2026-05-30 Auth account maintenance dry-run
+
+> [!success]
+> 운영 DB에 남아 있을 수 있는 duplicate GitHub provider identity와 legacy plaintext provider token을 배포 전/후에 JSON report로 점검할 수 있습니다.
+
+계약:
+
+- `scripts/auth_account_maintenance.py` 기본 실행은 dry-run이며 token 값을 출력하지 않습니다.
+- duplicate `(provider, provider_user_id)` group은 `auth_account_ids` / `user_ids`만 출력하고 자동 merge하지 않습니다.
+- `--apply`는 duplicate가 없을 때만 legacy plaintext provider token을 `af1:` encrypted form으로 rotate합니다.
+- rotation path는 기존 auth flow의 `rotate_legacy_provider_tokens()` helper를 재사용합니다.
+- apply mode는 대상 row를 `FOR UPDATE SKIP LOCKED`로 잡아 운영 중복 실행의 충돌 가능성을 줄입니다.
+
+관련 구현: [[Commercial Readiness Hardening - Auth Maintenance and Rendered Smoke 2026-05-30]]
+
 ## 관련 링크
 
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI ephemeral login --no-save]]
@@ -190,6 +206,7 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI npm prepack release gate]]
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI credential file permissions]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Backend critical path rate-limit]]
+- [[Commercial Readiness Hardening - Auth Maintenance and Rendered Smoke 2026-05-30]]
 - [[Privacy Safety]]
 - [[Active Tasks#P1 후보]]
 

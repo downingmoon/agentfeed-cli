@@ -218,6 +218,9 @@ created: 2026-05-30
 - [x] Backend shared DB rate-limit event global retention pruning 추가
 - [x] Frontend `/cli/authorize` missing-session server fallback과 dev smoke assertion 추가
 - [x] Backend integration guide CLI install command를 `agentfeed-cli`로 정합화
+- [x] Backend auth account duplicate/legacy-token maintenance dry-run 도구 추가
+- [x] Dev live smoke가 review/feed rendered shell까지 검증하도록 확장
+- [[Commercial Readiness Hardening - Auth Maintenance and Rendered Smoke 2026-05-30]]
 - [[Commercial Readiness Hardening - Auth Race and Login Smoke 2026-05-30]]
 
 

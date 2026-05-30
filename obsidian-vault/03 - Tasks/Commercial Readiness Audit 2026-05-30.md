@@ -58,7 +58,7 @@ aliases:
 - [x] Backend production safety가 `ENVIRONMENT=production` exact match에 의존하는 문제: non-development fail-closed 적용
 - [x] Backend rate-limit shared store: Redis 신규 의존성 대신 기존 Postgres 기반 `rate_limit_events` + advisory lock으로 multi-worker/global quota 보강
 - [x] Frontend `npm audit --omit=dev`의 Next/PostCSS moderate advisory: stable Next는 아직 vulnerable PostCSS를 pin하므로 targeted `overrides.next.postcss=8.5.15`와 audit gate로 mitigation
-- [ ] Backend full Ruff repo-wide cleanup: 현재 patch scope targeted ruff는 통과하나 기존 style noise 존재
+- [x] Backend full Ruff repo-wide cleanup: repo-wide `ruff check .` clean으로 전환, FastAPI `Depends` 기본값은 B008 project ignore로 명시
 
 ## 2026-05-30 backend shared rate-limit store 추가 루프
 
@@ -76,6 +76,21 @@ aliases:
 - `TRUSTED_PROXY_IPS`는 comma-separated IP/CIDR allowlist입니다.
 - `ENVIRONMENT=development`는 local URLs만 허용합니다.
 - `prod`, `staging` 등 non-development env는 production-like로 간주해 secure secret/OAuth/frontend/origin 값을 요구합니다.
+
+
+## 2026-05-30 backend repo-wide Ruff cleanup 루프
+
+- `uv run --python 3.12 --with ruff ruff check .`가 repo 전체에서 통과하도록 정리했습니다.
+- import ordering, `datetime.UTC`, PEP 604 optional annotation, unused imports, SQLAlchemy boolean predicate, OAuth state exception chaining을 정리했습니다.
+- SQLAlchemy relationship forward reference는 `TYPE_CHECKING` imports로 lint false-positive를 제거했습니다.
+- FastAPI의 `Depends(...)`, `Query(...)` default argument 패턴은 framework idiom이라 `B008`을 project ignore에 명시했습니다.
+- Pydantic generic response schema는 Python 3.12 type parameter syntax로 정리했습니다.
+
+검증:
+
+- `uv run --python 3.12 --with ruff ruff check .`
+- `uv run --python 3.12 --with pytest --with pytest-asyncio pytest tests -q` → 95 passed
+- `../agentfeed-dev/scripts/test-all.sh`
 
 ## 검증 로그
 

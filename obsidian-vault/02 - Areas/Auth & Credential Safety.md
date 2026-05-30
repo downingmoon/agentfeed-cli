@@ -227,6 +227,21 @@ created: 2026-05-30
 
 관련 구현: [[Commercial Readiness Hardening - Token Lifecycle and Settings Surface 2026-05-30]]
 
+## 2026-05-30 Ingestion token rotation contract
+
+> [!success]
+> Ingestion token expiry warning의 remediation path를 `login` 재발급이 아니라 first-class rotation으로 승격했습니다.
+
+계약:
+
+- `POST /v1/ingest/token/rotate`는 현재 bearer `af_live_...` token을 revoke하고 replacement raw token을 한 번만 반환합니다.
+- `POST /v1/me/ingestion-tokens/{token_id}/rotate`는 signed-in Settings 관리자가 특정 active token을 rotate합니다.
+- Rotation response에는 `token`, `token_expires_at`, `rotated_from`, `rotated_at`이 포함되지만 list/status response에는 raw token이 없습니다.
+- Rotation은 quota-at-limit 상태에서도 동작하도록 old token revoke와 new token issue를 같은 transaction 경계에서 처리합니다.
+- 두 rotate mutation은 critical mutation rate-limit bucket에 포함됩니다.
+
+관련 구현: [[Commercial Readiness Hardening - Token Rotation UX 2026-05-30]]
+
 ## 관련 링크
 
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI ephemeral login --no-save]]

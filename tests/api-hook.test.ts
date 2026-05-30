@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { initProject } from '../src/config/project-config.js';
 import { writeDraft } from '../src/draft/write.js';
 import { createEmptyDraft } from '../src/draft/create.js';
-import { checkApiReachability, checkIngestionToken, createCliAuthSession, draftToIngestRequest, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
+import { checkApiReachability, checkIngestionToken, createCliAuthSession, draftToIngestRequest, exchangeCliAuthSession, previewDraftRemote, publishDraft, rotateIngestionToken } from '../src/api/client.js';
 import { browserLogin, waitForCliAuthExchange } from '../src/auth/browser-login.js';
 import { installClaudeCodeHook, uninstallClaudeCodeHook } from '../src/hooks/claude-code-settings.js';
 import { pathExists } from '../src/utils/fs.js';
@@ -125,6 +125,30 @@ describe('api client', () => {
   });
 
 
+  it('rotates the current ingestion token without printing or uploading draft data', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      data: {
+        id: 'token-new',
+        name: 'CLI: MacBook',
+        token: 'af_live_new_secret',
+        created_at: '2026-05-30T00:00:00Z',
+        expires_at: '2026-06-15T00:00:00Z',
+        token_expires_at: '2026-06-15T00:00:00Z',
+        rotated_from: 'token-old',
+        rotated_at: '2026-05-30T00:01:00Z',
+        user: { id: 'user-1', username: 'downingmoon' }
+      }
+    }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await rotateIngestionToken({ ingestion_token: 'af_live_old_secret', api_base_url: 'http://localhost:8001/v1', created_at: 'now' });
+
+    expect(result).toMatchObject({ id: 'token-new', token: 'af_live_new_secret', rotated_from: 'token-old' });
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/v1/ingest/token/rotate', expect.objectContaining({
+      method: 'POST',
+      headers: { authorization: 'Bearer af_live_old_secret' }
+    }));
+  });
 
   it('remote preview posts the ingest payload and returns backend warnings', async () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });

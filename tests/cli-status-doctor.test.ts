@@ -1,6 +1,6 @@
 import { beforeAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { execFile, execFileSync } from 'node:child_process';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
@@ -60,6 +60,69 @@ describe('status and doctor provenance output', () => {
 
     expect(stdout).toContain('Token expires at: 2026-06-15T00:00:00.000Z');
     expect(stdout).not.toContain('af_live_saved_secret');
+  });
+
+
+  it('rotate replaces a saved token via the ingestion rotation endpoint without printing secrets', async () => {
+    await mkdir(join(home, '.agentfeed'), { recursive: true });
+    await writeFile(join(home, '.agentfeed', 'credentials.json'), JSON.stringify({
+      api_base_url: 'http://127.0.0.1:9/v1',
+      ingestion_token: 'af_live_old_secret',
+      token_expires_at: '2026-06-01T00:00:00Z',
+      created_at: '2026-05-30T00:00:00Z'
+    }));
+    const newExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const server = await import('node:http').then(({ createServer }) => createServer((req, res) => {
+      if (req.url === '/v1/ingest/token/rotate') {
+        expect(req.headers.authorization).toBe('Bearer af_live_old_secret');
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({
+          data: {
+            id: 'token-new',
+            name: 'CLI: rotated',
+            token: 'af_live_new_secret',
+            created_at: '2026-05-30T00:00:00Z',
+            expires_at: newExpiry,
+            token_expires_at: newExpiry,
+            rotated_from: 'token-old',
+            rotated_at: '2026-05-30T00:01:00Z',
+            user: { id: 'user-1', username: 'downingmoon' }
+          }
+        }));
+        return;
+      }
+      res.writeHead(404).end();
+    }));
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind');
+
+    try {
+      const { stdout } = await execFileAsync(process.execPath, [cliPath, 'rotate'], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: '',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+        }
+      });
+
+      expect(stdout).toContain('AgentFeed token rotated.');
+      expect(stdout).toContain('Rotated from: token-old');
+      expect(stdout).toContain('New token ID: token-new');
+      expect(stdout).not.toContain('af_live_old_secret');
+      expect(stdout).not.toContain('af_live_new_secret');
+      const saved = JSON.parse(await readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8'));
+      expect(saved).toMatchObject({
+        ingestion_token: 'af_live_new_secret',
+        token_expires_at: newExpiry,
+        user: { id: 'user-1', username: 'downingmoon' }
+      });
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
   });
 
   it('doctor reports credential and API source provenance before network checks', () => {

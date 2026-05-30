@@ -1571,3 +1571,24 @@ Frontend 표시:
 - `../agentfeed-dev/scripts/test-all.sh && ../agentfeed-dev/scripts/smoke-e2e.sh`
 
 관련 구현: [[Commercial Readiness Hardening - Token Lifecycle and Settings Surface 2026-05-30]]
+
+## 2026-05-30 Token rotation end-to-end contract
+
+> [!success]
+> Backend rotation endpoints, CLI command, Frontend Settings action이 같은 one-time secret contract로 연결되었습니다.
+
+End-to-end 흐름:
+
+1. CLI는 saved token으로 `POST /v1/ingest/token/rotate`를 호출합니다.
+2. Backend는 old token을 revoke하고 replacement token을 발급합니다.
+3. CLI는 replacement raw token을 저장하고 stdout에는 secret을 숨깁니다.
+4. Frontend `/settings`는 `POST /v1/me/ingestion-tokens/{id}/rotate`를 호출해 managed token을 교체합니다.
+5. Frontend는 새 secret을 one-time notice로 표시하고 token list를 다시 조회합니다.
+
+API/UX 정합성:
+
+- Backend column/source of truth는 ingestion token `name`, `expires_at`, `revoked_at` metadata입니다.
+- Frontend는 token id/name/expiry metadata를 그대로 사용하고 `tag` 같은 별도 alias를 만들지 않습니다.
+- Raw token은 issue/exchange/rotate response에서만 존재합니다.
+
+관련 구현: [[Commercial Readiness Hardening - Token Rotation UX 2026-05-30]]

@@ -1,4 +1,4 @@
-import type { AgentFeedCredentials, CliAuthExchangeResult, CliAuthSession, IngestWorklogRequest, LocalDraft, WorklogStatus } from '../types.js';
+import type { AgentFeedCredentials, CliAuthExchangeResult, CliAuthSession, IngestWorklogRequest, LocalDraft, RotatedIngestionTokenResult, WorklogStatus } from '../types.js';
 import { readDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 import { sanitizedDraftForUpload, scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
@@ -279,6 +279,22 @@ async function postIngest<T>(path: string, draft: LocalDraft, credentials: Agent
     throw new AgentFeedApiError(response.status, code, msg, api.error?.details);
   }
   return (data as { data: T }).data;
+}
+
+
+export async function rotateIngestionToken(credentials: AgentFeedCredentials): Promise<RotatedIngestionTokenResult> {
+  const response = await fetchWithTimeout(apiUrl(credentials.api_base_url, '/ingest/token/rotate'), {
+    method: 'POST',
+    headers: { authorization: `Bearer ${credentials.ingestion_token}` }
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const api = data as { error?: { code?: string; message?: string; details?: Record<string, unknown> } };
+    const code = api.error?.code ?? `HTTP_${response.status}`;
+    const msg = friendlyError(response.status, code, api.error?.message ?? response.statusText, api.error?.details);
+    throw new AgentFeedApiError(response.status, code, msg, api.error?.details);
+  }
+  return (data as { data: RotatedIngestionTokenResult }).data;
 }
 
 export async function previewDraftRemote(draft: LocalDraft, credentials: AgentFeedCredentials): Promise<RemotePreviewResult> {

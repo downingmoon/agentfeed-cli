@@ -14,6 +14,7 @@ agentfeed --help
 ```bash
 agentfeed init
 agentfeed login --token af_live_xxx
+agentfeed rotate
 agentfeed hook install claude-code
 agentfeed collect
 agentfeed collect --explain
@@ -31,6 +32,23 @@ agentfeed publish --latest --open-review
 ```
 
 The CLI creates `.agentfeed/drafts/*.json` first and uploads only reviewable private drafts. It does not upload raw diffs, raw transcripts, `.env` contents, or secrets.
+
+
+## Login and token rotation
+
+`agentfeed login` opens the AgentFeed browser approval flow by default, or accepts a one-time token with `--token`.
+
+When a saved device token is near expiry or compromised, run:
+
+```bash
+agentfeed rotate
+agentfeed rotate --browser
+agentfeed token rotate
+```
+
+`agentfeed rotate` replaces the saved token through the API, saves the new secret locally, and does not print the raw token. If the saved token is already invalid or expired, the command falls back to the browser login replacement flow. If `AGENTFEED_TOKEN` is set, unset it or use `agentfeed rotate --browser` because environment variables cannot be updated in place.
+
+Use `agentfeed doctor` to check server-side token validity and expiry.
 
 
 ## One-command sharing

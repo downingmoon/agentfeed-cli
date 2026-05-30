@@ -8,7 +8,7 @@ import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 import { formatCollectionExplain } from '../draft/explain.js';
-import { checkApiReachability, checkIngestionToken, previewDraftRemote, publishDraft } from '../api/client.js';
+import { AgentFeedApiError, checkApiReachability, checkIngestionToken, previewDraftRemote, publishDraft, rotateIngestionToken } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
 import { applyRedactedPublicFields, publicScanFieldsFromDraft, scanAndRedactDraftPublicFields, type PublicScanFields } from '../privacy/draft-sanitizer.js';
@@ -63,8 +63,8 @@ function tokenExpiryWarning(expiresAt?: string | null, expiringSoon?: boolean): 
   if (!expiresAt) return null;
   const expires = Date.parse(expiresAt);
   if (!Number.isFinite(expires)) return null;
-  if (expires <= Date.now()) return 'ingestion token is expired. Run: agentfeed login';
-  if (expiringSoon || expires - Date.now() <= 7 * 86_400_000) return 'ingestion token expires soon. Run: agentfeed login to rotate this device token.';
+  if (expires <= Date.now()) return 'ingestion token is expired. Run: agentfeed rotate';
+  if (expiringSoon || expires - Date.now() <= 7 * 86_400_000) return 'ingestion token expires soon. Run: agentfeed rotate to replace this device token.';
   return null;
 }
 
@@ -169,6 +169,52 @@ async function cmdLogin(args: string[]) {
   print(noSave
     ? 'No credentials file was written. Future commands need AGENTFEED_TOKEN or a saved login.'
     : 'Next:\n  agentfeed status');
+}
+
+async function rotateViaBrowserLogin(args: string[], message: string) {
+  const apiBaseUrl = option(args, '--api-base-url');
+  const noSave = flag(args, '--no-save');
+  const creds = await browserLogin({ apiBaseUrl, noOpen: flag(args, '--no-open'), save: !noSave });
+  print(`${message}\n`);
+  print(`API: ${creds.api_base_url}`);
+  if (creds.token_expires_at) print(`Token expires at: ${formatTokenExpiry(creds.token_expires_at)}`);
+  print(noSave
+    ? 'No credentials file was written. Future commands need AGENTFEED_TOKEN or a saved login.'
+    : 'Saved replacement token. Next:\n  agentfeed status');
+}
+
+async function cmdRotate(args: string[]) {
+  const forceBrowser = flag(args, '--browser');
+  const noSave = flag(args, '--no-save');
+  const credentialResolution = await loadCredentialsWithMetadata({ cwd: process.cwd() });
+  const creds = credentialResolution.credentials;
+  if (forceBrowser || noSave || !creds) {
+    await rotateViaBrowserLogin(args, creds ? 'AgentFeed browser rotation complete.' : 'No saved token found. Starting browser login replacement.');
+    return;
+  }
+  if (credentialResolution.token_source === 'environment') {
+    throw new Error('AGENTFEED_TOKEN is set, so AgentFeed cannot update that token in-place. Unset AGENTFEED_TOKEN or run: agentfeed rotate --browser');
+  }
+  try {
+    const rotated = await rotateIngestionToken(creds);
+    const saved = await saveCredentials(rotated.token, {
+      apiBaseUrl: creds.api_base_url,
+      user: rotated.user ?? creds.user,
+      tokenExpiresAt: rotated.token_expires_at ?? rotated.expires_at
+    });
+    print('AgentFeed token rotated.\n');
+    print(`Rotated from: ${rotated.rotated_from}`);
+    print(`New token ID: ${rotated.id}`);
+    print(`API: ${saved.api_base_url}`);
+    if (saved.token_expires_at) print(`Token expires at: ${formatTokenExpiry(saved.token_expires_at)}`);
+    print('Raw token was saved and not printed. Next:\n  agentfeed doctor');
+  } catch (error) {
+    if (error instanceof AgentFeedApiError && (error.status === 401 || error.code === 'INGESTION_TOKEN_INVALID')) {
+      await rotateViaBrowserLogin(args, 'Saved token is invalid or expired. Browser login issued a replacement token.');
+      return;
+    }
+    throw error;
+  }
 }
 
 async function cmdStatus() {
@@ -430,6 +476,10 @@ async function main() {
     case 'init': return cmdInit(args);
     case 'login': return cmdLogin(args);
     case 'status': return cmdStatus();
+    case 'rotate': return cmdRotate(args);
+    case 'token':
+      if (args[0] === 'rotate') return cmdRotate(args.slice(1));
+      throw new Error('Usage: agentfeed token rotate');
     case 'collect': return cmdCollect(args);
     case 'share': return cmdShare(args);
     case 'preview': return cmdPreview(args);
@@ -443,8 +493,8 @@ async function main() {
     case undefined:
     case '--help':
     case '-h':
-      print('Usage: agentfeed <init|login|status|collect|share|preview|publish|scan|hook|doctor|drafts|discard|open>');
-      print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --no-save\n  agentfeed login --token <token>\n  agentfeed login --token <token> --no-save');
+      print('Usage: agentfeed <init|login|rotate|status|collect|share|preview|publish|scan|hook|doctor|drafts|discard|open>');
+      print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --no-save\n  agentfeed login --token <token>\n  agentfeed login --token <token> --no-save\n  agentfeed rotate\n  agentfeed rotate --browser\n  agentfeed token rotate');
       print('\nCollect:\n  agentfeed collect\n  agentfeed collect --explain\n  agentfeed collect --source codex\n  agentfeed collect --source gemini-cli\n  agentfeed collect --source claude-code --session-file <path>\n  agentfeed collect --since 2026-05-20T01:00:00Z\n  agentfeed collect --all');
       print('\nShare:\n  agentfeed share\n  agentfeed share --dry\n  agentfeed share --open-review\n  agentfeed share --since 2026-05-20T01:00:00Z\n  agentfeed share --all\n  agentfeed share --note "Fixed auth flow"\n  agentfeed share --no-clipboard');
       print('\nScan:\n  agentfeed scan --id <draft_id>\n  agentfeed scan --id <draft_id> --dry-run\n  agentfeed scan --path . --json');

@@ -265,3 +265,18 @@ created: 2026-05-30
 - `../agentfeed-dev/scripts/test-all.sh`
 
 관련 구현: [[Commercial Readiness Hardening - Token Lifecycle and Settings Surface 2026-05-30]]
+
+## 2026-05-30 CLI token rotation command
+
+> [!success]
+> `agentfeed status` / `agentfeed doctor`의 expiry warning은 이제 사용자가 바로 실행할 수 있는 `agentfeed rotate` remediation을 안내합니다.
+
+계약:
+
+- `agentfeed rotate`는 saved credential token을 `/v1/ingest/token/rotate`로 교체하고 새 raw token은 credential file에만 저장합니다.
+- stdout에는 `rotated_from`, replacement token id, API URL, expiry만 출력하고 raw secret은 출력하지 않습니다.
+- saved token이 invalid/expired이면 browser login replacement flow로 fallback합니다.
+- `AGENTFEED_TOKEN` 환경변수 source는 in-place 저장 대상이 아니므로 unset 또는 `agentfeed rotate --browser`를 안내합니다.
+- `agentfeed token rotate`는 같은 동작의 alias입니다.
+
+검증: [[Commercial Readiness Hardening - Token Rotation UX 2026-05-30#검증 결과]]

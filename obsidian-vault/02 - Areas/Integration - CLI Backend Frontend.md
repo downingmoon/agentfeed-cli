@@ -1756,3 +1756,26 @@ Frontend 계약:
 - Active route matching은 slash boundary를 사용해 `/projects-old` 같은 sibling path를 `/projects` active로 오인하지 않습니다.
 
 검증: [[Commercial Readiness Hardening - Concurrent Notification Migration CLI Auth Smoke and Header Contracts 2026-05-31#검증 증거]]
+
+
+## 2026-05-31 Settings partial failure and cross-platform open contracts
+
+> [!success]
+> CLI review 재열기, Backend deployment config, Frontend settings UX가 상용화 기준의 failure isolation contract로 맞춰졌습니다.
+
+CLI 계약:
+
+- `agentfeed open`은 trusted cached review URL만 열고, Windows opener command를 platform-native로 실행합니다.
+- README/help는 review draft 재열기 command를 명시합니다.
+
+Backend 계약:
+
+- Host allowlist와 trusted proxy 설정은 startup에서 형식 오류를 fail-fast합니다.
+- 잘못된 `API_ALLOWED_HOSTS` token은 TrustedHostMiddleware에 전달되기 전에 차단됩니다.
+
+Frontend 계약:
+
+- Settings primary data(`me.settings`)와 secondary data(integrations/tokens)는 `Promise.allSettled`로 분리됩니다.
+- integrations/tokens 장애는 section-level alert로 표시하고 privacy/notification controls를 blank 처리하지 않습니다.
+
+검증: [[Commercial Readiness Hardening - Cross Platform Open Config Validation and Settings Partial Failure 2026-05-31#검증 증거]]

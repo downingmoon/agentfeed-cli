@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Cross Platform Open Config Validation and Settings Partial Failure 2026-05-31]]
+
 - [[Commercial Readiness Hardening - Concurrent Notification Migration CLI Auth Smoke and Header Contracts 2026-05-31]]
 - [[Commercial Readiness Hardening - Native Keychain Smoke Notification Gates and Social Action Contracts 2026-05-31]]
 - [[Commercial Readiness Hardening - Session Parser Bounds Notification Dedupe and Comment Contracts 2026-05-31]]
@@ -69,6 +71,10 @@ graph LR
 - [[Cross Repo Integration Fixes]]
 
 ## 주요 개념 링크
+
+- [[Auth & Credential Safety#2026-05-31 Cross-platform browser opener and open command trust|Cross-platform opener + open trust]]
+- [[Runtime Configuration#2026-05-31 Backend host and proxy config fail-fast|Backend host/proxy config fail-fast]]
+- [[Integration - CLI Backend Frontend#2026-05-31 Settings partial failure and cross-platform open contracts|Settings partial failure + open contracts]]
 
 - [[Collection System#수집 품질 원칙|수집 품질 원칙]]
 - [[Collection System#증거 소스|증거 소스]]

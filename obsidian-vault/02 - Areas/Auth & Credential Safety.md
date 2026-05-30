@@ -523,3 +523,18 @@ created: 2026-05-30
 - 의도적으로 CI에서 browser auth를 실행하려면 `--browser` override가 필요합니다.
 
 검증: [[Commercial Readiness Hardening - Concurrent Notification Migration CLI Auth Smoke and Header Contracts 2026-05-31#검증 증거]]
+
+
+## 2026-05-31 Cross-platform browser opener and open command trust
+
+> [!success]
+> CLI browser/review open flow가 Windows, WSL, macOS, Linux opener contract를 분리하고 cached review URL trust boundary를 회귀 테스트로 고정했습니다.
+
+계약:
+
+- Windows는 `cmd /c start "" <url>`을 사용합니다.
+- WSL은 `wslview`, macOS는 `open`, Linux는 `xdg-open`을 사용합니다.
+- `agentfeed open`은 cached `review_url`이 trusted AgentFeed host 또는 configured local/custom API base와 맞을 때만 browser opener를 호출합니다.
+- `agentfeed open --latest`와 `agentfeed open --id <draft_id>`는 help/README에 노출됩니다.
+
+검증: [[Commercial Readiness Hardening - Cross Platform Open Config Validation and Settings Partial Failure 2026-05-31#검증 증거]]

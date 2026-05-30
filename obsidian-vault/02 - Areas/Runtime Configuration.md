@@ -359,3 +359,18 @@ created: 2026-05-30
 
 - Frontend CSP는 `default-src 'self'`, `base-uri 'self'`, `object-src 'none'`, `frame-ancestors 'none'`, API origin 기반 `connect-src`를 포함한다.
 - Backend CSRF는 Bearer-only API client를 허용하지만, cookie가 함께 있는 mutation은 Authorization header 존재와 무관하게 trusted Origin/Referer를 요구한다.
+
+
+## 2026-05-31 Backend host and proxy config fail-fast
+
+> [!success]
+> Backend deployment config가 startup 시 malformed host/proxy 값을 차단하도록 보강되었습니다.
+
+계약:
+
+- Production `ALLOWED_ORIGINS` / `API_ALLOWED_HOSTS`는 raw string뿐 아니라 parsed list도 비어 있으면 실패합니다.
+- `API_ALLOWED_HOSTS`는 hostname token만 허용하며 scheme, path, query, fragment, credential, port를 포함할 수 없습니다.
+- `TRUSTED_PROXY_IPS`는 IP address 또는 CIDR range만 허용합니다.
+- 개발 환경에서도 malformed trusted proxy entry는 startup validation에서 실패합니다.
+
+검증: [[Commercial Readiness Hardening - Cross Platform Open Config Validation and Settings Partial Failure 2026-05-31#검증 증거]]

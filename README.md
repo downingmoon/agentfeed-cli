@@ -31,6 +31,7 @@ agentfeed collect --all
 agentfeed preview
 agentfeed scan --id <draft_id> --dry-run
 agentfeed publish --latest --open-review
+agentfeed open --latest
 ```
 
 The CLI creates `.agentfeed/drafts/*.json` first and uploads only reviewable private drafts. It does not upload raw diffs, raw transcripts, `.env` contents, or secrets.
@@ -105,6 +106,8 @@ Repo-local test/build commands are never executed by default, even when `.agentf
 Draft collection also records a stable fingerprint from `session_id + git head + collection_window`; repeated runs reuse the existing local draft unless `--force` or `--all` is used. If that draft was already uploaded, `share` / `publish` reuse the saved review URL instead of uploading a duplicate worklog.
 
 Successful `share` / `publish` copies the review URL to the clipboard when the platform supports it. Use `--no-clipboard` to opt out.
+
+Use `agentfeed open`, `agentfeed open --latest`, or `agentfeed open --id <draft_id>` to reopen a previously uploaded private review draft in your browser. Cached review URLs are opened only when they match the trusted AgentFeed host or the configured local/custom API base.
 
 ## Privacy scan dry-run
 

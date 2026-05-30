@@ -23,6 +23,10 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] CLI Windows browser opener + `agentfeed open` trusted review URL regression 보강
+- [x] Backend `API_ALLOWED_HOSTS` / `TRUSTED_PROXY_IPS` startup validation 보강
+- [x] Frontend SettingsPage integrations/token section-level failure isolation 보강
+
 - [x] `share --note`를 Backend 별도 필드로 승격할지 API 계약 결정
 - [x] review URL clipboard Linux fallback(`wl-copy`, `xsel`) 보강
 - [x] 실제 Codex session schema 기반 tool call / subagent / agent turn 과소집계 보강
@@ -144,6 +148,8 @@ created: 2026-05-30
 - [x] Frontend unpublish control을 실제 published status 기준으로 축소
 
 ## 관련 링크
+
+- [[Commercial Readiness Hardening - Cross Platform Open Config Validation and Settings Partial Failure 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Native Keychain Smoke Notification Gates and Social Action Contracts 2026-05-31]]
 - [[Commercial Readiness Hardening - Concurrent Notification Migration CLI Auth Smoke and Header Contracts 2026-05-31]]

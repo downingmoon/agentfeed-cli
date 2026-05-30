@@ -124,6 +124,9 @@ created: 2026-05-30
 - [x] Backend publish follower notification race를 row lock/transition edge로 보강
 - [x] Backend leaderboard following-state N+1 제거 및 public worklog partial index 추가
 - [x] Frontend profile/project/explore pagination/partial-failure contract regression 보강
+- [x] CLI oversized/pathological agent session transcript bounded parsing guard 보강
+- [x] Backend notification producer idempotency를 `dedupe_key` unique insert로 보강
+- [x] Frontend dashboard/worklog comments/API pagination contract regression 보강
 
 ## P2 후보
 
@@ -136,6 +139,7 @@ created: 2026-05-30
 
 ## 관련 링크
 
+- [[Commercial Readiness Hardening - Session Parser Bounds Notification Dedupe and Comment Contracts 2026-05-31]]
 - [[Commercial Readiness Hardening - Keychain Publish Race Leaderboard Scale and Frontend Contracts 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Soft Delete Auth Intent and CLI Upload Safety 2026-05-30]]

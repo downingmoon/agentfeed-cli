@@ -25,6 +25,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - Session Parser Bounds Notification Dedupe and Comment Contracts 2026-05-31]] — session parser bounds, notification dedupe, frontend comment/API contracts
+
 - [[Commercial Readiness Hardening - Keychain Publish Race Leaderboard Scale and Frontend Contracts 2026-05-31]] — keychain, publish race, leaderboard scale, frontend contracts
 
 - [[Commercial Readiness Hardening - CSRF Token Capture and Search Pagination 2026-05-30]] — CSRF Origin gate, one-time token capture, search pagination, CLI rotation recovery

@@ -647,3 +647,16 @@ created: 2026-05-30
 - 전체 CLI gate와 shared `test-all.sh` / `smoke-e2e.sh`를 통과했습니다.
 
 관련 구현: [[Commercial Readiness Hardening - Card Capabilities Rate Limits and Dry Run Safety 2026-05-30]]
+## 2026-05-31 Session parser bounded input guard
+
+> [!success]
+> Agent session JSONL 수집이 oversized file, non-file path, pathological long line에 끌려가지 않도록 bounded parser guard를 추가했습니다.
+
+계약:
+
+- Session file은 기본 10 MiB 한도 안의 regular file만 읽습니다.
+- JSONL은 기본 50,000 row까지만 파싱하고, 기본 1,000,000 char 초과 line은 skip합니다.
+- explicit `--session-file`도 같은 guard를 거치며, 읽을 수 없는 파일은 project match 실패로 처리합니다.
+- Long line skip은 정상 bounded row의 session identity 수집을 방해하지 않습니다.
+
+검증: [[Commercial Readiness Hardening - Session Parser Bounds Notification Dedupe and Comment Contracts 2026-05-31#검증 증거]]

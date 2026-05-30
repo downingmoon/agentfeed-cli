@@ -1695,3 +1695,22 @@ API/UX 정합성:
 - Frontend `/feed`는 backend `next_cursor` / `has_more`를 보존하고 추가 페이지를 append한다.
 - Worklog comments도 backend cursor pagination을 사용한다.
 - Route/global error boundary로 runtime failure 시 Feed 복귀/재시도 UX를 제공한다.
+## 2026-05-31 Notification dedupe and frontend comment contracts
+
+> [!success]
+> Backend notification producer와 Frontend comments/API regression contract가 같은 상용화 기준으로 보강되었습니다.
+
+Backend 계약:
+
+- `notifications.dedupe_key`는 nullable unique index입니다.
+- repeatable producer는 deterministic key를 넘기고 DB `ON CONFLICT DO NOTHING`으로 중복 발행을 흡수합니다.
+- publish/follow/like/bookmark/comment producer가 dedupe contract를 사용합니다.
+
+Frontend 계약:
+
+- Dashboard는 summary/recent worklog partial failure를 분리합니다.
+- Worklog detail은 primary worklog fetch와 secondary comments fetch를 분리합니다.
+- Initial/load-more/submitted comments는 모두 id 기반 dedupe helper를 거칩니다.
+- Projects/search/leaderboard/me pagination/action URL contract가 no-dependency test로 잠겼습니다.
+
+검증: [[Commercial Readiness Hardening - Session Parser Bounds Notification Dedupe and Comment Contracts 2026-05-31#검증 증거]]

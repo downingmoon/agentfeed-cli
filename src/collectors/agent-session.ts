@@ -5,6 +5,10 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import type { AgentType, ChangedFileSummary, CollectionQuality, CollectionSource, CollectionWindow, CollectionWindowReason, WorklogMetrics } from '../types.js';
 import { shouldIgnoreEvidencePath } from './path-filter.js';
 
+const DEFAULT_SESSION_FILE_MAX_BYTES = 10 * 1024 * 1024;
+const DEFAULT_SESSION_JSONL_MAX_ROWS = 50_000;
+const DEFAULT_SESSION_JSONL_MAX_LINE_CHARS = 1_000_000;
+
 export interface AgentSessionMetrics extends WorklogMetrics {
   session_id?: string | null;
   model?: string | null;
@@ -99,14 +103,53 @@ function safeJsonParse(text: string): unknown | null {
   try { return JSON.parse(text); } catch { return null; }
 }
 
+function boundedPositiveIntegerEnv(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.trunc(n) : fallback;
+}
+
+function sessionFileMaxBytes(): number {
+  return boundedPositiveIntegerEnv('AGENTFEED_SESSION_FILE_MAX_BYTES', DEFAULT_SESSION_FILE_MAX_BYTES);
+}
+
+function sessionJsonlMaxRows(): number {
+  return boundedPositiveIntegerEnv('AGENTFEED_SESSION_JSONL_MAX_ROWS', DEFAULT_SESSION_JSONL_MAX_ROWS);
+}
+
+function sessionJsonlMaxLineChars(): number {
+  return boundedPositiveIntegerEnv('AGENTFEED_SESSION_JSONL_MAX_LINE_CHARS', DEFAULT_SESSION_JSONL_MAX_LINE_CHARS);
+}
+
 function parseJsonlRecords(text: string): Record<string, unknown>[] {
   const rows: Record<string, unknown>[] = [];
+  const maxRows = sessionJsonlMaxRows();
+  const maxLineChars = sessionJsonlMaxLineChars();
   for (const line of text.split('\n')) {
     if (!line.trim()) continue;
+    if (line.length > maxLineChars) continue;
     const row = asRecord(safeJsonParse(line));
     if (row) rows.push(row);
+    if (rows.length >= maxRows) break;
   }
   return rows;
+}
+
+async function readBoundedSessionText(sessionFile: string): Promise<string | null> {
+  try {
+    const info = await stat(sessionFile);
+    if (!info.isFile() || info.size > sessionFileMaxBytes()) return null;
+    return await readFile(sessionFile, 'utf8');
+  } catch {
+    return null;
+  }
+}
+
+async function readSessionJsonlRecords(sessionFile: string): Promise<Record<string, unknown>[] | null> {
+  const text = await readBoundedSessionText(sessionFile);
+  if (text == null) return null;
+  return parseJsonlRecords(text);
 }
 
 function findStructuredCwd(value: unknown): string | null {
@@ -142,7 +185,9 @@ function canonicalPath(path: string): string {
 async function structuredCwdMatchState(sessionFile: string, cwd: string): Promise<{ sawStructuredCwd: boolean; matchedProject: boolean }> {
   const projectRoot = canonicalPath(cwd);
   let sawStructuredCwd = false;
-  for (const line of (await readFile(sessionFile, 'utf8')).split('\n')) {
+  const text = await readBoundedSessionText(sessionFile);
+  if (text == null) return { sawStructuredCwd: true, matchedProject: false };
+  for (const line of text.split('\n')) {
     if (!line.trim()) continue;
     const structuredCwd = findStructuredCwd(safeJsonParse(line));
     if (!structuredCwd) continue;
@@ -509,7 +554,8 @@ async function readOmxMetadata(cwd: string, sessionId: string | null): Promise<{
 }
 
 async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null, inferIdleGap = true): Promise<AgentSessionMetrics | null> {
-  const rows = parseJsonlRecords(await readFile(sessionFile, 'utf8'));
+  const rows = await readSessionJsonlRecords(sessionFile);
+  if (!rows) return null;
   const effective = inferEffectiveCollectionWindow(rows, window, { inferIdleGap });
   const effectiveWindow = effective.window;
   const files = new Map<string, ChangedFileSummary>();
@@ -629,7 +675,8 @@ function codexTokenTotal(info: Record<string, unknown>): number {
 }
 
 async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null, inferIdleGap = true): Promise<AgentSessionMetrics | null> {
-  const rows = parseJsonlRecords(await readFile(sessionFile, 'utf8'));
+  const rows = await readSessionJsonlRecords(sessionFile);
+  if (!rows) return null;
   const effective = inferEffectiveCollectionWindow(rows, window, { inferIdleGap });
   const effectiveWindow = effective.window;
   const files = new Map<string, ChangedFileSummary>();
@@ -786,7 +833,8 @@ function geminiTokenTotal(tokens: Record<string, unknown>): number {
 }
 
 async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null, inferIdleGap = true): Promise<AgentSessionMetrics | null> {
-  const rows = parseJsonlRecords(await readFile(sessionFile, 'utf8'));
+  const rows = await readSessionJsonlRecords(sessionFile);
+  if (!rows) return null;
   const effective = inferEffectiveCollectionWindow(rows, window, { inferIdleGap });
   const effectiveWindow = effective.window;
   const files = new Map<string, ChangedFileSummary>();

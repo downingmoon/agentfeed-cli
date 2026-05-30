@@ -33,6 +33,7 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Session Parser Bounds Notification Dedupe and Comment Contracts 2026-05-31]]
 - [[Commercial Readiness Hardening - Keychain Publish Race Leaderboard Scale and Frontend Contracts 2026-05-31]]
 
 - [[Commercial Readiness Audit 2026-05-30]]
@@ -121,6 +122,8 @@ graph LR
 - [[Integration - CLI Backend Frontend#2026-05-30 Worklog card can_comment propagation|Card can_comment propagation]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Unauthenticated social action guard|Unauthenticated social guard]]
 - [[Auth & Credential Safety#2026-05-30 Worklog and project mutation rate-limit coverage|Mutation rate-limit coverage]]
+- [[Collection System#2026-05-31 Session parser bounded input guard|Session parser bounds]]
+- [[Integration - CLI Backend Frontend#2026-05-31 Notification dedupe and frontend comment contracts|Notification dedupe + comment contracts]]
 - [[Collection System#2026-05-30 share dry-run command execution guard|share dry-run command guard]]
 - [[Integration - CLI Backend Frontend#End-to-end 흐름|End-to-end 흐름]]
 - [[Active Tasks#P1 후보|P1 후보]]

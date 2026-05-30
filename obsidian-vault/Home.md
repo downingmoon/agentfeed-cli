@@ -18,6 +18,7 @@ created: 2026-05-30
 - [[Collection System]] — 핵심 수집 파트 정리
 - [[Privacy Safety]] — 공개 전 redaction / scan 안전장치
 - [[Auth & Credential Safety]] — 로그인/token 저장 안전장치
+- [[Runtime Configuration]] — runtime URL/env 정규화
 - [[Integration - CLI Backend Frontend]] — 3개 레포 연동 상태
 - [[Active Tasks]] — 다음 작업 후보
 

@@ -60,6 +60,7 @@ sequenceDiagram
 
 - `npx tsc --noEmit --pretty false`
 - `npm run build`
+- `../agentfeed-dev/scripts/test-all.sh`
 
 ## 2026-05-30 Frontend inert control 제거
 
@@ -207,6 +208,26 @@ sequenceDiagram
 - `npm run build`
 - `../agentfeed-dev/scripts/test-all.sh`
 - `HOME=$(mktemp -d) node dist/cli/index.js login --token af_live_ephemeral --api-base-url http://localhost:8001/v1 --no-save` 후 credential file 미생성 확인
+
+## 2026-05-30 Frontend API URL normalization
+
+> [!success]
+> Frontend API URL 구성도 CLI의 API base URL hardening과 같은 수준으로 보강했습니다. 자세한 runtime config 계약은 [[Runtime Configuration#2026-05-30 Frontend API URL normalization]]에 정리합니다.
+
+계약:
+
+- `NEXT_PUBLIC_API_URL=http://localhost:8001/v1/`처럼 `/v1` suffix가 포함되어도 root `http://localhost:8001`로 정규화합니다.
+- 모든 fetch URL은 `buildApiUrl(path)`를 통해 `${root}/v1${path}`로 생성합니다.
+- GitHub OAuth URL도 같은 helper를 사용해 `/v1/v1/auth/github` drift를 막습니다.
+- malformed URL, unsupported protocol, query/hash, URL credential은 fetch 전에 실패합니다.
+- `agentfeed-dev/scripts/test-all.sh`에 Frontend contract test를 포함해 3-repo gate에서 계속 검증합니다.
+
+검증:
+
+- `npm run test:contracts`
+- `npx tsc --noEmit --pretty false`
+- `npm run build`
+- `../agentfeed-dev/scripts/test-all.sh`
 
 ## 관련 원본
 

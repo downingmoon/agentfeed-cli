@@ -30,6 +30,7 @@ graph LR
 - [[Collection System]]
 - [[Privacy Safety]]
 - [[Auth & Credential Safety]]
+- [[Runtime Configuration]]
 - [[Integration - CLI Backend Frontend]]
 - [[Active Tasks]]
 
@@ -46,5 +47,6 @@ graph LR
 - [[Collection System#증거 소스|증거 소스]]
 - [[Privacy Safety#Redaction dry-run UX|Redaction dry-run UX]]
 - [[Auth & Credential Safety#2026-05-30 CLI ephemeral login --no-save|CLI ephemeral login]]
+- [[Runtime Configuration#2026-05-30 Frontend API URL normalization|Frontend API URL normalization]]
 - [[Integration - CLI Backend Frontend#End-to-end 흐름|End-to-end 흐름]]
 - [[Active Tasks#P1 후보|P1 후보]]

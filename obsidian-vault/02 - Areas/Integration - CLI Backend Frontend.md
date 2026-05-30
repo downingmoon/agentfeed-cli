@@ -58,6 +58,8 @@ sequenceDiagram
 
 - [x] Docker Desktop 실행 상태에서 `agentfeed-dev`의 `make smoke-e2e` 성공 확인
 - [x] CLI → Backend → Frontend review/publish/feed smoke 재확인
+- [x] OAuth 없이 재현 가능한 CLI browser-login token exchange 경로 test 보강
+- [x] smoke 전용 ingestion token을 `/v1/ingest/status`로 upload 전 검증
 - [ ] 실제 GitHub OAuth / CLI browser login happy path 재확인
 - [ ] 실제 사용자 작업 repo에서 `agentfeed share --open-review` smoke
 
@@ -309,3 +311,73 @@ Dev:
 
 > [!note]
 > 이 결정으로 생성 요약은 수집/분석 결과만 담고, 사람의 맥락은 별도 공개 메모로 다뤄집니다.
+
+## 2026-05-30 Search UI/API 계약
+
+> [!success]
+> Frontend Header의 검색 입력이 더 이상 장식용이 아니며, `GET /v1/search` 계약을 사용하는 `/search` 페이지로 연결됩니다.
+
+계약:
+
+- Header search form: `/search?q={query}`로 이동
+- Search page: `q`와 `type` query string을 읽어 Backend `/search` 호출
+- 지원 type: `worklogs`, `users`, `projects`, `prompts`
+- `type`이 없으면 Backend 기본 all 검색 결과를 섹션별로 표시
+
+Frontend 표시:
+
+- Worklogs: 기존 `WorklogCard`와 social state hydration 재사용
+- Users: `ApiUser` → `User` adapter 후 profile link
+- Projects: Backend search가 제공하는 최소 project field를 기준으로 card 표시, `slug`가 없으면 `id` fallback
+- Prompts: worklog detail link로 연결
+
+검증:
+
+- `agentfeed-frontend`: `npx tsc --noEmit --pretty false`
+- `agentfeed-frontend`: `npm run build`에서 `/search` route 생성 확인
+- `agentfeed-dev`: `./scripts/test-all.sh`
+
+## 2026-05-30 Cursor pagination UX 계약
+
+> [!success]
+> Frontend에서 list API의 첫 페이지만 읽어 발생하던 truncation과 project false 404 위험을 줄였습니다.
+
+보강 범위:
+
+- `ProjectsPage`: `projects.list({ cursor, limit })` 기반 Load more
+- `ProfilePage`: `users.worklogs(username, { cursor, limit })` 기반 Worklogs tab Load more
+- `ProjectDetailPage`: `projects.list`를 cursor로 순회해 slug/id를 찾고, 첫 페이지 밖 project를 404로 오판하지 않음
+- `ProjectDetailPage`: `projects.worklogs(projectId, { cursor, limit })` 기반 Load more
+
+> [!note]
+> Backend column/API 이름을 기준으로 유지했고, Frontend는 기존 `pagination.next_cursor` / `pagination.has_more` 계약을 그대로 사용합니다.
+
+검증:
+
+- `agentfeed-frontend`: `npx tsc --noEmit --pretty false`
+- `agentfeed-frontend`: `npm run build`
+- `agentfeed-dev`: `./scripts/test-all.sh`
+
+## 2026-05-30 CLI login/token smoke 계약
+
+> [!success]
+> 실제 GitHub OAuth credential 없이도 CLI browser login의 핵심 token exchange/save 경로를 자동 검증합니다.
+
+계약:
+
+- `browserLogin({ noOpen: true })`는 브라우저를 열지 않고 CLI auth session을 생성합니다.
+- CLI session 생성 request는 64 hex verifier와 device name을 보냅니다.
+- exchange request는 같은 verifier로 session token을 교환합니다.
+- 성공 시 `~/.agentfeed/credentials.json`에 `ingestion_token`, `api_base_url`, `user`가 저장됩니다.
+- `agentfeed-dev/scripts/smoke-e2e.sh`는 upload 전에 seed ingestion token을 `GET /v1/ingest/status`로 검증합니다.
+
+남은 수동 확인:
+
+- [ ] 실제 GitHub OAuth app credential이 있는 환경에서 `/cli/authorize` approval UI까지 포함한 browser-login happy path
+
+검증:
+
+- `AgentFeed-CLI`: `npx vitest run tests/api-hook.test.ts`
+- `AgentFeed-CLI`: `npm run typecheck`
+- `agentfeed-dev`: `bash -n scripts/smoke-e2e.sh`
+- `agentfeed-dev`: `make smoke-e2e`

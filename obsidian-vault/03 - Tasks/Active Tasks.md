@@ -18,6 +18,7 @@ created: 2026-05-30
 - [x] Docker 없이 가능한 static gate 보강: `smoke-e2e.sh` syntax + Alembic offline migration chain
 - [x] Docker daemon 실행 후 `agentfeed-dev`에서 `make smoke-e2e` 성공 경로 확인
 - [x] CLI → Backend → Frontend review/publish/feed smoke 재확인
+- [x] Ingestion token `/v1/ingest/status` preflight가 포함된 smoke 재확인
 
 ## P1 후보
 
@@ -53,6 +54,10 @@ created: 2026-05-30
 - [x] dev bootstrap에서 lockfile 기반 `npm ci`와 `.env` 우선 로딩 사용
 - [x] 실제 Cursor workspace/session format 추가 조사 후 parser 품질 상향 가능성 판단
 - [x] CLI ingest `worklog.model` → Backend 저장 → Frontend 노출 계약화
+- [x] Header 검색창을 `/search` 페이지와 Backend `/search` API에 연결
+- [x] Projects/Profile/ProjectDetail cursor pagination UX 보강
+- [x] Project slug lookup이 첫 페이지 밖 프로젝트를 false 404 처리하지 않도록 보강
+- [x] CLI browser login/token path를 no-OAuth test와 dev smoke token preflight로 검증
 
 ## P2 후보
 
@@ -81,6 +86,9 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 Release/dev reproducibility 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 test-all gate 보강]]
 - [[Integration - CLI Backend Frontend#2026-05-30 worklog.model ingest 계약]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Search UI/API 계약]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Cursor pagination UX 계약]]
+- [[Integration - CLI Backend Frontend#2026-05-30 CLI login/token smoke 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Feed sort label 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Publish management 계약]]
 - [[Collection System#2026-05-30 Agent window timestamp-less evidence 보정]]

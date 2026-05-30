@@ -6,7 +6,7 @@ import { initProject } from '../src/config/project-config.js';
 import { writeDraft } from '../src/draft/write.js';
 import { createEmptyDraft } from '../src/draft/create.js';
 import { checkApiReachability, checkIngestionToken, createCliAuthSession, draftToIngestRequest, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
-import { waitForCliAuthExchange } from '../src/auth/browser-login.js';
+import { browserLogin, waitForCliAuthExchange } from '../src/auth/browser-login.js';
 import { installClaudeCodeHook, uninstallClaudeCodeHook } from '../src/hooks/claude-code-settings.js';
 
 let dir: string;
@@ -175,6 +175,56 @@ describe('api client', () => {
     expect(exchange.token).toBe('af_live_test');
     expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.agentfeed.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
     expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://api.agentfeed.dev/v1/auth/cli/sessions/session-1/exchange', expect.objectContaining({ method: 'POST' }));
+  });
+
+  it('completes no-open browser login by exchanging the CLI session and saving credentials', async () => {
+    let sessionVerifier: string | undefined;
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.endsWith('/auth/cli/sessions')) {
+        const body = JSON.parse(String(init?.body ?? '{}')) as { verifier?: string; device_name?: string };
+        expect(body.verifier).toMatch(/^[a-f0-9]{64}$/);
+        expect(body.device_name).toBeTruthy();
+        sessionVerifier = body.verifier;
+        return new Response(JSON.stringify({
+          data: {
+            session_id: 'session-no-open',
+            authorize_url: 'http://localhost:3000/cli/authorize?session_id=session-no-open',
+            expires_at: '2026-05-20T00:05:00Z',
+            poll_interval_seconds: 1
+          }
+        }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+
+      if (url.endsWith('/auth/cli/sessions/session-no-open/exchange')) {
+        const body = JSON.parse(String(init?.body ?? '{}')) as { verifier?: string };
+        expect(body.verifier).toMatch(/^[a-f0-9]{64}$/);
+        expect(body.verifier).toBe(sessionVerifier);
+        return new Response(JSON.stringify({
+          data: {
+            token: 'af_live_no_open',
+            user: { id: 'user-no-open', username: 'cli-user' }
+          }
+        }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404, headers: { 'content-type': 'application/json' } });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const creds = await browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1', noOpen: true, waitMs: 50 });
+
+    expect(creds).toMatchObject({
+      api_base_url: 'https://api.agentfeed.dev/v1',
+      ingestion_token: 'af_live_no_open',
+      user: { id: 'user-no-open', username: 'cli-user' }
+    });
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.agentfeed.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://api.agentfeed.dev/v1/auth/cli/sessions/session-no-open/exchange', expect.objectContaining({ method: 'POST' }));
+    await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8').then(JSON.parse)).resolves.toMatchObject({
+      api_base_url: 'https://api.agentfeed.dev/v1',
+      ingestion_token: 'af_live_no_open',
+      user: { id: 'user-no-open', username: 'cli-user' }
+    });
   });
 
   it('keeps polling the browser login session until it is approved', async () => {

@@ -1,14 +1,15 @@
 {
-  "name": "agentfeed",
+  "name": "agentfeed-cli",
   "version": "0.2.0",
-  "description": "AgentFeed local CLI MVP",
+  "description": "AgentFeed CLI for collecting, reviewing, and publishing AI agent worklogs",
   "type": "module",
   "bin": {
     "agentfeed": "./dist/cli/index.js"
   },
   "scripts": {
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "tsc",
-    "prepack": "npm run build",
+    "prepack": "npm run clean && npm run build && npm run typecheck && npm test -- --run",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"

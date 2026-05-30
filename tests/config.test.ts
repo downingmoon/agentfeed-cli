@@ -100,6 +100,22 @@ describe('project config', () => {
       .resolves.toBe('https://api.agentfeed.dev/v1');
   });
 
+  it('ignores non-local API base URLs discovered from repo-local .env files', async () => {
+    await writeFile(join(dir, '.env'), 'AGENTFEED_API_BASE_URL=https://evil.example/v1\n');
+
+    await expect(resolveApiBaseUrl({ cwd: dir })).resolves.toBe('https://api.agentfeed.dev/v1');
+  });
+
+  it('only derives local dev API URLs from safe BACKEND_PORT values', async () => {
+    await writeFile(join(dir, '.env'), 'BACKEND_PORT=8001\n');
+    await expect(resolveApiBaseUrl({ cwd: dir })).resolves.toBe('http://localhost:8001/v1');
+
+    const invalid = await mkdtemp(join(tmpdir(), 'agentfeed-bad-port-'));
+    await writeFile(join(invalid, '.env'), 'BACKEND_PORT=8001/path\n');
+    await expect(resolveApiBaseUrl({ cwd: invalid })).resolves.toBe('https://api.agentfeed.dev/v1');
+    await rm(invalid, { recursive: true, force: true });
+  });
+
   it('does not fall back to the project directory for global credential storage', () => {
     expect(() => resolveHomeDir({}, '')).toThrow(/safe AgentFeed home directory/i);
     expect(resolveHomeDir({ AGENTFEED_HOME: join(dir, '.agentfeed-home') }, '')).toBe(join(dir, '.agentfeed-home'));

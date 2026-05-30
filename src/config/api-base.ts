@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { isIP } from 'node:net';
 import { dirname, join, resolve } from 'node:path';
 import { DEFAULT_API_BASE_URL } from './defaults.js';
 import { pathExists } from '../utils/fs.js';
@@ -49,6 +50,33 @@ function candidateEnvFiles(cwd: string): string[] {
   return files;
 }
 
+function isLoopbackHostname(hostname: string): boolean {
+  const host = hostname.toLowerCase().replace(/^\[(.*)\]$/, '$1');
+  if (host === 'localhost' || host.endsWith('.localhost')) return true;
+  if (host === '::1') return true;
+  if (host === '0.0.0.0') return true;
+  if (isIP(host) === 4 && host.startsWith('127.')) return true;
+  return false;
+}
+
+function fileDiscoveredApiBaseUrl(value: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(normalizeApiBaseUrl(value));
+  } catch {
+    return null;
+  }
+  return isLoopbackHostname(url.hostname) ? url.toString().replace(/\/$/, '') : null;
+}
+
+function localApiBaseUrlFromBackendPort(value: string): string | null {
+  const port = value.trim();
+  if (!/^\d{1,5}$/.test(port)) return null;
+  const parsed = Number(port);
+  if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > 65535) return null;
+  return `http://localhost:${parsed}/v1`;
+}
+
 export function normalizeApiBaseUrl(value: string): string {
   const raw = value.trim();
   let url: URL;
@@ -77,8 +105,14 @@ export async function discoverApiBaseUrl(cwd = process.cwd()): Promise<string | 
   for (const file of candidateEnvFiles(cwd)) {
     if (!(await pathExists(file))) continue;
     const env = parseEnvFile(await readFile(file, 'utf8'));
-    if (env.AGENTFEED_API_BASE_URL) return env.AGENTFEED_API_BASE_URL;
-    if (env.BACKEND_PORT) return `http://localhost:${env.BACKEND_PORT}/v1`;
+    if (env.AGENTFEED_API_BASE_URL) {
+      const discovered = fileDiscoveredApiBaseUrl(env.AGENTFEED_API_BASE_URL);
+      if (discovered) return discovered;
+    }
+    if (env.BACKEND_PORT) {
+      const discovered = localApiBaseUrlFromBackendPort(env.BACKEND_PORT);
+      if (discovered) return discovered;
+    }
   }
   return null;
 }

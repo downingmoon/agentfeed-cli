@@ -23,6 +23,7 @@ function latestSourceMtimeMs(dir: string): number {
 
 function buildStampIsFresh(repoRoot: string, stampPath: string): boolean {
   if (!existsSync(stampPath)) return false;
+  if (!existsSync(join(repoRoot, 'dist', 'cli', 'index.js'))) return false;
   const stampMtime = statSync(stampPath).mtimeMs;
   const sourceMtime = latestSourceMtimeMs(join(repoRoot, 'src'));
   const configMtime = Math.max(
@@ -33,7 +34,7 @@ function buildStampIsFresh(repoRoot: string, stampPath: string): boolean {
 }
 
 export function ensureCliBuilt(repoRoot: string): void {
-  const stampPath = join(repoRoot, 'dist', '.agentfeed-test-build.stamp');
+  const stampPath = join(repoRoot, '.agentfeed-test-build.stamp');
   const lockPath = join(repoRoot, '.agentfeed-test-build.lock');
   const lockTimeoutMs = 120_000;
   const startedAt = Date.now();

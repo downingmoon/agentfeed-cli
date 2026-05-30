@@ -212,6 +212,19 @@ created: 2026-05-30
 ## 새로 발견한 P1 후보 / 다음 루프
 
 
+- [x] CLI npm package collision 회피: package `agentfeed-cli`, bin `agentfeed` 계약화
+- [x] CLI `npm pack --dry-run` release gate와 stale dist/test artifact 방지
+- [x] CLI reused draft stdout/upload 전 public field 재-scan/redaction 보강
+- [x] CLI repo-local `.env` API base auto-discovery를 loopback dev URL로 제한
+- [x] Frontend production API URL localhost/http fail-closed와 OAuth next allowlist 보강
+- [x] Frontend public login entrypoint/header mount와 Landing OAuth CTA 연결
+- [x] Frontend publish privacy severity를 high/critical/unknown fail-closed로 보강
+- [x] Backend project visibility를 schema/public surface/direct lookup에서 fail-closed 처리
+- [x] Backend `uv.lock`/dev dependency group과 locked test gate 도입
+- [x] `agentfeed-dev/scripts/test-all.sh`에 CLI pack dry-run, production-safe frontend build, Backend locked gate 반영
+- [[Commercial Readiness Hardening - Release and Public Gates 2026-05-30]]
+
+
 - [x] 2026-05-30 상용화 readiness 병렬 audit 결과를 [[Commercial Readiness Audit 2026-05-30]]에 정리
 - [x] CLI credential/API base trust boundary, token/path/repository redaction, upload response validation 보강
 - [x] Backend bookmark/search/public source/privacy scan exposure boundary 보강

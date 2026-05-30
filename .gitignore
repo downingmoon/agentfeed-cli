@@ -5,6 +5,8 @@ coverage/
 .env.*
 !.env.example
 .agentfeed/
+.agentfeed-test-build.stamp
+.agentfeed-test-build.lock
 .DS_Store
 npm-debug.log*
 pnpm-debug.log*

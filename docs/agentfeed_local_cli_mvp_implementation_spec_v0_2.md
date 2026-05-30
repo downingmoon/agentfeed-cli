@@ -2200,7 +2200,7 @@ Implement in this exact order.
 ## 29.1 Developer Setup
 
 ```bash
-npm install -g agentfeed
+npm install -g agentfeed-cli
 
 cd ~/projects/binance-signal-bot
 agentfeed init

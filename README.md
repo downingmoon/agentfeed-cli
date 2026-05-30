@@ -2,6 +2,15 @@
 
 Local CLI MVP for creating public-safe AgentFeed worklog drafts from AI-assisted development sessions.
 
+## Install
+
+The npm package is published as `agentfeed-cli` and exposes the `agentfeed` command:
+
+```bash
+npm install -g agentfeed-cli
+agentfeed --help
+```
+
 ```bash
 agentfeed init
 agentfeed login --token af_live_xxx

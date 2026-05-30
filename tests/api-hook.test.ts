@@ -191,6 +191,19 @@ describe('api client', () => {
     expect(payload.worklog.model).toBe('gpt-5.5');
   });
 
+  it('redacts uploaded string metadata outside the summary fields', () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    const secret = 'sk-123456789012345678901234';
+    draft.worklog.model = `model-${secret}`;
+    draft.worklog.metrics.agent_modes = [`agent-mode-${secret}`];
+
+    const payload = draftToIngestRequest(draft);
+
+    expect(JSON.stringify(payload)).not.toContain(secret);
+    expect(payload.worklog.model).toBe('model-[REDACTED_SECRET]');
+    expect(payload.worklog.metrics.agent_modes).toEqual(['agent-mode-[REDACTED_SECRET]']);
+  });
+
   it('sends share notes as user_note instead of folding them into generated summaries', () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
     draft.worklog.summary = 'Generated machine summary.';

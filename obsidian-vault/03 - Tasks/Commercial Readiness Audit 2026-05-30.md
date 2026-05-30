@@ -105,6 +105,19 @@ aliases:
 
 관련: [[Live E2E Smoke Gate Hardening 2026-05-30]], [[Integration - CLI Backend Frontend#2026-05-30 Live E2E smoke gate hardening]]
 
+
+## 2026-05-30 release/public gate hardening 루프
+
+- CLI package name을 `agentfeed-cli`로 고정하고 bin name은 `agentfeed`로 유지했습니다.
+- CLI `prepack`은 clean/build/typecheck/test를 수행하며 `npm pack --dry-run`이 release gate에 포함됩니다.
+- CLI reused draft는 stdout/upload 전에 public fields를 재-scan/redact합니다.
+- CLI file-discovered API base URL은 loopback dev endpoint만 자동 신뢰합니다.
+- Frontend production build는 localhost/http API URL을 fail-closed로 차단하고 OAuth `next` query를 allowlist합니다.
+- Backend project visibility는 public surfaces에서 `public`만 노출하고 direct lookup은 `public|unlisted|owner`만 허용합니다.
+- Backend `uv.lock` + dev dependency group을 추가하고 shared gate를 locked command로 전환했습니다.
+
+관련: [[Commercial Readiness Hardening - Release and Public Gates 2026-05-30]]
+
 ## 검증 로그
 
 - Dev live E2E: `./scripts/smoke-e2e.sh` → passed

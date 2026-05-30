@@ -11,7 +11,8 @@ import { formatCollectionExplain } from '../draft/explain.js';
 import { checkApiReachability, checkIngestionToken, previewDraftRemote, publishDraft } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
-import { applyRedactedPublicFields, publicScanFieldsFromDraft, type PublicScanFields } from '../privacy/draft-sanitizer.js';
+import { applyRedactedPublicFields, publicScanFieldsFromDraft, scanAndRedactDraftPublicFields, type PublicScanFields } from '../privacy/draft-sanitizer.js';
+import type { LocalDraft } from '../types.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { detectAgentSignals, formatAgentSignalLines } from '../collectors/agent-discovery.js';
 import { changedAreas } from '../summary/changed-areas.js';
@@ -27,6 +28,12 @@ import { draftPaths } from '../draft/paths.js';
 
 function print(text = '') { process.stdout.write(`${text}\n`); }
 function err(text = '') { process.stderr.write(`${text}\n`); }
+
+async function sanitizeDraftForCliOutput(cwd: string, draft: LocalDraft): Promise<LocalDraft> {
+  scanAndRedactDraftPublicFields(draft);
+  await writeDraft(cwd, draft);
+  return draft;
+}
 
 function flattenStringFields(input: PublicScanFields, prefix = ''): Array<[string, string]> {
   const entries: Array<[string, string]> = [];
@@ -147,7 +154,7 @@ async function cmdCollect(args: string[]) {
   const source = parseAgentSource(option(args, '--source'));
   const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
   const collection = await collectDraftWithStatus({ cwd: process.cwd(), source, sessionFile: option(args, '--session-file') ?? null, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all') });
-  const draft = collection.draft;
+  const draft = await sanitizeDraftForCliOutput(process.cwd(), collection.draft);
   if (flag(args, '--json')) {
     if (!flag(args, '--no-save-cursor')) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
     print(JSON.stringify(draft, null, 2));
@@ -176,7 +183,7 @@ async function cmdShare(args: string[]) {
 
   const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
   const collection = await collectDraftWithStatus({ cwd: process.cwd(), source: opts.source, sessionFile: opts.sessionFile, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all'), note: opts.note });
-  const draft = collection.draft;
+  const draft = await sanitizeDraftForCliOutput(process.cwd(), collection.draft);
 
   if (opts.json) {
     if (opts.dryRun) {

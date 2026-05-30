@@ -9,6 +9,8 @@ export function publicScanFieldsFromDraft(draft: LocalDraft): PublicScanFields {
     title: draft.worklog.title,
     summary: draft.worklog.summary,
     user_note: draft.worklog.user_note ?? null,
+    model: draft.worklog.model ?? null,
+    metrics: draft.worklog.metrics,
     public_prompt: draft.worklog.public_prompt ?? null,
     outcome: draft.worklog.outcome,
     timeline: draft.worklog.timeline,
@@ -22,6 +24,8 @@ export function applyRedactedPublicFields(draft: LocalDraft, redacted: PublicSca
   if (typeof redacted.title === 'string') draft.worklog.title = redacted.title;
   if (typeof redacted.summary === 'string') draft.worklog.summary = redacted.summary;
   if (typeof redacted.user_note === 'string' || redacted.user_note == null) draft.worklog.user_note = redacted.user_note as string | null;
+  if (typeof redacted.model === 'string' || redacted.model == null) draft.worklog.model = redacted.model as string | null;
+  if (redacted.metrics && typeof redacted.metrics === 'object') draft.worklog.metrics = redacted.metrics as LocalDraft['worklog']['metrics'];
   if (typeof redacted.public_prompt === 'string' || redacted.public_prompt == null) draft.worklog.public_prompt = redacted.public_prompt as string | null;
   if (Array.isArray(redacted.outcome)) draft.worklog.outcome = redacted.outcome as string[];
   if (Array.isArray(redacted.timeline)) draft.worklog.timeline = redacted.timeline as LocalDraft['worklog']['timeline'];

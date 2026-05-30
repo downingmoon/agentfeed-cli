@@ -28,6 +28,7 @@ graph LR
 ## 핵심 노트
 
 - [[Commercial Readiness Audit 2026-05-30]]
+- [[Commercial Readiness Hardening - Release and Public Gates 2026-05-30]]
 
 - [[Collection System]]
 - [[Privacy Safety]]

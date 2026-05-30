@@ -5,7 +5,9 @@ import { createEmptyDraft } from '../src/draft/create.js';
 import { AGENTFEED_CLI_VERSION, AGENTFEED_TOOL_VERSION } from '../src/version.js';
 
 const packageJson = JSON.parse(readFileSync(resolve('package.json'), 'utf8')) as {
+  name: string;
   version: string;
+  bin?: Record<string, string>;
   scripts?: Record<string, string>;
   files?: string[];
 };
@@ -23,7 +25,9 @@ describe('CLI version metadata', () => {
   });
 
   it('builds dist before npm packaging', () => {
+    expect(packageJson.name).toBe('agentfeed-cli');
+    expect(packageJson.bin?.agentfeed).toBe('./dist/cli/index.js');
     expect(packageJson.files).toContain('dist');
-    expect(packageJson.scripts?.prepack).toBe('npm run build');
+    expect(packageJson.scripts?.prepack).toBe('npm run clean && npm run build && npm run typecheck && npm test -- --run');
   });
 });

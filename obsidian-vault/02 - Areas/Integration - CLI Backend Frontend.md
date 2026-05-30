@@ -1197,3 +1197,50 @@ Frontend 표시:
 - `npm run test:contracts`
 - `npx tsc --noEmit --pretty false`
 - `NEXT_PUBLIC_API_URL=http://localhost:8001/v1 npm run build`
+
+## 2026-05-30 Soft-deleted project metadata gate
+
+> [!success]
+> Soft-deleted project는 더 이상 worklog card/detail/search/feed/explore/profile 표면에서 project metadata로 노출되지 않습니다.
+
+문제:
+
+- Public worklog 자체는 `public_worklog_filters()`로 걸러졌지만, card/detail 구성 중 `Worklog.project_id`로 `Project`를 직접 조회하는 경로는 `Project.deleted_at IS NULL`을 누락했습니다.
+- 삭제된 project row가 남아 있으면 feed/search/explore/detail/profile 카드에 `name`/`slug`/`visibility`가 그대로 섞일 수 있었습니다.
+
+수정:
+
+- Backend에 `get_worklog_card_project(project_id, db)` shared helper를 추가하고 `Project.deleted_at.is_(None)` 조건을 단일화했습니다.
+- `/feed`, `/explore`, `/search`, `/users/{username}/worklogs`, `/me/worklogs`, `/me/bookmarks`, `/worklogs/{id}`가 모두 helper를 사용합니다.
+- `_build_project_card()`를 분리해 private project redaction과 soft-delete 방어를 같은 payload builder에 모았습니다.
+
+검증:
+
+- worklog card builder가 soft-deleted project payload를 `None`으로 처리하는 회귀 테스트
+- shared helper SQL에 `projects.deleted_at IS NULL`이 포함되는지 회귀 테스트
+- worklog detail/feed item 표면에서 deleted project metadata가 빠지는지 회귀 테스트
+- `uv run --python 3.12 --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q` → `67 passed`
+- `uv run --python 3.12 --with ruff ruff check ... --select F` → changed files unused-import check 통과
+
+관련: [[Privacy Safety#2026-05-30 Soft-deleted project metadata gate]]
+
+
+## 2026-05-30 CLI git-only duplicate test isolation
+
+> [!success]
+> Git-only duplicate draft 회귀 테스트가 개발자 홈의 Claude/Codex 로그 규모에 흔들리지 않도록 테스트 fixture의 agent auto-discovery를 명시적으로 비활성화했습니다.
+
+문제:
+
+- 해당 테스트는 agent session evidence가 없는 git-only duplicate guard를 검증해야 했습니다.
+- 하지만 `initProject()`가 로컬 홈의 agent/plugin signal을 감지하면 no-source collect가 `.claude` / `.codex` session discovery를 수행해 환경에 따라 Vitest 5초 timeout을 넘을 수 있었습니다.
+
+수정:
+
+- `tests/duplicate-draft.test.ts` fixture에서 `.agentfeed/config.json`의 agent auto-source를 모두 false로 고정했습니다.
+- explicit `--source codex` 성격의 다른 duplicate tests는 그대로 session-file 경로를 사용하므로 계약은 유지됩니다.
+
+검증:
+
+- `npm test -- tests/duplicate-draft.test.ts --run --testNamePattern 'reuses git-only drafts'`
+- `../agentfeed-dev/scripts/test-all.sh` → CLI 141 tests, Frontend contract/type/build, Backend 67 tests, Alembic offline chain 통과

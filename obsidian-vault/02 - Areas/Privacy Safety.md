@@ -180,3 +180,17 @@ Redacted preview:
 - 차단된 요청은 `403 Forbidden`으로 종료되고 comment/notification side effect를 남기지 않습니다.
 
 관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 Comment settings enforcement]]
+
+
+## 2026-05-30 Soft-deleted project metadata gate
+
+> [!success]
+> Project soft-delete는 project 자체 조회뿐 아니라 worklog 기반 public card/detail payload에도 적용됩니다.
+
+프라이버시 계약:
+
+- 삭제된 project는 worklog가 public이어도 `project` payload를 반환하지 않습니다.
+- private project redaction(`Private project`)과 deleted project omission(`null`)은 구분합니다.
+- 새 worklog card/detail 표면은 shared helper 또는 `_build_project_card()`를 통과해야 합니다.
+
+검증 링크: [[Integration - CLI Backend Frontend#2026-05-30 Soft-deleted project metadata gate]]

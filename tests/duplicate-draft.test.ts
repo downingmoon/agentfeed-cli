@@ -22,7 +22,12 @@ beforeEach(async () => {
   await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = true;\n');
   execFileSync('git', ['add', '.'], { cwd: dir });
   execFileSync('git', ['commit', '-m', 'initial'], { cwd: dir, stdio: 'ignore' });
-  await initProject({ cwd: dir, noGitCheck: false });
+  const { config } = await initProject({ cwd: dir, noGitCheck: false });
+  config.agents.claude_code.enabled = false;
+  config.agents.codex.enabled = false;
+  config.agents.cursor.enabled = false;
+  config.agents.gemini_cli.enabled = false;
+  await writeFile(join(dir, '.agentfeed', 'config.json'), `${JSON.stringify(config, null, 2)}\n`);
   execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });
   execFileSync('git', ['commit', '-m', 'agentfeed config'], { cwd: dir, stdio: 'ignore' });
 });

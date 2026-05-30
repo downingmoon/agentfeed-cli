@@ -190,6 +190,7 @@ created: 2026-05-30
 - [[Auth & Credential Safety#2026-05-30 Header OAuth next preservation]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Publish follower notification producer]]
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI integration test build lock]]
+- [[Integration - CLI Backend Frontend#2026-05-30 CLI git-only duplicate test isolation]]
 - [x] Public surfaces가 `visibility=public`만으로 needs_review worklog를 노출하지 않도록 published-status gate 보강
 - [x] Frontend adapter에서 nullable array API payload 렌더 크래시 방지
 - [[Integration - CLI Backend Frontend#2026-05-30 Public surface published-status gate]]
@@ -200,10 +201,12 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 Comment settings enforcement]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Frontend social mutation pending lock]]
 - [[Privacy Safety#2026-05-30 Comment settings enforcement]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Soft-deleted project metadata gate]]
+- [[Privacy Safety#2026-05-30 Soft-deleted project metadata gate]]
 
 ## 새로 발견한 P1 후보 / 다음 루프
 
 - [ ] Backend auth/ingest/social/comment critical path에 최소 per-IP/per-user rate limit 연결
-- [ ] Soft-deleted project가 public worklog card/detail/search/feed/explore에 metadata로 노출되지 않도록 shared project fetch helper 적용
+- [x] Soft-deleted project가 public worklog card/detail/search/feed/explore에 metadata로 노출되지 않도록 shared project fetch helper 적용
 - [ ] `show_token_usage_publicly`, `show_estimated_cost_publicly`, file/line/test metric privacy setting을 public card/detail/stats 응답에 적용
 - [ ] Frontend OAuth `next` query allowlist와 runtime API config failure UI 보강

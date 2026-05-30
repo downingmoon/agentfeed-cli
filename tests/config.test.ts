@@ -3,8 +3,8 @@ import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { initProject, loadProjectConfig } from '../src/config/project-config.js';
-import { resolveApiBaseUrl } from '../src/config/api-base.js';
-import { credentialsFromToken, credentialsPath, globalAgentFeedDir, resolveCredentials, resolveHomeDir, saveCredentials } from '../src/config/credentials.js';
+import { resolveApiBaseUrl, resolveApiBaseUrlWithMetadata } from '../src/config/api-base.js';
+import { credentialsFromToken, credentialsPath, globalAgentFeedDir, loadCredentialsWithMetadata, resolveCredentials, resolveHomeDir, saveCredentials } from '../src/config/credentials.js';
 import { pathExists } from '../src/utils/fs.js';
 
 let dir: string;
@@ -12,6 +12,7 @@ let home: string;
 const oldHome = process.env.HOME;
 const oldAgentFeedHome = process.env.AGENTFEED_HOME;
 const oldBase = process.env.AGENTFEED_API_BASE_URL;
+const oldToken = process.env.AGENTFEED_TOKEN;
 
 beforeEach(async () => {
   dir = await mkdtemp(join(tmpdir(), 'agentfeed-config-'));
@@ -27,6 +28,8 @@ afterEach(async () => {
   else process.env.AGENTFEED_HOME = oldAgentFeedHome;
   if (oldBase === undefined) delete process.env.AGENTFEED_API_BASE_URL;
   else process.env.AGENTFEED_API_BASE_URL = oldBase;
+  if (oldToken === undefined) delete process.env.AGENTFEED_TOKEN;
+  else process.env.AGENTFEED_TOKEN = oldToken;
   await rm(dir, { recursive: true, force: true });
   await rm(home, { recursive: true, force: true });
 });
@@ -104,11 +107,23 @@ describe('project config', () => {
     await writeFile(join(dir, '.env'), 'AGENTFEED_API_BASE_URL=https://evil.example/v1\n');
 
     await expect(resolveApiBaseUrl({ cwd: dir })).resolves.toBe('https://api.agentfeed.dev/v1');
+    const resolved = await resolveApiBaseUrlWithMetadata({ cwd: dir });
+    expect(resolved).toMatchObject({
+      value: 'https://api.agentfeed.dev/v1',
+      source: 'default'
+    });
+    expect(resolved.warnings.join('\n')).toContain('ignored non-local AGENTFEED_API_BASE_URL');
+    expect(resolved.warnings.join('\n')).toContain(join(dir, '.env'));
   });
 
   it('only derives local dev API URLs from safe BACKEND_PORT values', async () => {
     await writeFile(join(dir, '.env'), 'BACKEND_PORT=8001\n');
     await expect(resolveApiBaseUrl({ cwd: dir })).resolves.toBe('http://localhost:8001/v1');
+    await expect(resolveApiBaseUrlWithMetadata({ cwd: dir })).resolves.toMatchObject({
+      value: 'http://localhost:8001/v1',
+      source: 'env_file',
+      source_detail: `${join(dir, '.env')}:BACKEND_PORT`
+    });
 
     const invalid = await mkdtemp(join(tmpdir(), 'agentfeed-bad-port-'));
     await writeFile(join(invalid, '.env'), 'BACKEND_PORT=8001/path\n');
@@ -134,5 +149,20 @@ describe('project config', () => {
     delete process.env.AGENTFEED_API_BASE_URL;
     await writeFile(join(dir, '.env'), 'AGENTFEED_API_BASE_URL=\"http://localhost:8001/v1/\"\n');
     await expect(resolveApiBaseUrl({ cwd: dir })).resolves.toBe('http://localhost:8001/v1');
+  });
+
+  it('reports credential and API base provenance without exposing token values in metadata', async () => {
+    process.env.AGENTFEED_TOKEN = 'af_live_env_secret';
+    process.env.AGENTFEED_API_BASE_URL = 'http://localhost:8001/v1';
+
+    const resolved = await loadCredentialsWithMetadata({ cwd: dir });
+
+    expect(resolved.credentials?.ingestion_token).toBe('af_live_env_secret');
+    expect(resolved.token_source).toBe('environment');
+    expect(resolved.api_base_url_source).toBe('environment');
+    expect(resolved.api_base_url).toBe('http://localhost:8001/v1');
+    expect(JSON.stringify({ ...resolved, credentials: undefined })).not.toContain('af_live_env_secret');
+
+    delete process.env.AGENTFEED_TOKEN;
   });
 });

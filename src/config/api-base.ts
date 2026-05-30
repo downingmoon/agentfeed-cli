@@ -59,14 +59,32 @@ function isLoopbackHostname(hostname: string): boolean {
   return false;
 }
 
-function fileDiscoveredApiBaseUrl(value: string): string | null {
+export type ApiBaseUrlSource = 'explicit' | 'environment' | 'stored_credentials' | 'env_file' | 'default';
+
+export interface ApiBaseUrlResolution {
+  value: string;
+  source: ApiBaseUrlSource;
+  source_detail?: string;
+  warnings: string[];
+}
+
+interface DiscoveredApiBaseUrl {
+  value: string | null;
+  source_detail?: string;
+  warnings: string[];
+}
+
+function fileDiscoveredApiBaseUrl(value: string): { value: string | null; warning?: string } {
   let url: URL;
   try {
     url = new URL(normalizeApiBaseUrl(value));
   } catch {
-    return null;
+    return { value: null, warning: 'ignored invalid AGENTFEED_API_BASE_URL from .env' };
   }
-  return isLoopbackHostname(url.hostname) ? url.toString().replace(/\/$/, '') : null;
+  if (!isLoopbackHostname(url.hostname)) {
+    return { value: null, warning: `ignored non-local AGENTFEED_API_BASE_URL from .env (${url.hostname})` };
+  }
+  return { value: url.toString().replace(/\/$/, '') };
 }
 
 function localApiBaseUrlFromBackendPort(value: string): string | null {
@@ -101,28 +119,46 @@ export function normalizeApiBaseUrl(value: string): string {
   return url.toString().replace(/\/$/, '');
 }
 
-export async function discoverApiBaseUrl(cwd = process.cwd()): Promise<string | null> {
+export async function discoverApiBaseUrlWithDiagnostics(cwd = process.cwd()): Promise<DiscoveredApiBaseUrl> {
+  const warnings: string[] = [];
   for (const file of candidateEnvFiles(cwd)) {
     if (!(await pathExists(file))) continue;
     const env = parseEnvFile(await readFile(file, 'utf8'));
     if (env.AGENTFEED_API_BASE_URL) {
       const discovered = fileDiscoveredApiBaseUrl(env.AGENTFEED_API_BASE_URL);
-      if (discovered) return discovered;
+      if (discovered.value) return { value: discovered.value, source_detail: file, warnings };
+      if (discovered.warning) warnings.push(`${discovered.warning}: ${file}`);
     }
     if (env.BACKEND_PORT) {
       const discovered = localApiBaseUrlFromBackendPort(env.BACKEND_PORT);
-      if (discovered) return discovered;
+      if (discovered) return { value: discovered, source_detail: `${file}:BACKEND_PORT`, warnings };
+      warnings.push(`ignored invalid BACKEND_PORT from .env: ${file}`);
     }
   }
-  return null;
+  return { value: null, warnings };
+}
+
+export async function discoverApiBaseUrl(cwd = process.cwd()): Promise<string | null> {
+  return (await discoverApiBaseUrlWithDiagnostics(cwd)).value;
+}
+
+export async function resolveApiBaseUrlWithMetadata(options: { cwd?: string; explicitApiBaseUrl?: string; storedApiBaseUrl?: string } = {}): Promise<ApiBaseUrlResolution> {
+  if (options.explicitApiBaseUrl) {
+    return { value: normalizeApiBaseUrl(options.explicitApiBaseUrl), source: 'explicit', warnings: [] };
+  }
+  if (process.env.AGENTFEED_API_BASE_URL) {
+    return { value: normalizeApiBaseUrl(process.env.AGENTFEED_API_BASE_URL), source: 'environment', source_detail: 'AGENTFEED_API_BASE_URL', warnings: [] };
+  }
+  if (options.storedApiBaseUrl) {
+    return { value: normalizeApiBaseUrl(options.storedApiBaseUrl), source: 'stored_credentials', warnings: [] };
+  }
+  const discovered = await discoverApiBaseUrlWithDiagnostics(options.cwd);
+  if (discovered.value) {
+    return { value: normalizeApiBaseUrl(discovered.value), source: 'env_file', source_detail: discovered.source_detail, warnings: discovered.warnings };
+  }
+  return { value: normalizeApiBaseUrl(DEFAULT_API_BASE_URL), source: 'default', warnings: discovered.warnings };
 }
 
 export async function resolveApiBaseUrl(options: { cwd?: string; explicitApiBaseUrl?: string; storedApiBaseUrl?: string } = {}): Promise<string> {
-  return normalizeApiBaseUrl(
-    options.explicitApiBaseUrl ||
-    process.env.AGENTFEED_API_BASE_URL ||
-    options.storedApiBaseUrl ||
-    await discoverApiBaseUrl(options.cwd) ||
-    DEFAULT_API_BASE_URL
-  );
+  return (await resolveApiBaseUrlWithMetadata(options)).value;
 }

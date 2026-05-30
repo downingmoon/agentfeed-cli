@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { rm } from 'node:fs/promises';
 import { initProject, loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
-import { credentialsFromToken, loadCredentials, saveCredentials } from '../config/credentials.js';
-import { resolveApiBaseUrl } from '../config/api-base.js';
+import { credentialsFromToken, loadCredentials, loadCredentialsWithMetadata, saveCredentials, type CredentialTokenSource } from '../config/credentials.js';
+import { resolveApiBaseUrl, resolveApiBaseUrlWithMetadata, type ApiBaseUrlSource } from '../config/api-base.js';
 import { markCollectionComplete, resolveCollectionWindow } from '../config/collection-state.js';
 import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
@@ -28,6 +28,25 @@ import { draftPaths } from '../draft/paths.js';
 
 function print(text = '') { process.stdout.write(`${text}\n`); }
 function err(text = '') { process.stderr.write(`${text}\n`); }
+
+function credentialSourceLabel(source: CredentialTokenSource): string {
+  switch (source) {
+    case 'environment': return 'environment (AGENTFEED_TOKEN)';
+    case 'credentials_file': return 'saved credentials file';
+    case 'missing': return 'missing';
+  }
+}
+
+function apiBaseSourceLabel(source: ApiBaseUrlSource, detail?: string): string {
+  const suffix = detail ? ` (${detail})` : '';
+  switch (source) {
+    case 'explicit': return `explicit CLI option${suffix}`;
+    case 'environment': return `environment (AGENTFEED_API_BASE_URL)`;
+    case 'stored_credentials': return `saved credentials file${suffix}`;
+    case 'env_file': return `discovered env file${suffix}`;
+    case 'default': return `default${suffix}`;
+  }
+}
 
 async function sanitizeDraftForCliOutput(cwd: string, draft: LocalDraft): Promise<LocalDraft> {
   scanAndRedactDraftPublicFields(draft);
@@ -131,7 +150,8 @@ async function cmdLogin(args: string[]) {
 }
 
 async function cmdStatus() {
-  const creds = await loadCredentials();
+  const credentialResolution = await loadCredentialsWithMetadata({ cwd: process.cwd() });
+  const creds = credentialResolution.credentials;
   let config: Awaited<ReturnType<typeof loadProjectConfig>> | null = null;
   let root = process.cwd();
   try { root = await resolveProjectRoot(process.cwd()); config = await loadProjectConfig(root); } catch { /* not initialized */ }
@@ -140,7 +160,13 @@ async function cmdStatus() {
   const settingsPath = config ? resolveClaudeSettingsPath({ projectRoot: root, scope: config.agents.claude_code.hook_scope }) : '';
   const hook = settingsPath && await pathExists(settingsPath) ? hasAgentFeedHook(await readJson<Record<string, unknown>>(settingsPath)) ? 'installed' : 'not installed' : 'unknown';
   print(`User/token: ${creds ? 'configured' : 'missing'}`);
-  print(`API base URL: ${creds?.api_base_url ?? await resolveApiBaseUrl()}`);
+  print(`User/token source: ${credentialSourceLabel(credentialResolution.token_source)}`);
+  print(`Credentials file: ${credentialResolution.credentials_file_exists ? credentialResolution.credentials_file_path : 'missing'}`);
+  print(`API base URL: ${credentialResolution.api_base_url ?? creds?.api_base_url ?? await resolveApiBaseUrl()}`);
+  if (credentialResolution.api_base_url_source) {
+    print(`API base URL source: ${apiBaseSourceLabel(credentialResolution.api_base_url_source, credentialResolution.api_base_url_source_detail)}`);
+  }
+  for (const warning of credentialResolution.warnings) print(`Warning: ${warning}`);
   print(`Project initialized: ${config ? 'yes' : 'no'}`);
   if (config) print(`Project name: ${config.project.name}`);
   const git = await collectGitMetrics(process.cwd());
@@ -309,12 +335,25 @@ async function cmdDoctor() {
   const checks: Array<[string, boolean | string]> = [];
   checks.push(['Node version', process.versions.node]);
   checks.push(['agentfeed version', AGENTFEED_CLI_VERSION]);
-  const creds = await loadCredentials();
-  const apiBaseUrl = creds?.api_base_url ?? await resolveApiBaseUrl();
+  const credentialResolution = await loadCredentialsWithMetadata({ cwd: process.cwd() });
+  const creds = credentialResolution.credentials;
+  const apiResolution = credentialResolution.api_base_url
+    ? null
+    : await resolveApiBaseUrlWithMetadata({ cwd: process.cwd() });
+  const apiBaseUrl = credentialResolution.api_base_url ?? apiResolution?.value ?? await resolveApiBaseUrl();
   const apiReachability = await checkApiReachability(apiBaseUrl);
   checks.push(['global credentials file exists', creds ? 'yes' : 'no']);
+  checks.push(['credentials file path', credentialResolution.credentials_file_path]);
+  checks.push(['credential source', credentialSourceLabel(credentialResolution.token_source)]);
   checks.push(['ingestion token exists', creds?.ingestion_token ? 'yes' : 'no']);
   checks.push(['API base URL configured', apiBaseUrl]);
+  checks.push([
+    'API base URL source',
+    apiBaseSourceLabel(
+      credentialResolution.api_base_url_source ?? apiResolution?.source ?? 'default',
+      credentialResolution.api_base_url_source_detail ?? apiResolution?.source_detail
+    )
+  ]);
   checks.push(['API reachable', apiReachability.ok ? `yes (${apiReachability.status})` : `no (${apiReachability.status ?? apiReachability.error ?? 'unreachable'})`]);
   if (creds?.ingestion_token) {
     const tokenCheck = await checkIngestionToken(creds);
@@ -326,6 +365,7 @@ async function cmdDoctor() {
   const git = await collectGitMetrics(process.cwd());
   checks.push(['current directory is git repository', git.branch || git.head_commit ? 'yes' : 'no']);
   for (const [name, value] of checks) print(`${name}: ${value}`);
+  for (const warning of [...credentialResolution.warnings, ...(apiResolution?.warnings ?? [])]) print(`Warning: ${warning}`);
   print();
   for (const line of formatAgentSignalLines(await detectAgentSignals({ cwd: process.cwd() }))) print(line);
 }

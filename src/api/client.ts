@@ -123,7 +123,9 @@ export function draftToIngestRequest(draft: LocalDraft): IngestWorklogRequest {
 }
 
 function friendlyError(status: number, code: string, message: string, details?: Record<string, unknown>): string {
-  if (status === 401 || code === 'INGESTION_TOKEN_INVALID') return 'Login/token problem. Run: agentfeed login';
+  if (status === 401 || code === 'INGESTION_TOKEN_INVALID') {
+    return 'Login/token problem. Run: agentfeed rotate. If AGENTFEED_TOKEN is set, replace that environment variable or run: agentfeed rotate --browser.';
+  }
   if (status === 413 || code === 'INGESTION_PAYLOAD_TOO_LARGE') return 'Draft payload is too large. Local draft was kept.';
   if (status === 422 || code === 'VALIDATION_ERROR') return `Validation error: ${message}${details ? ` ${JSON.stringify(details)}` : ''}`;
   if (status === 429 || code === 'RATE_LIMITED') return `Rate limited.${details?.retry_after_seconds ? ` Retry after ${details.retry_after_seconds} seconds.` : ''}`;

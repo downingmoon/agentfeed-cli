@@ -212,6 +212,13 @@ created: 2026-05-30
 ## 새로 발견한 P1 후보 / 다음 루프
 
 
+- [x] Cookie-authenticated browser mutation Origin/Referer gate 보강
+- [x] Settings rotated token one-time copy/reveal/auto-clear UX 보강
+- [x] Backend `/v1/search` cursor/has_more 계약과 Frontend Load more 연결
+- [x] CLI invalid token upload recovery 안내를 `agentfeed rotate` 중심으로 보정
+- [[Commercial Readiness Hardening - CSRF Token Capture and Search Pagination 2026-05-30]]
+
+
 - [x] Worklog list/card `viewer_state.can_comment` false default를 Backend permission helper 기준으로 보정
 - [x] Public card anonymous like/bookmark click이 API mutation 전에 GitHub OAuth로 이동하도록 보강
 - [x] Worklog/project/privacy-finding/publish mutation rate-limit coverage 보강

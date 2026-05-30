@@ -280,3 +280,16 @@ created: 2026-05-30
 - `agentfeed token rotate`는 같은 동작의 alias입니다.
 
 검증: [[Commercial Readiness Hardening - Token Rotation UX 2026-05-30#검증 결과]]
+
+## 2026-05-30 CLI invalid token recovery hint
+
+> [!success]
+> Upload/preview/publish에서 token invalid 오류가 나면 `agentfeed rotate` 중심의 복구 경로를 안내합니다.
+
+계약:
+
+- 401 또는 `INGESTION_TOKEN_INVALID`는 `agentfeed rotate`를 우선 remediation으로 표시합니다.
+- `AGENTFEED_TOKEN` 환경변수 source는 CLI가 저장 파일처럼 교체할 수 없으므로 env 값을 직접 교체하거나 `agentfeed rotate --browser`를 사용하도록 안내합니다.
+- 기존 token raw value는 error message에 포함하지 않습니다.
+
+검증: [[Commercial Readiness Hardening - CSRF Token Capture and Search Pagination 2026-05-30#검증 결과]]

@@ -431,3 +431,31 @@ created: 2026-05-30
 - `../agentfeed-dev/scripts/smoke-e2e.sh`
 
 관련 구현: [[Commercial Readiness Hardening - Token Expiry Provenance and Feed UX 2026-05-30]]
+
+## 2026-05-30 Cookie-authenticated mutation Origin gate
+
+> [!success]
+> Browser cookie 인증 mutation은 이제 trusted frontend Origin/Referer에서 온 요청만 통과합니다.
+
+계약:
+
+- `access_token` cookie가 있는 unsafe method request는 `FRONTEND_URL` 또는 `ALLOWED_ORIGINS` origin과 일치해야 합니다.
+- `GET`, `HEAD`, `OPTIONS`는 safe method로 gate를 우회합니다.
+- Cookie가 없는 bearer-only CLI request는 Origin header 없이 계속 통과합니다.
+- 실패 응답은 `CSRF_ORIGIN_INVALID` 403으로 고정합니다.
+
+검증: [[Commercial Readiness Hardening - CSRF Token Capture and Search Pagination 2026-05-30#검증 결과]]
+
+## 2026-05-30 One-time rotated token capture UX
+
+> [!success]
+> Settings rotation secret은 copy-first, masked-by-default, auto-clear UX로 다룹니다.
+
+계약:
+
+- Raw token은 기본적으로 DOM에 평문 노출하지 않고 masked text로 표시합니다.
+- Clipboard copy 성공/실패 상태를 명시하고, 실패 시 수동 reveal fallback을 제공합니다.
+- Panel은 120초 후 자동 clear되며 dismiss 전에는 다른 token mutation을 막습니다.
+- Secret은 localStorage/sessionStorage/API cache에 저장하지 않습니다.
+
+관련 구현: [[Commercial Readiness Hardening - CSRF Token Capture and Search Pagination 2026-05-30]]

@@ -525,7 +525,7 @@ describe('api client', () => {
   });
 
   it.each([
-    [401, 'INGESTION_TOKEN_INVALID', /login|token/i],
+    [401, 'INGESTION_TOKEN_INVALID', /agentfeed rotate.*AGENTFEED_TOKEN.*rotate --browser/i],
     [413, 'INGESTION_PAYLOAD_TOO_LARGE', /too large/i],
     [422, 'VALIDATION_ERROR', /validation/i],
     [429, 'RATE_LIMITED', /rate limited/i]

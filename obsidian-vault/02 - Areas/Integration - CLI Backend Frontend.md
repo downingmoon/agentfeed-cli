@@ -1592,3 +1592,31 @@ API/UX 정합성:
 - Raw token은 issue/exchange/rotate response에서만 존재합니다.
 
 관련 구현: [[Commercial Readiness Hardening - Token Rotation UX 2026-05-30]]
+
+## 2026-05-30 Search cursor pagination contract
+
+> [!success]
+> Backend `/v1/search` cursor contract와 Frontend `/search` Load more UX가 연결되었습니다.
+
+계약:
+
+- Backend는 `cursor` query param을 offset cursor로 decode하고 branch query에 적용합니다.
+- Search query는 stable ordering을 갖고 `limit + 1` fetch로 `has_more`를 계산합니다.
+- Response는 `{ data, pagination: { next_cursor, has_more } }` envelope을 유지합니다.
+- Frontend `search.query()`는 pagination envelope을 반환하고 `/search`는 다음 cursor를 요청해 결과를 append합니다.
+
+검증: [[Commercial Readiness Hardening - CSRF Token Capture and Search Pagination 2026-05-30#검증 결과]]
+
+## 2026-05-30 Settings token capture UX contract
+
+> [!success]
+> Frontend Settings rotation UX는 Backend one-time secret contract를 사용자 행동으로 안전하게 연결합니다.
+
+계약:
+
+- Backend rotation response의 `name`, `token`, `token_expires_at`/`expires_at` 필드를 그대로 사용합니다.
+- 사용자는 copy button을 우선 사용하고, clipboard failure에서만 reveal fallback을 봅니다.
+- Token panel lifecycle은 dismiss 또는 120초 timeout으로 종료됩니다.
+- Panel이 열려 있는 동안 rotate/revoke button을 disable해 one-time secret handoff를 먼저 완료하게 합니다.
+
+관련 구현: [[Commercial Readiness Hardening - CSRF Token Capture and Search Pagination 2026-05-30]]

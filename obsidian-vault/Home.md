@@ -14,6 +14,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - CSRF Token Capture and Search Pagination 2026-05-30]] — CSRF Origin gate, one-time token capture, search pagination, CLI rotation recovery
+
 - [[Commercial Readiness Hardening - Token Rotation UX 2026-05-30]] — token rotation API/CLI/settings UX hardening
 
 - [[Commercial Readiness Audit 2026-05-30]] — 상용화 readiness 감사와 P1 보정 현황

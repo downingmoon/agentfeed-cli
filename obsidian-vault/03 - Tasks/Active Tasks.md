@@ -217,14 +217,15 @@ created: 2026-05-30
 - [x] Worklog/project/privacy-finding/publish mutation rate-limit coverage 보강
 - [x] `agentfeed share --dry-run`이 configured project commands를 실행하지 않도록 보강
 - [[Commercial Readiness Hardening - Card Capabilities Rate Limits and Dry Run Safety 2026-05-30]]
+- [[Commercial Readiness Hardening - Token Expiry Provenance and Feed UX 2026-05-30]]
 
 ### 다음 하드닝 후보
 
-- [ ] Backend ingestion token expiry / invalidation policy와 migration 설계
-- [ ] Frontend share failure toast/error feedback
-- [ ] Frontend feed filter URL sync
-- [ ] CLI repo `.env` unsafe API discovery diagnostic
-- [ ] CLI credential source provenance를 `status` / `doctor`에 표시
+- [x] Backend ingestion token expiry / invalidation policy와 migration 설계
+- [x] Frontend share failure toast/error feedback
+- [x] Frontend feed filter URL sync
+- [x] CLI repo `.env` unsafe API discovery diagnostic
+- [x] CLI credential source provenance를 `status` / `doctor`에 표시
 
 
 - [x] Backend GitHub OAuth provider identity unique constraint와 deleted-user fail-closed 보강

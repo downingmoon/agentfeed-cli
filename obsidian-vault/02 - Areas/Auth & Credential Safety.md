@@ -378,3 +378,26 @@ created: 2026-05-30
 - Rate-limit identity and persistence policy는 기존 [[Auth & Credential Safety#2026-05-30 Shared database rate-limit store|shared database rate-limit store]] 계약을 따릅니다.
 
 관련 구현: [[Commercial Readiness Hardening - Card Capabilities Rate Limits and Dry Run Safety 2026-05-30]]
+
+## 2026-05-30 Ingestion token expiry policy
+
+> [!success]
+> Ingestion token은 더 이상 수동 revoke 전까지 무기한 유효하지 않고, `INGESTION_TOKEN_TTL_DAYS` 정책에 따라 `expires_at`을 갖습니다.
+
+계약:
+
+- `INGESTION_TOKEN_TTL_DAYS` 기본값은 90일이며 1보다 작으면 startup validation에서 실패합니다.
+- `ingestion_tokens.expires_at`은 non-null 컬럼입니다.
+- 새 token 발급은 `issue_ingestion_token()` helper가 `expires_at`을 설정합니다.
+- active token quota는 revoked token과 expired token을 제외하고 계산합니다.
+- `get_ingestion_user()`는 만료 token을 `INGESTION_TOKEN_INVALID`로 거부하고 `revoked_at`을 기록합니다.
+- token list/integration status는 expired token을 active로 보지 않습니다.
+
+검증:
+
+- `uv run --python 3.12 --locked --group dev ruff check .`
+- `uv run --python 3.12 --locked --group dev pytest tests -q`
+- `../agentfeed-dev/scripts/test-all.sh`
+- `../agentfeed-dev/scripts/smoke-e2e.sh`
+
+관련 구현: [[Commercial Readiness Hardening - Token Expiry Provenance and Feed UX 2026-05-30]]

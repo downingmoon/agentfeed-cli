@@ -221,3 +221,27 @@ created: 2026-05-30
 - `<html suppressHydrationWarning>`으로 bootstrap이 바꾼 `data-theme` attribute mismatch warning을 방지합니다.
 
 관련 구현: [[Commercial Readiness Hardening - Comment Capability and Theme Hydration 2026-05-30]]
+
+## 2026-05-30 CLI credential and API source provenance
+
+> [!success]
+> `agentfeed status`와 `agentfeed doctor`가 credential token source, credential file path, API base URL source, unsafe `.env` warning을 표시합니다.
+
+계약:
+
+- API base precedence는 explicit option → environment → saved credentials → repo `.env` → default입니다.
+- repo `.env`의 `AGENTFEED_API_BASE_URL`은 loopback dev URL만 auto-discovery 대상으로 허용합니다.
+- non-loopback `.env` 값은 무시하고 default fallback을 쓰되 warning을 출력합니다.
+- token source는 `environment`, `credentials_file`, `missing` 중 하나로 설명합니다.
+- raw token 값은 status/doctor에 출력하지 않습니다.
+
+검증:
+
+- `npm run build && npm test -- --run tests/config.test.ts tests/cli-status-doctor.test.ts && npm run typecheck`
+- `npm test -- --run`
+- `npm pack --dry-run`
+- `npm audit --omit=dev --audit-level=moderate`
+- `../agentfeed-dev/scripts/test-all.sh`
+- `../agentfeed-dev/scripts/smoke-e2e.sh`
+
+관련 구현: [[Commercial Readiness Hardening - Token Expiry Provenance and Feed UX 2026-05-30]]

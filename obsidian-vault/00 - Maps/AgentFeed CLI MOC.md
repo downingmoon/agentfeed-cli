@@ -41,6 +41,7 @@ graph LR
 - [[Commercial Readiness Hardening - Comment Capability and Theme Hydration 2026-05-30]]
 - [[Commercial Readiness Hardening - Card Capabilities Rate Limits and Dry Run Safety 2026-05-30]]
 
+- [[Commercial Readiness Hardening - Token Expiry Provenance and Feed UX 2026-05-30]]
 - [[Collection System]]
 - [[Privacy Safety]]
 - [[Auth & Credential Safety]]

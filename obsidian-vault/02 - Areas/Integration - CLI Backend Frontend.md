@@ -1486,3 +1486,67 @@ Frontend 표시:
 - API config error가 있으면 redirect도 시도하지 않아 설정 오류를 숨기지 않습니다.
 
 관련 구현: [[Commercial Readiness Hardening - Card Capabilities Rate Limits and Dry Run Safety 2026-05-30]]
+
+## 2026-05-30 Feed filter URL sync
+
+> [!success]
+> `/feed`의 sort/time/agent/category filter가 query string과 동기화되어 reload/share/login redirect 후에도 유지됩니다.
+
+계약:
+
+- `sort=latest`, `time=week` 기본값은 URL에서 생략합니다.
+- `sort=trending|discussed`, `time=today|week|month`, `agent=<agent>`, `category=<category>`를 URL에서 label state로 복원합니다.
+- filter state 변경은 `router.replace(..., { scroll: false })`로 history spam을 줄입니다.
+- `/feed` OAuth `next` allowlist는 `sort`, `time`, `agent`, `category`만 보존하고 unsafe param은 제거합니다.
+- `useSearchParams()`를 쓰는 `/feed` page는 `Suspense` boundary 안에 둡니다.
+
+검증:
+
+- `npm run test:contracts`
+- `npx tsc --noEmit --incremental false`
+- `NEXT_PUBLIC_API_URL=https://api.agentfeed.dev npm run build`
+- `../agentfeed-dev/scripts/test-all.sh`
+- `../agentfeed-dev/scripts/smoke-e2e.sh`
+
+관련 구현: [[Commercial Readiness Hardening - Token Expiry Provenance and Feed UX 2026-05-30]]
+
+## 2026-05-30 Worklog share failure feedback
+
+> [!success]
+> Worklog card share/copy가 불가능한 환경에서도 사용자가 실패 이유를 볼 수 있고, 조용히 detail page로 이동하지 않습니다.
+
+계약:
+
+- share button은 Web Share API 성공, clipboard fallback 성공, unavailable 실패를 모두 결과 상태로 보존합니다.
+- 결과 메시지는 `role="status" aria-live="polite"`로 노출합니다.
+- unavailable 상태는 4초 후 자동으로 사라지며 card navigation과 섞이지 않습니다.
+- 공유 URL과 메시지 생성은 `shareWorklog()` / `copyWorklogLink()` / `shareWorklogResultMessage()` helper에 모읍니다.
+
+검증:
+
+- `npm run test:contracts`
+- `npx tsc --noEmit --incremental false`
+- `NEXT_PUBLIC_API_URL=https://api.agentfeed.dev npm run build`
+- `../agentfeed-dev/scripts/test-all.sh`
+
+관련 구현: [[Commercial Readiness Hardening - Token Expiry Provenance and Feed UX 2026-05-30]]
+
+## 2026-05-30 Smoke migration readiness
+
+> [!success]
+> live smoke는 seed data를 넣기 전에 running backend container에서 Alembic migration을 적용해 schema drift를 먼저 제거합니다.
+
+계약:
+
+- `agentfeed-dev/scripts/smoke-e2e.sh`는 stack readiness 확인 후 `alembic upgrade head`를 실행합니다.
+- dev compose는 `INGESTION_TOKEN_TTL_DAYS`를 backend env로 전달합니다.
+- smoke seed token은 `expires_at`을 명시해 backend model/API 계약과 맞춥니다.
+- Alembic revision id는 기본 version table 길이와 호환되도록 32자 이하를 유지합니다.
+
+검증:
+
+- `../agentfeed-dev/scripts/test-all.sh`
+- temporary Postgres DB + `alembic upgrade head` fresh online migration check
+- `../agentfeed-dev/scripts/smoke-e2e.sh`
+
+관련 구현: [[Commercial Readiness Hardening - Token Expiry Provenance and Feed UX 2026-05-30]]

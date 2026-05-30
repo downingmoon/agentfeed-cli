@@ -249,6 +249,27 @@ sequenceDiagram
 - `uv run --with ruff ruff check --select I,F app/routers/auth.py tests/test_contracts.py`
 - `../agentfeed-dev/scripts/test-all.sh`
 
+## 2026-05-30 CLI API POST timeout
+
+> [!success]
+> CLI의 browser login session 생성/교환과 draft preview/upload POST 요청이 무기한 대기하지 않도록 timeout/AbortSignal을 추가했습니다. 자세한 runtime 계약은 [[Runtime Configuration#2026-05-30 CLI API POST timeout]]에 정리합니다.
+
+계약:
+
+- CLI API POST 기본 timeout은 30초입니다.
+- `AGENTFEED_API_TIMEOUT_MS`로 조정 가능합니다.
+- timeout 시 `API_REQUEST_TIMEOUT`으로 실패합니다.
+- publish/upload timeout은 local draft를 `uploaded: true`로 저장하지 않습니다.
+- CLI auth session 생성/교환과 ingest preview/upload 모두 fetch signal을 전달합니다.
+
+검증:
+
+- `npx vitest run tests/api-hook.test.ts --testNamePattern "creates and exchanges|times out"`
+- `npm test -- --run`
+- `npm run typecheck`
+- `npm run build`
+- `../agentfeed-dev/scripts/test-all.sh`
+
 ## 관련 원본
 
 - [[Cross Repo Integration Fixes#목표 end-to-end 흐름]]

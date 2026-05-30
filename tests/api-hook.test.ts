@@ -175,6 +175,7 @@ describe('api client', () => {
 
   it('creates and exchanges a browser login session', async () => {
     const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      expect(init?.signal).toBeInstanceOf(AbortSignal);
       if (url.endsWith('/auth/cli/sessions')) {
         return new Response(JSON.stringify({
           data: {
@@ -201,6 +202,36 @@ describe('api client', () => {
     expect(exchange.token).toBe('af_live_test');
     expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.agentfeed.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
     expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://api.agentfeed.dev/v1/auth/cli/sessions/session-1/exchange', expect.objectContaining({ method: 'POST' }));
+  });
+
+  it('times out upload requests and keeps the draft pending', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    await writeDraft(dir, draft);
+    const oldTimeout = process.env.AGENTFEED_API_TIMEOUT_MS;
+    process.env.AGENTFEED_API_TIMEOUT_MS = '10';
+    const fetchMock = vi.fn((_url: string, init?: RequestInit) => {
+      const signal = init?.signal;
+      if (!(signal instanceof AbortSignal)) return Promise.reject(new Error('missing abort signal'));
+      return new Promise<Response>((_resolve, reject) => {
+        signal.addEventListener('abort', () => {
+          const error = new Error('aborted');
+          error.name = 'AbortError';
+          reject(error);
+        });
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      const pending = publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } });
+      await expect(pending).rejects.toMatchObject({ code: 'API_REQUEST_TIMEOUT' });
+    } finally {
+      if (oldTimeout === undefined) delete process.env.AGENTFEED_API_TIMEOUT_MS;
+      else process.env.AGENTFEED_API_TIMEOUT_MS = oldTimeout;
+    }
+
+    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+    expect(saved.upload.uploaded).toBe(false);
   });
 
   it('completes no-open browser login by exchanging the CLI session and saving credentials', async () => {

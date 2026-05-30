@@ -16,6 +16,13 @@ export interface ApiCheckResult {
   error?: string;
 }
 
+const DEFAULT_API_REQUEST_TIMEOUT_MS = 30_000;
+
+function apiRequestTimeoutMs(): number {
+  const configured = Number(process.env.AGENTFEED_API_TIMEOUT_MS);
+  return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_API_REQUEST_TIMEOUT_MS;
+}
+
 function apiUrl(apiBaseUrl: string, path: string): string {
   return `${apiBaseUrl.replace(/\/$/, '')}${path}`;
 }
@@ -97,6 +104,32 @@ function friendlyError(status: number, code: string, message: string, details?: 
   return message || `AgentFeed API error (${status})`;
 }
 
+function networkErrorMessage(error: unknown, options: { localDraftKept?: boolean } = {}): string {
+  const reason = error instanceof Error && error.message ? ` ${error.message}` : '';
+  return options.localDraftKept
+    ? `Could not reach AgentFeed API. Local draft was kept.${reason}`
+    : `Could not reach AgentFeed API.${reason}`;
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit, options: { localDraftKept?: boolean; timeoutMs?: number } = {}): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? apiRequestTimeoutMs());
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (controller.signal.aborted || (error instanceof Error && error.name === 'AbortError')) {
+      throw new AgentFeedApiError(
+        408,
+        'API_REQUEST_TIMEOUT',
+        options.localDraftKept ? 'AgentFeed API request timed out. Local draft was kept.' : 'AgentFeed API request timed out.'
+      );
+    }
+    throw new AgentFeedApiError(0, 'API_REQUEST_FAILED', networkErrorMessage(error, options));
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export interface RemotePreviewResult {
   valid: boolean;
   preview: Record<string, unknown>;
@@ -113,7 +146,7 @@ export interface PublishDraftResult {
 }
 
 async function postJson<T>(apiBaseUrl: string, path: string, body: Record<string, unknown>): Promise<T> {
-  const response = await fetch(`${apiBaseUrl.replace(/\/$/, '')}${path}`, {
+  const response = await fetchWithTimeout(`${apiBaseUrl.replace(/\/$/, '')}${path}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body)
@@ -143,11 +176,11 @@ async function postIngest<T>(path: string, draft: LocalDraft, credentials: Agent
   const payload = draftToIngestRequest(draft);
   const body = JSON.stringify(payload);
   if (Buffer.byteLength(body, 'utf8') > 512 * 1024) throw new AgentFeedApiError(413, 'INGESTION_PAYLOAD_TOO_LARGE', 'Draft payload is too large.');
-  const response = await fetch(apiUrl(credentials.api_base_url, path), {
+  const response = await fetchWithTimeout(apiUrl(credentials.api_base_url, path), {
     method: 'POST',
     headers: { authorization: `Bearer ${credentials.ingestion_token}`, 'content-type': 'application/json' },
     body
-  });
+  }, { localDraftKept: true });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     const api = data as { error?: { code?: string; message?: string; details?: Record<string, unknown> } };

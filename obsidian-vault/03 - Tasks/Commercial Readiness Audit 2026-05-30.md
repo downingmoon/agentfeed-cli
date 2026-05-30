@@ -57,7 +57,7 @@ aliases:
 - [x] Backend rate-limit identity가 untrusted `X-Forwarded-For`를 우선 신뢰하는 문제: trusted proxy allowlist 적용
 - [x] Backend production safety가 `ENVIRONMENT=production` exact match에 의존하는 문제: non-development fail-closed 적용
 - [ ] Backend rate-limit shared store: multi-worker/global quota용 Redis 등 backend 필요
-- [ ] Frontend `npm audit --omit=dev`의 Next/PostCSS moderate advisory: upstream patched version 가능 여부 확인 후 upgrade/mitigation 판단
+- [x] Frontend `npm audit --omit=dev`의 Next/PostCSS moderate advisory: stable Next는 아직 vulnerable PostCSS를 pin하므로 targeted `overrides.next.postcss=8.5.15`와 audit gate로 mitigation
 - [ ] Backend full Ruff repo-wide cleanup: 현재 patch scope targeted ruff는 통과하나 기존 style noise 존재
 
 ## 2026-05-30 backend 운영 보안 추가 루프

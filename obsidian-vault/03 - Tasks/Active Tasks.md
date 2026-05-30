@@ -216,7 +216,8 @@ created: 2026-05-30
 - [x] Backend trusted proxy 기반 rate-limit identity 보강
 - [ ] Backend shared limiter store 설계/구현
 - [x] Backend production ENV fail-closed 정책 보강
-- [ ] Frontend Next/PostCSS moderate audit advisory upstream fix 가능 여부 확인
+- [x] Frontend Next/PostCSS moderate audit advisory를 PostCSS override와 audit gate로 보정
+- [x] `agentfeed-dev/scripts/test-all.sh`에 CLI/Frontend `npm audit --omit=dev --audit-level=moderate` gate 추가
 
 - [x] Backend auth/ingest/social/comment critical path에 최소 per-IP/per-user rate limit 연결
 - [x] Soft-deleted project가 public worklog card/detail/search/feed/explore에 metadata로 노출되지 않도록 shared project fetch helper 적용

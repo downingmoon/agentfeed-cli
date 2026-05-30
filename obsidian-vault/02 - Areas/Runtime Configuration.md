@@ -147,3 +147,24 @@ created: 2026-05-30
 - `NEXT_PUBLIC_API_URL=http://localhost:8000 npm run build`
 
 관련: [[Commercial Readiness Audit 2026-05-30#Frontend user-facing safety / runtime config]]
+
+## 2026-05-30 Frontend PostCSS advisory override
+
+> [!success]
+> Next stable이 아직 vulnerable PostCSS를 pin하는 동안, npm targeted `overrides.next.postcss`로 PostCSS patch version을 고정해 production dependency audit를 clean하게 유지합니다.
+
+계약:
+
+- `next@15.5.18`은 transitive `postcss`를 `8.4.31`로 pin하고, npm audit은 `GHSA-qx2v-qp2m-jg93` moderate advisory를 보고했습니다.
+- stable `next@16.2.6`도 현재 `postcss 8.4.31`을 사용하므로 canary upgrade 대신 `overrides.next.postcss=8.5.15`를 적용합니다.
+- npm tree는 `next -> postcss@8.5.15 overridden`이어야 합니다.
+- `agentfeed-dev/scripts/test-all.sh`는 CLI/Frontend production dependency audit gate를 실행해 lockfile drift를 잡습니다.
+- Next stable이 `postcss >= 8.5.10`을 직접 포함하면 override 제거 가능성을 재평가합니다.
+
+검증:
+
+- `npm ls postcss next --all` → `next -> postcss@8.5.15 overridden`
+- `npm audit --omit=dev --audit-level=moderate` → found 0 vulnerabilities
+- `npm run test:contracts && npm run lint && NEXT_PUBLIC_API_URL=http://localhost:8000 npm run build`
+
+관련: [[Commercial Readiness Audit 2026-05-30#아직 남은 P1 후보]]

@@ -80,6 +80,8 @@ graph LR
 - [[Privacy Safety#2026-05-30 Comment settings enforcement|Comment settings enforcement]]
 - [[Privacy Safety#2026-05-30 Soft-deleted project metadata gate|Soft-deleted project metadata gate]]
 - [[Auth & Credential Safety#2026-05-30 Backend critical path rate-limit|Backend rate-limit]]
+- [[Auth & Credential Safety#2026-05-30 Frontend OAuth next allowlist|Frontend OAuth next allowlist]]
+- [[Runtime Configuration#2026-05-30 Runtime API config failure UI|Runtime API config failure UI]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Frontend social mutation pending lock|Social mutation pending lock]]
 - [[Integration - CLI Backend Frontend#End-to-end 흐름|End-to-end 흐름]]
 - [[Active Tasks#P1 후보|P1 후보]]

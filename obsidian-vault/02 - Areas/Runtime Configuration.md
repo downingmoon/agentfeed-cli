@@ -106,3 +106,24 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI API POST timeout]]
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI API base URL validation]]
 - [[Active Tasks#P1 후보]]
+
+## 2026-05-30 Runtime API config failure UI
+
+> [!success]
+> 런타임 API URL 설정 오류가 signed-out 상태나 click crash로 숨지 않고 전역 banner로 노출됩니다.
+
+계약:
+
+- `getApiConfigError()`는 `normalizeApiRoot()`의 validation 결과를 UI에서 표시 가능한 문자열로 변환합니다.
+- `AppProvider`는 API config 오류가 있으면 `/auth/me` probing을 하지 않고 `signedIn=false`, `isLoading=false`로 안정화합니다.
+- 전역 banner는 `role="alert"`로 렌더되고 `NEXT_PUBLIC_API_URL` 설정 방법과 구체 오류 메시지를 표시합니다.
+- Header OAuth buttons는 API config 오류가 있으면 disabled 처리하고 오류 메시지를 title로 제공합니다.
+
+검증:
+
+- `npm run test:contracts`
+- `npx tsc --noEmit --incremental false`
+- `NEXT_PUBLIC_API_URL=http://localhost:8000 npm run build`
+- `scripts/check-env.mjs` negative smoke에서 unset/invalid protocol/credential/query-hash가 모두 exit 1로 실패
+
+관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 Frontend OAuth next allowlist + runtime API config UI]]

@@ -1283,3 +1283,35 @@ Frontend 표시:
 > 현재 limiter는 dependency-free in-memory 구현이라 process-local입니다. 단일 프로세스/초기 운영 abuse guard로는 충분하지만, horizontal scaling에서 전역 quota가 필요해지면 Redis 등 shared store로 bucket backend를 교체해야 합니다.
 
 관련: [[Auth & Credential Safety#2026-05-30 Backend critical path rate-limit]]
+
+## 2026-05-30 Frontend OAuth next allowlist + runtime API config UI
+
+> [!success]
+> Frontend GitHub OAuth 시작점은 allowlisted in-app path만 `next`로 전달하고, API URL 설정 오류는 전역 UI로 드러냅니다.
+
+문제:
+
+- `authNextPath()`가 `/`로 시작하고 `//`로 시작하지 않는지만 검사해 allowlist가 없었습니다.
+- `auth.githubUrl(next)` 직접 호출은 unsafe `next`를 다시 검증하지 않았습니다.
+- `NEXT_PUBLIC_API_URL` 설정 오류가 `auth.me()` 실패로 뭉개져 사용자에게는 단순 signed-out 상태처럼 보일 수 있었습니다.
+
+수정:
+
+- `src/lib/auth-next.ts`에 exact/prefix allowlist를 두고 protocol-relative, absolute URL, scheme-like, encoded backslash/slash, whitespace/control, dot-segment path를 거부합니다.
+- unsafe path는 공격자 query까지 버리고 `/`로 fallback합니다.
+- `auth.githubUrl(next)`도 helper를 통해 한 번 더 sanitize하고 unsafe `next`는 OAuth URL에서 생략합니다.
+- `AppProvider`가 `getApiConfigError()`를 초기화 시점에 평가하고, 오류가 있으면 auth probing을 건너뛰며 전역 `role="alert"` banner를 렌더합니다.
+- Header sign-in buttons는 API config 오류가 있을 때 disabled 처리해 click handler crash를 막습니다.
+
+검증:
+
+- `npm run test:contracts`
+- `npx tsc --noEmit --incremental false`
+- `NEXT_PUBLIC_API_URL=http://localhost:8000 npm run build`
+- `scripts/check-env.mjs` negative smoke:
+  - unset `NEXT_PUBLIC_API_URL` → exit 1
+  - `ftp://api.agentfeed.dev` → exit 1
+  - `https://user:pass@api.agentfeed.dev` → exit 1
+  - `https://api.agentfeed.dev?debug=true` → exit 1
+
+관련: [[Auth & Credential Safety#2026-05-30 Frontend OAuth next allowlist]], [[Runtime Configuration#2026-05-30 Runtime API config failure UI]]

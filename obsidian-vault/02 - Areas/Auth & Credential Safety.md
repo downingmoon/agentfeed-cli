@@ -219,3 +219,23 @@ created: 2026-05-30
 - CLI authorize page의 기존 next-preservation pattern과 동일한 흐름을 사용합니다.
 
 관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 Header OAuth next preservation]]
+
+## 2026-05-30 Frontend OAuth next allowlist
+
+> [!success]
+> Browser login redirect target은 명시적으로 허용한 AgentFeed route만 유지합니다.
+
+보안 계약:
+
+- 허용 route는 `/`, `/feed`, `/explore`, `/leaderboard`, `/projects`, `/search`, `/dashboard`, `/notifications`, `/docs`, `/privacy`, `/terms`, `/changelog`, `/cli/authorize`와 public dynamic prefix(`/profile/`, `/projects/`, `/worklog/`, `/worklogs/`)입니다.
+- protocol-relative URL, absolute URL, `javascript:` 같은 scheme-like 값, encoded `//`, encoded/raw backslash, whitespace/control char, `.`/`..` segment는 거부합니다.
+- unsafe next는 query를 보존하지 않고 `/`로 fallback합니다.
+- `auth.githubUrl(next)` 직접 호출도 unsafe next를 OAuth query param에 싣지 않습니다.
+- CLI authorize return path(`/cli/authorize?session_id=...`)는 유지하되 session id는 encoded query로만 전달합니다.
+
+검증:
+
+- OAuth next contract tests가 safe query/repeated params/encoded values/CLI authorize path를 보존하는지 확인합니다.
+- unsafe path matrix가 `/` fallback 및 top-level OAuth `next` 생략을 확인합니다.
+
+관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 Frontend OAuth next allowlist + runtime API config UI]]

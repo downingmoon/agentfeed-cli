@@ -49,6 +49,30 @@ function candidateEnvFiles(cwd: string): string[] {
   return files;
 }
 
+export function normalizeApiBaseUrl(value: string): string {
+  const raw = value.trim();
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new Error(`Invalid AgentFeed API base URL: ${value}`);
+  }
+  if (!['http:', 'https:'].includes(url.protocol)) {
+    throw new Error('Invalid AgentFeed API base URL: protocol must be http or https.');
+  }
+  if (!url.hostname) {
+    throw new Error('Invalid AgentFeed API base URL: hostname is required.');
+  }
+  if (url.username || url.password) {
+    throw new Error('Invalid AgentFeed API base URL: credentials are not allowed in the URL.');
+  }
+  if (url.search || url.hash) {
+    throw new Error('Invalid AgentFeed API base URL: do not include query or hash fragments.');
+  }
+  url.pathname = url.pathname.replace(/\/+$/, '');
+  return url.toString().replace(/\/$/, '');
+}
+
 export async function discoverApiBaseUrl(cwd = process.cwd()): Promise<string | null> {
   for (const file of candidateEnvFiles(cwd)) {
     if (!(await pathExists(file))) continue;
@@ -60,7 +84,7 @@ export async function discoverApiBaseUrl(cwd = process.cwd()): Promise<string | 
 }
 
 export async function resolveApiBaseUrl(options: { cwd?: string; explicitApiBaseUrl?: string; storedApiBaseUrl?: string } = {}): Promise<string> {
-  return (
+  return normalizeApiBaseUrl(
     options.explicitApiBaseUrl ||
     process.env.AGENTFEED_API_BASE_URL ||
     await discoverApiBaseUrl(options.cwd) ||

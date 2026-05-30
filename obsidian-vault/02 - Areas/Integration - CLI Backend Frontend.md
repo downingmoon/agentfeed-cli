@@ -67,6 +67,34 @@ sequenceDiagram
 > [!note]
 > Frontend repo에는 아직 별도 test runner dependency가 없으므로, 새 dependency 추가 없이 TypeScript/Next build gate로 검증했습니다.
 
+## 2026-05-30 CLI API base URL validation
+
+> [!success]
+> `agentfeed login/status/share` 등이 사용하는 API base URL을 네트워크 호출 전에 검증하고, trailing slash를 정규화하도록 보정했습니다.
+
+문제:
+
+- `AGENTFEED_API_BASE_URL`, `.env`, 저장 credential, 명시 옵션에서 들어온 URL이 malformed이거나 `ftp://` 같은 잘못된 protocol이어도 그대로 fetch 시점까지 전달될 수 있었습니다.
+- 사용자는 `fetch failed` 같은 늦은 오류만 보게 되어 로컬 연결 문제를 파악하기 어려웠습니다.
+
+수정:
+
+- `resolveApiBaseUrl()`이 최종 candidate를 `normalizeApiBaseUrl()`로 검증합니다.
+- 허용 protocol은 `http` / `https`입니다.
+- hostname 필수, URL 내 credentials 금지, query/hash 금지입니다.
+- `/v1/` 같은 trailing slash는 `/v1`로 정규화합니다.
+
+검증:
+
+- malformed URL reject 회귀 테스트
+- unsupported protocol reject 회귀 테스트
+- query/hash reject 회귀 테스트
+- env/file URL normalization 회귀 테스트
+- `npx vitest run tests/config.test.ts`
+- `npm run typecheck`
+- `npm test -- --run`
+- `npm run build`
+
 ## 2026-05-30 Backend production env fail-fast
 
 > [!success]

@@ -63,6 +63,7 @@ created: 2026-05-30
 - [x] Backend GitHub provider token plaintext 저장을 encrypted at-rest 저장으로 보정
 - [x] Frontend 주요 inert control을 route/API-backed action으로 연결
 - [x] Backend production env에서 default secret/local OAuth URL을 fail-fast로 차단
+- [x] CLI API base URL을 network call 전에 검증/정규화
 
 ## P2 후보
 
@@ -99,6 +100,7 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 Backend provider token at-rest 보호]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Frontend inert control 제거]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Backend production env fail-fast]]
+- [[Integration - CLI Backend Frontend#2026-05-30 CLI API base URL validation]]
 - [[Privacy Safety#2026-05-30 Upload-time privacy re-scan]]
 - [[Collection System#2026-05-30 Generic until-window timestamp-less evidence 보정]]
 - [[Collection System#2026-05-30 Agent window timestamp-less evidence 보정]]

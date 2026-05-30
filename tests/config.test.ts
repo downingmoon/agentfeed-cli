@@ -66,4 +66,19 @@ describe('project config', () => {
 
     await rm(workspace, { recursive: true, force: true });
   });
+
+  it('rejects malformed or unsafe API base URLs before network calls', async () => {
+    await expect(resolveApiBaseUrl({ explicitApiBaseUrl: 'http//:bad' })).rejects.toThrow(/Invalid AgentFeed API base URL/i);
+    await expect(resolveApiBaseUrl({ explicitApiBaseUrl: 'ftp://api.agentfeed.dev/v1' })).rejects.toThrow(/http or https/i);
+    await expect(resolveApiBaseUrl({ explicitApiBaseUrl: 'https://api.agentfeed.dev/v1?debug=true' })).rejects.toThrow(/query or hash/i);
+  });
+
+  it('normalizes valid API base URLs from env and files', async () => {
+    process.env.AGENTFEED_API_BASE_URL = 'https://api.agentfeed.dev/v1/';
+    await expect(resolveApiBaseUrl({ cwd: dir })).resolves.toBe('https://api.agentfeed.dev/v1');
+
+    delete process.env.AGENTFEED_API_BASE_URL;
+    await writeFile(join(dir, '.env'), 'AGENTFEED_API_BASE_URL=\"http://localhost:8001/v1/\"\n');
+    await expect(resolveApiBaseUrl({ cwd: dir })).resolves.toBe('http://localhost:8001/v1');
+  });
 });

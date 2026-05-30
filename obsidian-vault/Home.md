@@ -29,6 +29,8 @@ created: 2026-05-30
 
 - [[Commercial Readiness Hardening - Publish Privacy Severity Auth Smoke and Alembic Version Gate 2026-05-31]] — publish privacy severity fail-closed, CLI auth exchanged token smoke, Alembic version gate
 
+- [[Commercial Readiness Hardening - Hydrated Browser Privacy Smoke 2026-05-31]] — hydrated browser public DOM privacy smoke
+
 - [[Commercial Readiness Hardening - CLI Private Review Privacy Policy 2026-05-31]] — CLI private review upload와 public publish privacy gate를 명확히 표시
 
 - [[Commercial Readiness Hardening - Feed Keyset and OAuth Hash Redirect 2026-05-31]] — aggregate feed keyset pagination, OAuth next hash preservation, docs command contract

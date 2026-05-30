@@ -37,6 +37,8 @@ graph LR
 
 - [[Commercial Readiness Hardening - Publish Privacy Severity Auth Smoke and Alembic Version Gate 2026-05-31]]
 
+- [[Commercial Readiness Hardening - Hydrated Browser Privacy Smoke 2026-05-31]]
+
 - [[Commercial Readiness Hardening - CLI Private Review Privacy Policy 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Feed Keyset and OAuth Hash Redirect 2026-05-31]]

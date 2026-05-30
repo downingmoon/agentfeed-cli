@@ -326,3 +326,17 @@ Redacted preview:
 - Resolve 후 review payload는 fresh `resolved: true` / `resolution` 값을 반환하고, publish는 unresolved blocking finding이 없을 때만 허용됩니다.
 
 검증: [[Commercial Readiness Hardening - Publish Privacy Severity Auth Smoke and Alembic Version Gate 2026-05-31#검증 증거]]
+
+## 2026-05-31 Hydrated browser privacy smoke
+
+> [!success]
+> Public detail/feed privacy boundary를 API payload뿐 아니라 hydrated browser DOM에서도 검증합니다.
+
+계약:
+
+- Browser-rendered `/worklogs/{id}`는 published title과 model badge를 표시해야 합니다.
+- Browser-rendered `/feed?agent=cursor&time_range=week`는 published card title과 Cursor label을 표시해야 합니다.
+- 두 DOM 모두 owner-only `user_note` 원문과 public note copy를 포함하면 안 됩니다.
+- DOM negative check는 page가 아직 loading이어서 false pass하지 않도록 title/agent positive assertion 이후에 수행합니다.
+
+검증: [[Commercial Readiness Hardening - Hydrated Browser Privacy Smoke 2026-05-31#검증 증거]]

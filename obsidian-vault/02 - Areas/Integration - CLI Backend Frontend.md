@@ -1845,3 +1845,17 @@ Frontend 계약:
 - Alembic `011_visibility_status_constraints`는 긴 revision id chain을 위해 `alembic_version.version_num`을 64자로 확장합니다.
 
 검증: [[Commercial Readiness Hardening - Publish Privacy Severity Auth Smoke and Alembic Version Gate 2026-05-31#검증 증거]]
+
+## 2026-05-31 Hydrated browser public DOM smoke
+
+> [!success]
+> CLI upload → Backend publish → Frontend public rendering 흐름이 실제 headless browser DOM까지 이어지는지 smoke gate에 포함했습니다.
+
+통합 계약:
+
+- Dev smoke는 Chrome/Chromium DevTools protocol로 `/worklogs/{id}`와 `/feed`를 렌더링합니다.
+- DOM polling은 dynamic worklog title/agent/model positive assertion으로 API fetch와 hydration 완료를 확인합니다.
+- 같은 DOM에서 `Smoke author note` 비노출을 확인해 public UI privacy regression을 잡습니다.
+- 새 npm dependency 없이 Node built-in WebSocket과 Chrome DevTools Protocol만 사용합니다.
+
+검증: [[Commercial Readiness Hardening - Hydrated Browser Privacy Smoke 2026-05-31#검증 증거]]

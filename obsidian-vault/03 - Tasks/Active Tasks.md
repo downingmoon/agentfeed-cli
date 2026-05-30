@@ -26,6 +26,7 @@ created: 2026-05-30
 - [x] Backend/Frontend publish privacy severity taxonomy를 fail-closed 기준으로 정렬
 - [x] Backend review privacy_scan_json stale override 제거
 - [x] smoke-e2e가 CLI auth exchanged token과 privacy block/resolve/publish success를 검증하도록 보강
+- [x] smoke-e2e가 hydrated browser public DOM에서 user_note 비노출을 검증하도록 보강
 - [x] Alembic 긴 revision id가 dev/live migration을 깨지 않도록 version table 확장
 - [x] CLI private review upload와 public/unlisted publish privacy gate 혼동 방지
 
@@ -158,6 +159,8 @@ created: 2026-05-30
 - [x] Frontend unpublish control을 실제 published status 기준으로 축소
 
 ## 관련 링크
+
+- [[Commercial Readiness Hardening - Hydrated Browser Privacy Smoke 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Publish Privacy Severity Auth Smoke and Alembic Version Gate 2026-05-31]]
 

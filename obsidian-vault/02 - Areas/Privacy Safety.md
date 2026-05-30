@@ -194,3 +194,20 @@ Redacted preview:
 - 새 worklog card/detail 표면은 shared helper 또는 `_build_project_card()`를 통과해야 합니다.
 
 검증 링크: [[Integration - CLI Backend Frontend#2026-05-30 Soft-deleted project metadata gate]]
+
+## 2026-05-30 Public metric privacy settings
+
+> [!success]
+> 공개 surface는 사용자의 metric 공개 설정을 실제 payload와 aggregate에 반영합니다.
+
+프라이버시 계약:
+
+- `show_token_usage_publicly=false` → public card/detail/activity/profile/project token metric은 `null` 또는 ranking 제외입니다.
+- `show_estimated_cost_publicly=false` → public card/detail estimated cost는 `null`입니다. 기본값도 false입니다.
+- `show_file_count_publicly=false` → public file count metric은 `null`입니다.
+- `show_line_count_publicly=false` → public added/removed line metric은 `null`입니다.
+- `show_test_count_publicly=false` → public test run/pass metric과 tests leaderboard aggregate는 숨깁니다.
+- author/review/private dashboard 경로는 자신의 full metric 검토를 위해 기존 값을 유지합니다.
+- aggregate는 숨김 row를 빼고 합산하지 않고, 해당 metric 전체를 `null`로 반환합니다. 이는 partial sum을 실제 total로 오해하지 않게 하기 위한 선택입니다.
+
+관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 Public metric privacy settings]]

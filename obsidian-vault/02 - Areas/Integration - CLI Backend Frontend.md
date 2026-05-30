@@ -1315,3 +1315,32 @@ Frontend 표시:
   - `https://api.agentfeed.dev?debug=true` → exit 1
 
 관련: [[Auth & Credential Safety#2026-05-30 Frontend OAuth next allowlist]], [[Runtime Configuration#2026-05-30 Runtime API config failure UI]]
+
+## 2026-05-30 Public metric privacy settings
+
+> [!success]
+> `show_*_publicly` privacy settings now affect public worklog metrics and aggregate stats instead of only being stored in `/me/settings`.
+
+문제:
+
+- `UserSettings`에는 token/cost/file/line/test 공개 여부가 있었지만 card/detail/stats read path가 `metrics_json`을 그대로 반환했습니다.
+- Project/User public aggregate stats도 raw metrics를 합산해, 사용자가 비공개로 설정한 수치가 profile/project/feed/detail/search/explore에 남을 수 있었습니다.
+
+수정:
+
+- Backend `metric_privacy` service를 추가해 author settings를 `MetricPrivacy`로 읽고 worklog metrics를 field group 단위로 `null` 처리합니다.
+- Public card 경로(feed/following/search/explore/category/project/user/bookmark)는 author가 아닌 viewer에게 privacy-filtered metrics를 반환합니다.
+- Worklog public detail도 같은 필터를 적용하고, author/review 경로는 full metrics를 유지합니다.
+- Project public stats와 User public stats는 숨김 metric이 하나라도 포함되면 해당 aggregate를 `null`로 반환해 partial sum을 실제 total처럼 보이지 않게 합니다.
+- User activity `tokens_used`와 `most_tests_added` leaderboard도 해당 setting을 반영합니다.
+- Frontend adapter/type/rendering은 `null` aggregate를 `0`으로 바꾸지 않고 `—`로 표시할 수 있게 보정했습니다.
+
+검증:
+
+- Backend contract tests: metric privacy card/detail/project/user/activity/leaderboard coverage 추가
+- Frontend contract tests: project/user hidden metric null preservation coverage 추가
+- `uv run --python 3.12 --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q` → `78 passed`
+- `npm run test:contracts`
+- `npx tsc --noEmit --incremental false`
+
+관련: [[Privacy Safety#2026-05-30 Public metric privacy settings]]

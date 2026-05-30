@@ -79,6 +79,7 @@ graph LR
 - [[Integration - CLI Backend Frontend#2026-05-30 Frontend nullable array adapter hardening|Frontend nullable arrays]]
 - [[Privacy Safety#2026-05-30 Comment settings enforcement|Comment settings enforcement]]
 - [[Privacy Safety#2026-05-30 Soft-deleted project metadata gate|Soft-deleted project metadata gate]]
+- [[Privacy Safety#2026-05-30 Public metric privacy settings|Public metric privacy settings]]
 - [[Auth & Credential Safety#2026-05-30 Backend critical path rate-limit|Backend rate-limit]]
 - [[Auth & Credential Safety#2026-05-30 Frontend OAuth next allowlist|Frontend OAuth next allowlist]]
 - [[Runtime Configuration#2026-05-30 Runtime API config failure UI|Runtime API config failure UI]]

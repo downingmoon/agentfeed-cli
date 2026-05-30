@@ -210,8 +210,10 @@ created: 2026-05-30
 
 - [x] Backend auth/ingest/social/comment critical path에 최소 per-IP/per-user rate limit 연결
 - [x] Soft-deleted project가 public worklog card/detail/search/feed/explore에 metadata로 노출되지 않도록 shared project fetch helper 적용
-- [ ] `show_token_usage_publicly`, `show_estimated_cost_publicly`, file/line/test metric privacy setting을 public card/detail/stats 응답에 적용
+- [x] `show_token_usage_publicly`, `show_estimated_cost_publicly`, file/line/test metric privacy setting을 public card/detail/stats 응답에 적용
 - [x] Frontend OAuth `next` query allowlist와 runtime API config failure UI 보강
 - [[Integration - CLI Backend Frontend#2026-05-30 Frontend OAuth next allowlist + runtime API config UI]]
 - [[Auth & Credential Safety#2026-05-30 Frontend OAuth next allowlist]]
 - [[Runtime Configuration#2026-05-30 Runtime API config failure UI]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Public metric privacy settings]]
+- [[Privacy Safety#2026-05-30 Public metric privacy settings]]

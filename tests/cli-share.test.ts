@@ -230,6 +230,39 @@ describe('share CLI command', () => {
     }
   });
 
+  it('dry-run skips configured project commands even when command collection is enabled', async () => {
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const commandPath = join(dir, '.agentfeed', 'dry-run-command.js');
+    const markerPath = join(dir, '.agentfeed', 'dry-run-command-ran');
+    const config = JSON.parse(await readFile(configPath, 'utf8')) as {
+      collection: { run_tests_on_collect: boolean };
+      commands: { test: string | null; build: string | null };
+    };
+    config.collection.run_tests_on_collect = true;
+    config.commands.test = `${process.execPath} .agentfeed/dry-run-command.js`;
+    config.commands.build = null;
+    await writeFile(configPath, JSON.stringify(config, null, 2));
+    await writeFile(commandPath, 'require("node:fs").writeFileSync(".agentfeed/dry-run-command-ran", "yes");\n');
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = false;\nexport const dryRun = true;\n');
+
+    const { stdout } = await execFileAsync(process.execPath, [
+      cliPath,
+      'share',
+      '--dry-run',
+      '--all',
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        HOME: home,
+      }
+    });
+
+    expect(stdout).toContain('Dry run complete');
+    await expect(readFile(markerPath, 'utf8')).rejects.toThrow();
+  });
+
   it('opens the review URL after publish when project config enables it', async () => {
     const server = createServer(async (req, res) => {
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {

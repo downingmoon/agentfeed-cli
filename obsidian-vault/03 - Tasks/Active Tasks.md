@@ -212,6 +212,21 @@ created: 2026-05-30
 ## 새로 발견한 P1 후보 / 다음 루프
 
 
+- [x] Worklog list/card `viewer_state.can_comment` false default를 Backend permission helper 기준으로 보정
+- [x] Public card anonymous like/bookmark click이 API mutation 전에 GitHub OAuth로 이동하도록 보강
+- [x] Worklog/project/privacy-finding/publish mutation rate-limit coverage 보강
+- [x] `agentfeed share --dry-run`이 configured project commands를 실행하지 않도록 보강
+- [[Commercial Readiness Hardening - Card Capabilities Rate Limits and Dry Run Safety 2026-05-30]]
+
+### 다음 하드닝 후보
+
+- [ ] Backend ingestion token expiry / invalidation policy와 migration 설계
+- [ ] Frontend share failure toast/error feedback
+- [ ] Frontend feed filter URL sync
+- [ ] CLI repo `.env` unsafe API discovery diagnostic
+- [ ] CLI credential source provenance를 `status` / `doctor`에 표시
+
+
 - [x] Backend GitHub OAuth provider identity unique constraint와 deleted-user fail-closed 보강
 - [x] Backend CLI auth approve/exchange row lock으로 one-session multi-token race window 축소
 - [x] Backend legacy provider token touch-time encryption rotation path 추가

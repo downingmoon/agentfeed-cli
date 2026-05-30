@@ -25,6 +25,12 @@ graph LR
     E --> F[Public Feed]
 ```
 
+
+## 문서 운영 원칙
+
+> [!important]
+> 앞으로 구현/분석/검증 문서는 `obsidian-vault/`에 Obsidian Markdown 형식으로 작성합니다. 신규 작업 노트는 MOC, 관련 Area note, [[Active Tasks]]에 wikilink로 연결합니다.
+
 ## 핵심 노트
 
 - [[Commercial Readiness Audit 2026-05-30]]
@@ -33,6 +39,7 @@ graph LR
 - [[Commercial Readiness Hardening - Auth Maintenance and Rendered Smoke 2026-05-30]]
 - [[Commercial Readiness Hardening - Token Quotas Privacy Tags and Card Actions 2026-05-30]]
 - [[Commercial Readiness Hardening - Comment Capability and Theme Hydration 2026-05-30]]
+- [[Commercial Readiness Hardening - Card Capabilities Rate Limits and Dry Run Safety 2026-05-30]]
 
 - [[Collection System]]
 - [[Privacy Safety]]
@@ -91,5 +98,9 @@ graph LR
 - [[Auth & Credential Safety#2026-05-30 Frontend OAuth next allowlist|Frontend OAuth next allowlist]]
 - [[Runtime Configuration#2026-05-30 Runtime API config failure UI|Runtime API config failure UI]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Frontend social mutation pending lock|Social mutation pending lock]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Worklog card can_comment propagation|Card can_comment propagation]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Unauthenticated social action guard|Unauthenticated social guard]]
+- [[Auth & Credential Safety#2026-05-30 Worklog and project mutation rate-limit coverage|Mutation rate-limit coverage]]
+- [[Collection System#2026-05-30 share dry-run command execution guard|share dry-run command guard]]
 - [[Integration - CLI Backend Frontend#End-to-end 흐름|End-to-end 흐름]]
 - [[Active Tasks#P1 후보|P1 후보]]

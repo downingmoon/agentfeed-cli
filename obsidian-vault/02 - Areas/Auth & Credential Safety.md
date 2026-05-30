@@ -364,3 +364,17 @@ created: 2026-05-30
 - `uv run --with pytest --with pytest-asyncio pytest -q` → 89 passed
 
 관련: [[Commercial Readiness Audit 2026-05-30#2026-05-30 backend 운영 보안 추가 루프]]
+
+## 2026-05-30 Worklog and project mutation rate-limit coverage
+
+> [!success]
+> Worklog/project write paths and privacy-finding publish/resolve paths are now explicitly represented in Backend rate-limit rules.
+
+계약:
+
+- `POST/PATCH/DELETE /v1/worklogs`와 `POST/PATCH/DELETE /v1/projects` 계열 mutation은 bucket을 갖습니다.
+- `POST /v1/worklogs/{id}/privacy-findings/{id}/resolve`, publish, unpublish도 bucket을 갖습니다.
+- nested resource ids are normalized so equivalent resource-shaped paths share the intended bucket key.
+- Rate-limit identity and persistence policy는 기존 [[Auth & Credential Safety#2026-05-30 Shared database rate-limit store|shared database rate-limit store]] 계약을 따릅니다.
+
+관련 구현: [[Commercial Readiness Hardening - Card Capabilities Rate Limits and Dry Run Safety 2026-05-30]]

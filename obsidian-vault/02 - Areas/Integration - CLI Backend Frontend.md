@@ -1460,3 +1460,29 @@ Frontend 표시:
 - permission-disabled 상태는 API 실패 후에야 알리는 대신 disabled placeholder/notice로 먼저 안내합니다.
 
 관련 구현: [[Commercial Readiness Hardening - Comment Capability and Theme Hydration 2026-05-30]]
+
+## 2026-05-30 Worklog card can_comment propagation
+
+> [!success]
+> Feed/profile/project/explore/bookmark/search card payload도 detail payload와 같은 `viewer_state.can_comment` capability contract를 따릅니다.
+
+계약:
+
+- Backend가 viewer와 author settings를 기준으로 card-level `viewer_state.can_comment`를 계산합니다.
+- anonymous viewer는 false, 작성자는 true, non-author viewer는 `allow_comments` 설정을 따릅니다.
+- Frontend card/detail UI는 capability 필드를 API 실패 후 추정하지 않고 선제 gate로 사용할 수 있습니다.
+
+관련 구현: [[Commercial Readiness Hardening - Card Capabilities Rate Limits and Dry Run Safety 2026-05-30]]
+
+## 2026-05-30 Unauthenticated social action guard
+
+> [!success]
+> Public card의 anonymous like/bookmark click은 더 이상 API mutation으로 진행되지 않고 GitHub OAuth login으로 이동합니다.
+
+계약:
+
+- signed-out 상태에서는 `toggleLike` / `toggleBookmark`가 pending state 또는 API call을 만들기 전에 종료합니다.
+- 현재 path/query는 `authNextPath()`로 sanitize 된 뒤 OAuth `next`로 전달됩니다.
+- API config error가 있으면 redirect도 시도하지 않아 설정 오류를 숨기지 않습니다.
+
+관련 구현: [[Commercial Readiness Hardening - Card Capabilities Rate Limits and Dry Run Safety 2026-05-30]]

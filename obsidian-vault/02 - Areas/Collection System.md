@@ -629,3 +629,21 @@ created: 2026-05-30
 - `generic-window-timestamp-aliases` 회귀 테스트 추가
 - `npm test -- tests/session-collector.test.ts --run`
 - `npm run build`
+
+## 2026-05-30 share dry-run command execution guard
+
+> [!success]
+> `agentfeed share --dry-run`은 preview/safety path로 유지되며 configured project commands를 실행하지 않습니다.
+
+계약:
+
+- `.agentfeed/config.json`에서 `run_tests_on_collect=true`여도 `share --dry-run`은 configured commands를 skip합니다.
+- dry-run 결과는 upload preview에 필요한 draft/status만 생성하고 project command side effect를 만들지 않습니다.
+- 실제 collect/share upload path의 explicit command collection behavior는 유지합니다.
+
+검증:
+
+- 회귀 테스트 `dry-run skips configured project commands even when command collection is enabled`가 marker file side effect 부재를 확인합니다.
+- 전체 CLI gate와 shared `test-all.sh` / `smoke-e2e.sh`를 통과했습니다.
+
+관련 구현: [[Commercial Readiness Hardening - Card Capabilities Rate Limits and Dry Run Safety 2026-05-30]]

@@ -103,7 +103,101 @@ created: 2026-05-30
 - [x] Claude failed `Write` / `Edit` / `MultiEdit`를 changed file evidence로 과대집계하지 않도록 보정
 - [x] 성공한 test summary의 `0 failed` 문구를 failed command로 과대집계하지 않도록 보정
 - [x] `playwright install`, `cypress open` 같은 browser test setup command와 wrapped setup command를 executed test로 과대집계하지 않도록 보정
-- [ ] Docker 기반 local E2E smoke success path 재검증
+- [x] 실패한 Codex `apply_patch` custom tool input을 changed file evidence로 과대집계하지 않도록 보정
+- [x] 실패한 Codex `spawn_agent` function call을 spawned subagent로 과대집계하지 않도록 보정
+- [x] explicit collection window에서 timestamp 없는 agent evidence row를 제외하도록 보정
+- [x] Docker 기반 local E2E smoke success path 재검증
+
+## 2026-05-30 Local E2E smoke 검증
+
+> [!success]
+> `agentfeed-dev` Docker stack에서 `make smoke-e2e`가 통과했습니다. 수집 draft가 Backend review API와 Frontend review/feed까지 이어지는 핵심 제품 경로를 확인했습니다.
+
+연결 문서:
+
+- [[Integration - CLI Backend Frontend#2026-05-30 Docker smoke E2E 성공]]
+- [[Integration - CLI Backend Frontend#2026-05-30 share --json upload draft 계약]]
+
+검증:
+
+- `npm test -- tests/cli-share.test.ts --run`
+- `make smoke-e2e`
+
+## 2026-05-30 Agent window timestamp-less evidence 보정
+
+> [!success]
+> `--since` / `--until` 같은 명시적 collection window가 있을 때 timestamp 없는 Claude / Codex / Gemini evidence row를 window 안 작업으로 간주하지 않도록 보정했습니다.
+
+문제:
+
+- 기존 agent session parser는 timestamp가 없는 row를 collection window 안에 포함했습니다.
+- 명시적 `--since` 수집에서 오래된 또는 출처가 불명확한 patch / command / token row가 현재 작업 evidence로 섞일 수 있었습니다.
+- session id / model 같은 identity 정보는 유지해야 하지만, timestamp 없는 작업 evidence는 window 검증에 사용할 수 없습니다.
+
+수정:
+
+- Claude / Codex / Gemini parser는 collection boundary가 있을 때 timestamp 없는 row를 evidence 처리에서 제외합니다.
+- session identity는 window 필터 전에 읽어 유지합니다.
+- collection boundary가 없는 기본 수집에서는 기존 호환성을 위해 timestamp 없는 row도 best-effort로 유지합니다.
+
+검증:
+
+- `excludes timestamp-less Codex edit rows when an explicit since window is active` 회귀 테스트
+- `npm test -- tests/session-collector.test.ts --run -t "failed Codex spawn_agent|timestamp-less Codex|Codex non-shell tool calls|failed Codex apply_patch"`
+- `npm test -- tests/session-collector.test.ts --run`
+- `npm test -- --run`
+
+## 2026-05-30 Codex failed spawn_agent 보정
+
+> [!success]
+> 실패한 Codex `spawn_agent` 호출은 tool call로만 세고, 실제 spawned subagent 수에는 넣지 않도록 보정했습니다.
+
+문제:
+
+- 기존 Codex parser는 `function_call.name=spawn_agent`를 보는 즉시 `subagents_spawned`를 증가시켰습니다.
+- 이후 paired `function_call_output`에서 실패가 보고되어도 spawned count가 유지됐습니다.
+- feed에는 실제 생성되지 않은 subagent가 실행된 것처럼 표시될 수 있었습니다.
+
+수정:
+
+- `call_id`가 있는 `spawn_agent`는 pending 상태로 보관합니다.
+- 같은 `call_id`의 output이 실패 / error / unavailable / denied 류이면 spawned count에서 제외합니다.
+- output이 없거나 실패 신호가 없으면 기존 호환성을 위해 성공한 spawned subagent로 반영합니다.
+
+검증:
+
+- `does not count failed Codex spawn_agent calls as spawned subagents` 회귀 테스트
+- `counts Codex non-shell tool calls, spawned subagents, and agent turns` 기존 성공 경로 회귀 테스트
+- `npm test -- tests/session-collector.test.ts --run -t "failed Codex spawn_agent|timestamp-less Codex|Codex non-shell tool calls|failed Codex apply_patch"`
+- `npm test -- tests/session-collector.test.ts --run`
+- `npm test -- --run`
+
+## 2026-05-30 Codex failed apply_patch evidence 보정
+
+> [!success]
+> Codex `custom_tool_call.apply_patch`가 실패한 경우 patch input만 보고 changed file evidence를 만들지 않도록 보정했습니다.
+
+문제:
+
+- Codex session에는 structured `patch_apply_end`가 없을 때 `custom_tool_call.apply_patch.input`만 남을 수 있습니다.
+- 기존 fallback parser는 `custom_tool_call.status=failed`여도 patch input을 파싱했습니다.
+- 실제 파일 변경이 적용되지 않았는데 feed에는 새 파일/라인 변경이 있는 것처럼 보일 수 있었습니다.
+
+수정:
+
+- `custom_tool_call.apply_patch`는 status가 `failed`, `error`, `cancelled`, `canceled`가 아닐 때만 fallback changed-file evidence로 반영합니다.
+- `patch_apply_end`도 동일한 실패 상태 helper를 사용합니다.
+- 기존 successful fallback patch와 structured patch 병합 동작은 유지합니다.
+
+검증:
+
+- `does not count failed Codex apply_patch custom tool input as changed files` 회귀 테스트
+- `npm test -- tests/session-collector.test.ts --run -t "failed Codex apply_patch|apply_patch custom tool input|mixed-patch|failed Gemini"`
+- `npm test -- tests/session-collector.test.ts --run`
+- `npm test -- tests/git-draft.test.ts tests/cli-collect.test.ts --run`
+- `npm run build`
+- `npm test -- --run`
+- `../agentfeed-dev/scripts/test-all.sh`
 
 ## 2026-05-30 Browser test setup command 과대집계 보정
 

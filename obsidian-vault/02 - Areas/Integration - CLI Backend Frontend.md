@@ -53,10 +53,11 @@ sequenceDiagram
 
 ## 남은 검증 리스크
 
-> [!warning]
-> Docker daemon이 꺼져 있으면 `make smoke-e2e` 성공 경로는 로컬에서 재검증할 수 없습니다.
+> [!success]
+> 2026-05-30 현재 Docker dev stack에서 `make smoke-e2e`가 CLI upload → Backend review API → Frontend review route → publish → public detail/feed까지 통과했습니다.
 
-- [ ] Docker Desktop 실행 상태에서 `agentfeed-dev`의 `make smoke-e2e` 성공 확인
+- [x] Docker Desktop 실행 상태에서 `agentfeed-dev`의 `make smoke-e2e` 성공 확인
+- [x] CLI → Backend → Frontend review/publish/feed smoke 재확인
 - [ ] 실제 GitHub OAuth / CLI browser login happy path 재확인
 - [ ] 실제 사용자 작업 repo에서 `agentfeed share --open-review` smoke
 
@@ -141,7 +142,56 @@ P1로 남길 계약 gap:
 
 - Cursor-style 수집 payload의 `collection_quality=low`, `collection_sources[0].name=cursor` 확인
 - `share --note`가 `summary`에 섞이지 않고 `user_note`로 draft/review/detail/feed까지 보존되는지 확인
-- 현재 로컬 검증 상태: Docker daemon 미실행으로 syntax/static check만 가능
+- 현재 로컬 검증 상태: [[#2026-05-30 Docker smoke E2E 성공]]에서 실제 Docker smoke 통과
+
+## 2026-05-30 Docker smoke E2E 성공
+
+> [!success]
+> `agentfeed-dev`에서 `make smoke-e2e`가 통과했습니다. 이 경로는 CLI가 만든 draft를 Backend에 업로드하고, Frontend review 화면에서 조회한 뒤 publish하여 public detail/feed까지 확인합니다.
+
+검증 경로:
+
+1. Docker compose dev stack health check
+2. smoke 전용 user / ingestion token seed
+3. `AgentFeed-CLI` local build
+4. temporary Cursor-style project 생성
+5. `agentfeed share --json --source cursor --session-file ... --note ... --all --no-clipboard`
+6. `GET /v1/worklogs/{id}/review`
+7. `GET /worklogs/{id}/review`
+8. `POST /v1/worklogs/{id}/publish`
+9. `GET /v1/worklogs/{id}` + `GET /v1/feed?agent=cursor`
+
+추가 보정:
+
+- `agentfeed-dev/compose.yaml`의 Frontend service에 `frontend-next:/workspace/frontend/.next` named volume을 추가했습니다.
+- 이유: host의 `npm run build`와 Docker dev server가 같은 bind mount의 `.next`를 공유하면 Next dev manifest가 깨져 500이 발생할 수 있습니다.
+- `node_modules`와 마찬가지로 container-owned volatile cache는 named volume으로 격리합니다.
+
+검증:
+
+- `curl -fsS -L http://localhost:3001`
+- `make smoke-e2e`
+
+## 2026-05-30 share --json upload draft 계약
+
+> [!success]
+> `agentfeed share --json`의 upload mode도 dry-run mode처럼 `draft` 객체를 함께 출력합니다. smoke script와 외부 자동화는 upload 결과(`upload`)와 실제 수집 draft(`draft`)를 한 JSON에서 검증할 수 있습니다.
+
+계약:
+
+- dry-run: `{ dry_run: true, reused_existing_draft, draft }`
+- upload: `{ dry_run: false, reused_existing_draft, draft_id, draft, upload }`
+
+이유:
+
+- smoke gate는 `share --note`가 `summary`에 섞이지 않고 `draft.worklog.user_note`에 남는지 확인해야 합니다.
+- Backend 응답만으로는 CLI가 어떤 draft를 업로드했는지 로컬 수집 계약을 검증하기 어렵습니다.
+- JSON output은 터미널/자동화용 로컬 결과이므로, 이미 `.agentfeed/drafts/*.json`에 저장되는 public-safe draft를 함께 보여주는 쪽이 재현성이 높습니다.
+
+검증:
+
+- `tests/cli-share.test.ts`
+- `make smoke-e2e`
 
 ## 2026-05-30 test-all gate 보강
 

@@ -16,8 +16,8 @@ created: 2026-05-30
 
 - [x] Review 화면에서 collection quality/source evidence 노출
 - [x] Docker 없이 가능한 static gate 보강: `smoke-e2e.sh` syntax + Alembic offline migration chain
-- [ ] Docker daemon 실행 후 `agentfeed-dev`에서 `make smoke-e2e` 성공 경로 확인
-- [ ] CLI → Backend → Frontend review/publish/feed 수동 smoke 재확인
+- [x] Docker daemon 실행 후 `agentfeed-dev`에서 `make smoke-e2e` 성공 경로 확인
+- [x] CLI → Backend → Frontend review/publish/feed smoke 재확인
 
 ## P1 후보
 
@@ -42,6 +42,11 @@ created: 2026-05-30
 - [x] Claude failed `Write` / `Edit` / `MultiEdit`를 changed file evidence로 과대집계하지 않도록 보정
 - [x] 성공한 test summary의 `0 failed` 문구를 failed command로 과대집계하지 않도록 보정
 - [x] `playwright install`, `cypress open` 같은 browser test setup command와 wrapped setup command를 executed test로 과대집계하지 않도록 보정
+- [x] 실패한 Codex `apply_patch` custom tool input을 changed file evidence로 과대집계하지 않도록 보정
+- [x] 실패한 Codex `spawn_agent` function call을 spawned subagent로 과대집계하지 않도록 보정
+- [x] explicit collection window에서 timestamp 없는 agent evidence row를 제외하도록 보정
+- [x] `share --json` upload output에 smoke 검증용 draft를 포함하도록 계약화
+- [x] Docker dev frontend `.next` 캐시를 named volume으로 격리해 smoke flake 방지
 - [x] 실제 Cursor workspace/session format 추가 조사 후 parser 품질 상향 가능성 판단
 - [x] CLI ingest `worklog.model` → Backend 저장 → Frontend 노출 계약화
 
@@ -65,10 +70,15 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 Clipboard fallback 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 user_note 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 E2E smoke gate 보강]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Docker smoke E2E 성공]]
+- [[Integration - CLI Backend Frontend#2026-05-30 share --json upload draft 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 test-all gate 보강]]
 - [[Integration - CLI Backend Frontend#2026-05-30 worklog.model ingest 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Feed sort label 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Publish management 계약]]
+- [[Collection System#2026-05-30 Agent window timestamp-less evidence 보정]]
+- [[Collection System#2026-05-30 Codex failed spawn_agent 보정]]
+- [[Collection System#2026-05-30 Codex failed apply_patch evidence 보정]]
 - [[Collection System#2026-05-30 Browser test setup command 과대집계 보정]]
 - [[Collection System#2026-05-30 Test summary zero failed 과대집계 보정]]
 - [[Collection System#2026-05-30 Gemini 실패 file edit 과대집계 보정]]

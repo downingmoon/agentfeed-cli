@@ -40,7 +40,7 @@ agentfeed share --source gemini-cli --session-file ./session.jsonl
 
 `--note` is stored as a separate public-safe author note, not folded into the generated worklog summary.
 
-Use `--json` for automation.
+Use `--json` for automation. Dry-run output is shaped as `{ dry_run, reused_existing_draft, draft }`; upload output is shaped as `{ dry_run, reused_existing_draft, draft_id, draft, upload }` so scripts can verify the exact public-safe draft that was uploaded alongside the review URL.
 
 ## Scoped and incremental collection
 

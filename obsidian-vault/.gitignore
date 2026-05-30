@@ -2,3 +2,7 @@
 .obsidian/workspace.json
 .obsidian/workspace-mobile.json
 .trash/
+
+# Local appearance/layout preferences
+.obsidian/appearance.json
+.obsidian/graph.json

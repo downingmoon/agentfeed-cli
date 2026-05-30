@@ -215,6 +215,25 @@ describe('agent session collector', () => {
     expect(metrics?.tool_calls).toBe(1);
   });
 
+  it('does not count failed Codex apply_patch custom tool input as changed files', async () => {
+    const sessionFile = join(dir, 'codex-failed-apply-patch.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-failed-apply-patch', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'custom_tool_call', name: 'apply_patch', status: 'failed', call_id: 'failed-patch', input: [
+        '*** Begin Patch',
+        `*** Add File: ${join(dir, 'src', 'failed-patch.ts')}`,
+        '+export const failedPatch = true;',
+        '*** End Patch'
+      ].join('\n') } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(1);
+    expect(metrics?.changed_files).toEqual([]);
+    expect(metrics?.files_changed).toBeNull();
+  });
+
   it('keeps Codex apply_patch fallback files that do not appear in structured patch_apply_end changes', async () => {
     const sessionFile = join(dir, 'codex-mixed-patch-evidence.jsonl');
     await writeJsonl(sessionFile, [
@@ -343,6 +362,20 @@ describe('agent session collector', () => {
     expect(metrics?.tests_passed).toBe(1);
     expect(metrics?.subagents_spawned).toBe(1);
     expect(metrics?.agent_turns).toBe(2);
+  });
+
+  it('does not count failed Codex spawn_agent calls as spawned subagents', async () => {
+    const sessionFile = join(dir, 'codex-failed-spawn-agent.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-failed-spawn-agent', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'function_call', name: 'spawn_agent', arguments: JSON.stringify({ role: 'explore' }), call_id: 'agent-fail' } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'agent-fail', output: 'spawn failed: agent unavailable' } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(1);
+    expect(metrics?.subagents_spawned).toBeNull();
   });
 
   it('matches session files by structured cwd fields, not arbitrary transcript text', async () => {
@@ -1101,6 +1134,25 @@ describe('collection window filtering', () => {
     expect(metrics?.tokens_used).toBe(15);
     expect(metrics?.changed_files.map((file) => file.path)).toEqual(['src/new.ts']);
     expect(metrics?.lines_added).toBe(2);
+  });
+
+  it('excludes timestamp-less Codex edit rows when an explicit since window is active', async () => {
+    const sessionFile = join(dir, 'codex-window-missing-timestamp.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-window-missing-timestamp', cwd: dir } },
+      { type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: {
+        [join(dir, 'src', 'untimestamped.ts')]: { type: 'add', content: 'export const stale = true;\n' }
+      } } },
+      { timestamp: '2026-05-20T01:00:00Z', type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: {
+        [join(dir, 'src', 'fresh.ts')]: { type: 'add', content: 'export const fresh = true;\n' }
+      } } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile, since: '2026-05-20T01:00:00Z' });
+
+    expect(metrics?.session_id).toBe('codex-window-missing-timestamp');
+    expect(metrics?.changed_files.map((file) => file.path)).toEqual(['src/fresh.ts']);
+    expect(metrics?.lines_added).toBe(1);
   });
 
   it('subtracts the pre-window Codex cumulative token baseline', async () => {

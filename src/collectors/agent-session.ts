@@ -277,6 +277,17 @@ function commandFailed(output: string): boolean {
   return false;
 }
 
+function failedStatus(value: unknown): boolean {
+  const status = asString(value)?.toLowerCase();
+  return status === 'failed' || status === 'error' || status === 'cancelled' || status === 'canceled';
+}
+
+function toolOutputFailed(output: string): boolean {
+  const text = output.trim();
+  if (!text) return false;
+  return commandFailed(text) || /\b(failed|error|unavailable|not found|denied)\b/i.test(text);
+}
+
 function toolResultOutput(item: Record<string, unknown>): string {
   const content = item.content;
   if (typeof content === 'string') return content;
@@ -337,6 +348,10 @@ function rowInCollectionWindow(row: Record<string, unknown>, window?: Collection
 
 function hasCollectionWindowBoundary(window?: CollectionWindow | null): boolean {
   return Boolean(window?.since || window?.until);
+}
+
+function rowInAgentCollectionWindow(row: Record<string, unknown>, window?: CollectionWindow | null): boolean {
+  return rowInCollectionWindow(row, window, { includeMissingTimestamp: !hasCollectionWindowBoundary(window) });
 }
 
 const DEFAULT_IDLE_GAP_MILLIS = 30 * 60 * 1000;
@@ -522,7 +537,7 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?:
     if (!message) continue;
     sessionId ??= asString(row.sessionId);
     model ??= asString(message.model);
-    if (!rowInCollectionWindow(row, effectiveWindow)) continue;
+    if (!rowInAgentCollectionWindow(row, effectiveWindow)) continue;
     matchedWindowRow = true;
     if (row.type === 'assistant') agentTurns += 1;
     estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(row) ?? 0, explicitCostUsd(message) ?? 0);
@@ -629,6 +644,7 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
   let toolCalls = 0;
   const skills = new Set<string>();
   const agentModes = new Set<string>();
+  const pendingSubagentCalls = new Map<string, { failed: boolean }>();
   let subagentsSpawned = 0;
   let subagentsCompleted = 0;
   let agentTurns = 0;
@@ -656,7 +672,7 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
         tokenBaselineBeforeWindow = Math.max(tokenBaselineBeforeWindow ?? 0, codexTokenTotal(info));
       }
     }
-    if (!rowInCollectionWindow(row, effectiveWindow)) continue;
+    if (!rowInAgentCollectionWindow(row, effectiveWindow)) continue;
     matchedWindowRow = true;
     estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(row) ?? 0, explicitCostUsd(payload) ?? 0);
     if (payload.type === 'agent_message') agentTurns += 1;
@@ -670,9 +686,12 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
     }
     if (payload.type === 'function_call') {
       toolCalls += 1;
-      if (payload.name === 'spawn_agent') subagentsSpawned += 1;
+      const callId = asString(payload.call_id);
+      if (payload.name === 'spawn_agent') {
+        if (callId) pendingSubagentCalls.set(callId, { failed: false });
+        else subagentsSpawned += 1;
+      }
       if (payload.name === 'exec_command') {
-        const callId = asString(payload.call_id);
         const argsText = asString(payload.arguments);
         const args = argsText ? asRecord(safeJsonParse(argsText)) : null;
         const command = asString(args?.cmd) ?? '';
@@ -687,17 +706,21 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
     if (payload.type === 'custom_tool_call') toolCalls += 1;
     if (payload.type === 'function_call_output') {
       const callId = asString(payload.call_id);
+      const pendingSubagent = callId ? pendingSubagentCalls.get(callId) : null;
+      if (pendingSubagent && (failedStatus(payload.status) || toolOutputFailed(asString(payload.output) ?? ''))) {
+        pendingSubagent.failed = true;
+      }
       const command = callId ? commands.get(callId) : null;
       if (command && commandFailed(asString(payload.output) ?? '')) {
         failedCommands += 1;
         if (command.test) failedTestCommands += 1;
       }
     }
-    if (payload.type === 'custom_tool_call' && payload.name === 'apply_patch') {
+    if (payload.type === 'custom_tool_call' && payload.name === 'apply_patch' && !failedStatus(payload.status)) {
       const patchText = asString(payload.input);
       if (patchText) patchTextFallbacks.push(patchText);
     }
-    if (payload.type === 'patch_apply_end' && payload.status !== 'failed') {
+    if (payload.type === 'patch_apply_end' && !failedStatus(payload.status)) {
       const changes = asRecord(payload.changes);
       if (!changes) continue;
       for (const [absolutePath, changeRaw] of Object.entries(changes)) {
@@ -718,6 +741,9 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
         upsertFile(files, rel, { status: kind === 'add' ? 'added' : kind === 'delete' ? 'deleted' : 'modified', added, removed });
       }
     }
+  }
+  for (const subagent of pendingSubagentCalls.values()) {
+    if (!subagent.failed) subagentsSpawned += 1;
   }
   if (hasCollectionWindowBoundary(effectiveWindow) && !matchedWindowRow) return null;
   if (patchTextFallbacks.length) {
@@ -777,7 +803,7 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?:
   for (const row of rows) {
     sessionId ??= asString(row.sessionId);
     model ??= asString(row.model);
-    if (!rowInCollectionWindow(row, effectiveWindow)) continue;
+    if (!rowInAgentCollectionWindow(row, effectiveWindow)) continue;
     matchedWindowRow = true;
     if (row.type === 'gemini') agentTurns += 1;
     estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(row) ?? 0);
@@ -804,7 +830,7 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?:
       const name = asString(call.name);
       const args = asRecord(call.args) ?? {};
       const status = asString(call.status);
-      const failed = status === 'error' || status === 'failed';
+      const failed = failedStatus(status);
       if (name === 'activate_skill') {
         const skill = asString(args.name) ?? asString(args.skill_name) ?? asString(args.skillName);
         if (skill && !failed) skills.add(skill);

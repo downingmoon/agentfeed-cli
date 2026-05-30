@@ -181,8 +181,9 @@ async function cmdShare(args: string[]) {
       return;
     }
     const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds! });
+    draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, uploaded_at: result.created_at };
     await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
-    print(JSON.stringify({ dry_run: false, reused_existing_draft: collection.reusedExisting, draft_id: draft.id, upload: result }, null, 2));
+    print(JSON.stringify({ dry_run: false, reused_existing_draft: collection.reusedExisting, draft_id: draft.id, draft, upload: result }, null, 2));
     if (!opts.noClipboard) await copyToClipboard(result.review_url);
     if (opts.openReview) await openBrowser(result.review_url);
     return;

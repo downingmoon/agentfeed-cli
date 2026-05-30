@@ -57,6 +57,17 @@ function redactedFieldPreviews(original: PublicScanFields, redacted: PublicScanF
     .map(([field, value]) => ({ field, value: singleLine(value) }));
 }
 
+async function shouldOpenReviewAfterUpload(openFlag: boolean, options: { respectConfig?: boolean } = {}): Promise<boolean> {
+  if (openFlag) return true;
+  if (options.respectConfig === false) return false;
+  try {
+    const config = await loadProjectConfig(process.cwd());
+    return config.collection.open_review_after_upload;
+  } catch {
+    return false;
+  }
+}
+
 function formatPrivacyScanReport(input: PublicScanFields, redacted: PublicScanFields, scan: ReturnType<typeof scanAndRedactFields>['scan'], options: { dryRun?: boolean } = {}): string {
   const lines = [`Privacy: ${scan.status}`, `Findings: ${scan.findings.length}`];
   if (options.dryRun) lines.push('Dry run: draft not modified.');
@@ -177,7 +188,7 @@ async function cmdShare(args: string[]) {
     await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
     print(JSON.stringify({ dry_run: false, reused_existing_draft: collection.reusedExisting, draft_id: draft.id, draft, upload: result }, null, 2));
     if (!opts.noClipboard) await copyToClipboard(result.review_url);
-    if (opts.openReview) await openBrowser(result.review_url);
+    if (await shouldOpenReviewAfterUpload(opts.openReview, { respectConfig: false })) await openBrowser(result.review_url);
     return;
   }
 
@@ -199,7 +210,7 @@ async function cmdShare(args: string[]) {
   print(`Review URL:
 ${result.review_url}`);
   if (!opts.noClipboard && await copyToClipboard(result.review_url)) print('Review URL copied to clipboard.');
-  if (opts.openReview) {
+  if (await shouldOpenReviewAfterUpload(opts.openReview)) {
     const opened = await openBrowser(result.review_url);
     if (!opened) print(result.review_url);
   }
@@ -237,7 +248,7 @@ async function cmdPublish(args: string[]) {
   print(result.reused_existing ? 'Worklog already uploaded; reusing existing review URL.\n' : 'Worklog uploaded.\n');
   print(`Status: ${result.status}`);
   print(`Review URL:\n${result.review_url}`);
-  if (flag(args, '--open-review')) {
+  if (await shouldOpenReviewAfterUpload(flag(args, '--open-review'))) {
     const opened = await openBrowser(result.review_url);
     if (!opened) print(result.review_url);
   }

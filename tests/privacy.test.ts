@@ -21,6 +21,13 @@ describe('privacy scanner', () => {
     expect(result.scan.findings.some((f) => f.type === 'sensitive_path')).toBe(true);
   });
 
+  it('redacts Windows absolute paths', () => {
+    const result = scanAndRedactFields({ summary: 'Error at C:\\Users\\Downing\\project\\src\\index.ts changed' });
+
+    expect(result.redacted.summary).toBe('Error at [REDACTED_PATH] changed');
+    expect(result.scan.findings.some((f) => f.type === 'sensitive_path')).toBe(true);
+  });
+
   it('redacts high severity secrets and marks danger', () => {
     const result = scanAndRedactFields({ title: 'Use sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890' });
     expect(result.redacted.title).toContain('[REDACTED_SECRET]');

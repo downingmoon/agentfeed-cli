@@ -13,6 +13,7 @@ const patterns: PatternRule[] = [
   { type: 'api_key_pattern', severity: 'high', regex: /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible JWT detected.' },
   { type: 'email_address', severity: 'medium', regex: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, replacement: '[REDACTED_EMAIL]', message: 'Email address detected.' },
   { type: 'private_url', severity: 'medium', regex: /https?:\/\/(?:localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(?:1[6-9]|2\d|3[01])\.\d+\.\d+)(?::\d+)?[^\s'"<>]*/gi, replacement: '[REDACTED_URL]', message: 'Private or localhost URL detected.' },
+  { type: 'sensitive_path', severity: 'medium', regex: /(?<!\S)[A-Za-z]:\\(?:[^\s\\/:*?"<>|]+\\){1,}[^\s\\/:*?"<>|]+/g, replacement: '[REDACTED_PATH]', message: 'Windows absolute local path detected.' },
   { type: 'sensitive_path', severity: 'medium', regex: /(?<!\S)(?:\/[A-Za-z0-9._-]+){2,}(?:\/[A-Za-z0-9._-]+)?/g, replacement: '[REDACTED_PATH]', message: 'Absolute local path detected.' },
   { type: 'env_file_reference', severity: 'low', regex: /(?:^|\b)(?:\.env|id_rsa|credentials\.json)(?:\b|$)/gi, replacement: '[REDACTED_PATH]', message: 'Sensitive filename reference detected.' }
 ];

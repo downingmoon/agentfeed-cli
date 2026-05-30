@@ -78,6 +78,12 @@ created: 2026-05-30
 - [x] npm package `prepack` build gate로 stale `dist` 배포 방지
 - [x] Backend ingest payload cap을 실제 streamed body byte 기준으로 강제
 - [x] Frontend project slug null 시 id fallback으로 dead link 방지
+- [x] CLI privacy scanner가 Windows absolute path를 redaction
+- [x] CLI `open_review_after_upload` 설정을 publish/share upload UX에 반영
+- [x] Private worklog comments list/create visibility gate 보강
+- [x] Unlisted publish도 unresolved high severity privacy finding 차단
+- [ ] GitHub OAuth provider 장애/httpx failure를 raw 500 대신 controlled 503으로 변환
+- [ ] CLI duplicate ingestion 409 응답의 `review_url`을 성공 재동기화로 처리
 
 ## P2 후보
 
@@ -131,6 +137,11 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI npm prepack release gate]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Backend streamed ingest payload cap]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Frontend project slug fallback]]
+- [[Privacy Safety#2026-05-30 Windows path redaction]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Windows path redaction]]
+- [[Integration - CLI Backend Frontend#2026-05-30 CLI open-review config 계약]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Worklog comment visibility gate]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Unlisted publish privacy gate]]
 - [[Collection System#2026-05-30 Generic until-window timestamp-less evidence 보정]]
 - [[Collection System#2026-05-30 Agent window timestamp-less evidence 보정]]
 - [[Collection System#2026-05-30 Codex failed spawn_agent 보정]]

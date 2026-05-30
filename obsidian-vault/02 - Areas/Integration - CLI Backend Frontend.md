@@ -437,6 +437,84 @@ sequenceDiagram
   - `env NEXT_PUBLIC_API_URL=http://localhost:8000 npm run build`
   - `../agentfeed-dev/scripts/test-all.sh`
 
+## 2026-05-30 Windows path redaction
+
+> [!success]
+> CLI privacy scanner가 Windows absolute path를 public field에 남기지 않도록 보강했습니다. 자세한 redaction 계약은 [[Privacy Safety#2026-05-30 Windows path redaction]]에 정리합니다.
+
+검증:
+
+- RED/GREEN: `npx vitest run tests/privacy.test.ts --testNamePattern 'Windows absolute'`
+- `npm test -- --run tests/privacy.test.ts tests/cli-share.test.ts tests/api-hook.test.ts tests/open-browser.test.ts`
+- `npm run typecheck`
+- `../agentfeed-dev/scripts/test-all.sh`
+
+## 2026-05-30 CLI open-review config 계약
+
+> [!success]
+> `collection.open_review_after_upload: true`가 설정된 기본 프로젝트에서는 `agentfeed publish` / human `agentfeed share`가 `--open-review` 없이도 review URL을 브라우저로 엽니다.
+
+계약:
+
+- `--open-review`는 항상 우선합니다.
+- human output path의 `agentfeed share`와 `agentfeed publish`는 project config `open_review_after_upload`를 존중합니다.
+- `agentfeed share --json`은 machine-readable output을 유지하기 위해 config 기반 auto-open을 하지 않고, 명시 `--open-review`만 허용합니다.
+- `agentfeed collect --upload`은 내부적으로 publish path를 타므로 같은 설정을 상속합니다.
+
+검증:
+
+- RED/GREEN: `npx vitest run tests/cli-share.test.ts --testNamePattern 'opens the review URL'`
+- `npm test -- --run tests/privacy.test.ts tests/cli-share.test.ts tests/api-hook.test.ts tests/open-browser.test.ts`
+- `npm run typecheck`
+- `../agentfeed-dev/scripts/test-all.sh`
+
+## 2026-05-30 Worklog comment visibility gate
+
+> [!success]
+> private worklog의 comments list/create endpoint가 worklog detail visibility와 같은 owner-only gate를 사용합니다.
+
+문제:
+
+- `GET /v1/worklogs/{id}`는 private worklog를 author 외 사용자에게 404로 숨겼습니다.
+- 하지만 comments list/create path는 worklog visibility를 먼저 확인하지 않아 private worklog id를 아는 사용자가 댓글 접근/작성 경로로 metadata를 건드릴 수 있었습니다.
+
+계약:
+
+- private worklog comments는 author만 읽고 작성할 수 있습니다.
+- author가 아닌 사용자는 detail endpoint와 동일하게 `Worklog not found`로 처리합니다.
+- public/unlisted worklog comments는 기존처럼 접근 가능합니다.
+
+검증:
+
+- RED/GREEN: `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q -k 'private_worklog_comments'`
+- `uv run --with pytest --with pytest-asyncio pytest -q`
+- `uv run --with ruff ruff check --select I,F app/routers/worklogs.py tests/test_contracts.py`
+- `../agentfeed-dev/scripts/test-all.sh`
+
+## 2026-05-30 Unlisted publish privacy gate
+
+> [!success]
+> unresolved high severity privacy finding이 있으면 public뿐 아니라 unlisted publish도 Backend/Frontend 양쪽에서 차단합니다.
+
+문제:
+
+- unlisted는 feed 노출은 제한되지만 URL 공유로 접근 가능한 공개 상태입니다.
+- 기존 Backend publish guard는 `visibility == public`만 검사했고, Frontend review UI도 unlisted publish button은 활성 상태로 남았습니다.
+
+계약:
+
+- `POST /v1/worklogs/{id}/publish`는 visibility가 `public` 또는 `unlisted`일 때 unresolved high severity finding을 모두 차단합니다.
+- Frontend review page는 같은 조건에서 `Publish public`과 `Publish unlisted`를 모두 disable하고, 직접 handler 호출도 guard합니다.
+- `Make private` / unpublish 관리 경로는 이 gate와 별개로 유지합니다.
+
+검증:
+
+- RED/GREEN Backend: `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q -k 'publish_unlisted_rejects'`
+- RED/GREEN Frontend: `npm run test:contracts`
+- `npx tsc --noEmit --pretty false`
+- `env NEXT_PUBLIC_API_URL=http://localhost:8000 npm run build`
+- `../agentfeed-dev/scripts/test-all.sh`
+
 ## 관련 원본
 
 - [[Cross Repo Integration Fixes#목표 end-to-end 흐름]]

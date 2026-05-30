@@ -85,8 +85,32 @@ Redacted preview:
 - `npm test -- tests/api-hook.test.ts --run`
 - `npm test -- --run`
 
+## 2026-05-30 Windows path redaction
+
+> [!success]
+> Windows absolute path(`C:\Users\...`)도 Unix absolute path와 같은 `sensitive_path` finding으로 redaction합니다.
+
+문제:
+
+- 기존 path redaction은 `/Users/...`, `/home/...` 같은 Unix-style absolute path만 탐지했습니다.
+- Windows 사용자 이름과 로컬 폴더 구조가 `summary`, `timeline`, `changed_areas` 같은 public field에 남을 수 있었습니다.
+
+계약:
+
+- `C:\Users\Downing\project\src\index.ts` 형태의 drive-letter absolute path는 `[REDACTED_PATH]`로 치환합니다.
+- finding type은 기존 UI/Backend 계약과 같은 `sensitive_path`를 유지합니다.
+
+검증:
+
+- RED/GREEN: `npx vitest run tests/privacy.test.ts --testNamePattern 'Windows absolute'`
+- `npm test -- --run tests/privacy.test.ts tests/cli-share.test.ts tests/api-hook.test.ts tests/open-browser.test.ts`
+- `npm run typecheck`
+- `../agentfeed-dev/scripts/test-all.sh`
+
 ## 관련 링크
 
 - [[AgentFeed Local CLI MVP Spec v0.2#17. Privacy Scanner]]
 - [[Collection System#수집 품질 원칙]]
 - [[Active Tasks#P2 후보]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Windows path redaction]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Unlisted publish privacy gate]]

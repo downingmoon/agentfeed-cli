@@ -259,3 +259,46 @@ created: 2026-05-30
 - `npm run typecheck && npm test`
 
 관련: [[Commercial Readiness Audit 2026-05-30#CLI token / local privacy boundary]]
+
+## 2026-05-30 Trusted proxy rate-limit identity
+
+> [!success]
+> Rate-limit identity는 더 이상 client가 임의로 보낸 forwarding header를 기본 신뢰하지 않습니다.
+
+보안 계약:
+
+- Authorization bearer token / access token cookie가 있으면 기존처럼 token fingerprint bucket을 우선 사용합니다.
+- token이 없는 요청은 기본적으로 socket `request.client.host`를 IP identity로 사용합니다.
+- `X-Forwarded-For` / `X-Real-IP`는 `request.client.host`가 `TRUSTED_PROXY_IPS` allowlist에 포함될 때만 사용합니다.
+- XFF chain은 오른쪽부터 trusted proxy hop을 제거한 뒤 rightmost untrusted IP를 선택합니다.
+- invalid forwarded value는 무시하고 socket client IP로 fallback합니다.
+- `TRUSTED_PROXY_IPS`는 comma-separated IP 또는 CIDR을 지원합니다.
+- 운영 scale-out에서 process-local bucket 한계는 남아 있으므로 shared limiter store는 별도 P1 follow-up입니다.
+
+검증:
+
+- `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q -k 'rate_limit_identity'`
+- `uv run --with pytest --with pytest-asyncio pytest -q` → 89 passed
+
+관련: [[Commercial Readiness Audit 2026-05-30#2026-05-30 backend 운영 보안 추가 루프]]
+
+## 2026-05-30 Backend production environment fail-closed
+
+> [!success]
+> Backend는 `ENVIRONMENT=production` exact match에만 의존하지 않고 non-development 환경을 production-like로 취급합니다.
+
+보안 계약:
+
+- `development`, `dev`, `local`만 development 환경입니다.
+- `prod`, `staging`, 빈 값 등 development가 아닌 값은 production-like로 간주해 secure secret, non-default database URL, GitHub OAuth 값, public HTTPS redirect/frontend/origin을 요구합니다.
+- empty `ALLOWED_ORIGINS`는 production-like 환경에서 실패합니다.
+- public HTTPS URL 검증은 loopback/private IP와 trailing-dot localhost를 거부합니다.
+- `ENVIRONMENT=development`는 localhost/loopback URL만 허용합니다. public URL이 설정되면 명시적으로 production-like environment를 사용해야 합니다.
+- `settings.is_production`은 non-development에서 true가 되어 auth cookie `Secure` flag 같은 runtime policy도 fail-closed 됩니다.
+
+검증:
+
+- `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q -k 'production_settings or development_settings or non_development_settings'`
+- `uv run --with pytest --with pytest-asyncio pytest -q` → 89 passed
+
+관련: [[Commercial Readiness Audit 2026-05-30#2026-05-30 backend 운영 보안 추가 루프]]

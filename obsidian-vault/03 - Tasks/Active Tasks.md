@@ -213,8 +213,9 @@ created: 2026-05-30
 - [x] CLI credential/API base trust boundary, token/path/repository redaction, upload response validation 보강
 - [x] Backend bookmark/search/public source/privacy scan exposure boundary 보강
 - [x] Frontend safe API error, anti-clickjacking headers, production HTTPS API URL gate, review preview/project detail 계약 보강
-- [ ] Backend trusted proxy 기반 rate-limit identity와 shared limiter store 설계/구현
-- [ ] Backend production ENV fail-closed 정책 보강
+- [x] Backend trusted proxy 기반 rate-limit identity 보강
+- [ ] Backend shared limiter store 설계/구현
+- [x] Backend production ENV fail-closed 정책 보강
 - [ ] Frontend Next/PostCSS moderate audit advisory upstream fix 가능 여부 확인
 
 - [x] Backend auth/ingest/social/comment critical path에 최소 per-IP/per-user rate limit 연결

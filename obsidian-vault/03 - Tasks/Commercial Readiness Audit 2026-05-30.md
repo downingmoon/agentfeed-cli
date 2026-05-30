@@ -54,13 +54,24 @@ aliases:
 > [!warning]
 > 이번 루프에서 모두 고치지는 않았지만, 상용화 전 별도 루프가 필요한 항목입니다.
 
-- [ ] Backend rate-limit identity가 untrusted `X-Forwarded-For`를 우선 신뢰하는 문제: trusted proxy allowlist / shared store 필요
-- [ ] Backend production safety가 `ENVIRONMENT=production` exact match에 의존하는 문제: unknown/prod/staging fail-closed 필요
+- [x] Backend rate-limit identity가 untrusted `X-Forwarded-For`를 우선 신뢰하는 문제: trusted proxy allowlist 적용
+- [x] Backend production safety가 `ENVIRONMENT=production` exact match에 의존하는 문제: non-development fail-closed 적용
+- [ ] Backend rate-limit shared store: multi-worker/global quota용 Redis 등 backend 필요
 - [ ] Frontend `npm audit --omit=dev`의 Next/PostCSS moderate advisory: upstream patched version 가능 여부 확인 후 upgrade/mitigation 판단
 - [ ] Backend full Ruff repo-wide cleanup: 현재 patch scope targeted ruff는 통과하나 기존 style noise 존재
 
+## 2026-05-30 backend 운영 보안 추가 루프
+
+- Trusted proxy allowlist 없이는 `X-Forwarded-For` / `X-Real-IP`를 rate-limit identity로 사용하지 않습니다.
+- `TRUSTED_PROXY_IPS`는 comma-separated IP/CIDR allowlist입니다.
+- `ENVIRONMENT=development`는 local URLs만 허용합니다.
+- `prod`, `staging` 등 non-development env는 production-like로 간주해 secure secret/OAuth/frontend/origin 값을 요구합니다.
+
 ## 검증 로그
 
+- Backend 추가 targeted: `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q -k 'production_settings or development_settings or non_development_settings or rate_limit_identity'` → 10 passed
+- Backend full: `uv run --with pytest --with pytest-asyncio pytest -q` → 89 passed
+- Backend targeted ruff: `uv run --with ruff ruff check --select F,I app/config.py app/middleware/rate_limit.py tests/test_contracts.py` → passed
 - CLI: `npm run typecheck && npm test` → 152 passed
 - Backend: `uv run --with pytest --with pytest-asyncio pytest -q` → 84 passed
 - Frontend: `npm run test:contracts && npm run lint` → passed

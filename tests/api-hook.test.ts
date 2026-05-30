@@ -8,6 +8,7 @@ import { createEmptyDraft } from '../src/draft/create.js';
 import { checkApiReachability, checkIngestionToken, createCliAuthSession, draftToIngestRequest, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
 import { browserLogin, waitForCliAuthExchange } from '../src/auth/browser-login.js';
 import { installClaudeCodeHook, uninstallClaudeCodeHook } from '../src/hooks/claude-code-settings.js';
+import { pathExists } from '../src/utils/fs.js';
 
 let dir: string;
 let home: string;
@@ -396,6 +397,15 @@ describe('api client', () => {
 });
 
 describe('Claude Code hook installer', () => {
+  it('does not create settings.json when uninstalling with no existing Claude config', async () => {
+    const settings = join(dir, '.claude', 'settings.json');
+
+    expect(await pathExists(settings)).toBe(false);
+    await uninstallClaudeCodeHook({ projectRoot: dir, settingsPath: settings });
+
+    expect(await pathExists(settings)).toBe(false);
+  });
+
   it('installs Stop hook into empty settings, preserves settings, avoids duplicates, and uninstalls only AgentFeed hook', async () => {
     const settings = join(dir, '.claude', 'settings.json');
     await mkdir(join(dir, '.claude'), { recursive: true });

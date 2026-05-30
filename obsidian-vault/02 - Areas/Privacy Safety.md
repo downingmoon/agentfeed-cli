@@ -114,3 +114,16 @@ Redacted preview:
 - [[Active Tasks#P2 후보]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Windows path redaction]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Unlisted publish privacy gate]]
+
+## 2026-05-30 Social mutation visibility gate
+
+> [!success]
+> Private worklog는 owner가 아닌 사용자가 like/bookmark/report 같은 social mutation으로 접근하거나 notification payload를 유발할 수 없습니다.
+
+보안 계약:
+
+- private worklog social mutation은 comment visibility gate와 같은 기준을 사용합니다.
+- 비소유자는 `NotFoundError`를 받으며, mutation과 notification 생성이 모두 발생하지 않습니다.
+- public/unlisted worklog는 기존 social UX를 유지합니다.
+
+관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 Social mutation visibility gate]]

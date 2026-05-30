@@ -76,7 +76,9 @@ function removeAgentFeedFromHookList(value: unknown): unknown {
 
 export async function uninstallClaudeCodeHook(options: { projectRoot: string; scope?: 'project' | 'global'; settingsPath?: string }) {
   const path = resolveClaudeSettingsPath(options);
+  if (!(await pathExists(path))) return { path, settings: {}, backupPath: null };
   const settings = await readSettings(path);
+  if (!hasAgentFeedHook(settings)) return { path, settings, backupPath: null };
   const backupPath = await backupSettings(options.projectRoot, path);
   if (settings.hooks && typeof settings.hooks === 'object') {
     const hooks = settings.hooks as JsonObj;

@@ -172,3 +172,17 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI credential file permissions]]
 - [[Privacy Safety]]
 - [[Active Tasks#P1 후보]]
+
+## 2026-05-30 OAuth state payload expiry
+
+> [!success]
+> GitHub OAuth state는 cookie lifetime에만 의존하지 않고 signed payload 내부 만료 시간도 검증합니다.
+
+보안 계약:
+
+- state payload에는 `next`, random `nonce`, `exp`가 포함됩니다.
+- query state와 HttpOnly cookie state는 byte-for-byte 일치해야 합니다.
+- HMAC signature가 유효해야 합니다.
+- `exp`가 없거나 현재 시각보다 과거이면 `OAUTH_STATE_INVALID`로 실패합니다.
+
+관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 OAuth state payload expiry]]

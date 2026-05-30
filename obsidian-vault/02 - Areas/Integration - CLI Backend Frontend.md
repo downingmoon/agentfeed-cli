@@ -915,3 +915,90 @@ Frontend 표시:
 
 - `npm run test:contracts`
 - `npx tsc --noEmit --pretty false`
+
+## 2026-05-30 OAuth state payload expiry
+
+> [!success]
+> GitHub OAuth state는 cookie `max_age`뿐 아니라 signed payload 내부 `exp`도 검증합니다.
+
+문제:
+
+- 기존 state는 HMAC signature와 cookie binding은 있었지만 payload 자체에는 만료 시간이 없었습니다.
+- 브라우저나 프록시가 오래된 cookie를 보존하는 경우 stale state가 signature만 맞으면 통과할 수 있었습니다.
+
+수정:
+
+- `_encode_next_state()` payload에 `exp` unix timestamp를 포함합니다.
+- `_decode_next_state()`는 query state, cookie state, signature, payload `exp`를 모두 검증합니다.
+- 만료되었거나 `exp`가 없는 state는 `OAUTH_STATE_INVALID`로 거부합니다.
+
+검증:
+
+- `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q -k oauth_state`
+- `uv run --with ruff ruff check --select I,F app/routers/auth.py app/routers/social.py tests/test_contracts.py`
+- `uv run --with pytest --with pytest-asyncio pytest -q`
+
+## 2026-05-30 Social mutation visibility gate
+
+> [!success]
+> `like`, `unlike`, `bookmark`, `unbookmark`, `report worklog` mutation은 대상 worklog가 현재 사용자에게 visible한지 먼저 검증합니다.
+
+문제:
+
+- 기존 `app/routers/social.py`는 `Like`/`Bookmark` mutation 전에 worklog visibility와 owner를 확인하지 않았습니다.
+- 비소유자가 private worklog id를 알고 있으면 social state를 변경하고, like/bookmark notification payload로 private title이 노출될 수 있었습니다.
+
+수정:
+
+- social router가 worklogs router의 `_get_worklog_or_404()` / `_assert_worklog_visible_to_user()` guard를 재사용합니다.
+- private worklog는 owner가 아니면 social mutation 전에 `NotFoundError`로 차단합니다.
+- notification title은 visibility gate 통과 후에만 사용합니다.
+
+검증:
+
+- `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q -k 'private_worklog_like or private_worklog_bookmark'`
+- `uv run --with ruff ruff check --select I,F app/routers/auth.py app/routers/social.py tests/test_contracts.py`
+- `uv run --with pytest --with pytest-asyncio pytest -q`
+
+## 2026-05-30 CLI hook uninstall no-op
+
+> [!success]
+> `agentfeed hook uninstall claude-code`는 기존 Claude settings file이나 AgentFeed hook이 없으면 config file을 새로 만들거나 rewrite하지 않는 no-op입니다.
+
+문제:
+
+- 기존 uninstall path는 `.claude/settings.json`이 없어도 `{}` 파일을 새로 생성했습니다.
+- 제거 명령이 repository에 예기치 않은 config 파일을 남기면 local UX와 VCS hygiene가 나빠집니다.
+
+수정:
+
+- settings file이 없으면 즉시 `{ backupPath: null }`로 반환합니다.
+- settings file은 있지만 AgentFeed hook이 없으면 backup/write를 생략합니다.
+- 실제 AgentFeed hook이 제거될 때만 backup과 write를 수행합니다.
+
+검증:
+
+- `npx vitest run tests/api-hook.test.ts --testNamePattern 'does not create settings|installs Stop hook'`
+- `npx vitest run tests/api-hook.test.ts`
+- `npm run typecheck`
+
+## 2026-05-30 Frontend comment submit lock
+
+> [!success]
+> Worklog detail comment 작성은 요청 중 중복 제출을 막고, 실패 시 입력값을 보존한 채 오류를 표시합니다.
+
+문제:
+
+- 기존 `WorklogDetailPage.submitComment()`는 pending state와 error UI가 없었습니다.
+- 느린 네트워크에서 “남기기”를 반복 클릭하면 중복 POST가 발생할 수 있고, 실패하면 사용자에게 원인이 보이지 않았습니다.
+
+수정:
+
+- `commentSubmitting` / `commentSubmitError` 상태를 추가했습니다.
+- `canSubmitComment(body, submitting)` 계약 helper를 추가해 blank/pending submit을 차단합니다.
+- 성공 시에만 입력값을 비우고, 실패 시 입력값과 오류 메시지를 유지합니다.
+
+검증:
+
+- `npm run test:contracts`
+- `npx tsc --noEmit --pretty false`

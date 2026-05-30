@@ -84,6 +84,10 @@ created: 2026-05-30
 - [x] Unlisted publish도 unresolved high severity privacy finding 차단
 - [x] GitHub OAuth provider 장애/httpx failure를 raw 500 대신 controlled 503으로 변환
 - [x] CLI duplicate ingestion 409 응답의 `review_url`을 성공 재동기화로 처리
+- [x] GitHub OAuth state payload 내부 만료 시간 검증
+- [x] Private worklog social like/bookmark mutation visibility gate 보강
+- [x] CLI Claude hook uninstall이 missing config를 생성하지 않는 no-op 보장
+- [x] Frontend worklog comment submit 중복 클릭/실패 UX 보강
 
 ## P2 후보
 
@@ -168,3 +172,9 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 GitHub OAuth provider failure contract]]
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI duplicate ingest 409 재동기화]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Frontend unpublish control predicate]]
+- [[Integration - CLI Backend Frontend#2026-05-30 OAuth state payload expiry]]
+- [[Auth & Credential Safety#2026-05-30 OAuth state payload expiry]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Social mutation visibility gate]]
+- [[Privacy Safety#2026-05-30 Social mutation visibility gate]]
+- [[Integration - CLI Backend Frontend#2026-05-30 CLI hook uninstall no-op]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Frontend comment submit lock]]

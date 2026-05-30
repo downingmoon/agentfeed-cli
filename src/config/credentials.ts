@@ -1,7 +1,7 @@
-import { chmod } from 'node:fs/promises';
+import { chmod, mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { AgentFeedCredentials } from '../types.js';
-import { ensureDir, pathExists, readJson, writeJson } from '../utils/fs.js';
+import { pathExists, readJson } from '../utils/fs.js';
 import { resolveApiBaseUrl } from './api-base.js';
 
 export function homeDir(): string {
@@ -16,6 +16,17 @@ export function credentialsPath(): string {
   return join(globalAgentFeedDir(), 'credentials.json');
 }
 
+async function ensurePrivateAgentFeedDir(): Promise<void> {
+  const dir = globalAgentFeedDir();
+  await mkdir(dir, { recursive: true, mode: 0o700 });
+  try { await chmod(dir, 0o700); } catch { /* best-effort on non-POSIX filesystems */ }
+}
+
+async function writePrivateCredentialsFile(credentials: AgentFeedCredentials): Promise<void> {
+  await writeFile(credentialsPath(), `${JSON.stringify(credentials, null, 2)}\n`, { encoding: 'utf8', mode: 0o600 });
+  try { await chmod(credentialsPath(), 0o600); } catch { /* best-effort on non-POSIX filesystems */ }
+}
+
 export async function credentialsFromToken(token: string, options: { apiBaseUrl?: string; user?: AgentFeedCredentials['user'] } = {}): Promise<AgentFeedCredentials> {
   return {
     api_base_url: await resolveApiBaseUrl({ explicitApiBaseUrl: options.apiBaseUrl }),
@@ -27,9 +38,8 @@ export async function credentialsFromToken(token: string, options: { apiBaseUrl?
 
 export async function saveCredentials(token: string, options: { apiBaseUrl?: string; user?: AgentFeedCredentials['user'] } = {}): Promise<AgentFeedCredentials> {
   const credentials = await credentialsFromToken(token, options);
-  await ensureDir(globalAgentFeedDir());
-  await writeJson(credentialsPath(), credentials);
-  try { await chmod(credentialsPath(), 0o600); } catch { /* warn at command layer if needed */ }
+  await ensurePrivateAgentFeedDir();
+  await writePrivateCredentialsFile(credentials);
   return credentials;
 }
 

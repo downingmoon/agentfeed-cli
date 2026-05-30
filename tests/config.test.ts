@@ -1,10 +1,10 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { initProject, loadProjectConfig } from '../src/config/project-config.js';
 import { resolveApiBaseUrl } from '../src/config/api-base.js';
-import { credentialsFromToken, credentialsPath, resolveCredentials } from '../src/config/credentials.js';
+import { credentialsFromToken, credentialsPath, globalAgentFeedDir, resolveCredentials, saveCredentials } from '../src/config/credentials.js';
 import { pathExists } from '../src/utils/fs.js';
 
 let dir: string;
@@ -59,6 +59,17 @@ describe('project config', () => {
       ingestion_token: 'af_live_ephemeral'
     });
     await expect(pathExists(credentialsPath())).resolves.toBe(false);
+  });
+
+  it('saves credentials with private POSIX permissions', async () => {
+    if (process.platform === 'win32') return;
+
+    await saveCredentials('af_live_private', { apiBaseUrl: 'http://localhost:8001/v1' });
+
+    const dirMode = (await stat(globalAgentFeedDir())).mode & 0o777;
+    const fileMode = (await stat(credentialsPath())).mode & 0o777;
+    expect(dirMode).toBe(0o700);
+    expect(fileMode).toBe(0o600);
   });
 
   it('discovers the dev orchestration .env when AGENTFEED_API_BASE_URL is not exported', async () => {

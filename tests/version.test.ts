@@ -4,7 +4,12 @@ import { describe, expect, it } from 'vitest';
 import { createEmptyDraft } from '../src/draft/create.js';
 import { AGENTFEED_CLI_VERSION, AGENTFEED_TOOL_VERSION } from '../src/version.js';
 
-const packageVersion = JSON.parse(readFileSync(resolve('package.json'), 'utf8')).version as string;
+const packageJson = JSON.parse(readFileSync(resolve('package.json'), 'utf8')) as {
+  version: string;
+  scripts?: Record<string, string>;
+  files?: string[];
+};
+const packageVersion = packageJson.version;
 
 describe('CLI version metadata', () => {
   it('uses package.json as the single source for emitted tool metadata', () => {
@@ -15,5 +20,10 @@ describe('CLI version metadata', () => {
       projectRoot: '/tmp/agentfeed-cli',
       source: 'codex'
     }).source.tool_version).toBe(AGENTFEED_TOOL_VERSION);
+  });
+
+  it('builds dist before npm packaging', () => {
+    expect(packageJson.files).toContain('dist');
+    expect(packageJson.scripts?.prepack).toBe('npm run build');
   });
 });

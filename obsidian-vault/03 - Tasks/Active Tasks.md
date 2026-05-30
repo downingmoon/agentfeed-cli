@@ -195,3 +195,15 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 Public surface published-status gate]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Frontend nullable array adapter hardening]]
 - [[Privacy Safety#2026-05-30 Public surface published-status gate]]
+- [x] Backend `allow_comments=false` 설정이 comment create API에서 실제 차단되도록 보강
+- [x] Frontend like/bookmark mutation 중복 클릭 pending lock 보강
+- [[Integration - CLI Backend Frontend#2026-05-30 Comment settings enforcement]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Frontend social mutation pending lock]]
+- [[Privacy Safety#2026-05-30 Comment settings enforcement]]
+
+## 새로 발견한 P1 후보 / 다음 루프
+
+- [ ] Backend auth/ingest/social/comment critical path에 최소 per-IP/per-user rate limit 연결
+- [ ] Soft-deleted project가 public worklog card/detail/search/feed/explore에 metadata로 노출되지 않도록 shared project fetch helper 적용
+- [ ] `show_token_usage_publicly`, `show_estimated_cost_publicly`, file/line/test metric privacy setting을 public card/detail/stats 응답에 적용
+- [ ] Frontend OAuth `next` query allowlist와 runtime API config failure UI 보강

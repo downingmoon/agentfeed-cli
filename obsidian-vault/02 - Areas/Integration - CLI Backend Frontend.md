@@ -1153,3 +1153,47 @@ Frontend 표시:
 - `npm run test:contracts`
 - `npx tsc --noEmit --pretty false`
 - `../agentfeed-dev/scripts/test-all.sh`
+
+## 2026-05-30 Comment settings enforcement
+
+> [!success]
+> Backend now enforces the author's `allow_comments` privacy setting before creating a new comment.
+
+문제:
+
+- `UserSettings.allow_comments`는 저장/조회/수정 API에 존재했지만 `POST /worklogs/{id}/comments`에서 확인하지 않았습니다.
+- 작성자가 댓글을 끄더라도 인증 사용자가 공개 worklog에 계속 댓글을 만들 수 있어 privacy setting과 실제 API 동작이 어긋났습니다.
+
+수정:
+
+- `create_comment()`가 visibility gate 이후 `_assert_comments_allowed()`를 호출합니다.
+- 작성자 본인은 자기 worklog에 follow-up comment를 남길 수 있고, 비작성자는 작성자 설정이 `allow_comments=false`이면 `403 Forbidden`을 받습니다.
+- 실패 시 comment row, notification side effect, commit이 발생하지 않습니다.
+
+검증:
+
+- `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q -k 'allow_comments or private_worklog_comments_are_not_creatable'`
+- `uv run --with ruff ruff check --select I,F app/routers/worklogs.py tests/test_contracts.py`
+- `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q`
+
+## 2026-05-30 Frontend social mutation pending lock
+
+> [!success]
+> Like/bookmark controls now ignore re-entrant clicks while the previous mutation is in flight.
+
+문제:
+
+- Worklog cards와 detail page의 like/bookmark 버튼은 optimistic update를 했지만 pending guard가 없었습니다.
+- 사용자가 빠르게 두 번 누르면 같은 worklog에 중복 mutation이 전송되어 count가 튀거나 네트워크 지터 상황에서 UI 상태가 흔들릴 수 있었습니다.
+
+수정:
+
+- `AppContext`가 worklog id별 `likePending` / `bookmarkPending` state와 ref-backed in-flight guard를 유지합니다.
+- 카드 A/B/C, feed/search/explore/profile/project/detail surface가 pending 값을 전달하거나 버튼을 disable합니다.
+- 실패 시 기존 optimistic rollback은 유지하고, 완료 시 pending state를 해제합니다.
+
+검증:
+
+- `npm run test:contracts`
+- `npx tsc --noEmit --pretty false`
+- `NEXT_PUBLIC_API_URL=http://localhost:8001/v1 npm run build`

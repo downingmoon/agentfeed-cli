@@ -76,5 +76,7 @@ graph LR
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI integration test build lock|CLI integration test build lock]]
 - [[Privacy Safety#2026-05-30 Public surface published-status gate|Public published-status gate]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Frontend nullable array adapter hardening|Frontend nullable arrays]]
+- [[Privacy Safety#2026-05-30 Comment settings enforcement|Comment settings enforcement]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Frontend social mutation pending lock|Social mutation pending lock]]
 - [[Integration - CLI Backend Frontend#End-to-end 흐름|End-to-end 흐름]]
 - [[Active Tasks#P1 후보|P1 후보]]

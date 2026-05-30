@@ -167,3 +167,16 @@ Redacted preview:
 관련 링크:
 
 - [[Integration - CLI Backend Frontend#2026-05-30 Public surface published-status gate]]
+
+## 2026-05-30 Comment settings enforcement
+
+> [!success]
+> 작성자가 댓글을 비활성화하면 비작성자는 더 이상 해당 worklog에 새 comment를 만들 수 없습니다.
+
+보안/프라이버시 계약:
+
+- `allow_comments=false`는 public/unlisted visibility와 별개로 comment creation을 막습니다.
+- 작성자는 자기 worklog에 follow-up을 남길 수 있습니다.
+- 차단된 요청은 `403 Forbidden`으로 종료되고 comment/notification side effect를 남기지 않습니다.
+
+관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 Comment settings enforcement]]

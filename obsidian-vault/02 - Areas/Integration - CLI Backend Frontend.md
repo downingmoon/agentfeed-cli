@@ -67,6 +67,33 @@ sequenceDiagram
 > [!note]
 > Frontend repo에는 아직 별도 test runner dependency가 없으므로, 새 dependency 추가 없이 TypeScript/Next build gate로 검증했습니다.
 
+## 2026-05-30 Backend production env fail-fast
+
+> [!success]
+> `ENVIRONMENT=production`일 때 Backend가 weak/default secret, localhost OAuth callback/frontend/origin, 누락된 GitHub OAuth 값을 조용히 받아들이지 않도록 fail-fast validation을 추가했습니다.
+
+문제:
+
+- 기존 Backend 설정은 production에서도 기본 `SECRET_KEY`, localhost `GITHUB_REDIRECT_URI`, localhost `FRONTEND_URL`, localhost `ALLOWED_ORIGINS`, 빈 GitHub OAuth 값을 그대로 허용할 수 있었습니다.
+- 이 상태로 배포되면 로그인/OAuth flow가 깨지거나 JWT signing secret이 기본값으로 남는 운영 사고가 가능합니다.
+
+수정:
+
+- `Settings` model validation에서 production일 때 다음을 강제합니다.
+  - `SECRET_KEY`: 기본값 금지, 최소 32자
+  - `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`: non-empty
+  - `GITHUB_REDIRECT_URI` / `FRONTEND_URL` / `ALLOWED_ORIGINS`: public `https` URL, localhost 금지
+- development 기본값은 로컬 구동 편의성을 위해 유지합니다.
+
+검증:
+
+- production secure config accept 회귀 테스트
+- default secret reject 회귀 테스트
+- localhost OAuth/frontend/origin reject 회귀 테스트
+- missing GitHub OAuth value reject 회귀 테스트
+- `uv run --with pytest --with pytest-asyncio pytest -q`
+- `uv run --with ruff ruff check --select I,F app/config.py tests/test_contracts.py`
+
 ## 2026-05-30 Backend provider token at-rest 보호
 
 > [!success]

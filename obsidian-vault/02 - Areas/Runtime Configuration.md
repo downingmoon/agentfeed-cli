@@ -245,3 +245,23 @@ created: 2026-05-30
 - `../agentfeed-dev/scripts/smoke-e2e.sh`
 
 관련 구현: [[Commercial Readiness Hardening - Token Expiry Provenance and Feed UX 2026-05-30]]
+
+## 2026-05-30 CLI token expiry visibility
+
+> [!success]
+> CLI는 저장 credential과 remote token status를 구분해 token expiry를 설명합니다.
+
+계약:
+
+- browser login으로 받은 `token_expires_at`은 저장 credential에 보존합니다.
+- `AGENTFEED_TOKEN` 환경변수 token은 저장 파일의 expiry를 상속하지 않습니다.
+- `agentfeed status`는 local saved expiry만 표시하므로 network call 없이 빠르게 동작합니다.
+- `agentfeed doctor`는 `/v1/ingest/status` remote metadata를 우선해 실제 서버 기준 만료/임박 경고를 표시합니다.
+- raw token은 status/doctor/login output에 출력하지 않습니다.
+
+검증:
+
+- `npm run build && npm test -- --run tests/api-hook.test.ts tests/cli-status-doctor.test.ts tests/config.test.ts && npm run typecheck`
+- `../agentfeed-dev/scripts/test-all.sh`
+
+관련 구현: [[Commercial Readiness Hardening - Token Lifecycle and Settings Surface 2026-05-30]]

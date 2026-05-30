@@ -213,6 +213,20 @@ created: 2026-05-30
 
 관련 구현: [[Commercial Readiness Hardening - Token Quotas Privacy Tags and Card Actions 2026-05-30]]
 
+## 2026-05-30 Ingestion token lifecycle status
+
+> [!success]
+> Ingestion token expiry 정책이 CLI와 Frontend에 보이는 lifecycle metadata 계약으로 확장되었습니다.
+
+계약:
+
+- `GET /v1/ingest/status`는 인증된 `af_live_...` token의 `id`, `name`, `created_at`, `last_used_at`, `expires_at`, `expires_in_seconds`, `expiring_soon`을 반환합니다.
+- `POST /v1/auth/cli/sessions/{id}/exchange`는 one-time raw token과 함께 `token_expires_at`을 반환합니다.
+- status/list/revoke response는 raw token secret을 포함하지 않습니다.
+- `/v1/me/ingestion-tokens` create/list/delete는 response model로 계약을 고정합니다.
+
+관련 구현: [[Commercial Readiness Hardening - Token Lifecycle and Settings Surface 2026-05-30]]
+
 ## 관련 링크
 
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI ephemeral login --no-save]]
@@ -225,6 +239,7 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 Backend critical path rate-limit]]
 - [[Commercial Readiness Hardening - Auth Maintenance and Rendered Smoke 2026-05-30]]
 - [[Commercial Readiness Hardening - Token Quotas Privacy Tags and Card Actions 2026-05-30]]
+- [[Commercial Readiness Hardening - Token Lifecycle and Settings Surface 2026-05-30]]
 - [[Privacy Safety]]
 - [[Active Tasks#P1 후보]]
 

@@ -225,13 +225,26 @@ describe('api client', () => {
     expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/health', expect.objectContaining({ method: 'GET' }));
   });
 
-  it('checks ingestion token validity without uploading a draft', async () => {
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ data: { ok: true } }), { status: 200, headers: { 'content-type': 'application/json' } }));
+  it('checks ingestion token validity without uploading a draft and parses lifecycle metadata', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      data: {
+        ok: true,
+        token: {
+          id: 'token-1',
+          name: 'CLI: MacBook',
+          expires_at: '2026-06-15T00:00:00Z',
+          expires_in_seconds: 1_000_000,
+          expiring_soon: false
+        }
+      }
+    }), { status: 200, headers: { 'content-type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchMock);
 
     const result = await checkIngestionToken({ ingestion_token: 'af_live_test', api_base_url: 'http://localhost:8001/v1', created_at: 'now' });
 
     expect(result).toMatchObject({ ok: true, status: 200, url: 'http://localhost:8001/v1/ingest/status' });
+    expect(result.data?.token?.expires_at).toBe('2026-06-15T00:00:00Z');
+    expect(result.data?.token?.expiring_soon).toBe(false);
     expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/v1/ingest/status', expect.objectContaining({
       method: 'GET',
       headers: { authorization: 'Bearer af_live_test' }
@@ -263,6 +276,7 @@ describe('api client', () => {
       return new Response(JSON.stringify({
         data: {
           token: 'af_live_test',
+          token_expires_at: '2026-06-15T00:00:00Z',
           user: { id: 'user-1', username: 'downingmoon' }
         }
       }), { status: 200, headers: { 'content-type': 'application/json' } });
@@ -274,6 +288,7 @@ describe('api client', () => {
 
     expect(session.authorize_url).toContain('/cli/authorize');
     expect(exchange.token).toBe('af_live_test');
+    expect(exchange.token_expires_at).toBe('2026-06-15T00:00:00Z');
     expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.agentfeed.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
     expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://api.agentfeed.dev/v1/auth/cli/sessions/session-1/exchange', expect.objectContaining({ method: 'POST' }));
   });
@@ -391,6 +406,7 @@ describe('api client', () => {
         return new Response(JSON.stringify({
           data: {
             token: 'af_live_no_open',
+            token_expires_at: '2026-06-15T00:00:00Z',
             user: { id: 'user-no-open', username: 'cli-user' }
           }
         }), { status: 200, headers: { 'content-type': 'application/json' } });
@@ -405,6 +421,7 @@ describe('api client', () => {
     expect(creds).toMatchObject({
       api_base_url: 'https://api.agentfeed.dev/v1',
       ingestion_token: 'af_live_no_open',
+      token_expires_at: '2026-06-15T00:00:00Z',
       user: { id: 'user-no-open', username: 'cli-user' }
     });
     expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.agentfeed.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
@@ -412,6 +429,7 @@ describe('api client', () => {
     await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8').then(JSON.parse)).resolves.toMatchObject({
       api_base_url: 'https://api.agentfeed.dev/v1',
       ingestion_token: 'af_live_no_open',
+      token_expires_at: '2026-06-15T00:00:00Z',
       user: { id: 'user-no-open', username: 'cli-user' }
     });
   });
@@ -433,6 +451,7 @@ describe('api client', () => {
         return new Response(JSON.stringify({
           data: {
             token: 'af_live_ephemeral',
+            token_expires_at: '2026-06-15T00:00:00Z',
             user: { id: 'user-ephemeral', username: 'no-save-user' }
           }
         }), { status: 200, headers: { 'content-type': 'application/json' } });
@@ -447,6 +466,7 @@ describe('api client', () => {
     expect(creds).toMatchObject({
       api_base_url: 'https://api.agentfeed.dev/v1',
       ingestion_token: 'af_live_ephemeral',
+      token_expires_at: '2026-06-15T00:00:00Z',
       user: { id: 'user-ephemeral', username: 'no-save-user' }
     });
     await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });

@@ -221,6 +221,11 @@ created: 2026-05-30
 
 ### 다음 하드닝 후보
 
+- [x] Backend `/v1/ingest/status` token lifecycle metadata response model 보강
+- [x] CLI `login`/`status`/`doctor` token expiry 저장/표시/임박 경고 보강
+- [x] Frontend signed-in `/settings` token/integration/settings surface 추가
+- [[Commercial Readiness Hardening - Token Lifecycle and Settings Surface 2026-05-30]]
+
 - [x] Backend ingestion token expiry / invalidation policy와 migration 설계
 - [x] Frontend share failure toast/error feedback
 - [x] Frontend feed filter URL sync

@@ -48,6 +48,26 @@ function apiBaseSourceLabel(source: ApiBaseUrlSource, detail?: string): string {
   }
 }
 
+function formatTokenExpiry(expiresAt: string): string {
+  const expires = Date.parse(expiresAt);
+  if (!Number.isFinite(expires)) return expiresAt;
+  const deltaMs = expires - Date.now();
+  const absMs = Math.abs(deltaMs);
+  const days = Math.floor(absMs / 86_400_000);
+  const hours = Math.floor((absMs % 86_400_000) / 3_600_000);
+  const relative = deltaMs < 0 ? `expired ${days}d ${hours}h ago` : `in ${days}d ${hours}h`;
+  return `${new Date(expires).toISOString()} (${relative})`;
+}
+
+function tokenExpiryWarning(expiresAt?: string | null, expiringSoon?: boolean): string | null {
+  if (!expiresAt) return null;
+  const expires = Date.parse(expiresAt);
+  if (!Number.isFinite(expires)) return null;
+  if (expires <= Date.now()) return 'ingestion token is expired. Run: agentfeed login';
+  if (expiringSoon || expires - Date.now() <= 7 * 86_400_000) return 'ingestion token expires soon. Run: agentfeed login to rotate this device token.';
+  return null;
+}
+
 async function sanitizeDraftForCliOutput(cwd: string, draft: LocalDraft): Promise<LocalDraft> {
   scanAndRedactDraftPublicFields(draft);
   await writeDraft(cwd, draft);
@@ -136,6 +156,7 @@ async function cmdLogin(args: string[]) {
     const creds = await browserLogin({ apiBaseUrl, noOpen: flag(args, '--no-open'), save: !noSave });
     print(noSave ? '\nAgentFeed browser login complete (not saved).\n' : '\nAgentFeed browser login complete.\n');
     print(`API: ${creds.api_base_url}`);
+    if (creds.token_expires_at) print(`Token expires at: ${formatTokenExpiry(creds.token_expires_at)}`);
     print(noSave
       ? 'No credentials file was written. Future commands need AGENTFEED_TOKEN or a saved login.'
       : 'Next:\n  agentfeed status');
@@ -144,6 +165,7 @@ async function cmdLogin(args: string[]) {
   const creds = noSave ? await credentialsFromToken(token, { apiBaseUrl }) : await saveCredentials(token, { apiBaseUrl });
   print(noSave ? 'AgentFeed token loaded for this command only (not saved).\n' : 'AgentFeed credentials saved.\n');
   print(`API: ${creds.api_base_url}`);
+  if (creds.token_expires_at) print(`Token expires at: ${formatTokenExpiry(creds.token_expires_at)}`);
   print(noSave
     ? 'No credentials file was written. Future commands need AGENTFEED_TOKEN or a saved login.'
     : 'Next:\n  agentfeed status');
@@ -165,6 +187,11 @@ async function cmdStatus() {
   print(`API base URL: ${credentialResolution.api_base_url ?? creds?.api_base_url ?? await resolveApiBaseUrl()}`);
   if (credentialResolution.api_base_url_source) {
     print(`API base URL source: ${apiBaseSourceLabel(credentialResolution.api_base_url_source, credentialResolution.api_base_url_source_detail)}`);
+  }
+  if (creds?.token_expires_at) {
+    print(`Token expires at: ${formatTokenExpiry(creds.token_expires_at)}`);
+    const warning = tokenExpiryWarning(creds.token_expires_at);
+    if (warning) print(`Warning: ${warning}`);
   }
   for (const warning of credentialResolution.warnings) print(`Warning: ${warning}`);
   print(`Project initialized: ${config ? 'yes' : 'no'}`);
@@ -355,17 +382,23 @@ async function cmdDoctor() {
     )
   ]);
   checks.push(['API reachable', apiReachability.ok ? `yes (${apiReachability.status})` : `no (${apiReachability.status ?? apiReachability.error ?? 'unreachable'})`]);
+  const tokenWarnings: string[] = [];
   if (creds?.ingestion_token) {
     const tokenCheck = await checkIngestionToken(creds);
     checks.push(['ingestion token valid', tokenCheck.ok ? `yes (${tokenCheck.status})` : `no (${tokenCheck.status ?? tokenCheck.error ?? 'unreachable'})`]);
+    const expiresAt = tokenCheck.data?.token?.expires_at ?? creds.token_expires_at ?? null;
+    checks.push(['ingestion token expires at', expiresAt ? formatTokenExpiry(expiresAt) : 'unknown']);
+    const warning = tokenExpiryWarning(expiresAt, tokenCheck.data?.token?.expiring_soon);
+    if (warning) tokenWarnings.push(warning);
   } else {
     checks.push(['ingestion token valid', 'skipped']);
+    checks.push(['ingestion token expires at', 'unknown']);
   }
   try { await loadProjectConfig(process.cwd()); checks.push(['project config valid', 'yes']); } catch { checks.push(['project config valid', 'no']); }
   const git = await collectGitMetrics(process.cwd());
   checks.push(['current directory is git repository', git.branch || git.head_commit ? 'yes' : 'no']);
   for (const [name, value] of checks) print(`${name}: ${value}`);
-  for (const warning of [...credentialResolution.warnings, ...(apiResolution?.warnings ?? [])]) print(`Warning: ${warning}`);
+  for (const warning of [...credentialResolution.warnings, ...(apiResolution?.warnings ?? []), ...tokenWarnings]) print(`Warning: ${warning}`);
   print();
   for (const line of formatAgentSignalLines(await detectAgentSignals({ cwd: process.cwd() }))) print(line);
 }

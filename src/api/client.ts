@@ -16,6 +16,7 @@ export interface ApiCheckResult {
   url: string;
   status?: number;
   error?: string;
+  data?: IngestionTokenStatus;
 }
 
 const DEFAULT_API_REQUEST_TIMEOUT_MS = 30_000;
@@ -37,12 +38,37 @@ function healthUrl(apiBaseUrl: string): string {
   return url.toString();
 }
 
+export interface IngestionTokenStatus {
+  ok?: boolean;
+  user?: { id?: string; username?: string | null; display_name?: string | null };
+  token?: {
+    id?: string;
+    name?: string;
+    created_at?: string;
+    last_used_at?: string | null;
+    expires_at?: string;
+    expires_in_seconds?: number;
+    expiring_soon?: boolean;
+  };
+}
+
+async function parseCheckData(response: Response): Promise<IngestionTokenStatus | undefined> {
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.includes('application/json')) return undefined;
+  try {
+    const parsed = await response.json() as { data?: IngestionTokenStatus };
+    return parsed.data;
+  } catch {
+    return undefined;
+  }
+}
+
 async function fetchCheck(url: string, init: RequestInit): Promise<ApiCheckResult> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 3000);
   try {
     const response = await fetch(url, { ...init, signal: controller.signal });
-    return { ok: response.ok, url, status: response.status };
+    return { ok: response.ok, url, status: response.status, data: await parseCheckData(response) };
   } catch (error) {
     return { ok: false, url, error: error instanceof Error ? error.message : String(error) };
   } finally {

@@ -55,6 +55,7 @@ export interface AgentFeedProjectConfig {
 export interface AgentFeedCredentials {
   api_base_url: string;
   ingestion_token: string;
+  token_expires_at?: string | null;
   user?: { id?: string; username?: string | null; display_name?: string | null };
   created_at: string;
 }
@@ -68,6 +69,7 @@ export interface CliAuthSession {
 
 export interface CliAuthExchangeResult {
   token: string;
+  token_expires_at?: string | null;
   user?: { id?: string; username?: string | null; display_name?: string | null };
 }
 

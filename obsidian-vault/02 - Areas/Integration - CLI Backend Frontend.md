@@ -1550,3 +1550,24 @@ Frontend 표시:
 - `../agentfeed-dev/scripts/smoke-e2e.sh`
 
 관련 구현: [[Commercial Readiness Hardening - Token Expiry Provenance and Feed UX 2026-05-30]]
+
+## 2026-05-30 Frontend settings/token surface
+
+> [!success]
+> Backend에 있던 settings/integration/token API가 signed-in Frontend `/settings` 화면으로 연결되었습니다.
+
+계약:
+
+- Header signed-in nav는 `/settings`를 노출합니다.
+- `/settings`는 `me.settings()`, `me.integrations()`, `me.ingestionTokens()`를 함께 조회합니다.
+- token list는 secret 없이 metadata만 표시하고, revoke는 `DELETE /v1/me/ingestion-tokens/{id}`를 호출합니다.
+- privacy/notification toggles는 기존 settings update API를 사용합니다.
+- OAuth `next` allowlist는 `/settings`를 허용하되 unsafe query/path는 계속 제거합니다.
+
+검증:
+
+- `npm run test:contracts && npm run lint`
+- `NEXT_PUBLIC_API_URL=https://api.agentfeed.dev npm run build`
+- `../agentfeed-dev/scripts/test-all.sh && ../agentfeed-dev/scripts/smoke-e2e.sh`
+
+관련 구현: [[Commercial Readiness Hardening - Token Lifecycle and Settings Surface 2026-05-30]]

@@ -49,16 +49,17 @@ async function writePrivateCredentialsFile(credentials: AgentFeedCredentials): P
   try { await chmod(credentialsPath(), 0o600); } catch { /* best-effort on non-POSIX filesystems */ }
 }
 
-export async function credentialsFromToken(token: string, options: { apiBaseUrl?: string; user?: AgentFeedCredentials['user'] } = {}): Promise<AgentFeedCredentials> {
+export async function credentialsFromToken(token: string, options: { apiBaseUrl?: string; user?: AgentFeedCredentials['user']; tokenExpiresAt?: string | null } = {}): Promise<AgentFeedCredentials> {
   return {
     api_base_url: await resolveApiBaseUrl({ explicitApiBaseUrl: options.apiBaseUrl }),
     ingestion_token: token,
+    token_expires_at: options.tokenExpiresAt ?? null,
     user: options.user,
     created_at: new Date().toISOString()
   };
 }
 
-export async function saveCredentials(token: string, options: { apiBaseUrl?: string; user?: AgentFeedCredentials['user'] } = {}): Promise<AgentFeedCredentials> {
+export async function saveCredentials(token: string, options: { apiBaseUrl?: string; user?: AgentFeedCredentials['user']; tokenExpiresAt?: string | null } = {}): Promise<AgentFeedCredentials> {
   const credentials = await credentialsFromToken(token, options);
   await ensurePrivateAgentFeedDir();
   await writePrivateCredentialsFile(credentials);
@@ -73,9 +74,11 @@ export async function resolveCredentials(base: AgentFeedCredentials | null): Pro
   const token = process.env.AGENTFEED_TOKEN || base?.ingestion_token;
   if (!token) throw new Error('AgentFeed token is missing. Run: agentfeed login --token <token>');
   const apiBaseUrl = await resolveApiBaseUrl({ storedApiBaseUrl: base?.api_base_url });
+  const tokenExpiresAt = process.env.AGENTFEED_TOKEN ? null : base?.token_expires_at ?? null;
   return {
     api_base_url: apiBaseUrl,
     ingestion_token: token,
+    token_expires_at: tokenExpiresAt,
     user: base?.user,
     created_at: base?.created_at || new Date().toISOString()
   };
@@ -93,6 +96,7 @@ export async function loadCredentialsWithMetadata(options: { cwd?: string } = {}
       : 'missing';
 
   const api = await resolveApiBaseUrlWithMetadata({ cwd: options.cwd, storedApiBaseUrl: base?.api_base_url });
+  const tokenExpiresAt = process.env.AGENTFEED_TOKEN ? null : base?.token_expires_at ?? null;
   if (!token) {
     return {
       credentials: null,
@@ -110,6 +114,7 @@ export async function loadCredentialsWithMetadata(options: { cwd?: string } = {}
     credentials: {
       api_base_url: api.value,
       ingestion_token: token,
+      token_expires_at: tokenExpiresAt,
       user: base?.user,
       created_at: base?.created_at || new Date().toISOString()
     },

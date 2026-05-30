@@ -57,6 +57,6 @@ export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: bool
   if (input.isTTY) output.write('Keep this command running; no Enter key is required.\n');
 
   const exchange = await waitForCliAuthExchange({ apiBaseUrl, session, verifier, waitMs: options.waitMs });
-  if (options.save === false) return credentialsFromToken(exchange.token, { apiBaseUrl, user: exchange.user });
-  return saveCredentials(exchange.token, { apiBaseUrl, user: exchange.user });
+  if (options.save === false) return credentialsFromToken(exchange.token, { apiBaseUrl, user: exchange.user, tokenExpiresAt: exchange.token_expires_at });
+  return saveCredentials(exchange.token, { apiBaseUrl, user: exchange.user, tokenExpiresAt: exchange.token_expires_at });
 }

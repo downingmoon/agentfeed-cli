@@ -42,6 +42,7 @@ graph LR
 - [[Commercial Readiness Hardening - Card Capabilities Rate Limits and Dry Run Safety 2026-05-30]]
 
 - [[Commercial Readiness Hardening - Token Expiry Provenance and Feed UX 2026-05-30]]
+- [[Commercial Readiness Hardening - Token Lifecycle and Settings Surface 2026-05-30]]
 - [[Collection System]]
 - [[Privacy Safety]]
 - [[Auth & Credential Safety]]
@@ -79,6 +80,9 @@ graph LR
 - [[Integration - CLI Backend Frontend#2026-05-30 Unlisted publish privacy gate|Unlisted publish privacy gate]]
 - [[Integration - CLI Backend Frontend#2026-05-30 GitHub OAuth provider failure contract|GitHub OAuth provider 503]]
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI duplicate ingest 409 재동기화|CLI duplicate ingest resync]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Frontend settings/token surface|Frontend settings/token surface]]
+- [[Runtime Configuration#2026-05-30 CLI token expiry visibility|CLI token expiry visibility]]
+- [[Auth & Credential Safety#2026-05-30 Ingestion token lifecycle status|Ingestion token lifecycle status]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Frontend unpublish control predicate|Frontend unpublish predicate]]
 - [[Auth & Credential Safety#2026-05-30 OAuth state payload expiry|OAuth state expiry]]
 - [[Privacy Safety#2026-05-30 Social mutation visibility gate|Social mutation visibility gate]]

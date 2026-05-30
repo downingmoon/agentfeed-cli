@@ -52,9 +52,37 @@ created: 2026-05-30
 > [!warning]
 > `--no-save`는 token을 출력하지 않습니다. 보안상 브라우저 교환 결과 token을 터미널에 노출하지 않으며, ephemeral 사용이 필요하면 `AGENTFEED_TOKEN` 환경변수를 사용합니다.
 
+## 2026-05-30 GitHub OAuth state CSRF protection
+
+> [!success]
+> Backend GitHub OAuth login은 이제 signed state와 HttpOnly cookie를 함께 검증한 뒤에만 GitHub token exchange를 진행합니다.
+
+### 계약
+
+- `/v1/auth/github`는 매 요청마다 random nonce를 포함한 state를 생성합니다.
+- state payload는 Backend `SECRET_KEY` 기반 HMAC으로 서명합니다.
+- 같은 state 값을 `agentfeed_oauth_state` HttpOnly cookie에도 저장합니다.
+- `/v1/auth/github/callback`은 query `state`와 cookie state가 일치하고 signature가 유효한 경우에만 `next` path를 복원합니다.
+- state 검증 실패 시 GitHub code/token exchange를 시작하지 않습니다.
+- callback 성공 후 OAuth state cookie는 삭제합니다.
+
+### 검증
+
+- RED: invalid state callback 테스트가 기존 구현에서 GitHub token exchange를 먼저 호출해 실패
+- GREEN:
+  - `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q -k 'oauth_state or github_login_sets or invalid_oauth_state'`
+  - `uv run --with pytest --with pytest-asyncio pytest -q`
+  - `uv run --with ruff ruff check --select I,F app/routers/auth.py tests/test_contracts.py`
+- 통합 gate:
+  - `../agentfeed-dev/scripts/test-all.sh`
+
+> [!warning]
+> 이 변경은 배포 중 이미 시작된 GitHub OAuth redirect에는 영향을 줄 수 있습니다. 새 login 시작부터는 state cookie가 발급되므로 정상 동작합니다.
+
 ## 관련 링크
 
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI ephemeral login --no-save]]
+- [[Integration - CLI Backend Frontend#2026-05-30 GitHub OAuth state CSRF protection]]
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI login/token smoke 계약]]
 - [[Privacy Safety]]
 - [[Active Tasks#P1 후보]]

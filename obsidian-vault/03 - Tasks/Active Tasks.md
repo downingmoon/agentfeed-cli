@@ -68,6 +68,7 @@ created: 2026-05-30
 - [x] Landing placeholder footer/comment/share controls를 실제 route/action으로 연결
 - [x] CLI login `--no-save`로 token/browser credential file 미저장 경로 보장
 - [x] Frontend `NEXT_PUBLIC_API_URL` `/v1` 중복/trailing slash/malformed 설정 방어
+- [x] Backend GitHub OAuth state를 signed+cookie-bound로 검증해 login CSRF 방어
 
 ## P2 후보
 
@@ -110,6 +111,7 @@ created: 2026-05-30
 - [[Privacy Safety#2026-05-30 Upload-time privacy re-scan]]
 - [[Auth & Credential Safety#2026-05-30 CLI ephemeral login --no-save]]
 - [[Runtime Configuration#2026-05-30 Frontend API URL normalization]]
+- [[Auth & Credential Safety#2026-05-30 GitHub OAuth state CSRF protection]]
 - [[Collection System#2026-05-30 Generic until-window timestamp-less evidence 보정]]
 - [[Collection System#2026-05-30 Agent window timestamp-less evidence 보정]]
 - [[Collection System#2026-05-30 Codex failed spawn_agent 보정]]

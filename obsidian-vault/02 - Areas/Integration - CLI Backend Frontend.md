@@ -229,6 +229,26 @@ sequenceDiagram
 - `npm run build`
 - `../agentfeed-dev/scripts/test-all.sh`
 
+## 2026-05-30 GitHub OAuth state CSRF protection
+
+> [!success]
+> GitHub OAuth login/callback이 signed state와 HttpOnly cookie를 함께 검증하도록 Backend auth 계약을 강화했습니다. 자세한 보안 계약은 [[Auth & Credential Safety#2026-05-30 GitHub OAuth state CSRF protection]]에 정리합니다.
+
+계약:
+
+- `/v1/auth/github`는 `state` query와 `agentfeed_oauth_state` cookie를 같이 발급합니다.
+- state는 `next` path와 random nonce를 포함하고 `SECRET_KEY` HMAC signature로 보호됩니다.
+- callback은 query state와 cookie state가 모두 존재하고 일치하며 signature가 유효해야 진행합니다.
+- invalid/missing/tampered state는 `OAUTH_STATE_INVALID`로 실패합니다.
+- state 검증은 GitHub token exchange보다 먼저 실행됩니다.
+
+검증:
+
+- `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q -k 'oauth_state or github_login_sets or invalid_oauth_state'`
+- `uv run --with pytest --with pytest-asyncio pytest -q`
+- `uv run --with ruff ruff check --select I,F app/routers/auth.py tests/test_contracts.py`
+- `../agentfeed-dev/scripts/test-all.sh`
+
 ## 관련 원본
 
 - [[Cross Repo Integration Fixes#목표 end-to-end 흐름]]

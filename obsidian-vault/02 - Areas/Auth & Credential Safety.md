@@ -473,3 +473,14 @@ created: 2026-05-30
 - trust gate warning은 source detail을 포함하되 token 값은 노출하지 않습니다.
 
 관련 구현: [[Commercial Readiness Hardening - Discovery Rate Limits URL Safety and Adapter Resilience 2026-05-31]]
+
+## 2026-05-31 Browser login opener timeout
+
+> [!success]
+> CLI browser login은 opener 실행 전에 authorize URL을 먼저 출력하고, opener process가 닫히지 않는 환경에서도 timeout 후 수동-open 안내를 제공합니다.
+
+- `openBrowser()`는 child process를 unref하되 timeout timer로 최대 대기 시간을 제한합니다.
+- `agentfeed login`/`rotate --browser`의 핵심 복구 경로는 “명령을 유지하고 URL을 브라우저에 붙여넣기”입니다.
+- 검증: `npm test -- --run tests/open-browser.test.ts tests/cli-share.test.ts`, `npm run typecheck && npm test -- --run`
+
+관련: [[Commercial Readiness Hardening - Browser Login API Bounds and Security Headers 2026-05-31]]

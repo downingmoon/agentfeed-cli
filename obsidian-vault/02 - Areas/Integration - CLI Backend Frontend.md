@@ -1671,3 +1671,15 @@ API/UX 정합성:
 - Frontend list adapters는 malformed API row를 drop하고 valid rows를 유지합니다.
 
 검증: [[Commercial Readiness Hardening - Discovery Rate Limits URL Safety and Adapter Resilience 2026-05-31#검증 결과]]
+
+## 2026-05-31 Browser login API bounds security headers
+
+> [!note]
+> 이번 루프는 onboarding reliability, frontend runtime failure boundary, backend data-integrity contract를 함께 닫은 상용화 hardening입니다.
+
+- CLI `publish --json` output shape: `{ draft_id, upload }`.
+- Publish clipboard behavior now matches share unless `--no-clipboard` is set.
+- Frontend auth state can recover from API 401 after initial page load.
+- Backend no longer advertises unimplemented `team` visibility in write schemas; persisted values are constrained at DB level.
+
+관련: [[Commercial Readiness Hardening - Browser Login API Bounds and Security Headers 2026-05-31]]

@@ -339,3 +339,15 @@ created: 2026-05-30
 - [x] CLI `AGENTFEED_TOKEN` rotation 실패 안내를 shell/secret manager remediation 중심으로 보강
 - [[Commercial Readiness Hardening - Leaderboard Pagination Slug Uniqueness Env Token UX 2026-05-30]]
 - [[Commercial Readiness Hardening - Unpublish Command Trust and Feed Follow Auth 2026-05-30]]
+
+## 2026-05-31 P1 hardening continuation
+
+- [x] CLI browser opener hang 시 authorize URL 선출력 및 timeout fallback 보강
+- [x] CLI `publish --json` machine-readable output과 publish clipboard parity 보강
+- [x] Frontend malformed successful API response를 safe `ApiError`로 변환
+- [x] Frontend 401 API response auth-error event와 signed-out state recovery 보강
+- [x] Frontend security header contract 확장
+- [x] Backend `team` project visibility MVP schema 제거 및 visibility/status DB check constraint 보강
+- [x] Backend username/profile/project/worklog/ingest request bound validation 보강
+- [x] Backend public/list pagination limit lower-bound validation 보강
+- [[Commercial Readiness Hardening - Browser Login API Bounds and Security Headers 2026-05-31]]

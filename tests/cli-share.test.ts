@@ -51,6 +51,18 @@ async function installFakeBrowserOpener(binDir: string): Promise<string> {
   return logPath;
 }
 
+async function installFakeClipboard(binDir: string): Promise<string> {
+  const logPath = join(binDir, 'clipboard.log');
+  const script = '#!/usr/bin/env sh\ncat >> "$AGENTFEED_TEST_CLIPBOARD_LOG"\nexit 0\n';
+  await mkdir(binDir, { recursive: true });
+  await Promise.all(['pbcopy', 'xclip', 'wl-copy', 'xsel', 'clip.exe'].map(async (name) => {
+    const path = join(binDir, name);
+    await writeFile(path, script);
+    await chmod(path, 0o755);
+  }));
+  return logPath;
+}
+
 async function readRequestBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   const chunks: Buffer[] = [];
   for await (const chunk of req) chunks.push(Buffer.from(chunk));
@@ -358,6 +370,60 @@ describe('share CLI command', () => {
       expect(publish.stdout).toContain('Review URL:');
       await expect(readFile(browserLog, 'utf8')).resolves.toBe('http://localhost:3001/worklogs/worklog_auto_open/review\n');
     } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('prints machine-readable publish JSON and copies the review URL by default', async () => {
+    const server = createServer(async (req, res) => {
+      if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
+        res.writeHead(404).end();
+        return;
+      }
+      await readRequestBody(req);
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({
+        data: {
+          id: 'worklog_publish_json',
+          status: 'needs_review',
+          visibility: 'private',
+          review_url: 'http://localhost:3001/worklogs/worklog_publish_json/review',
+          created_at: '2026-05-31T00:00:00.000Z'
+        }
+      }));
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    const fakeBin = await mkdtemp(join(tmpdir(), 'agentfeed-clipboard-bin-'));
+    const clipboardLog = await installFakeClipboard(fakeBin);
+    try {
+      const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+      draft.worklog.title = 'Publish JSON';
+      draft.worklog.summary = 'Machine readable publish output';
+      await writeDraft(dir, draft);
+
+      const publish = await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id, '--json'], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          PATH: `${fakeBin}:${process.env.PATH ?? ''}`,
+          AGENTFEED_TEST_CLIPBOARD_LOG: clipboardLog,
+          AGENTFEED_TOKEN: 'af_live_test_token',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+        }
+      });
+
+      const output = JSON.parse(publish.stdout) as { draft_id: string; upload: { id: string; review_url: string } };
+      expect(output.draft_id).toBe(draft.id);
+      expect(output.upload.id).toBe('worklog_publish_json');
+      expect(output.upload.review_url).toBe('http://localhost:3001/worklogs/worklog_publish_json/review');
+      await expect(readFile(clipboardLog, 'utf8')).resolves.toBe('http://localhost:3001/worklogs/worklog_publish_json/review');
+    } finally {
+      await rm(fakeBin, { recursive: true, force: true });
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
   });

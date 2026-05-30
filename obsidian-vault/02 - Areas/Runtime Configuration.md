@@ -323,3 +323,28 @@ created: 2026-05-30
 - search query는 trim 후 2~120자 범위만 허용합니다.
 
 관련 구현: [[Commercial Readiness Hardening - Discovery Rate Limits URL Safety and Adapter Resilience 2026-05-31]]
+
+## 2026-05-31 Frontend API response and security header hardening
+
+> [!success]
+> Frontend API boundary now fails closed on malformed successful responses and emits an auth recovery event on 401 responses.
+
+- HTTP 200이어도 empty/non-JSON/malformed body면 raw parser error 대신 safe `ApiError(502)`로 변환합니다.
+- 401 response는 `agentfeed:auth-error` browser event를 발생시키며 AppContext가 signed-out state로 정리합니다.
+- `securityHeaders` contract includes CSP frame deny, XFO, nosniff, referrer policy, HSTS, Permissions-Policy, COOP, CORP.
+- 검증: `npm run lint && npm run test:contracts && NEXT_PUBLIC_API_URL=https://api.agentfeed.dev npm run build`
+
+관련: [[Commercial Readiness Hardening - Browser Login API Bounds and Security Headers 2026-05-31]]
+
+## 2026-05-31 Backend request bounds and visibility constraints
+
+> [!success]
+> Backend request schemas now reject unsupported visibility/status/input bounds before DB writes, and DB constraints enforce the same visibility/status support set.
+
+- Project visibility is MVP-only: `private | unlisted | public`; reserved `team` is no longer accepted on write schemas.
+- Worklog visibility/status have SQL check constraints via `011_visibility_status_constraints`.
+- Username/profile/project/worklog/ingest schemas validate DB column bounds and non-negative metrics.
+- Public/list pagination limits now enforce `ge=1` and clamp direct `list_tags()` calls to `1..100`.
+- 검증: Backend ruff, pytest, Alembic offline migration chain.
+
+관련: [[Commercial Readiness Hardening - Browser Login API Bounds and Security Headers 2026-05-31]]

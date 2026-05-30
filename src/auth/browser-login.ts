@@ -48,11 +48,14 @@ export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: bool
     deviceName: hostname(),
   });
 
+  output.write(`\nOpen this URL to authorize AgentFeed CLI:\n${session.authorize_url}\n\n`);
   if (!options.noOpen) {
-    await openBrowser(session.authorize_url);
+    const opened = await openBrowser(session.authorize_url);
+    if (!opened) {
+      output.write('Could not confirm the browser opener. If no browser opened, copy the URL above into your browser.\n\n');
+    }
   }
 
-  output.write(`\nOpen this URL to authorize AgentFeed CLI:\n${session.authorize_url}\n\n`);
   output.write('Waiting for browser approval. This terminal will finish automatically after approval.\n');
   if (input.isTTY) output.write('Keep this command running; no Enter key is required.\n');
 

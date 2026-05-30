@@ -90,7 +90,7 @@ aliases:
 
 - `uv run --python 3.12 --with ruff ruff check .`
 - `uv run --python 3.12 --with pytest --with pytest-asyncio pytest tests -q` → 95 passed
-- `../agentfeed-dev/scripts/test-all.sh`
+- `../agentfeed-dev/scripts/test-all.sh` → Backend `ruff check .`, Backend 95 tests, Alembic offline chain 포함
 
 ## 검증 로그
 

@@ -262,3 +262,17 @@ Redacted preview:
 - query filtering branch와 default top-tags branch가 같은 privacy predicate를 사용합니다.
 
 관련 구현: [[Commercial Readiness Hardening - Token Quotas Privacy Tags and Card Actions 2026-05-30]]
+
+## 2026-05-31 Public URL field validation
+
+> [!success]
+> Public profile/project URL fields가 unsafe scheme 또는 credentialed URL을 저장·재노출하지 않도록 schema boundary에서 차단합니다.
+
+계약:
+
+- `website_url`, `repository_url`, `homepage_url`은 http/https만 허용합니다.
+- URL userinfo는 phishing/secret leak 위험 때문에 거부합니다.
+- `github_url`은 GitHub host, `x_url`은 X/Twitter host로 제한합니다.
+- 빈 문자열은 `None`으로 정규화합니다.
+
+관련 구현: [[Commercial Readiness Hardening - Discovery Rate Limits URL Safety and Adapter Resilience 2026-05-31]]

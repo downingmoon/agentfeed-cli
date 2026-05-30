@@ -3,7 +3,8 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { AgentFeedCredentials } from '../types.js';
 import { pathExists, readJson } from '../utils/fs.js';
-import { resolveApiBaseUrl, resolveApiBaseUrlWithMetadata, type ApiBaseUrlResolution } from './api-base.js';
+import { DEFAULT_API_BASE_URL } from './defaults.js';
+import { normalizeApiBaseUrl, resolveApiBaseUrl, resolveApiBaseUrlWithMetadata, type ApiBaseUrlResolution } from './api-base.js';
 
 export type CredentialTokenSource = 'environment' | 'credentials_file' | 'missing';
 
@@ -61,6 +62,26 @@ async function readCredentialsFile(file: string): Promise<{ credentials: AgentFe
   }
 }
 
+function trustRepoApiBaseForAuthenticatedUse(): boolean {
+  return process.env.AGENTFEED_TRUST_REPO_API_BASE === '1';
+}
+
+function protectRepoDiscoveredApiBase(
+  api: ApiBaseUrlResolution,
+  hasToken: boolean,
+): ApiBaseUrlResolution {
+  if (!hasToken || api.source !== 'env_file' || trustRepoApiBaseForAuthenticatedUse()) return api;
+  const detail = api.source_detail ? ` (${api.source_detail})` : '';
+  return {
+    value: normalizeApiBaseUrl(DEFAULT_API_BASE_URL),
+    source: 'default',
+    warnings: [
+      ...api.warnings,
+      `ignored repo-local API base${detail} for authenticated token use; set AGENTFEED_TRUST_REPO_API_BASE=1 to explicitly trust this checkout.`
+    ]
+  };
+}
+
 export async function credentialsFromToken(token: string, options: { apiBaseUrl?: string; user?: AgentFeedCredentials['user']; tokenExpiresAt?: string | null } = {}): Promise<AgentFeedCredentials> {
   return {
     api_base_url: await resolveApiBaseUrl({ explicitApiBaseUrl: options.apiBaseUrl }),
@@ -85,7 +106,11 @@ export async function loadCredentials(): Promise<AgentFeedCredentials | null> {
 export async function resolveCredentials(base: AgentFeedCredentials | null): Promise<AgentFeedCredentials> {
   const token = process.env.AGENTFEED_TOKEN || base?.ingestion_token;
   if (!token) throw new Error('AgentFeed token is missing. Run: agentfeed login --token <token>');
-  const apiBaseUrl = await resolveApiBaseUrl({ storedApiBaseUrl: base?.api_base_url });
+  const api = protectRepoDiscoveredApiBase(
+    await resolveApiBaseUrlWithMetadata({ storedApiBaseUrl: base?.api_base_url }),
+    Boolean(token),
+  );
+  const apiBaseUrl = api.value;
   const tokenExpiresAt = process.env.AGENTFEED_TOKEN ? null : base?.token_expires_at ?? null;
   return {
     api_base_url: apiBaseUrl,
@@ -108,7 +133,10 @@ export async function loadCredentialsWithMetadata(options: { cwd?: string } = {}
       ? 'credentials_file'
       : 'missing';
 
-  const api = await resolveApiBaseUrlWithMetadata({ cwd: options.cwd, storedApiBaseUrl: base?.api_base_url });
+  const api = protectRepoDiscoveredApiBase(
+    await resolveApiBaseUrlWithMetadata({ cwd: options.cwd, storedApiBaseUrl: base?.api_base_url }),
+    Boolean(token),
+  );
   const warnings = [...fileResult.warnings, ...api.warnings];
   const tokenExpiresAt = process.env.AGENTFEED_TOKEN ? null : base?.token_expires_at ?? null;
   if (!token) {

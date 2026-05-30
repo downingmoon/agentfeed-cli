@@ -320,23 +320,14 @@ function parseCliAuthSession(value: unknown, apiBaseUrl: string): CliAuthSession
   };
 }
 
-const VALID_UPLOAD_STATUSES = new Set<string>([
+const VALID_PRIVATE_REVIEW_UPLOAD_STATUSES = new Set<string>([
   'draft',
   'needs_review',
   'private',
-  'unlisted',
-  'public',
-  'rejected',
-  'deleted',
   'already_uploaded'
 ]);
 
-const VALID_UPLOAD_VISIBILITIES = new Set<string>([
-  'private',
-  'unlisted',
-  'public',
-  'team'
-]);
+const VALID_PRIVATE_REVIEW_VISIBILITY = 'private';
 
 function parsePublishDraftResult(value: unknown, apiBaseUrl: string): PublishDraftResult {
   if (!isRecord(value)) throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid upload response.');
@@ -345,7 +336,16 @@ function parsePublishDraftResult(value: unknown, apiBaseUrl: string): PublishDra
   const visibility = stringField(value.visibility);
   const reviewUrl = stringField(value.review_url);
   const createdAt = stringField(value.created_at);
-  if (!id || !status || !VALID_UPLOAD_STATUSES.has(status) || !visibility || !VALID_UPLOAD_VISIBILITIES.has(visibility) || !reviewUrl || !createdAt || !Number.isFinite(Date.parse(createdAt)) || !validateReviewUrl(reviewUrl, apiBaseUrl)) {
+  if (
+    !id
+    || !status
+    || !VALID_PRIVATE_REVIEW_UPLOAD_STATUSES.has(status)
+    || visibility !== VALID_PRIVATE_REVIEW_VISIBILITY
+    || !reviewUrl
+    || !createdAt
+    || !Number.isFinite(Date.parse(createdAt))
+    || !validateReviewUrl(reviewUrl, apiBaseUrl)
+  ) {
     throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid upload response. Local draft was kept.');
   }
   return {
@@ -435,6 +435,21 @@ export async function uploadDraft(draft: LocalDraft, credentials: AgentFeedCrede
   return parsePublishDraftResult(await postIngest<unknown>('/ingest/worklogs', draft, credentials), credentials.api_base_url);
 }
 
+export function isTrustedReviewUrl(reviewUrl: string, apiBaseUrl: string): boolean {
+  return validateReviewUrl(reviewUrl, apiBaseUrl);
+}
+
+function parseCachedUploadResult(draft: LocalDraft, apiBaseUrl: string): PublishDraftResult {
+  return parsePublishDraftResult({
+    id: draft.upload.worklog_id,
+    status: 'already_uploaded',
+    visibility: 'private',
+    review_url: draft.upload.review_url,
+    created_at: draft.upload.uploaded_at ?? draft.source.created_at,
+    reused_existing: true
+  }, apiBaseUrl);
+}
+
 function detailString(details: Record<string, unknown> | undefined, key: string): string | null {
   const value = details?.[key];
   return typeof value === 'string' && value.length > 0 ? value : null;
@@ -477,15 +492,16 @@ export async function publishDraft(options: { cwd: string; id: string; credentia
   const draft = await readDraft(options.cwd, options.id);
   scanAndRedactDraftPublicFields(draft);
   if (draft.upload.uploaded && draft.upload.worklog_id && draft.upload.review_url) {
+    let cached: PublishDraftResult;
+    try {
+      cached = parseCachedUploadResult(draft, options.credentials.api_base_url);
+    } catch {
+      draft.upload = { uploaded: false };
+      await writeDraft(options.cwd, draft);
+      throw new AgentFeedApiError(502, 'DRAFT_UPLOAD_METADATA_INVALID', 'Saved draft upload metadata is invalid. Run agentfeed share again to upload a fresh private review draft.');
+    }
     await writeDraft(options.cwd, draft);
-    return {
-      id: draft.upload.worklog_id,
-      status: 'already_uploaded',
-      visibility: 'private',
-      review_url: draft.upload.review_url,
-      created_at: draft.upload.uploaded_at ?? draft.source.created_at,
-      reused_existing: true
-    };
+    return cached;
   }
   let result: PublishDraftResult;
   try {

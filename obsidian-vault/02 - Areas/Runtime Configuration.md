@@ -310,3 +310,16 @@ created: 2026-05-30
 
 관련 구현: [[Commercial Readiness Hardening - Leaderboard Pagination Slug Uniqueness Env Token UX 2026-05-30]]
 
+
+## 2026-05-31 Public discovery rate-limit contract
+
+> [!success]
+> Public read/discovery API도 mutation API와 별도 read-tier bucket으로 보호합니다.
+
+계약:
+
+- `/v1/search`, `/v1/search/suggestions`, `/v1/feed`, `/v1/leaderboard`, `/v1/explore`, `/v1/tags`, project/user/worklog public read paths는 rate-limit rule을 갖습니다.
+- users/explore category dynamic segments는 shared bucket으로 normalize합니다.
+- search query는 trim 후 2~120자 범위만 허용합니다.
+
+관련 구현: [[Commercial Readiness Hardening - Discovery Rate Limits URL Safety and Adapter Resilience 2026-05-31]]

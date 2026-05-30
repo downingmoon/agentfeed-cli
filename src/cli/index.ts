@@ -3,12 +3,13 @@ import { rm } from 'node:fs/promises';
 import { initProject, loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
 import { credentialsFromToken, loadCredentials, loadCredentialsWithMetadata, saveCredentials, type CredentialTokenSource } from '../config/credentials.js';
 import { resolveApiBaseUrl, resolveApiBaseUrlWithMetadata, type ApiBaseUrlSource } from '../config/api-base.js';
+import { DEFAULT_API_BASE_URL } from '../config/defaults.js';
 import { markCollectionComplete, resolveCollectionWindow } from '../config/collection-state.js';
 import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 import { formatCollectionExplain } from '../draft/explain.js';
-import { AgentFeedApiError, checkApiReachability, checkIngestionToken, previewDraftRemote, publishDraft, rotateIngestionToken } from '../api/client.js';
+import { AgentFeedApiError, checkApiReachability, checkIngestionToken, isTrustedReviewUrl, previewDraftRemote, publishDraft, rotateIngestionToken } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
 import { applyRedactedPublicFields, publicScanFieldsFromDraft, scanAndRedactDraftPublicFields, type PublicScanFields } from '../privacy/draft-sanitizer.js';
@@ -475,6 +476,12 @@ async function cmdDiscard(args: string[]) {
 async function cmdOpen(args: string[]) {
   const draft = flag(args, '--latest') || !option(args, '--id') ? await readLatestDraft(process.cwd()) : await readDraft(process.cwd(), option(args, '--id')!);
   if (!draft.upload.review_url) throw new Error('Draft has not been uploaded yet.');
+  const credentials = await loadCredentialsWithMetadata({ cwd: process.cwd() });
+  const trustedApiBases = new Set([DEFAULT_API_BASE_URL]);
+  if (credentials.api_base_url) trustedApiBases.add(credentials.api_base_url);
+  if (![...trustedApiBases].some((apiBaseUrl) => isTrustedReviewUrl(draft.upload.review_url!, apiBaseUrl))) {
+    throw new Error('Saved draft review URL is invalid. Run agentfeed share again to upload a fresh private review draft.');
+  }
   const opened = await openBrowser(draft.upload.review_url);
   print(opened ? 'Opened review URL.' : draft.upload.review_url);
 }

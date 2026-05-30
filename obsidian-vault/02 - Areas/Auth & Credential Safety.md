@@ -459,3 +459,17 @@ created: 2026-05-30
 - Secret은 localStorage/sessionStorage/API cache에 저장하지 않습니다.
 
 관련 구현: [[Commercial Readiness Hardening - CSRF Token Capture and Search Pagination 2026-05-30]]
+
+## 2026-05-31 CLI repo-local API trust gate
+
+> [!success]
+> 인증 token이 있는 CLI request는 repo-local `.env` API base를 기본 신뢰하지 않습니다.
+
+계약:
+
+- `AGENTFEED_API_BASE_URL` explicit env와 saved credential API base는 계속 신뢰합니다.
+- `.env` / `BACKEND_PORT` discovery는 token이 없을 때 dev convenience로만 사용합니다.
+- token이 있는 상태에서 repo-local API base를 쓰려면 `AGENTFEED_TRUST_REPO_API_BASE=1`이 필요합니다.
+- trust gate warning은 source detail을 포함하되 token 값은 노출하지 않습니다.
+
+관련 구현: [[Commercial Readiness Hardening - Discovery Rate Limits URL Safety and Adapter Resilience 2026-05-31]]

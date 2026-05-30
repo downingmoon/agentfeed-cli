@@ -6,6 +6,8 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { initProject } from '../src/config/project-config.js';
+import { createEmptyDraft } from '../src/draft/create.js';
+import { writeDraft } from '../src/draft/write.js';
 import { ensureCliBuilt } from './build-cli.js';
 
 const repoRoot = resolve('.');
@@ -56,6 +58,37 @@ async function readRequestBody(req: IncomingMessage): Promise<Record<string, unk
 }
 
 describe('share CLI command', () => {
+  it('refuses unsafe cached review URLs before invoking the browser opener', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.upload = {
+      uploaded: true,
+      worklog_id: 'worklog_existing',
+      review_url: 'https://evil.example/worklogs/worklog_existing/review',
+      uploaded_at: '2026-05-30T00:00:00.000Z'
+    };
+    await writeDraft(dir, draft);
+    const binDir = await mkdtemp(join(tmpdir(), 'agentfeed-browser-bin-'));
+    const browserLog = await installFakeBrowserOpener(binDir);
+
+    try {
+      const run = execFileAsync(process.execPath, [cliPath, 'open', '--id', draft.id], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          PATH: `${binDir}:${process.env.PATH ?? ''}`,
+          AGENTFEED_TEST_BROWSER_LOG: browserLog
+        }
+      });
+
+      await expect(run).rejects.toMatchObject({ code: 1 });
+      await expect(readFile(browserLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+    } finally {
+      await rm(binDir, { recursive: true, force: true });
+    }
+  });
+
   it('includes the collected draft in uploaded JSON output for smoke verification', async () => {
     let ingestPayload: Record<string, unknown> | null = null;
     const server = createServer(async (req, res) => {

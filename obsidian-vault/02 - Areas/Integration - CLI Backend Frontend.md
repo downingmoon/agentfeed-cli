@@ -1657,3 +1657,17 @@ API/UX 정합성:
 
 관련 구현: [[Commercial Readiness Hardening - Leaderboard Pagination Slug Uniqueness Env Token UX 2026-05-30]]
 
+
+## 2026-05-31 Discovery URL Adapter hardening
+
+> [!success]
+> CLI/Backend/Frontend 상용화 hardening 루프에서 discovery abuse, URL trust, adapter crash 리스크를 닫았습니다.
+
+계약:
+
+- CLI cached upload metadata와 `agentfeed open`은 trusted review URL만 사용합니다.
+- Backend public discovery routes는 read-tier rate limit과 bounded search query를 갖습니다.
+- Backend public profile/project URL fields는 http(s) + credential-free URL만 저장합니다.
+- Frontend list adapters는 malformed API row를 drop하고 valid rows를 유지합니다.
+
+검증: [[Commercial Readiness Hardening - Discovery Rate Limits URL Safety and Adapter Resilience 2026-05-31#검증 결과]]

@@ -43,23 +43,28 @@ describe('api client', () => {
     expect(saved.upload).toMatchObject({ uploaded: true, worklog_id: 'worklog_1', review_url: 'https://agentfeed.dev/review/1' });
   });
 
-  it('publish accepts backend-supported non-private visibility values', async () => {
+  it.each([
+    { status: 'public', visibility: 'public' },
+    { status: 'unlisted', visibility: 'unlisted' },
+    { status: 'needs_review', visibility: 'team' }
+  ])('rejects upload success responses outside private-review states: %j', async ({ status, visibility }) => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
     await writeDraft(dir, draft);
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
       data: {
-        id: 'worklog_unlisted',
-        status: 'unlisted',
-        visibility: 'unlisted',
-        review_url: 'https://agentfeed.dev/worklogs/worklog_unlisted/review',
+        id: `worklog_${visibility}`,
+        status,
+        visibility,
+        review_url: `https://agentfeed.dev/worklogs/worklog_${visibility}/review`,
         created_at: '2026-05-19T00:00:00Z'
       }
     }), { status: 200, headers: { 'content-type': 'application/json' } })));
 
-    const result = await publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } });
+    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
+      .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
 
-    expect(result.visibility).toBe('unlisted');
-    expect(result.review_url).toBe('https://agentfeed.dev/worklogs/worklog_unlisted/review');
+    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+    expect(saved.upload.uploaded).toBe(false);
   });
 
   it('re-scans manually edited draft fields before upload and persists redactions', async () => {
@@ -112,6 +117,31 @@ describe('api client', () => {
     const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
     expect(saved.worklog.summary).toBe('Already uploaded but still contains [REDACTED_SECRET]');
     expect(saved.privacy_scan.status).toBe('danger');
+  });
+
+  it.each([
+    'https://evil.example/worklogs/worklog_existing/review',
+    'https://agentfeed.dev/worklogs/worklog_existing/review?token=leak',
+    'https://agentfeed.dev/worklogs/worklog_existing/review#secret'
+  ])('rejects cached uploaded draft review URLs before reuse: %s', async (reviewUrl) => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    draft.upload = {
+      uploaded: true,
+      worklog_id: 'worklog_existing',
+      review_url: reviewUrl,
+      uploaded_at: '2026-05-19T00:00:00Z'
+    };
+    await writeDraft(dir, draft);
+    const fetchMock = vi.fn(async () => { throw new Error('must not upload'); });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
+      .rejects.toMatchObject({ code: 'DRAFT_UPLOAD_METADATA_INVALID' });
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+    expect(saved.upload.uploaded).toBe(false);
+    expect(saved.upload.review_url).toBeUndefined();
   });
 
   it('publish treats duplicate ingestion with a review URL as a successful resync', async () => {

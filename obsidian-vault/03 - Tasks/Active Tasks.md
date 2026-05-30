@@ -98,6 +98,14 @@ created: 2026-05-30
 - [x] Frontend dashboard/notifications/settings/comment signed-out intent를 OAuth next로 보존
 - [x] CLI `collect` repo-local `collection.auto_upload` 무시 및 preview/publish 재-redaction 보강
 
+
+- [x] CLI authenticated requests가 repo-local `.env` API base를 기본 신뢰하지 않도록 opt-in gate 추가
+- [x] CLI cached draft `review_url` 재검증 및 `agentfeed open` browser opener trust gate 보강
+- [x] Backend public discovery/search/read endpoints read-tier rate-limit 및 bounded search query 보강
+- [x] Backend profile/project public URL field http(s)/host/userinfo validation 보강
+- [x] Backend follow/like/bookmark idempotent race handling 및 self-follow DB constraint 보강
+- [x] Frontend feed/search/explore/profile/project list adapter malformed row isolation 보강
+
 ## P2 후보
 
 - [x] 비용 정보는 추정 금지 원칙 유지, explicit cost field만 opt-in 보존
@@ -213,6 +221,13 @@ created: 2026-05-30
 - [[Auth & Credential Safety#2026-05-30 Backend critical path rate-limit]]
 - [[Live E2E Smoke Gate Hardening 2026-05-30]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Live E2E smoke gate hardening]]
+
+
+- [[Commercial Readiness Hardening - Discovery Rate Limits URL Safety and Adapter Resilience 2026-05-31]]
+- [[Integration - CLI Backend Frontend#2026-05-31 Discovery URL Adapter hardening]]
+- [[Auth & Credential Safety#2026-05-31 CLI repo-local API trust gate]]
+- [[Privacy Safety#2026-05-31 Public URL field validation]]
+- [[Runtime Configuration#2026-05-31 Public discovery rate-limit contract]]
 
 ## 새로 발견한 P1 후보 / 다음 루프
 

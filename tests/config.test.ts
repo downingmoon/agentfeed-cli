@@ -14,6 +14,7 @@ const oldAgentFeedHome = process.env.AGENTFEED_HOME;
 const oldBase = process.env.AGENTFEED_API_BASE_URL;
 const oldToken = process.env.AGENTFEED_TOKEN;
 const oldAllowInsecure = process.env.AGENTFEED_ALLOW_INSECURE_API;
+const oldTrustRepoApiBase = process.env.AGENTFEED_TRUST_REPO_API_BASE;
 
 beforeEach(async () => {
   dir = await mkdtemp(join(tmpdir(), 'agentfeed-config-'));
@@ -22,6 +23,7 @@ beforeEach(async () => {
   delete process.env.AGENTFEED_HOME;
   delete process.env.AGENTFEED_API_BASE_URL;
   delete process.env.AGENTFEED_ALLOW_INSECURE_API;
+  delete process.env.AGENTFEED_TRUST_REPO_API_BASE;
 });
 
 afterEach(async () => {
@@ -34,6 +36,8 @@ afterEach(async () => {
   else process.env.AGENTFEED_TOKEN = oldToken;
   if (oldAllowInsecure === undefined) delete process.env.AGENTFEED_ALLOW_INSECURE_API;
   else process.env.AGENTFEED_ALLOW_INSECURE_API = oldAllowInsecure;
+  if (oldTrustRepoApiBase === undefined) delete process.env.AGENTFEED_TRUST_REPO_API_BASE;
+  else process.env.AGENTFEED_TRUST_REPO_API_BASE = oldTrustRepoApiBase;
   await rm(dir, { recursive: true, force: true });
   await rm(home, { recursive: true, force: true });
 });
@@ -190,6 +194,25 @@ describe('project config', () => {
     expect(resolved.token_source).toBe('environment');
     expect(resolved.api_base_url).toBe('http://localhost:8001/v1');
     expect(resolved.warnings.join('\n')).toContain('ignored malformed AgentFeed credentials file');
+  });
+
+  it('does not combine authenticated tokens with repo-local API base discovery unless explicitly trusted', async () => {
+    await writeFile(join(dir, '.env'), 'BACKEND_PORT=1234\n');
+    process.env.AGENTFEED_TOKEN = 'af_live_env_secret';
+
+    const resolved = await loadCredentialsWithMetadata({ cwd: dir });
+
+    expect(resolved.credentials?.ingestion_token).toBe('af_live_env_secret');
+    expect(resolved.credentials?.api_base_url).toBe('https://api.agentfeed.dev/v1');
+    expect(resolved.api_base_url_source).toBe('default');
+    expect(resolved.warnings.join('\n')).toContain('AGENTFEED_TRUST_REPO_API_BASE=1');
+    expect(resolved.warnings.join('\n')).toContain(`${join(dir, '.env')}:BACKEND_PORT`);
+
+    process.env.AGENTFEED_TRUST_REPO_API_BASE = '1';
+    const trusted = await loadCredentialsWithMetadata({ cwd: dir });
+
+    expect(trusted.credentials?.api_base_url).toBe('http://localhost:1234/v1');
+    expect(trusted.api_base_url_source).toBe('env_file');
   });
 
   it('reports credential and API base provenance without exposing token values in metadata', async () => {

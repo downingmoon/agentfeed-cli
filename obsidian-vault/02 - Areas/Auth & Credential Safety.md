@@ -161,6 +161,25 @@ created: 2026-05-30
 > [!important]
 > token 저장소 관련 변경은 [[Integration - CLI Backend Frontend#2026-05-30 CLI npm prepack release gate|release packaging gate]]와 함께 검증해, npm 배포 tarball이 최신 credential storage 코드를 포함하도록 유지합니다.
 
+
+## 2026-05-30 Backend critical path rate-limit
+
+> [!success]
+> Browser/CLI auth와 token-backed ingest/social/comment mutation은 최소 rate-limit gate를 통과해야 합니다.
+
+보안 계약:
+
+- CLI auth session 생성/승인/교환은 endpoint별 bucket으로 제한합니다.
+- GitHub OAuth 시작/callback도 IP bucket으로 제한합니다.
+- Ingestion token 요청은 token fingerprint bucket을 우선 사용해 같은 사용자의 upload burst를 제한합니다.
+- Social/comment mutation은 resource UUID를 `{id}`로 정규화해 resource id를 바꿔도 같은 endpoint bucket에 걸립니다.
+- 429는 `RATE_LIMITED` error code와 `Retry-After` header를 제공합니다.
+
+> [!warning]
+> in-memory limiter는 process-local입니다. 운영 scale-out 시 shared bucket store로 바꾸는 follow-up이 필요합니다.
+
+관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 Backend critical path rate-limit]]
+
 ## 관련 링크
 
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI ephemeral login --no-save]]
@@ -170,6 +189,7 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI login/token smoke 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI npm prepack release gate]]
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI credential file permissions]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Backend critical path rate-limit]]
 - [[Privacy Safety]]
 - [[Active Tasks#P1 후보]]
 

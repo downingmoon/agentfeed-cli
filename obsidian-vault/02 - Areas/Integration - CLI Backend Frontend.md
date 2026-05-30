@@ -1244,3 +1244,42 @@ Frontend 표시:
 
 - `npm test -- tests/duplicate-draft.test.ts --run --testNamePattern 'reuses git-only drafts'`
 - `../agentfeed-dev/scripts/test-all.sh` → CLI 141 tests, Frontend contract/type/build, Backend 67 tests, Alembic offline chain 통과
+
+
+## 2026-05-30 Backend critical path rate-limit
+
+> [!success]
+> Auth, ingest, social mutation, comment mutation/report critical path에 dependency-free in-memory rate limit을 연결했습니다.
+
+문제:
+
+- Backend에는 `RateLimitError` 타입은 있었지만 실제 middleware가 없어 CLI auth session 생성/교환, ingest upload/preview, social/comment mutation이 burst abuse에 무방비였습니다.
+- Ingest payload size limit은 body 크기만 막았고 요청 빈도는 제한하지 않았습니다.
+
+수정:
+
+- `app/middleware/rate_limit.py`를 추가해 endpoint별 fixed-window rule, UUID path normalization, token/IP identity key를 구현했습니다.
+- 적용 경로:
+  - `GET /v1/auth/github`, `GET /v1/auth/github/callback`
+  - `POST /v1/auth/cli/sessions`, `POST /v1/auth/cli/sessions/{id}/approve|exchange`
+  - `POST /v1/ingest/worklogs`, `POST /v1/ingest/worklogs/preview`
+  - `POST /v1/worklogs/{id}/comments`
+  - `POST|DELETE /v1/worklogs/{id}/like|bookmark`
+  - `POST /v1/comments/{id}/report`, `POST /v1/worklogs/{id}/report`
+- 인증 token/cookie가 있으면 raw token을 저장하지 않고 SHA-256 fingerprint bucket을 사용합니다. 없으면 `X-Forwarded-For` 첫 IP, `X-Real-IP`, client host 순서로 IP bucket을 사용합니다.
+- 429 응답은 기존 error envelope와 `Retry-After` header를 반환합니다.
+
+검증:
+
+- critical path rule coverage 회귀 테스트
+- UUID resource id normalization 회귀 테스트
+- endpoint/identity bucket isolation 회귀 테스트
+- token fingerprint/IP identity 회귀 테스트
+- 429 response contract 회귀 테스트
+- `uv run --python 3.12 --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q` → `72 passed`
+- `uv run --python 3.12 --with ruff ruff check app/main.py app/exceptions.py app/middleware/rate_limit.py tests/test_contracts.py --select F,I`
+
+> [!warning] 운영 메모
+> 현재 limiter는 dependency-free in-memory 구현이라 process-local입니다. 단일 프로세스/초기 운영 abuse guard로는 충분하지만, horizontal scaling에서 전역 quota가 필요해지면 Redis 등 shared store로 bucket backend를 교체해야 합니다.
+
+관련: [[Auth & Credential Safety#2026-05-30 Backend critical path rate-limit]]

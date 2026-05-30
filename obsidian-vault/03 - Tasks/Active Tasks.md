@@ -203,10 +203,12 @@ created: 2026-05-30
 - [[Privacy Safety#2026-05-30 Comment settings enforcement]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Soft-deleted project metadata gate]]
 - [[Privacy Safety#2026-05-30 Soft-deleted project metadata gate]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Backend critical path rate-limit]]
+- [[Auth & Credential Safety#2026-05-30 Backend critical path rate-limit]]
 
 ## 새로 발견한 P1 후보 / 다음 루프
 
-- [ ] Backend auth/ingest/social/comment critical path에 최소 per-IP/per-user rate limit 연결
+- [x] Backend auth/ingest/social/comment critical path에 최소 per-IP/per-user rate limit 연결
 - [x] Soft-deleted project가 public worklog card/detail/search/feed/explore에 metadata로 노출되지 않도록 shared project fetch helper 적용
 - [ ] `show_token_usage_publicly`, `show_estimated_cost_publicly`, file/line/test metric privacy setting을 public card/detail/stats 응답에 적용
 - [ ] Frontend OAuth `next` query allowlist와 runtime API config failure UI 보강

@@ -234,6 +234,26 @@ describe('agent session collector', () => {
     expect(metrics?.files_changed).toBeNull();
   });
 
+  it('does not count Codex apply_patch fallback when the paired tool output failed', async () => {
+    const sessionFile = join(dir, 'codex-apply-patch-output-failed.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-apply-patch-output-failed', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'custom_tool_call', name: 'apply_patch', status: 'completed', call_id: 'patch-output-failed', input: [
+        '*** Begin Patch',
+        `*** Add File: ${join(dir, 'src', 'phantom.ts')}`,
+        '+export const phantom = true;',
+        '*** End Patch'
+      ].join('\n') } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'patch-output-failed', status: 'failed', output: 'Patch failed: file not found' } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(1);
+    expect(metrics?.changed_files).toEqual([]);
+    expect(metrics?.files_changed).toBeNull();
+  });
+
   it('keeps Codex apply_patch fallback files that do not appear in structured patch_apply_end changes', async () => {
     const sessionFile = join(dir, 'codex-mixed-patch-evidence.jsonl');
     await writeJsonl(sessionFile, [

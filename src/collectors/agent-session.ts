@@ -652,7 +652,8 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
   let model: string | null = null;
   let matchedWindowRow = false;
   let tokenBaselineBeforeWindow: number | null = null;
-  const patchTextFallbacks: string[] = [];
+  const failedToolOutputCallIds = new Set<string>();
+  const patchTextFallbacks: { callId: string | null; patchText: string; failed: boolean }[] = [];
   const sinceMillis = parseBoundaryMillis(effectiveWindow?.since);
 
   for (const row of rows) {
@@ -710,6 +711,12 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
       if (pendingSubagent && (failedStatus(payload.status) || toolOutputFailed(asString(payload.output) ?? ''))) {
         pendingSubagent.failed = true;
       }
+      if (callId && (failedStatus(payload.status) || toolOutputFailed(asString(payload.output) ?? ''))) {
+        failedToolOutputCallIds.add(callId);
+        for (const fallback of patchTextFallbacks) {
+          if (fallback.callId === callId) fallback.failed = true;
+        }
+      }
       const command = callId ? commands.get(callId) : null;
       if (command && commandFailed(asString(payload.output) ?? '')) {
         failedCommands += 1;
@@ -718,7 +725,8 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
     }
     if (payload.type === 'custom_tool_call' && payload.name === 'apply_patch' && !failedStatus(payload.status)) {
       const patchText = asString(payload.input);
-      if (patchText) patchTextFallbacks.push(patchText);
+      const callId = asString(payload.call_id);
+      if (patchText) patchTextFallbacks.push({ callId, patchText, failed: Boolean(callId && failedToolOutputCallIds.has(callId)) });
     }
     if (payload.type === 'patch_apply_end' && !failedStatus(payload.status)) {
       const changes = asRecord(payload.changes);
@@ -747,7 +755,8 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
   }
   if (hasCollectionWindowBoundary(effectiveWindow) && !matchedWindowRow) return null;
   if (patchTextFallbacks.length) {
-    for (const patchText of patchTextFallbacks) {
+    for (const { patchText, failed } of patchTextFallbacks) {
+      if (failed) continue;
       const fallbackFiles = new Map<string, ChangedFileSummary>();
       applyCodexPatchText(cwd, patchText, fallbackFiles);
       for (const file of fallbackFiles.values()) {

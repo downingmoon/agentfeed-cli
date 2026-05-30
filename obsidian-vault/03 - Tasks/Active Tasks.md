@@ -391,3 +391,14 @@ created: 2026-05-30
 - [[Commercial Readiness Hardening - Auth Validation Pagination CSP and CSRF Contract 2026-05-31]]
 - [[Commercial Readiness Hardening - CI Automation CSP Auth Recovery Rate Limits and Search Safety 2026-05-31]]
 - [[Commercial Readiness Hardening - Secret Scanner Session Revocation Frontend Outage UX 2026-05-31]]
+
+## 2026-05-31 payload/report/secondary failure isolation continuation
+
+- [x] CLI Codex `apply_patch` fallback 실패 output 오탐 방지
+- [x] Backend mutating request body cap과 user-generated text field cap 추가
+- [x] Backend report duplicate idempotency unique constraint + migration 추가
+- [x] Backend search suggestions project slug wildcard escape 누락 보강
+- [x] Frontend body 없는 POST/DELETE Content-Type 제거로 CORS preflight 축소
+- [x] Frontend profile/project/dashboard/explore secondary API failure isolation
+- [x] Frontend projects/leaderboard/profile/project/notifications pagination dedup helper 적용
+- [[Commercial Readiness Hardening - Payload Caps Report Idempotency Secondary Failure Isolation 2026-05-31]]

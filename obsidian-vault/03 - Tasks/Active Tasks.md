@@ -82,8 +82,8 @@ created: 2026-05-30
 - [x] CLI `open_review_after_upload` 설정을 publish/share upload UX에 반영
 - [x] Private worklog comments list/create visibility gate 보강
 - [x] Unlisted publish도 unresolved high severity privacy finding 차단
-- [ ] GitHub OAuth provider 장애/httpx failure를 raw 500 대신 controlled 503으로 변환
-- [ ] CLI duplicate ingestion 409 응답의 `review_url`을 성공 재동기화로 처리
+- [x] GitHub OAuth provider 장애/httpx failure를 raw 500 대신 controlled 503으로 변환
+- [x] CLI duplicate ingestion 409 응답의 `review_url`을 성공 재동기화로 처리
 
 ## P2 후보
 
@@ -92,6 +92,7 @@ created: 2026-05-30
 - [x] privacy redaction dry-run 상세 표시
 - [x] Public Feed sort 라벨 `Most shipped` → `Most discussed` 계약 정리
 - [x] Backend unpublish endpoint를 Frontend review/detail 관리 UX에 연결
+- [x] Frontend unpublish control을 실제 published status 기준으로 축소
 
 ## 관련 링크
 
@@ -164,3 +165,6 @@ created: 2026-05-30
 - [[Collection System#2026-05-30 Wrapped test command 인식 보강]]
 - [[Collection System#2026-05-30 Generic timestamp alias 보강]]
 - [[Collection System#2026-05-30 Cursor 실제 저장소 조사]]
+- [[Integration - CLI Backend Frontend#2026-05-30 GitHub OAuth provider failure contract]]
+- [[Integration - CLI Backend Frontend#2026-05-30 CLI duplicate ingest 409 재동기화]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Frontend unpublish control predicate]]

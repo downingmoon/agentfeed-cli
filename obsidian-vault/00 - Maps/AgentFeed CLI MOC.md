@@ -62,5 +62,8 @@ graph LR
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI open-review config 계약|CLI open-review config]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Worklog comment visibility gate|Comment visibility gate]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Unlisted publish privacy gate|Unlisted publish privacy gate]]
+- [[Integration - CLI Backend Frontend#2026-05-30 GitHub OAuth provider failure contract|GitHub OAuth provider 503]]
+- [[Integration - CLI Backend Frontend#2026-05-30 CLI duplicate ingest 409 재동기화|CLI duplicate ingest resync]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Frontend unpublish control predicate|Frontend unpublish predicate]]
 - [[Integration - CLI Backend Frontend#End-to-end 흐름|End-to-end 흐름]]
 - [[Active Tasks#P1 후보|P1 후보]]

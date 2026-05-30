@@ -851,3 +851,67 @@ Frontend 표시:
 - `AgentFeed-CLI`: `npm run typecheck`
 - `agentfeed-dev`: `bash -n scripts/smoke-e2e.sh`
 - `agentfeed-dev`: `make smoke-e2e`
+
+## 2026-05-30 GitHub OAuth provider failure contract
+
+> [!success]
+> GitHub provider 장애나 HTTP failure가 Backend 내부 raw 500으로 새지 않고 `GITHUB_OAUTH_UNAVAILABLE` 503으로 변환되도록 보정했습니다.
+
+문제:
+
+- `get_github_access_token()` / `get_github_user()`에서 `httpx.HTTPError`가 그대로 bubble-up될 수 있었습니다.
+- 브라우저 로그인과 CLI browser auth가 GitHub provider outage를 만났을 때 사용자는 generic 500만 보게 됩니다.
+
+수정:
+
+- token exchange 단계 실패는 `details.stage = "token_exchange"`로 표준화합니다.
+- GitHub user fetch 단계 실패는 `details.stage = "github_user"`로 표준화합니다.
+- provider HTTP status가 있는 경우 `details.provider_status_code`를 포함합니다.
+
+검증:
+
+- `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q -k 'github_access_token_exchange_translates or github_user_fetch_translates'`
+- `uv run --with pytest --with pytest-asyncio pytest -q`
+- `uv run --with ruff ruff check --select I,F app/services/auth.py tests/test_contracts.py`
+
+## 2026-05-30 CLI duplicate ingest 409 재동기화
+
+> [!success]
+> CLI upload 중 이미 Backend가 같은 ingestion session을 저장한 경우, `409 DUPLICATE_INGESTION_SESSION`과 `review_url`을 성공 응답처럼 해석해 로컬 draft upload metadata를 복구합니다.
+
+문제:
+
+- 네트워크 timeout이나 CLI 재시도 후 Backend에는 worklog가 존재하지만 로컬 draft는 pending으로 남을 수 있었습니다.
+- 기존 CLI는 duplicate 409를 hard error로 처리해 사용자가 valid review URL을 얻지 못하고 같은 draft를 계속 재시도할 수 있었습니다.
+
+수정:
+
+- duplicate 응답의 `details.review_url`을 필수 복구 증거로 사용합니다.
+- `details.worklog_id`, `details.id`, 또는 `/worklogs/{id}/review` URL path에서 worklog id를 복구합니다.
+- 복구 성공 시 `status = "already_uploaded"`, `reused_existing = true`로 반환하고 `.agentfeed/drafts/*.json`의 `upload` metadata를 저장합니다.
+
+검증:
+
+- `npx vitest run tests/api-hook.test.ts --testNamePattern 'duplicate ingestion'`
+- `npm test -- --run tests/api-hook.test.ts`
+- `npm run typecheck`
+
+## 2026-05-30 Frontend unpublish control predicate
+
+> [!success]
+> Review 화면의 “Make private” 같은 unpublish control은 실제 publish 상태(`status`) 기준으로만 노출되도록 보정했습니다.
+
+문제:
+
+- 기존 `canUnpublishWorklog()`는 `status` 또는 `visibility` 중 하나라도 `public`/`unlisted`이면 true를 반환했습니다.
+- `{ status: "needs_review", visibility: "unlisted" }`처럼 아직 publish되지 않은 record에도 관리 action이 노출될 수 있었습니다.
+
+수정:
+
+- unpublish 가능 여부를 `status === "public" || status === "unlisted"`로 축소했습니다.
+- contract test에 draft-like unlisted visibility false-positive를 추가했습니다.
+
+검증:
+
+- `npm run test:contracts`
+- `npx tsc --noEmit --pretty false`

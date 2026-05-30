@@ -199,6 +199,39 @@ export async function uploadDraft(draft: LocalDraft, credentials: AgentFeedCrede
   return postIngest<PublishDraftResult>('/ingest/worklogs', draft, credentials);
 }
 
+function detailString(details: Record<string, unknown> | undefined, key: string): string | null {
+  const value = details?.[key];
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function worklogIdFromReviewUrl(reviewUrl: string): string | null {
+  try {
+    const parts = new URL(reviewUrl).pathname.split('/').filter(Boolean);
+    const worklogsIndex = parts.indexOf('worklogs');
+    return worklogsIndex >= 0 ? parts[worklogsIndex + 1] ?? null : null;
+  } catch {
+    return null;
+  }
+}
+
+function duplicateIngestResult(error: AgentFeedApiError, fallbackCreatedAt: string): PublishDraftResult | null {
+  if (error.status !== 409 || error.code !== 'DUPLICATE_INGESTION_SESSION') return null;
+  const reviewUrl = detailString(error.details, 'review_url');
+  if (!reviewUrl) return null;
+  const worklogId = detailString(error.details, 'worklog_id')
+    ?? detailString(error.details, 'id')
+    ?? worklogIdFromReviewUrl(reviewUrl);
+  if (!worklogId) return null;
+  return {
+    id: worklogId,
+    status: 'already_uploaded',
+    visibility: 'private',
+    review_url: reviewUrl,
+    created_at: detailString(error.details, 'created_at') ?? fallbackCreatedAt,
+    reused_existing: true
+  };
+}
+
 export async function publishDraft(options: { cwd: string; id: string; credentials: AgentFeedCredentials }): Promise<PublishDraftResult> {
   const draft = await readDraft(options.cwd, options.id);
   if (draft.upload.uploaded && draft.upload.worklog_id && draft.upload.review_url) {
@@ -212,7 +245,18 @@ export async function publishDraft(options: { cwd: string; id: string; credentia
     };
   }
   scanAndRedactDraftPublicFields(draft);
-  const result = await uploadDraft(draft, options.credentials);
+  let result: PublishDraftResult;
+  try {
+    result = await uploadDraft(draft, options.credentials);
+  } catch (error) {
+    if (error instanceof AgentFeedApiError) {
+      const duplicate = duplicateIngestResult(error, draft.source.created_at);
+      if (duplicate) result = duplicate;
+      else throw error;
+    } else {
+      throw error;
+    }
+  }
   draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, uploaded_at: result.created_at };
   await writeDraft(options.cwd, draft);
   return result;

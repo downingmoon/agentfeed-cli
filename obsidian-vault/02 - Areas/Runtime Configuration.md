@@ -354,3 +354,8 @@ created: 2026-05-30
 - Backend production 설정에 `API_ALLOWED_HOSTS`를 추가하고 public explicit hostname만 허용한다.
 - FastAPI app에 `TrustedHostMiddleware`를 추가해 unknown Host 요청을 app layer에서 400으로 차단한다.
 - Ingestion token 발급은 `issue_ingestion_token()` 내부에서 active user row lock과 quota check를 함께 수행한다.
+
+## 2026-05-31 CSP and CSRF contract hardening
+
+- Frontend CSP는 `default-src 'self'`, `base-uri 'self'`, `object-src 'none'`, `frame-ancestors 'none'`, API origin 기반 `connect-src`를 포함한다.
+- Backend CSRF는 Bearer-only API client를 허용하지만, cookie가 함께 있는 mutation은 Authorization header 존재와 무관하게 trusted Origin/Referer를 요구한다.

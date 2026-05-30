@@ -11,11 +11,14 @@ import { checkApiReachability, checkIngestionToken, createCliAuthSession, draftT
 import { browserLogin, waitForCliAuthExchange } from '../src/auth/browser-login.js';
 import { buildClaudeCodeStopHookCommand, installClaudeCodeHook, uninstallClaudeCodeHook } from '../src/hooks/claude-code-settings.js';
 import { pathExists } from '../src/utils/fs.js';
+import { saveCredentials } from '../src/config/credentials.js';
 
 let dir: string;
 let home: string;
 const execFileAsync = promisify(execFile);
 const oldHome = process.env.HOME;
+const oldAgentFeedCi = process.env.AGENTFEED_CI;
+const oldAgentFeedToken = process.env.AGENTFEED_TOKEN;
 
 beforeEach(async () => {
   dir = await mkdtemp(join(tmpdir(), 'agentfeed-api-'));
@@ -27,6 +30,10 @@ beforeEach(async () => {
 afterEach(async () => {
   process.env.HOME = oldHome;
   delete process.env.AGENTFEED_TRUST_REPO_API_BASE;
+  if (oldAgentFeedCi === undefined) delete process.env.AGENTFEED_CI;
+  else process.env.AGENTFEED_CI = oldAgentFeedCi;
+  if (oldAgentFeedToken === undefined) delete process.env.AGENTFEED_TOKEN;
+  else process.env.AGENTFEED_TOKEN = oldAgentFeedToken;
   vi.unstubAllGlobals();
   await rm(dir, { recursive: true, force: true });
   await rm(home, { recursive: true, force: true });
@@ -260,6 +267,59 @@ describe('api client', () => {
       method: 'POST',
       headers: { authorization: 'Bearer af_live_old_secret' }
     }));
+  });
+
+
+  it.each([
+    { data: { token: '' }, label: 'empty token' },
+    { data: { token: 'af_live_bad_expiry', token_expires_at: 'not-a-date' }, label: 'invalid token_expires_at' },
+    { data: { token: 'af_live_bad_user', user: { id: 123 } }, label: 'unsafe user object' }
+  ])('rejects malformed browser exchange responses before credentials can be saved: $label', async ({ data }) => {
+    await saveCredentials('af_live_existing', {
+      apiBaseUrl: 'https://api.agentfeed.dev/v1',
+      user: { id: 'user-existing', username: 'existing' },
+      tokenExpiresAt: '2026-06-01T00:00:00Z'
+    });
+    const before = await readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8');
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.endsWith('/auth/cli/sessions')) {
+        return new Response(JSON.stringify({
+          data: {
+            session_id: 'session-bad-exchange',
+            authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-bad-exchange',
+            expires_at: '2026-05-20T00:05:00Z',
+            poll_interval_seconds: 1
+          }
+        }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      return new Response(JSON.stringify({ data }), { status: 200, headers: { 'content-type': 'application/json' } });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1', noOpen: true, waitMs: 50 }))
+      .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).resolves.toBe(before);
+  });
+
+  it.each([
+    { data: { id: 'token-new', name: 'CLI', token: '', created_at: '2026-05-30T00:00:00Z', expires_at: '2026-06-15T00:00:00Z', rotated_from: 'token-old', rotated_at: '2026-05-30T00:01:00Z' }, label: 'empty token' },
+    { data: { id: 'token-new', name: 'CLI', token: 'af_live_new', created_at: '2026-05-30T00:00:00Z', expires_at: '2026-06-15T00:00:00Z', token_expires_at: 'tomorrow-ish', rotated_from: 'token-old', rotated_at: '2026-05-30T00:01:00Z' }, label: 'invalid token_expires_at' },
+    { data: { id: 'token-new', name: 'CLI', token: 'af_live_new', created_at: '2026-05-30T00:00:00Z', expires_at: '2026-06-15T00:00:00Z', rotated_from: 'token-old', rotated_at: '2026-05-30T00:01:00Z', user: { id: ['user-1'] } }, label: 'unsafe user object' }
+  ])('rejects malformed token rotation responses and leaves credentials unchanged: $label', async ({ data }) => {
+    await saveCredentials('af_live_existing_rotate', {
+      apiBaseUrl: 'https://api.agentfeed.dev/v1',
+      user: { id: 'user-existing', username: 'existing' },
+      tokenExpiresAt: '2026-06-01T00:00:00Z'
+    });
+    const before = await readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8');
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ data }), { status: 200, headers: { 'content-type': 'application/json' } })));
+
+    await expect(rotateIngestionToken({ ingestion_token: 'af_live_existing_rotate', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' }))
+      .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
+
+    await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).resolves.toBe(before);
   });
 
   it('remote preview posts the ingest payload and returns backend warnings', async () => {
@@ -565,6 +625,22 @@ describe('api client', () => {
 
     const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
     expect(saved.upload.uploaded).toBe(false);
+  });
+
+
+  it('fails fast in CI instead of opening browser auth when no token or browser override is provided', async () => {
+    process.env.AGENTFEED_CI = '1';
+    delete process.env.AGENTFEED_TOKEN;
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ data: {} }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+    const startedAt = Date.now();
+
+    await expect(browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1', noOpen: true }))
+      .rejects.toThrow(/AGENTFEED_TOKEN|agentfeed login --token|--browser/);
+
+    expect(Date.now() - startedAt).toBeLessThan(1000);
+    expect(fetchMock).not.toHaveBeenCalled();
+    await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
   it('completes no-open browser login by exchanging the CLI session and saving credentials', async () => {

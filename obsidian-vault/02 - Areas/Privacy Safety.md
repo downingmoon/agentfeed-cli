@@ -281,3 +281,8 @@ Redacted preview:
 
 - `user_note`는 owner review context로 유지하되 public card/detail payload와 frontend public adapter에서는 노출하지 않는다.
 - Worklog review preview contract는 `private_fields: ["user_note"]`와 `safe_public_preview: true`를 제공해 Frontend가 public/unlisted publish를 안전하게 판정할 수 있게 한다.
+
+## 2026-05-31 Discord token redaction
+
+- Discord bot token-like pattern을 high severity `api_key_pattern`으로 탐지하고 `[REDACTED_SECRET]`으로 치환한다.
+- `summary`, `user_note`, `public_prompt` 필드에서 동일하게 redaction한다.

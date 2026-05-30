@@ -362,3 +362,16 @@ created: 2026-05-30
 - [x] Backend review preview에서 `user_note`를 private field로 명시하고 safe preview contract 추가
 - [x] Frontend public adapter에서 `user_note` 제거 및 unsafe preview publish guard 추가
 - [[Commercial Readiness Hardening - Host Token Race and Private Preview Guards 2026-05-31]]
+
+## 2026-05-31 auth validation pagination CSP continuation
+
+- [x] CLI browser auth exchange / token rotation response runtime validation 추가
+- [x] CLI malformed auth/rotation response가 credentials를 덮어쓰지 않는 regression test 추가
+- [x] CLI `AGENTFEED_CI` browser login fail-fast guard와 `--browser` override 추가
+- [x] CLI Discord bot token-like secret redaction coverage 추가
+- [x] Frontend feed cursor pagination + Load more UX 추가
+- [x] Frontend worklog comments cursor pagination + Load more comments UX 추가
+- [x] Frontend CSP directive contract 확장
+- [x] Frontend route/global branded error boundary 추가
+- [x] Backend Bearer+cookie mutation도 CSRF Origin gate를 우회하지 않도록 계약 테스트 고정
+- [[Commercial Readiness Hardening - Auth Validation Pagination CSP and CSRF Contract 2026-05-31]]

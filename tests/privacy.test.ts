@@ -7,6 +7,7 @@ describe('privacy scanner', () => {
     ['Anthropic key', 'sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890', 'api_key_pattern'],
     ['AgentFeed token', 'af_live_abcdefghijklmnopqrstuvwxyz1234567890', 'api_key_pattern'],
     ['GitHub token', 'ghp_abcdefghijklmnopqrstuvwxyz1234567890', 'api_key_pattern'],
+    ['Discord bot token', 'MTAwMDAwMDAwMDAwMDAwMDAw.XyZ_12.abcdefghijklmnopqrstuvwxyz1', 'api_key_pattern'],
     ['email', 'dev@example.com', 'email_address'],
     ['localhost URL', 'http://localhost:3000/callback', 'private_url'],
     ['database URL', 'postgres://user:pass@localhost:5432/db', 'database_url']
@@ -40,6 +41,37 @@ describe('privacy scanner', () => {
 
     expect(result.redacted.summary).toBe(expected);
     expect(result.scan.findings.some((f) => f.type === 'sensitive_path')).toBe(true);
+  });
+
+  it('redacts Discord bot token-like secrets from public text fields', () => {
+    const discordToken = 'MTAwMDAwMDAwMDAwMDAwMDAw.XyZ_12.abcdefghijklmnopqrstuvwxyz1';
+    const result = scanAndRedactFields({
+      summary: `Rotate Discord bot token ${discordToken}`,
+      user_note: `Accidentally pasted ${discordToken}`,
+      public_prompt: `Use token=${discordToken}`
+    });
+
+    expect(result.redacted.summary).toBe('Rotate Discord bot token [REDACTED_SECRET]');
+    expect(result.redacted.user_note).toBe('Accidentally pasted [REDACTED_SECRET]');
+    expect(result.redacted.public_prompt).toBe('Use token=[REDACTED_SECRET]');
+    expect(result.scan.status).toBe('danger');
+    expect(result.scan.findings).toHaveLength(3);
+    expect(result.scan.findings.every((finding) =>
+      finding.type === 'api_key_pattern' &&
+      finding.severity === 'high' &&
+      finding.resolved === true &&
+      finding.resolution === 'redacted' &&
+      finding.sample_redacted === '[REDACTED_SECRET]' &&
+      finding.message === 'Possible Discord bot token detected.'
+    )).toBe(true);
+  });
+
+  it('does not flag arbitrary dotted identifiers as Discord bot tokens', () => {
+    const result = scanAndRedactFields({ summary: 'Release package-name@1.2.3 and docs section abcdefghijklmnopqrstuvwx.abcdef.short' });
+
+    expect(result.redacted.summary).toBe('Release package-name@1.2.3 and docs section abcdefghijklmnopqrstuvwx.abcdef.short');
+    expect(result.scan.findings).toHaveLength(0);
+    expect(result.scan.status).toBe('safe');
   });
 
   it('redacts high severity secrets and marks danger', () => {

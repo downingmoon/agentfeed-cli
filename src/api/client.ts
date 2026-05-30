@@ -229,6 +229,33 @@ function stringField(value: unknown): string | null {
   return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
+function optionalStringField(value: unknown): string | null | undefined {
+  if (value == null) return value as null | undefined;
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+function validOptionalDateString(value: unknown): string | null | undefined {
+  const text = optionalStringField(value);
+  if (text === undefined || text === null) return text;
+  return Number.isFinite(Date.parse(text)) ? text : undefined;
+}
+
+function parseOptionalUser(value: unknown): AgentFeedCredentials['user'] | null | undefined {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) return null;
+  const id = Object.hasOwn(value, 'id') ? optionalStringField(value.id) : undefined;
+  const username = Object.hasOwn(value, 'username') ? optionalStringField(value.username) : undefined;
+  const displayName = Object.hasOwn(value, 'display_name') ? optionalStringField(value.display_name) : undefined;
+  if (id === undefined && Object.hasOwn(value, 'id')) return null;
+  if (username === undefined && Object.hasOwn(value, 'username')) return null;
+  if (displayName === undefined && Object.hasOwn(value, 'display_name')) return null;
+  const user: NonNullable<AgentFeedCredentials['user']> = {};
+  if (id !== undefined && id !== null) user.id = id;
+  if (username !== undefined && username !== null) user.username = username;
+  if (displayName !== undefined && displayName !== null) user.display_name = displayName;
+  return user;
+}
+
 function isLocalHostname(hostname: string): boolean {
   const host = hostname.toLowerCase().replace(/^\[(.*)\]$/, '$1');
   return host === 'localhost' || host.endsWith('.localhost') || host === '::1' || host === '0.0.0.0' || host.startsWith('127.');
@@ -358,6 +385,59 @@ function parsePublishDraftResult(value: unknown, apiBaseUrl: string): PublishDra
   };
 }
 
+function parseCliAuthExchangeResult(value: unknown): CliAuthExchangeResult {
+  if (!isRecord(value)) throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid CLI auth exchange response.');
+  const token = stringField(value.token);
+  const hasTokenExpiresAt = Object.hasOwn(value, 'token_expires_at');
+  const tokenExpiresAt = hasTokenExpiresAt ? validOptionalDateString(value.token_expires_at) : undefined;
+  const user = parseOptionalUser(value.user);
+  if (!token || (hasTokenExpiresAt && tokenExpiresAt === undefined) || user === null) {
+    throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid CLI auth exchange response.');
+  }
+  return { token, token_expires_at: tokenExpiresAt, user };
+}
+
+function parseRotatedIngestionTokenResult(value: unknown): RotatedIngestionTokenResult {
+  if (!isRecord(value)) throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid token rotation response.');
+  const id = stringField(value.id);
+  const name = stringField(value.name);
+  const token = stringField(value.token);
+  const createdAt = stringField(value.created_at);
+  const expiresAt = stringField(value.expires_at);
+  const hasTokenExpiresAt = Object.hasOwn(value, 'token_expires_at');
+  const tokenExpiresAt = hasTokenExpiresAt ? validOptionalDateString(value.token_expires_at) : undefined;
+  const rotatedFrom = stringField(value.rotated_from);
+  const rotatedAt = stringField(value.rotated_at);
+  const user = parseOptionalUser(value.user);
+  if (
+    !id
+    || !name
+    || !token
+    || !createdAt
+    || !Number.isFinite(Date.parse(createdAt))
+    || !expiresAt
+    || !Number.isFinite(Date.parse(expiresAt))
+    || (hasTokenExpiresAt && tokenExpiresAt === undefined)
+    || !rotatedFrom
+    || !rotatedAt
+    || !Number.isFinite(Date.parse(rotatedAt))
+    || user === null
+  ) {
+    throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid token rotation response.');
+  }
+  return {
+    id,
+    name,
+    token,
+    created_at: createdAt,
+    expires_at: expiresAt,
+    token_expires_at: tokenExpiresAt,
+    rotated_from: rotatedFrom,
+    rotated_at: rotatedAt,
+    user
+  };
+}
+
 async function postJson<T>(apiBaseUrl: string, path: string, body: Record<string, unknown>): Promise<T> {
   const response = await fetchWithTimeout(`${apiBaseUrl.replace(/\/$/, '')}${path}`, {
     method: 'POST',
@@ -383,7 +463,7 @@ export async function createCliAuthSession(apiBaseUrl: string, input: { verifier
 }
 
 export async function exchangeCliAuthSession(apiBaseUrl: string, sessionId: string, verifier: string): Promise<CliAuthExchangeResult> {
-  return postJson<CliAuthExchangeResult>(apiBaseUrl, `/auth/cli/sessions/${encodeURIComponent(sessionId)}/exchange`, { verifier });
+  return parseCliAuthExchangeResult(await postJson<unknown>(apiBaseUrl, `/auth/cli/sessions/${encodeURIComponent(sessionId)}/exchange`, { verifier }));
 }
 
 async function postIngest<T>(path: string, draft: LocalDraft, credentials: AgentFeedCredentials): Promise<T> {
@@ -424,7 +504,7 @@ export async function rotateIngestionToken(credentials: AgentFeedCredentials): P
     const msg = friendlyError(response.status, code, api.error?.message ?? response.statusText, api.error?.details);
     throw new AgentFeedApiError(response.status, code, msg, api.error?.details);
   }
-  return (data as { data: RotatedIngestionTokenResult }).data;
+  return parseRotatedIngestionTokenResult((data as { data?: unknown }).data);
 }
 
 export async function previewDraftRemote(draft: LocalDraft, credentials: AgentFeedCredentials): Promise<RemotePreviewResult> {

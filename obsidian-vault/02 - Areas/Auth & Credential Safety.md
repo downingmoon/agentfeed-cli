@@ -490,3 +490,9 @@ created: 2026-05-30
 - `agentfeed login` / browser rotate는 pre-auth API base resolution에서 repo-local `.env` discovery를 기본 신뢰하지 않는다.
 - Trust precedence는 explicit `--api-base-url` / `AGENTFEED_API_BASE_URL` / stored credentials / default이며, repo-local discovery는 `AGENTFEED_TRUST_REPO_API_BASE=1`일 때만 사용한다.
 - Claude Code Stop hook은 AgentFeed collection 실패를 `.agentfeed/logs/hook.log`에 남기지만 사용자의 Claude session을 block하지 않도록 항상 exit `0`으로 종료한다.
+
+## 2026-05-31 Auth response validation and CI browser guard
+
+- CLI browser auth exchange와 ingestion token rotation response는 credential 저장 전에 token/date/user shape를 검증한다.
+- malformed 200 response는 `API_RESPONSE_INVALID`로 실패하며 기존 credentials를 유지한다.
+- `AGENTFEED_CI=1`에서는 browser login을 기본 차단하고 token-based login을 안내한다. 명시적 interactive override는 `--browser`다.

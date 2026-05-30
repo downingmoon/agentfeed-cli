@@ -1689,3 +1689,9 @@ API/UX 정합성:
 - CLI pre-auth login은 repo-local API discovery를 기본 ignore하고 Backend는 production Host allowlist를 강제한다.
 - Backend public worklog payload와 Frontend adapter가 `user_note`를 public surface에서 제거해 Feed/Detail privacy contract를 맞췄다.
 - Frontend review page는 unsafe preview 감지 시 publish를 차단하지만 Backend의 `safe_public_preview` contract가 있으면 public title/summary candidate를 정상 publish 가능 상태로 처리한다.
+
+## 2026-05-31 Feed comments pagination and runtime recovery
+
+- Frontend `/feed`는 backend `next_cursor` / `has_more`를 보존하고 추가 페이지를 append한다.
+- Worklog comments도 backend cursor pagination을 사용한다.
+- Route/global error boundary로 runtime failure 시 Feed 복귀/재시도 UX를 제공한다.

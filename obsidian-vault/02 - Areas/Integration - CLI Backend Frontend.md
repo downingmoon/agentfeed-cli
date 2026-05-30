@@ -1800,3 +1800,17 @@ Frontend 계약:
 - Docs page는 실제 CLI command인 `agentfeed share --open-review`만 안내합니다.
 
 검증: [[Commercial Readiness Hardening - Feed Keyset and OAuth Hash Redirect 2026-05-31#검증 증거]]
+
+## 2026-05-31 CLI private review privacy policy
+
+> [!success]
+> CLI → Backend ingest → Frontend review flow의 publish 용어 혼동을 줄였습니다.
+
+정합성:
+
+- CLI `publish/share`는 `POST /v1/ingest/worklogs`에 private review draft를 업로드합니다.
+- Backend `POST /v1/worklogs/{id}/publish`는 unresolved high-severity privacy finding이 있으면 public/unlisted publish를 거부합니다.
+- Frontend review 화면은 이 차단을 해제하기 위해 privacy finding resolve flow를 제공합니다.
+- CLI JSON automation은 `privacy_policy` 필드로 review 필요 여부를 판단할 수 있습니다.
+
+관련 구현: [[Commercial Readiness Hardening - CLI Private Review Privacy Policy 2026-05-31]]

@@ -470,6 +470,37 @@ describe('share CLI command', () => {
     await expect(readFile(browserLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
+  it('makes direct publish privacy policy clear for high-severity private review drafts', async () => {
+    const secret = 'sk-123456789012345678901234';
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.worklog.summary = `Manual edit contains ${secret}`;
+    draft.upload = {
+      uploaded: true,
+      worklog_id: 'worklog_privacy_policy',
+      review_url: 'https://agentfeed.dev/worklogs/worklog_privacy_policy/review',
+      uploaded_at: '2026-05-31T00:00:00.000Z'
+    };
+    await writeDraft(dir, draft);
+
+    const publish = await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: 'af_live_test_token',
+        CI: '1'
+      }
+    });
+
+    expect(publish.stdout).toContain('Private review draft already uploaded; reusing existing review URL.');
+    expect(publish.stdout).toContain('Privacy review: required before public publishing.');
+    expect(publish.stdout).toContain('Public/unlisted publishing is blocked in AgentFeed until high-severity findings are resolved.');
+    expect(publish.stdout).toContain('Private review upload is allowed so you can resolve findings in the web review.');
+    const saved = await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8');
+    expect(saved).not.toContain(secret);
+  });
+
   it('prints machine-readable publish JSON and copies the review URL only when requested', async () => {
     const server = createServer(async (req, res) => {
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
@@ -513,10 +544,15 @@ describe('share CLI command', () => {
         }
       });
 
-      const output = JSON.parse(publish.stdout) as { draft_id: string; upload: { id: string; review_url: string } };
+      const output = JSON.parse(publish.stdout) as { draft_id: string; upload: { id: string; review_url: string }; privacy_policy?: { private_review_upload?: string; public_publish_blocked?: boolean; review_required?: boolean } };
       expect(output.draft_id).toBe(draft.id);
       expect(output.upload.id).toBe('worklog_publish_json');
       expect(output.upload.review_url).toBe('http://localhost:3001/worklogs/worklog_publish_json/review');
+      expect(output.privacy_policy).toEqual({
+        private_review_upload: 'allowed',
+        public_publish_blocked: false,
+        review_required: false
+      });
       await expect(readFile(clipboardLog, 'utf8')).resolves.toBe('http://localhost:3001/worklogs/worklog_publish_json/review');
     } finally {
       await rm(fakeBin, { recursive: true, force: true });

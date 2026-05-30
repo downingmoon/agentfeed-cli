@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyDraft } from '../src/draft/create.js';
-import { formatSharePreview, parseShareArgs } from '../src/cli/share.js';
+import { formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from '../src/cli/share.js';
 import { option } from '../src/cli/args.js';
 
 describe('share command helpers', () => {
@@ -69,6 +69,35 @@ describe('share command helpers', () => {
 
     expect(output).toContain('Note: Refined login flow');
     expect(output).toContain('Summary: Collected agent work.');
+  });
+
+  it('explains that high-severity findings block public publishing but not private review upload', () => {
+    const draft = createEmptyDraft({ projectName: 'agentfeed-cli', projectRoot: '/tmp/agentfeed-cli', source: 'codex' });
+    draft.privacy_scan = {
+      status: 'danger',
+      findings: [{
+        id: 'finding-1',
+        type: 'api_key_pattern',
+        severity: 'high',
+        message: 'Possible secret',
+        field: 'worklog.summary',
+        sample_redacted: '[REDACTED_SECRET]',
+        resolved: false,
+      }],
+    };
+
+    const output = formatSharePreview(draft);
+
+    expect(output).toContain('Privacy: danger · findings 1');
+    expect(output).toContain('Privacy review: required before public publishing.');
+    expect(output).toContain('Public/unlisted publishing is blocked in AgentFeed until high-severity findings are resolved.');
+    expect(output).toContain('Private review upload is allowed so you can resolve findings in the web review.');
+    expect(formatPrivacyPolicyLines(draft)).toHaveLength(3);
+    expect(privacyPolicySummary(draft)).toEqual({
+      private_review_upload: 'allowed',
+      public_publish_blocked: true,
+      review_required: true,
+    });
   });
 
   it('warns when share preview has no agent collection evidence', () => {

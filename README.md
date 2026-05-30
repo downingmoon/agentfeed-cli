@@ -78,7 +78,7 @@ agentfeed share --run-configured-commands
 
 `--note` is stored as a separate public-safe author note, not folded into the generated worklog summary.
 
-Use `--json` for automation. Dry-run output is shaped as `{ dry_run, reused_existing_draft, draft }`; upload output is shaped as `{ dry_run, reused_existing_draft, draft_id, draft, upload }` so scripts can verify the exact public-safe draft that was uploaded alongside the review URL. JSON mode has no clipboard side effects unless `--clipboard` is passed explicitly.
+Use `--json` for automation. Dry-run output is shaped as `{ dry_run, reused_existing_draft, draft, privacy_policy }`; upload output is shaped as `{ dry_run, reused_existing_draft, draft_id, draft, upload, privacy_policy }` so scripts can verify the exact public-safe draft that was uploaded alongside the review URL. JSON mode has no clipboard side effects unless `--clipboard` is passed explicitly.
 
 ## Scoped and incremental collection
 
@@ -119,3 +119,5 @@ agentfeed scan --id <draft_id>
 ```
 
 `--dry-run` prints finding severity, field, redaction placeholder, and redacted preview without showing the original secret or modifying the draft. Without `--dry-run`, `scan` updates the draft's uploadable public fields with redacted values and saves the `privacy_scan` result.
+
+`share` and `publish` upload a **private review draft**, not a public worklog. If high-severity findings remain, the CLI now states that public/unlisted publishing is blocked in AgentFeed until those findings are resolved, while the private review upload is still allowed so you can resolve the findings in the web review.

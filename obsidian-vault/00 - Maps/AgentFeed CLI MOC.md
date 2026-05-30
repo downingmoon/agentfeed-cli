@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - CLI Private Review Privacy Policy 2026-05-31]]
+
 - [[Commercial Readiness Hardening - Feed Keyset and OAuth Hash Redirect 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Cross Platform Open Config Validation and Settings Partial Failure 2026-05-31]]

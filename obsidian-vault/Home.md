@@ -25,6 +25,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - CLI Private Review Privacy Policy 2026-05-31]] — CLI private review upload와 public publish privacy gate를 명확히 표시
+
 - [[Commercial Readiness Hardening - Feed Keyset and OAuth Hash Redirect 2026-05-31]] — aggregate feed keyset pagination, OAuth next hash preservation, docs command contract
 
 - [[Commercial Readiness Hardening - Cross Platform Open Config Validation and Settings Partial Failure 2026-05-31]] — cross-platform review opener, backend host/proxy validation, settings partial-failure UX

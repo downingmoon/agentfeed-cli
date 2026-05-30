@@ -29,6 +29,38 @@ export function formatMetricsRow(draft: LocalDraft): string {
   return parts.length ? parts.join(' · ') : 'no metrics';
 }
 
+export function privacyPublicPublishBlocked(draft: LocalDraft): boolean {
+  return draft.privacy_scan.status === 'danger'
+    || draft.privacy_scan.findings.some((finding) => finding.severity === 'high' && !finding.resolved);
+}
+
+export interface PrivacyPolicySummary {
+  private_review_upload: 'allowed';
+  public_publish_blocked: boolean;
+  review_required: boolean;
+}
+
+export function privacyPolicySummary(draft: LocalDraft): PrivacyPolicySummary {
+  const publicPublishBlocked = privacyPublicPublishBlocked(draft);
+  return {
+    private_review_upload: 'allowed',
+    public_publish_blocked: publicPublishBlocked,
+    review_required: publicPublishBlocked || draft.privacy_scan.status !== 'safe'
+  };
+}
+
+export function formatPrivacyPolicyLines(draft: LocalDraft): string[] {
+  const policy = privacyPolicySummary(draft);
+  if (!policy.review_required) return [];
+
+  const lines = ['Privacy review: required before public publishing.'];
+  if (policy.public_publish_blocked) {
+    lines.push('Public/unlisted publishing is blocked in AgentFeed until high-severity findings are resolved.');
+  }
+  lines.push('Private review upload is allowed so you can resolve findings in the web review.');
+  return lines;
+}
+
 export function formatSharePreview(draft: LocalDraft): string {
   const m = draft.worklog.metrics;
   const model = draft.worklog.model ? ` · ${draft.worklog.model}` : '';
@@ -45,6 +77,7 @@ export function formatSharePreview(draft: LocalDraft): string {
     `Changed areas: ${changedAreas}`,
     `Privacy: ${draft.privacy_scan.status} · findings ${draft.privacy_scan.findings.length}`
   ];
+  lines.push(...formatPrivacyPolicyLines(draft));
 
   lines.push(`Collection quality: ${collectionQualityLabel(m)}`);
   const windowLine = formatCollectionWindowLine(draft.source.collection_window, draft.source.collection_window_reason);

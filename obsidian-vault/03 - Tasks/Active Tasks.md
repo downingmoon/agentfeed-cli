@@ -22,6 +22,7 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] CLI private review upload와 public/unlisted publish privacy gate 혼동 방지
 
 - [x] Backend aggregate feed sort offset cursor를 score/published_at/id keyset cursor로 교체
 - [x] Frontend GitHub OAuth next redirect safe hash fragment 보존 및 unsafe hash strip

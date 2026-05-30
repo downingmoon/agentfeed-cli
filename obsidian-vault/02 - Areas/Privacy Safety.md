@@ -286,3 +286,17 @@ Redacted preview:
 
 - Discord bot token-like pattern을 high severity `api_key_pattern`으로 탐지하고 `[REDACTED_SECRET]`으로 치환한다.
 - `summary`, `user_note`, `public_prompt` 필드에서 동일하게 redaction한다.
+
+## 2026-05-31 CLI private review privacy policy
+
+> [!success]
+> `agentfeed share` / `agentfeed publish`는 private review draft upload이며, public/unlisted publish가 아니라는 정책을 CLI 출력과 JSON output에 명시했습니다.
+
+계약:
+
+- high-severity privacy finding이 있으면 CLI preview/publish output에 public/unlisted publishing이 AgentFeed에서 차단된다고 표시합니다.
+- private review upload는 허용되어 사용자가 web review에서 finding을 해결할 수 있습니다.
+- `share --json` / `publish --json`은 `privacy_policy.private_review_upload`, `privacy_policy.public_publish_blocked`, `privacy_policy.review_required`를 포함합니다.
+- public/unlisted publish 차단 자체는 Backend review publish API의 unresolved high-severity finding gate가 담당합니다.
+
+검증: [[Commercial Readiness Hardening - CLI Private Review Privacy Policy 2026-05-31#검증 증거]]

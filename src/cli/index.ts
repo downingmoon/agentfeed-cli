@@ -19,7 +19,7 @@ import { detectAgentSignals, formatAgentSignalLines } from '../collectors/agent-
 import { changedAreas } from '../summary/changed-areas.js';
 import { hasAgentFeedHook, installClaudeCodeHook, uninstallClaudeCodeHook, resolveClaudeSettingsPath } from '../hooks/claude-code-settings.js';
 import { flag, option } from './args.js';
-import { formatMetricsRow, formatSharePreview, parseShareArgs } from './share.js';
+import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
 import { openBrowser } from '../utils/open-browser.js';
@@ -339,13 +339,13 @@ async function cmdShare(args: string[]) {
 
   if (opts.json) {
     if (opts.dryRun) {
-      print(JSON.stringify({ dry_run: true, reused_existing_draft: collection.reusedExisting, draft }, null, 2));
+      print(JSON.stringify({ dry_run: true, reused_existing_draft: collection.reusedExisting, draft, privacy_policy: privacyPolicySummary(draft) }, null, 2));
       return;
     }
     const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds! });
     draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, uploaded_at: result.created_at };
     await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
-    print(JSON.stringify({ dry_run: false, reused_existing_draft: collection.reusedExisting, draft_id: draft.id, draft, upload: result }, null, 2));
+    print(JSON.stringify({ dry_run: false, reused_existing_draft: collection.reusedExisting, draft_id: draft.id, draft, upload: result, privacy_policy: privacyPolicySummary(draft) }, null, 2));
     if (shouldCopyReviewUrl({ json: true, noClipboard: opts.noClipboard, clipboard: flag(args, '--clipboard') })) await copyToClipboard(result.review_url);
     if (await shouldOpenReviewAfterUpload(opts.openReview, { respectConfig: false })) await openBrowser(result.review_url);
     return;
@@ -404,13 +404,17 @@ async function cmdPublish(args: string[]) {
   if (!creds) throw new Error('AgentFeed token is missing. Run: agentfeed login --token <token>');
   const id = await resolveDraftId(process.cwd(), args);
   const result = await publishDraft({ cwd: process.cwd(), id, credentials: creds });
+  const savedDraft = await readDraft(process.cwd(), id);
   if (flag(args, '--json')) {
-    print(JSON.stringify({ draft_id: id, upload: result }, null, 2));
+    print(JSON.stringify({ draft_id: id, upload: result, privacy_policy: privacyPolicySummary(savedDraft) }, null, 2));
     if (shouldCopyReviewUrl({ json: true, noClipboard: flag(args, '--no-clipboard'), clipboard: flag(args, '--clipboard') })) await copyToClipboard(result.review_url);
     if (await shouldOpenReviewAfterUpload(flag(args, '--open-review'), { respectConfig: false })) await openBrowser(result.review_url);
     return;
   }
-  print(result.reused_existing ? 'Worklog already uploaded; reusing existing review URL.\n' : 'Worklog uploaded.\n');
+  print(result.reused_existing ? 'Private review draft already uploaded; reusing existing review URL.\n' : 'Private review draft uploaded.\n');
+  const privacyPolicyLines = formatPrivacyPolicyLines(savedDraft);
+  for (const line of privacyPolicyLines) print(line);
+  if (privacyPolicyLines.length) print();
   print(`Status: ${result.status}`);
   print(`Review URL:\n${result.review_url}`);
   if (shouldCopyReviewUrl({ noClipboard: flag(args, '--no-clipboard') }) && await copyToClipboard(result.review_url)) print('Review URL copied to clipboard.');

@@ -216,7 +216,12 @@ created: 2026-05-30
 - [x] Settings rotated token one-time copy/reveal/auto-clear UX 보강
 - [x] Backend `/v1/search` cursor/has_more 계약과 Frontend Load more 연결
 - [x] CLI invalid token upload recovery 안내를 `agentfeed rotate` 중심으로 보정
+- [x] Backend keyset cursor malformed payload 500 방지
+- [x] `/users/{username}/projects` cursor pagination과 Frontend profile projects Load more 연결
+- [x] Frontend review route/profile follow auth gate 보강
+- [x] CLI upload response visibility/review URL 검증과 malformed credentials recovery 보강
 - [[Commercial Readiness Hardening - CSRF Token Capture and Search Pagination 2026-05-30]]
+- [[Commercial Readiness Hardening - Cursor Review Auth and CLI Response Safety 2026-05-30]]
 
 
 - [x] Worklog list/card `viewer_state.can_comment` false default를 Backend permission helper 기준으로 보정

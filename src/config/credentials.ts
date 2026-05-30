@@ -49,6 +49,18 @@ async function writePrivateCredentialsFile(credentials: AgentFeedCredentials): P
   try { await chmod(credentialsPath(), 0o600); } catch { /* best-effort on non-POSIX filesystems */ }
 }
 
+async function readCredentialsFile(file: string): Promise<{ credentials: AgentFeedCredentials | null; warnings: string[] }> {
+  try {
+    return { credentials: await readJson<AgentFeedCredentials>(file), warnings: [] };
+  } catch (error) {
+    const reason = error instanceof Error && error.message ? ` ${error.message}` : '';
+    return {
+      credentials: null,
+      warnings: [`ignored malformed AgentFeed credentials file: ${file}.${reason}`]
+    };
+  }
+}
+
 export async function credentialsFromToken(token: string, options: { apiBaseUrl?: string; user?: AgentFeedCredentials['user']; tokenExpiresAt?: string | null } = {}): Promise<AgentFeedCredentials> {
   return {
     api_base_url: await resolveApiBaseUrl({ explicitApiBaseUrl: options.apiBaseUrl }),
@@ -87,7 +99,8 @@ export async function resolveCredentials(base: AgentFeedCredentials | null): Pro
 export async function loadCredentialsWithMetadata(options: { cwd?: string } = {}): Promise<CredentialsResolution> {
   const file = credentialsPath();
   const fileExists = await pathExists(file);
-  const base = fileExists ? await readJson<AgentFeedCredentials>(file) : null;
+  const fileResult = fileExists ? await readCredentialsFile(file) : { credentials: null, warnings: [] };
+  const base = fileResult.credentials;
   const token = process.env.AGENTFEED_TOKEN || base?.ingestion_token;
   const tokenSource: CredentialTokenSource = process.env.AGENTFEED_TOKEN
     ? 'environment'
@@ -96,6 +109,7 @@ export async function loadCredentialsWithMetadata(options: { cwd?: string } = {}
       : 'missing';
 
   const api = await resolveApiBaseUrlWithMetadata({ cwd: options.cwd, storedApiBaseUrl: base?.api_base_url });
+  const warnings = [...fileResult.warnings, ...api.warnings];
   const tokenExpiresAt = process.env.AGENTFEED_TOKEN ? null : base?.token_expires_at ?? null;
   if (!token) {
     return {
@@ -106,7 +120,7 @@ export async function loadCredentialsWithMetadata(options: { cwd?: string } = {}
       api_base_url: api.value,
       api_base_url_source: api.source,
       api_base_url_source_detail: api.source_detail,
-      warnings: api.warnings
+      warnings
     };
   }
 
@@ -124,6 +138,6 @@ export async function loadCredentialsWithMetadata(options: { cwd?: string } = {}
     api_base_url: api.value,
     api_base_url_source: api.source,
     api_base_url_source_detail: api.source_detail,
-    warnings: api.warnings
+    warnings
   };
 }

@@ -151,6 +151,33 @@ describe('project config', () => {
     await expect(resolveApiBaseUrl({ cwd: dir })).resolves.toBe('http://localhost:8001/v1');
   });
 
+  it('ignores malformed credentials files with a warning instead of crashing', async () => {
+    await mkdir(globalAgentFeedDir(), { recursive: true });
+    await writeFile(credentialsPath(), '{ this is not json');
+
+    const resolved = await loadCredentialsWithMetadata({ cwd: dir });
+
+    expect(resolved.credentials).toBeNull();
+    expect(resolved.token_source).toBe('missing');
+    expect(resolved.credentials_file_exists).toBe(true);
+    expect(resolved.warnings.join('\n')).toContain('ignored malformed AgentFeed credentials file');
+    expect(resolved.warnings.join('\n')).toContain(credentialsPath());
+  });
+
+  it('uses environment tokens even when the credentials file is malformed', async () => {
+    await mkdir(globalAgentFeedDir(), { recursive: true });
+    await writeFile(credentialsPath(), '{ this is not json');
+    process.env.AGENTFEED_TOKEN = 'af_live_env_secret';
+    process.env.AGENTFEED_API_BASE_URL = 'http://localhost:8001/v1';
+
+    const resolved = await loadCredentialsWithMetadata({ cwd: dir });
+
+    expect(resolved.credentials?.ingestion_token).toBe('af_live_env_secret');
+    expect(resolved.token_source).toBe('environment');
+    expect(resolved.api_base_url).toBe('http://localhost:8001/v1');
+    expect(resolved.warnings.join('\n')).toContain('ignored malformed AgentFeed credentials file');
+  });
+
   it('reports credential and API base provenance without exposing token values in metadata', async () => {
     process.env.AGENTFEED_TOKEN = 'af_live_env_secret';
     process.env.AGENTFEED_API_BASE_URL = 'http://localhost:8001/v1';

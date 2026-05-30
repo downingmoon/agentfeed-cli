@@ -1,4 +1,4 @@
-import type { AgentFeedCredentials, CliAuthExchangeResult, CliAuthSession, IngestWorklogRequest, LocalDraft, RotatedIngestionTokenResult, WorklogStatus } from '../types.js';
+import type { AgentFeedCredentials, CliAuthExchangeResult, CliAuthSession, IngestWorklogRequest, LocalDraft, RotatedIngestionTokenResult, Visibility, WorklogStatus } from '../types.js';
 import { readDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 import { sanitizedDraftForUpload, scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
@@ -169,7 +169,7 @@ export interface RemotePreviewResult {
 export interface PublishDraftResult {
   id: string;
   status: WorklogStatus | 'already_uploaded';
-  visibility: 'private';
+  visibility: Visibility;
   review_url: string;
   created_at: string;
   reused_existing?: boolean;
@@ -191,16 +191,27 @@ function isAgentFeedHostname(hostname: string): boolean {
   return hostname === 'agentfeed.dev' || hostname.endsWith('.agentfeed.dev');
 }
 
+function isAgentFeedReviewHostname(hostname: string): boolean {
+  return isAgentFeedHostname(hostname) && !hostname.startsWith('api.');
+}
+
+function isExpectedReviewPath(pathname: string): boolean {
+  const normalized = pathname.replace(/\/+$/, '');
+  return /^\/(?:review\/[^/]+|worklogs\/[^/]+\/review)$/.test(normalized);
+}
+
 function validateReviewUrl(reviewUrl: string, apiBaseUrl: string): boolean {
   try {
     const review = new URL(reviewUrl);
     const api = new URL(apiBaseUrl);
     if (!['http:', 'https:'].includes(review.protocol)) return false;
     if (review.username || review.password) return false;
+    if (review.search || review.hash) return false;
+    if (!isExpectedReviewPath(review.pathname)) return false;
     if (isLocalHostname(api.hostname)) return isLocalHostname(review.hostname);
     if (review.protocol !== 'https:') return false;
-    if (api.hostname === 'api.agentfeed.dev') return isAgentFeedHostname(review.hostname);
-    return true;
+    if (isAgentFeedHostname(api.hostname)) return isAgentFeedReviewHostname(review.hostname);
+    return review.hostname === api.hostname;
   } catch {
     return false;
   }
@@ -217,6 +228,13 @@ const VALID_UPLOAD_STATUSES = new Set<string>([
   'already_uploaded'
 ]);
 
+const VALID_UPLOAD_VISIBILITIES = new Set<string>([
+  'private',
+  'unlisted',
+  'public',
+  'team'
+]);
+
 function parsePublishDraftResult(value: unknown, apiBaseUrl: string): PublishDraftResult {
   if (!isRecord(value)) throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid upload response.');
   const id = stringField(value.id);
@@ -224,13 +242,13 @@ function parsePublishDraftResult(value: unknown, apiBaseUrl: string): PublishDra
   const visibility = stringField(value.visibility);
   const reviewUrl = stringField(value.review_url);
   const createdAt = stringField(value.created_at);
-  if (!id || !status || !VALID_UPLOAD_STATUSES.has(status) || visibility !== 'private' || !reviewUrl || !createdAt || !Number.isFinite(Date.parse(createdAt)) || !validateReviewUrl(reviewUrl, apiBaseUrl)) {
+  if (!id || !status || !VALID_UPLOAD_STATUSES.has(status) || !visibility || !VALID_UPLOAD_VISIBILITIES.has(visibility) || !reviewUrl || !createdAt || !Number.isFinite(Date.parse(createdAt)) || !validateReviewUrl(reviewUrl, apiBaseUrl)) {
     throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid upload response. Local draft was kept.');
   }
   return {
     id,
     status: status as PublishDraftResult['status'],
-    visibility: 'private',
+    visibility: visibility as PublishDraftResult['visibility'],
     review_url: reviewUrl,
     created_at: createdAt,
     reused_existing: value.reused_existing === true ? true : undefined

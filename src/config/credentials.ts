@@ -82,9 +82,9 @@ function protectRepoDiscoveredApiBase(
   };
 }
 
-export async function credentialsFromToken(token: string, options: { apiBaseUrl?: string; user?: AgentFeedCredentials['user']; tokenExpiresAt?: string | null } = {}): Promise<AgentFeedCredentials> {
+export async function credentialsFromToken(token: string, options: { apiBaseUrl?: string; user?: AgentFeedCredentials['user']; tokenExpiresAt?: string | null; cwd?: string; trustRepoDiscoveredApiBase?: boolean } = {}): Promise<AgentFeedCredentials> {
   return {
-    api_base_url: await resolveApiBaseUrl({ explicitApiBaseUrl: options.apiBaseUrl }),
+    api_base_url: await resolveApiBaseUrl({ explicitApiBaseUrl: options.apiBaseUrl, cwd: options.cwd, trustRepoDiscoveredApiBase: options.trustRepoDiscoveredApiBase }),
     ingestion_token: token,
     token_expires_at: options.tokenExpiresAt ?? null,
     user: options.user,
@@ -92,7 +92,7 @@ export async function credentialsFromToken(token: string, options: { apiBaseUrl?
   };
 }
 
-export async function saveCredentials(token: string, options: { apiBaseUrl?: string; user?: AgentFeedCredentials['user']; tokenExpiresAt?: string | null } = {}): Promise<AgentFeedCredentials> {
+export async function saveCredentials(token: string, options: { apiBaseUrl?: string; user?: AgentFeedCredentials['user']; tokenExpiresAt?: string | null; cwd?: string; trustRepoDiscoveredApiBase?: boolean } = {}): Promise<AgentFeedCredentials> {
   const credentials = await credentialsFromToken(token, options);
   await ensurePrivateAgentFeedDir();
   await writePrivateCredentialsFile(credentials);

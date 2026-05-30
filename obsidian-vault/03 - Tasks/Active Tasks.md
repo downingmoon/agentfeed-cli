@@ -351,3 +351,14 @@ created: 2026-05-30
 - [x] Backend username/profile/project/worklog/ingest request bound validation 보강
 - [x] Backend public/list pagination limit lower-bound validation 보강
 - [[Commercial Readiness Hardening - Browser Login API Bounds and Security Headers 2026-05-31]]
+
+## 2026-05-31 host token race private preview continuation
+
+- [x] CLI Claude Code Stop hook failure를 `.agentfeed/logs/hook.log`에 기록하고 hook exit `0`으로 격리
+- [x] CLI browser login/rotate pre-auth 단계에서 repo-local `.env` API base를 기본 ignore하고 explicit trust flag로만 허용
+- [x] Backend `API_ALLOWED_HOSTS` + `TrustedHostMiddleware` production Host header allowlist 추가
+- [x] Backend ingestion token 발급 user lock + quota check를 서비스 경계로 통합
+- [x] Backend public worklog card/detail에서 owner-only `user_note` 제거
+- [x] Backend review preview에서 `user_note`를 private field로 명시하고 safe preview contract 추가
+- [x] Frontend public adapter에서 `user_note` 제거 및 unsafe preview publish guard 추가
+- [[Commercial Readiness Hardening - Host Token Race and Private Preview Guards 2026-05-31]]

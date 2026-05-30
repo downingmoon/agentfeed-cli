@@ -276,3 +276,8 @@ Redacted preview:
 - 빈 문자열은 `None`으로 정규화합니다.
 
 관련 구현: [[Commercial Readiness Hardening - Discovery Rate Limits URL Safety and Adapter Resilience 2026-05-31]]
+
+## 2026-05-31 Private user note public-surface guard
+
+- `user_note`는 owner review context로 유지하되 public card/detail payload와 frontend public adapter에서는 노출하지 않는다.
+- Worklog review preview contract는 `private_fields: ["user_note"]`와 `safe_public_preview: true`를 제공해 Frontend가 public/unlisted publish를 안전하게 판정할 수 있게 한다.

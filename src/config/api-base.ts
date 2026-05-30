@@ -149,7 +149,7 @@ export async function discoverApiBaseUrl(cwd = process.cwd()): Promise<string | 
   return (await discoverApiBaseUrlWithDiagnostics(cwd)).value;
 }
 
-export async function resolveApiBaseUrlWithMetadata(options: { cwd?: string; explicitApiBaseUrl?: string; storedApiBaseUrl?: string } = {}): Promise<ApiBaseUrlResolution> {
+export async function resolveApiBaseUrlWithMetadata(options: { cwd?: string; explicitApiBaseUrl?: string; storedApiBaseUrl?: string; trustRepoDiscoveredApiBase?: boolean } = {}): Promise<ApiBaseUrlResolution> {
   if (options.explicitApiBaseUrl) {
     return { value: normalizeApiBaseUrl(options.explicitApiBaseUrl), source: 'explicit', warnings: [] };
   }
@@ -161,11 +161,22 @@ export async function resolveApiBaseUrlWithMetadata(options: { cwd?: string; exp
   }
   const discovered = await discoverApiBaseUrlWithDiagnostics(options.cwd);
   if (discovered.value) {
-    return { value: normalizeApiBaseUrl(discovered.value), source: 'env_file', source_detail: discovered.source_detail, warnings: discovered.warnings };
+    if (options.trustRepoDiscoveredApiBase !== false) {
+      return { value: normalizeApiBaseUrl(discovered.value), source: 'env_file', source_detail: discovered.source_detail, warnings: discovered.warnings };
+    }
+    const detail = discovered.source_detail ? ` (${discovered.source_detail})` : '';
+    return {
+      value: normalizeApiBaseUrl(DEFAULT_API_BASE_URL),
+      source: 'default',
+      warnings: [
+        ...discovered.warnings,
+        `ignored repo-local API base${detail}; set AGENTFEED_TRUST_REPO_API_BASE=1 to explicitly trust this checkout.`
+      ]
+    };
   }
   return { value: normalizeApiBaseUrl(DEFAULT_API_BASE_URL), source: 'default', warnings: discovered.warnings };
 }
 
-export async function resolveApiBaseUrl(options: { cwd?: string; explicitApiBaseUrl?: string; storedApiBaseUrl?: string } = {}): Promise<string> {
+export async function resolveApiBaseUrl(options: { cwd?: string; explicitApiBaseUrl?: string; storedApiBaseUrl?: string; trustRepoDiscoveredApiBase?: boolean } = {}): Promise<string> {
   return (await resolveApiBaseUrlWithMetadata(options)).value;
 }

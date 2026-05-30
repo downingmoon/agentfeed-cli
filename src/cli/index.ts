@@ -154,7 +154,8 @@ async function cmdLogin(args: string[]) {
   const apiBaseUrl = option(args, '--api-base-url');
   const noSave = flag(args, '--no-save');
   if (!token) {
-    const creds = await browserLogin({ apiBaseUrl, noOpen: flag(args, '--no-open'), save: !noSave });
+    const existing = await loadCredentialsWithMetadata({ cwd: process.cwd() });
+    const creds = await browserLogin({ apiBaseUrl, noOpen: flag(args, '--no-open'), save: !noSave, cwd: process.cwd(), storedApiBaseUrl: existing.credentials?.api_base_url });
     print(noSave ? '\nAgentFeed browser login complete (not saved).\n' : '\nAgentFeed browser login complete.\n');
     print(`API: ${creds.api_base_url}`);
     if (creds.token_expires_at) print(`Token expires at: ${formatTokenExpiry(creds.token_expires_at)}`);
@@ -163,7 +164,8 @@ async function cmdLogin(args: string[]) {
       : 'Next:\n  agentfeed status');
     return;
   }
-  const creds = noSave ? await credentialsFromToken(token, { apiBaseUrl }) : await saveCredentials(token, { apiBaseUrl });
+  const loginApiOptions = { apiBaseUrl, cwd: process.cwd(), trustRepoDiscoveredApiBase: process.env.AGENTFEED_TRUST_REPO_API_BASE === '1' };
+  const creds = noSave ? await credentialsFromToken(token, loginApiOptions) : await saveCredentials(token, loginApiOptions);
   print(noSave ? 'AgentFeed token loaded for this command only (not saved).\n' : 'AgentFeed credentials saved.\n');
   print(`API: ${creds.api_base_url}`);
   if (creds.token_expires_at) print(`Token expires at: ${formatTokenExpiry(creds.token_expires_at)}`);
@@ -175,7 +177,8 @@ async function cmdLogin(args: string[]) {
 async function rotateViaBrowserLogin(args: string[], message: string) {
   const apiBaseUrl = option(args, '--api-base-url');
   const noSave = flag(args, '--no-save');
-  const creds = await browserLogin({ apiBaseUrl, noOpen: flag(args, '--no-open'), save: !noSave });
+  const existing = await loadCredentialsWithMetadata({ cwd: process.cwd() });
+  const creds = await browserLogin({ apiBaseUrl, noOpen: flag(args, '--no-open'), save: !noSave, cwd: process.cwd(), storedApiBaseUrl: existing.credentials?.api_base_url });
   print(`${message}\n`);
   print(`API: ${creds.api_base_url}`);
   if (creds.token_expires_at) print(`Token expires at: ${formatTokenExpiry(creds.token_expires_at)}`);

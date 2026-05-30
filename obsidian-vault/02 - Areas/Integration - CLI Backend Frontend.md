@@ -1683,3 +1683,9 @@ API/UX 정합성:
 - Backend no longer advertises unimplemented `team` visibility in write schemas; persisted values are constrained at DB level.
 
 관련: [[Commercial Readiness Hardening - Browser Login API Bounds and Security Headers 2026-05-31]]
+
+## 2026-05-31 Private preview and API host hardening
+
+- CLI pre-auth login은 repo-local API discovery를 기본 ignore하고 Backend는 production Host allowlist를 강제한다.
+- Backend public worklog payload와 Frontend adapter가 `user_note`를 public surface에서 제거해 Feed/Detail privacy contract를 맞췄다.
+- Frontend review page는 unsafe preview 감지 시 publish를 차단하지만 Backend의 `safe_public_preview` contract가 있으면 public title/summary candidate를 정상 publish 가능 상태로 처리한다.

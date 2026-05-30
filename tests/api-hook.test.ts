@@ -1,17 +1,20 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
-import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { mkdtemp, rm, mkdir, writeFile, readFile, chmod } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { promisify } from 'node:util';
 import { initProject } from '../src/config/project-config.js';
 import { writeDraft } from '../src/draft/write.js';
 import { createEmptyDraft } from '../src/draft/create.js';
 import { checkApiReachability, checkIngestionToken, createCliAuthSession, draftToIngestRequest, exchangeCliAuthSession, previewDraftRemote, publishDraft, rotateIngestionToken } from '../src/api/client.js';
 import { browserLogin, waitForCliAuthExchange } from '../src/auth/browser-login.js';
-import { installClaudeCodeHook, uninstallClaudeCodeHook } from '../src/hooks/claude-code-settings.js';
+import { buildClaudeCodeStopHookCommand, installClaudeCodeHook, uninstallClaudeCodeHook } from '../src/hooks/claude-code-settings.js';
 import { pathExists } from '../src/utils/fs.js';
 
 let dir: string;
 let home: string;
+const execFileAsync = promisify(execFile);
 const oldHome = process.env.HOME;
 
 beforeEach(async () => {
@@ -23,6 +26,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   process.env.HOME = oldHome;
+  delete process.env.AGENTFEED_TRUST_REPO_API_BASE;
   vi.unstubAllGlobals();
   await rm(dir, { recursive: true, force: true });
   await rm(home, { recursive: true, force: true });
@@ -654,6 +658,60 @@ describe('api client', () => {
     await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
+
+  it('browser login ignores repo-local BACKEND_PORT discovery before auth unless explicitly trusted', async () => {
+    await writeFile(join(dir, '.env'), 'BACKEND_PORT=8123\n');
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.endsWith('/auth/cli/sessions')) {
+        return new Response(JSON.stringify({
+          data: {
+            session_id: 'session-default-api',
+            authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-default-api',
+            expires_at: '2026-05-20T00:05:00Z',
+            poll_interval_seconds: 1
+          }
+        }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      if (url.endsWith('/auth/cli/sessions/session-default-api/exchange')) {
+        return new Response(JSON.stringify({ data: { token: 'af_live_default_api' } }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404, headers: { 'content-type': 'application/json' } });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const creds = await browserLogin({ cwd: dir, noOpen: true, waitMs: 50, save: false });
+
+    expect(creds.api_base_url).toBe('https://api.agentfeed.dev/v1');
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.agentfeed.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
+  });
+
+  it('browser login accepts repo-local API discovery when AGENTFEED_TRUST_REPO_API_BASE=1', async () => {
+    await writeFile(join(dir, '.env'), 'BACKEND_PORT=8124\n');
+    process.env.AGENTFEED_TRUST_REPO_API_BASE = '1';
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.endsWith('/auth/cli/sessions')) {
+        return new Response(JSON.stringify({
+          data: {
+            session_id: 'session-trusted-api',
+            authorize_url: 'http://localhost:3001/cli/authorize?session_id=session-trusted-api',
+            expires_at: '2026-05-20T00:05:00Z',
+            poll_interval_seconds: 1
+          }
+        }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      if (url.endsWith('/auth/cli/sessions/session-trusted-api/exchange')) {
+        return new Response(JSON.stringify({ data: { token: 'af_live_trusted_api' } }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404, headers: { 'content-type': 'application/json' } });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const creds = await browserLogin({ cwd: dir, noOpen: true, waitMs: 50, save: false });
+
+    expect(creds.api_base_url).toBe('http://localhost:8124/v1');
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://localhost:8124/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
+  });
+
   it('keeps polling the browser login session until it is approved', async () => {
     let attempts = 0;
     const exchange = vi.fn(async () => {
@@ -711,6 +769,38 @@ describe('Claude Code hook installer', () => {
     await uninstallClaudeCodeHook({ projectRoot: dir, settingsPath: settings });
 
     expect(await pathExists(settings)).toBe(false);
+  });
+
+
+  it('installs a Stop hook command that logs collection failures but exits successfully', async () => {
+    const binDir = await mkdtemp(join(tmpdir(), 'agentfeed-fake-bin-'));
+    const fakeAgentFeed = join(binDir, 'agentfeed');
+    await writeFile(fakeAgentFeed, [
+      '#!/usr/bin/env sh',
+      'echo "fake stdout: attempted $*"',
+      'echo "fake stderr: uninitialized project" >&2',
+      'exit 42',
+      ''
+    ].join('\n'));
+    await chmod(fakeAgentFeed, 0o755);
+
+    try {
+      const command = buildClaudeCodeStopHookCommand();
+      const result = await execFileAsync('sh', ['-c', command], {
+        cwd: dir,
+        env: { ...process.env, PATH: `${binDir}:${process.env.PATH ?? ''}` }
+      });
+
+      expect(result.stdout).toBe('');
+      expect(result.stderr).toBe('');
+      const log = await readFile(join(dir, '.agentfeed', 'logs', 'hook.log'), 'utf8');
+      expect(log).toContain('agentfeed Claude Code Stop hook start');
+      expect(log).toContain('fake stdout: attempted collect --source claude-code');
+      expect(log).toContain('fake stderr: uninitialized project');
+      expect(log).toContain('failed with exit 42');
+    } finally {
+      await rm(binDir, { recursive: true, force: true });
+    }
   });
 
   it('installs Stop hook into empty settings, preserves settings, avoids duplicates, and uninstalls only AgentFeed hook', async () => {

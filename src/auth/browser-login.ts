@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { hostname } from 'node:os';
 import { stdin as input, stdout as output } from 'node:process';
 import { createCliAuthSession, exchangeCliAuthSession, AgentFeedApiError } from '../api/client.js';
-import { resolveApiBaseUrl } from '../config/api-base.js';
+import { resolveApiBaseUrlWithMetadata } from '../config/api-base.js';
 import { credentialsFromToken, saveCredentials } from '../config/credentials.js';
 import { openBrowser } from '../utils/open-browser.js';
 import type { CliAuthExchangeResult, CliAuthSession } from '../types.js';
@@ -40,8 +40,16 @@ export async function waitForCliAuthExchange(options: {
   throw lastError instanceof Error ? lastError : new Error('CLI authorization was not completed.');
 }
 
-export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: boolean; waitMs?: number; save?: boolean } = {}) {
-  const apiBaseUrl = await resolveApiBaseUrl({ explicitApiBaseUrl: options.apiBaseUrl });
+export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: boolean; waitMs?: number; save?: boolean; cwd?: string; storedApiBaseUrl?: string } = {}) {
+  const apiResolution = await resolveApiBaseUrlWithMetadata({
+    cwd: options.cwd,
+    explicitApiBaseUrl: options.apiBaseUrl,
+    storedApiBaseUrl: options.storedApiBaseUrl,
+    trustRepoDiscoveredApiBase: process.env.AGENTFEED_TRUST_REPO_API_BASE === '1',
+  });
+  const apiBaseUrl = apiResolution.value;
+  for (const warning of apiResolution.warnings) output.write(`Warning: ${warning}\n`);
+  output.write(`Using AgentFeed API: ${apiBaseUrl}\n`);
   const verifier = randomBytes(32).toString('hex');
   const session = await createCliAuthSession(apiBaseUrl, {
     verifier,

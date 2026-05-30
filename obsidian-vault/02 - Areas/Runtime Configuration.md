@@ -348,3 +348,9 @@ created: 2026-05-30
 - 검증: Backend ruff, pytest, Alembic offline migration chain.
 
 관련: [[Commercial Readiness Hardening - Browser Login API Bounds and Security Headers 2026-05-31]]
+
+## 2026-05-31 Trusted host and token issuance hardening
+
+- Backend production 설정에 `API_ALLOWED_HOSTS`를 추가하고 public explicit hostname만 허용한다.
+- FastAPI app에 `TrustedHostMiddleware`를 추가해 unknown Host 요청을 app layer에서 400으로 차단한다.
+- Ingestion token 발급은 `issue_ingestion_token()` 내부에서 active user row lock과 quota check를 함께 수행한다.

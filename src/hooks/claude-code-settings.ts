@@ -6,6 +6,26 @@ import { ensureDir, pathExists } from '../utils/fs.js';
 type JsonObj = Record<string, unknown>;
 const AGENTFEED_COMMAND = 'agentfeed collect --source claude-code';
 
+export function buildClaudeCodeStopHookCommand(): string {
+  return [
+    "sh -c '",
+    "LOG_DIR=.agentfeed/logs; ",
+    "LOG_FILE=$LOG_DIR/hook.log; ",
+    "mkdir -p \"$LOG_DIR\" >/dev/null 2>&1; ",
+    "{ ",
+    "printf \"\\n[%s] agentfeed Claude Code Stop hook start\\n\" \"$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date)\"; ",
+    `${AGENTFEED_COMMAND}; `,
+    "status=$?; ",
+    "if [ $status -eq 0 ]; then ",
+    "printf \"[%s] agentfeed Claude Code Stop hook succeeded\\n\" \"$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date)\"; ",
+    "else ",
+    "printf \"[%s] agentfeed Claude Code Stop hook failed with exit %s\\n\" \"$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date)\" \"$status\"; ",
+    "fi; ",
+    "} >> \"$LOG_FILE\" 2>&1 || true; ",
+    "exit 0'",
+  ].join('');
+}
+
 function timestamp(): string {
   return new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
 }
@@ -48,7 +68,7 @@ export async function installClaudeCodeHook(options: { projectRoot: string; scop
   const path = resolveClaudeSettingsPath(options);
   const settings = await readSettings(path);
   if (!hasAgentFeedHook(settings)) {
-    stopEntries(settings).push({ matcher: '*', hooks: [{ type: 'command', command: AGENTFEED_COMMAND }] });
+    stopEntries(settings).push({ matcher: '*', hooks: [{ type: 'command', command: buildClaudeCodeStopHookCommand() }] });
   }
   if (options.dryRun) return { path, settings, backupPath: null };
   await ensureDir(dirname(path));

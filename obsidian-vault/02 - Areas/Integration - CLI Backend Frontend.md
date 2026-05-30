@@ -45,6 +45,32 @@ sequenceDiagram
 - Linux review URL clipboard fallback 보강
 - `share --note`를 `summary` prefix가 아닌 `user_note` 별도 계약으로 승격
 
+## 2026-05-30 Backend provider token at-rest 보호
+
+> [!success]
+> Backend GitHub OAuth provider token은 신규 저장/갱신 시 `AuthAccount.access_token_encrypted` 컬럼에 `af1:` prefix가 붙은 encrypted value로 저장합니다.
+
+문제:
+
+- 컬럼명은 `access_token_encrypted`였지만 기존 구현은 GitHub provider token을 그대로 저장했습니다.
+- DB snapshot 또는 관리자 실수로 provider token이 노출되면 GitHub OAuth 권한까지 노출될 수 있었습니다.
+
+수정:
+
+- `SECRET_KEY`에서 유도한 Fernet key로 provider token을 암호화합니다.
+- 새 auth account 생성과 기존 account token refresh 모두 암호화 경로를 탑니다.
+- 기존 plaintext row를 읽을 수 있도록 `af1:` prefix가 없는 값은 legacy plaintext로 취급하는 migration fallback을 유지합니다.
+
+검증:
+
+- provider token round-trip / plaintext 미포함 회귀 테스트
+- legacy plaintext fallback 회귀 테스트
+- `uv run --with pytest --with pytest-asyncio pytest -q`
+- `uv run --with ruff ruff check --select I,F app/services/auth.py tests/test_contracts.py`
+
+> [!warning] 운영 메모
+> `SECRET_KEY`가 바뀌면 새 encrypted provider token 복호화가 불가능합니다. 운영에서는 secret rotation 전에 별도 provider-token migration/rotation 절차가 필요합니다.
+
 ## 관련 원본
 
 - [[Cross Repo Integration Fixes#목표 end-to-end 흐름]]

@@ -60,6 +60,7 @@ created: 2026-05-30
 - [x] CLI browser login/token path를 no-OAuth test와 dev smoke token preflight로 검증
 - [x] publish/upload 직전 draft public field 재-scan으로 수동 편집 secret 누출 방지
 - [x] generic/Cursor `--until` 단독 window에서 timestamp 없는 row 반복 집계 방지
+- [x] Backend GitHub provider token plaintext 저장을 encrypted at-rest 저장으로 보정
 
 ## P2 후보
 
@@ -93,6 +94,7 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI login/token smoke 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Feed sort label 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Publish management 계약]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Backend provider token at-rest 보호]]
 - [[Privacy Safety#2026-05-30 Upload-time privacy re-scan]]
 - [[Collection System#2026-05-30 Generic until-window timestamp-less evidence 보정]]
 - [[Collection System#2026-05-30 Agent window timestamp-less evidence 보정]]

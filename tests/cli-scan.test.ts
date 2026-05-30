@@ -6,6 +6,7 @@ import { join, resolve } from 'node:path';
 import { initProject } from '../src/config/project-config.js';
 import { createEmptyDraft } from '../src/draft/create.js';
 import { writeDraft } from '../src/draft/write.js';
+import { ensureCliBuilt } from './build-cli.js';
 
 const repoRoot = resolve('.');
 const cliPath = join(repoRoot, 'dist', 'cli', 'index.js');
@@ -15,7 +16,7 @@ let dir: string;
 let home: string;
 
 beforeAll(() => {
-  execFileSync('npm', ['run', 'build'], { cwd: repoRoot, stdio: 'ignore' });
+  ensureCliBuilt(repoRoot);
 });
 
 beforeEach(async () => {

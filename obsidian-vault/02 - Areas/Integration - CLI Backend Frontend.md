@@ -1002,3 +1002,109 @@ Frontend 표시:
 
 - `npm run test:contracts`
 - `npx tsc --noEmit --pretty false`
+
+## 2026-05-30 CLI draft id path safety
+
+> [!success]
+> CLI draft id는 파일 경로로 쓰이기 전에 안전한 id 형식인지 검증합니다. `../credentials` 같은 traversal id는 draft read/delete 경로에서 모두 거부됩니다.
+
+문제:
+
+- `readDraft()`와 `agentfeed discard --id`가 raw `--id`를 `.agentfeed/drafts/${id}.json` 경로에 직접 결합했습니다.
+- crafted id가 `.agentfeed/drafts` 밖으로 escape해 `.agentfeed/credentials.json` 같은 파일을 읽거나 삭제할 수 있었습니다.
+
+수정:
+
+- `src/draft/paths.ts`에 `assertSafeDraftId()` / `draftPaths()`를 추가했습니다.
+- draft id는 letters, numbers, underscore, hyphen만 허용하고 path separator / dot segment를 거부합니다.
+- `readDraft()`, `writeDraft()`, `listDrafts()`, `discard`가 같은 safe path helper를 사용합니다.
+
+검증:
+
+- `npx vitest run tests/draft-id-path-safety.test.ts`
+- `npm run typecheck`
+
+## 2026-05-30 Private comment report visibility gate
+
+> [!success]
+> Private worklog의 comment는 owner가 아닌 사용자가 report mutation으로 접근할 수 없습니다.
+
+문제:
+
+- `POST /comments/{comment_id}/report`는 comment id만 있으면 report row를 생성했고, comment가 속한 worklog visibility를 확인하지 않았습니다.
+- private worklog comment id가 노출된 경우 비소유자가 social/report mutation으로 private 영역에 접근할 수 있었습니다.
+
+수정:
+
+- social router에 `_get_visible_comment_or_404()`를 추가했습니다.
+- comment와 worklog를 함께 조회한 뒤 `_assert_worklog_visible_to_user()`로 visibility를 검증합니다.
+- 비소유자는 `NotFoundError`를 받고 report row가 생성되지 않습니다.
+
+검증:
+
+- `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q -k 'private_worklog_comment_report'`
+- `uv run --with ruff ruff check --select I,F app/routers/social.py app/routers/worklogs.py tests/test_contracts.py`
+- `uv run --with pytest --with pytest-asyncio pytest -q`
+
+## 2026-05-30 Header OAuth next preservation
+
+> [!success]
+> Header의 Sign in / Get started 버튼은 현재 path와 query를 GitHub OAuth `next`로 전달합니다.
+
+문제:
+
+- 기존 Header sign-in은 `auth.githubUrl()`을 next 없이 호출했습니다.
+- `/search?q=codex` 같은 deep link에서 로그인하면 dashboard 기본 경로로 돌아가 맥락이 사라졌습니다.
+
+수정:
+
+- `signInWithGithub(next?: string)` 형태로 AppContext 계약을 확장했습니다.
+- `Header`가 `usePathname()` + `useSearchParams()`로 현재 route를 계산해 OAuth `next`에 넣습니다.
+- `authNextPath()` helper는 protocol-relative path를 `/`로 정규화합니다.
+
+검증:
+
+- `npm run test:contracts`
+- `npx tsc --noEmit --pretty false`
+
+## 2026-05-30 Publish follower notification producer
+
+> [!success]
+> Public publish 전환 시 follower에게 `new_worklog_from_following` notification을 발행합니다.
+
+문제:
+
+- notification setting과 `new_worklog_from_following` 타입은 있었지만 publish flow에서 producer가 없었습니다.
+- 사용자가 follow한 작성자의 public worklog가 feed에는 나타나도 알림으로는 전달되지 않았습니다.
+
+수정:
+
+- `publish_worklog()`가 `visibility="public"`이고 이전 visibility가 public이 아니었던 경우 follower ids를 조회합니다.
+- 각 follower에 대해 `create_notification(type="new_worklog_from_following")`을 호출합니다.
+- `create_notification()`을 그대로 사용해 per-user notification setting과 self-notification guard를 유지합니다.
+
+검증:
+
+- `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q -k 'publish_public_worklog_notifies_followers'`
+- `uv run --with ruff ruff check --select I,F app/routers/social.py app/routers/worklogs.py tests/test_contracts.py`
+- `uv run --with pytest --with pytest-asyncio pytest -q`
+
+## 2026-05-30 CLI integration test build lock
+
+> [!success]
+> Parallel Vitest workers can no longer race while rebuilding `dist/` for CLI subprocess tests.
+
+문제:
+
+- 여러 CLI subprocess test file이 `beforeAll`에서 동시에 `npm run build`를 실행했습니다.
+- `dist/api/client.js`가 재작성되는 순간 다른 test가 `dist/cli/index.js`를 실행하면 ESM export snapshot이 일시적으로 불일치해 `AgentFeedApiError` import가 실패할 수 있었습니다.
+
+수정:
+
+- `tests/build-cli.ts`에 repo-local build lock과 source mtime stamp를 추가했습니다.
+- CLI subprocess tests는 직접 `npm run build`를 호출하지 않고 `ensureCliBuilt()`를 공유합니다.
+- 첫 worker만 build를 수행하고, 나머지는 stamp freshness를 확인해 재빌드 race를 피합니다.
+
+검증:
+
+- `npx vitest run tests/cli-scan.test.ts tests/draft-id-path-safety.test.ts`

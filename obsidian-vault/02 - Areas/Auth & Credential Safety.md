@@ -186,3 +186,16 @@ created: 2026-05-30
 - `exp`가 없거나 현재 시각보다 과거이면 `OAUTH_STATE_INVALID`로 실패합니다.
 
 관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 OAuth state payload expiry]]
+
+## 2026-05-30 Header OAuth next preservation
+
+> [!success]
+> Header에서 시작한 GitHub OAuth login은 현재 route context를 `next`로 보존합니다.
+
+계약:
+
+- Header Sign in / Get started는 현재 path와 query string을 `next`에 담습니다.
+- protocol-relative path는 `/`로 정규화해 open redirect 입력이 되지 않게 합니다.
+- CLI authorize page의 기존 next-preservation pattern과 동일한 흐름을 사용합니다.
+
+관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 Header OAuth next preservation]]

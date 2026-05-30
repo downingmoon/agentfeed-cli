@@ -88,6 +88,10 @@ created: 2026-05-30
 - [x] Private worklog social like/bookmark mutation visibility gate 보강
 - [x] CLI Claude hook uninstall이 missing config를 생성하지 않는 no-op 보장
 - [x] Frontend worklog comment submit 중복 클릭/실패 UX 보강
+- [x] CLI draft id path traversal로 `.agentfeed/credentials.json` read/delete 가능한 P0 차단
+- [x] Private worklog comment report mutation visibility gate 보강
+- [x] Header GitHub OAuth login이 현재 route/query를 next로 보존
+- [x] Public publish 시 follower에게 `new_worklog_from_following` notification 발행
 
 ## P2 후보
 
@@ -178,3 +182,11 @@ created: 2026-05-30
 - [[Privacy Safety#2026-05-30 Social mutation visibility gate]]
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI hook uninstall no-op]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Frontend comment submit lock]]
+- [[Integration - CLI Backend Frontend#2026-05-30 CLI draft id path safety]]
+- [[Privacy Safety#2026-05-30 CLI draft id path safety]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Private comment report visibility gate]]
+- [[Privacy Safety#2026-05-30 Private comment report visibility gate]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Header OAuth next preservation]]
+- [[Auth & Credential Safety#2026-05-30 Header OAuth next preservation]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Publish follower notification producer]]
+- [[Integration - CLI Backend Frontend#2026-05-30 CLI integration test build lock]]

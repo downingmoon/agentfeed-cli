@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { rm } from 'node:fs/promises';
-import { join } from 'node:path';
 import { initProject, loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
 import { credentialsFromToken, loadCredentials, saveCredentials } from '../config/credentials.js';
 import { resolveApiBaseUrl } from '../config/api-base.js';
@@ -24,6 +23,7 @@ import { readJson, pathExists } from '../utils/fs.js';
 import { openBrowser } from '../utils/open-browser.js';
 import { copyToClipboard } from '../utils/clipboard.js';
 import { AGENTFEED_CLI_VERSION } from '../version.js';
+import { draftPaths } from '../draft/paths.js';
 
 function print(text = '') { process.stdout.write(`${text}\n`); }
 function err(text = '') { process.stderr.write(`${text}\n`); }
@@ -331,8 +331,9 @@ async function cmdDrafts() {
 async function cmdDiscard(args: string[]) {
   const id = await resolveDraftId(process.cwd(), args);
   const root = await resolveProjectRoot(process.cwd());
-  await rm(join(root, '.agentfeed', 'drafts', `${id}.json`), { force: true });
-  await rm(join(root, '.agentfeed', 'drafts', `${id}.md`), { force: true });
+  const { jsonPath, markdownPath } = draftPaths(root, id);
+  await rm(jsonPath, { force: true });
+  await rm(markdownPath, { force: true });
   print(`Discarded draft: ${id}`);
 }
 

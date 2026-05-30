@@ -127,3 +127,29 @@ Redacted preview:
 - public/unlisted worklog는 기존 social UX를 유지합니다.
 
 관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 Social mutation visibility gate]]
+
+## 2026-05-30 CLI draft id path safety
+
+> [!success]
+> Draft id는 더 이상 filesystem path segment로 직접 신뢰하지 않습니다.
+
+보안 계약:
+
+- draft id는 letters, numbers, `_`, `-`만 허용합니다.
+- `readDraft`, `writeDraft`, `listDrafts`, `discard`는 같은 safe path helper를 사용합니다.
+- traversal id로 `.agentfeed/credentials.json` 같은 민감 파일을 읽거나 삭제할 수 없습니다.
+
+관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 CLI draft id path safety]]
+
+## 2026-05-30 Private comment report visibility gate
+
+> [!success]
+> Comment report mutation도 comment가 속한 worklog visibility를 통과해야 합니다.
+
+보안 계약:
+
+- private worklog comment는 owner만 report할 수 있습니다.
+- 비소유자는 report target 존재 여부를 알 수 없도록 `NotFoundError`를 받습니다.
+- report row와 notification side effect는 생성되지 않습니다.
+
+관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 Private comment report visibility gate]]

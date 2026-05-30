@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { initProject } from '../src/config/project-config.js';
+import { ensureCliBuilt } from './build-cli.js';
 
 const repoRoot = resolve('.');
 const cliPath = join(repoRoot, 'dist', 'cli', 'index.js');
@@ -15,7 +16,7 @@ let dir: string;
 let home: string;
 
 beforeAll(() => {
-  execFileSync('npm', ['run', 'build'], { cwd: repoRoot, stdio: 'ignore' });
+  ensureCliBuilt(repoRoot);
 });
 
 beforeEach(async () => {

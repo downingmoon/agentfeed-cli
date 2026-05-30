@@ -49,6 +49,7 @@ graph LR
 - [[Auth & Credential Safety#2026-05-30 CLI ephemeral login --no-save|CLI ephemeral login]]
 - [[Auth & Credential Safety#2026-05-30 GitHub OAuth state CSRF protection|GitHub OAuth state]]
 - [[Auth & Credential Safety#2026-05-30 Deleted user ingestion-token invalidation|Deleted user token invalidation]]
+- [[Auth & Credential Safety#2026-05-30 CLI auth exchange active-user gate|CLI auth exchange gate]]
 - [[Runtime Configuration#2026-05-30 Frontend API URL normalization|Frontend API URL normalization]]
 - [[Runtime Configuration#2026-05-30 CLI API POST timeout|CLI API POST timeout]]
 - [[Integration - CLI Backend Frontend#End-to-end 흐름|End-to-end 흐름]]

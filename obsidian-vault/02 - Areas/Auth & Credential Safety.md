@@ -104,11 +104,40 @@ created: 2026-05-30
 > [!important]
 > 계정 삭제/비활성화 정책을 바꿀 때는 JWT 경로(`get_current_user_optional`)와 ingestion-token 경로(`get_ingestion_user`)의 active-user filter가 계속 같아야 합니다.
 
+## 2026-05-30 CLI auth exchange active-user gate
+
+> [!success]
+> 브라우저 승인 후 CLI가 token을 교환하는 마지막 단계에서도 user active 상태를 다시 확인합니다.
+
+### 문제
+
+- 승인 시점에는 `get_current_user`가 active user만 허용합니다.
+- 하지만 승인 직후부터 CLI exchange 직전 사이에 user가 soft-delete되면, 기존 exchange 경로는 `db.get(User, id)`만 사용해 새 ingestion token을 발급할 수 있었습니다.
+- 이는 [[#2026-05-30 Deleted user ingestion-token invalidation]]의 사후 사용 차단과 별개로, 삭제된 계정에 새 token을 만들 수 있는 gap입니다.
+
+### 계약
+
+- `POST /v1/auth/cli/sessions/{session_id}/exchange`는 `users.deleted_at IS NULL` 조건으로 user를 다시 조회합니다.
+- active user가 아니면 `UNAUTHORIZED`로 실패합니다.
+- 실패 시 session status는 `approved`로 남고, `consumed_at`을 설정하지 않으며, 새 `IngestionToken`을 추가하지 않습니다.
+- active user일 때만 raw `af_live_...` token이 생성되고 session이 `consumed`로 전환됩니다.
+
+### 검증
+
+- RED: exchange가 `db.get(User, id)`로 deleted user에게 token을 발급해 실패
+- GREEN:
+  - `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q -k 'cli_auth_exchange'`
+  - `uv run --with pytest --with pytest-asyncio pytest -q`
+  - `uv run --with ruff ruff check --select I,F app/routers/auth.py tests/test_contracts.py`
+- 통합 gate:
+  - `../agentfeed-dev/scripts/test-all.sh`
+
 ## 관련 링크
 
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI ephemeral login --no-save]]
 - [[Integration - CLI Backend Frontend#2026-05-30 GitHub OAuth state CSRF protection]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Deleted user ingestion-token invalidation]]
+- [[Integration - CLI Backend Frontend#2026-05-30 CLI auth exchange active-user gate]]
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI login/token smoke 계약]]
 - [[Privacy Safety]]
 - [[Active Tasks#P1 후보]]

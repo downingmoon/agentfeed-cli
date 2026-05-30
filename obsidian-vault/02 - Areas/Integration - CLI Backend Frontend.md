@@ -289,6 +289,25 @@ sequenceDiagram
 - `uv run --with ruff ruff check --select I,F app/dependencies.py tests/test_contracts.py`
 - `../agentfeed-dev/scripts/test-all.sh`
 
+## 2026-05-30 CLI auth exchange active-user gate
+
+> [!success]
+> CLI browser-login의 approval → exchange 사이 race에서도 soft-deleted user가 새 ingestion token을 받을 수 없도록 Backend exchange 계약을 강화했습니다. 자세한 보안 계약은 [[Auth & Credential Safety#2026-05-30 CLI auth exchange active-user gate]]에 정리합니다.
+
+계약:
+
+- `/v1/auth/cli/sessions/{session_id}/approve`: 기존처럼 logged-in active user만 승인 가능
+- `/v1/auth/cli/sessions/{session_id}/exchange`: 승인 후에도 `users.deleted_at IS NULL` user lookup을 다시 수행
+- inactive user면 새 token을 만들지 않고 session을 consume하지 않음
+- active user면 token 생성, `CliAuthSession.status=consumed`, `consumed_at` 설정
+
+검증:
+
+- `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q -k 'cli_auth_exchange'`
+- `uv run --with pytest --with pytest-asyncio pytest -q`
+- `uv run --with ruff ruff check --select I,F app/routers/auth.py tests/test_contracts.py`
+- `../agentfeed-dev/scripts/test-all.sh`
+
 ## 관련 원본
 
 - [[Cross Repo Integration Fixes#목표 end-to-end 흐름]]

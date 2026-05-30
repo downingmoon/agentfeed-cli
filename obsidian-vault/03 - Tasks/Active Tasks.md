@@ -71,6 +71,7 @@ created: 2026-05-30
 - [x] Backend GitHub OAuth state를 signed+cookie-bound로 검증해 login CSRF 방어
 - [x] CLI API POST timeout/AbortSignal로 login/publish 무기한 대기 방지
 - [x] Soft-deleted user의 ingestion token 인증과 `last_used_at` 갱신 차단
+- [x] CLI browser-login exchange 단계에서 soft-deleted user의 신규 token 발급 차단
 
 ## P2 후보
 
@@ -116,6 +117,7 @@ created: 2026-05-30
 - [[Auth & Credential Safety#2026-05-30 GitHub OAuth state CSRF protection]]
 - [[Runtime Configuration#2026-05-30 CLI API POST timeout]]
 - [[Auth & Credential Safety#2026-05-30 Deleted user ingestion-token invalidation]]
+- [[Auth & Credential Safety#2026-05-30 CLI auth exchange active-user gate]]
 - [[Collection System#2026-05-30 Generic until-window timestamp-less evidence 보정]]
 - [[Collection System#2026-05-30 Agent window timestamp-less evidence 보정]]
 - [[Collection System#2026-05-30 Codex failed spawn_agent 보정]]

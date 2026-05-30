@@ -340,3 +340,17 @@ Redacted preview:
 - DOM negative check는 page가 아직 loading이어서 false pass하지 않도록 title/agent positive assertion 이후에 수행합니다.
 
 검증: [[Commercial Readiness Hardening - Hydrated Browser Privacy Smoke 2026-05-31#검증 증거]]
+
+## 2026-05-31 CLI draft artifact private permissions
+
+> [!success]
+> CLI draft JSON/Markdown files now use private local filesystem permissions like credentials.
+
+계약:
+
+- `.agentfeed/drafts` directory는 `0o700`입니다.
+- draft `.json` / `.md` artifact는 `0o600`으로 생성됩니다.
+- 기존 draft 파일이 느슨한 mode로 존재해도 `writeDraft()` rewrite 후 다시 `0o600`으로 조입니다.
+- chmod가 의미 없는 filesystem에서는 best-effort로 실패를 무시합니다.
+
+검증: [[Commercial Readiness Hardening - CLI Draft Artifact Permissions 2026-05-31#검증 증거]]

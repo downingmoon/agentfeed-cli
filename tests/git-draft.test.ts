@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { mkdtemp, rm, writeFile, mkdir, readFile } from 'node:fs/promises';
+import { chmod, mkdtemp, rm, writeFile, mkdir, readFile, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -7,6 +7,7 @@ import { initProject } from '../src/config/project-config.js';
 import { collectGitMetrics } from '../src/collectors/git.js';
 import { collectDraft } from '../src/draft/create.js';
 import { findLatestDraft, readDraft } from '../src/draft/read.js';
+import { writeDraft } from '../src/draft/write.js';
 import { draftToIngestRequest } from '../src/api/client.js';
 
 let dir: string;
@@ -96,6 +97,28 @@ describe('git collector and drafts', () => {
     const payloadText = JSON.stringify(payload);
     expect(payload.worklog.changed_areas).toContain('API layer');
     expect(payloadText).not.toContain('src/api.ts');
+  });
+
+  it('writes draft artifacts with private permissions and tightens existing files', async () => {
+    if (process.platform === 'win32') return;
+    await initProject({ cwd: dir, noGitCheck: false });
+    await writeFile(join(dir, 'src', 'api.ts'), 'one\ntwo changed\nthree\nfour\n');
+
+    const draft = await collectDraft({ cwd: dir, source: 'claude_code' });
+    const draftsDir = join(dir, '.agentfeed', 'drafts');
+    const jsonPath = join(draftsDir, `${draft.id}.json`);
+    const markdownPath = join(draftsDir, `${draft.id}.md`);
+
+    expect((await stat(draftsDir)).mode & 0o777).toBe(0o700);
+    expect((await stat(jsonPath)).mode & 0o777).toBe(0o600);
+    expect((await stat(markdownPath)).mode & 0o777).toBe(0o600);
+
+    await chmod(jsonPath, 0o644);
+    await chmod(markdownPath, 0o644);
+    await writeDraft(dir, draft);
+
+    expect((await stat(jsonPath)).mode & 0o777).toBe(0o600);
+    expect((await stat(markdownPath)).mode & 0o777).toBe(0o600);
   });
 
   it('respects include_file_stats=false when creating public draft fields', async () => {

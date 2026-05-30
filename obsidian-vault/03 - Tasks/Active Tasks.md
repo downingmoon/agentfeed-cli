@@ -29,6 +29,7 @@ created: 2026-05-30
 - [x] smoke-e2e가 hydrated browser public DOM에서 user_note 비노출을 검증하도록 보강
 - [x] Alembic 긴 revision id가 dev/live migration을 깨지 않도록 version table 확장
 - [x] CLI private review upload와 public/unlisted publish privacy gate 혼동 방지
+- [x] CLI draft JSON/Markdown artifact를 private permission(`0o600`)으로 저장
 
 - [x] Backend aggregate feed sort offset cursor를 score/published_at/id keyset cursor로 교체
 - [x] Frontend GitHub OAuth next redirect safe hash fragment 보존 및 unsafe hash strip
@@ -159,6 +160,8 @@ created: 2026-05-30
 - [x] Frontend unpublish control을 실제 published status 기준으로 축소
 
 ## 관련 링크
+
+- [[Commercial Readiness Hardening - CLI Draft Artifact Permissions 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Hydrated Browser Privacy Smoke 2026-05-31]]
 

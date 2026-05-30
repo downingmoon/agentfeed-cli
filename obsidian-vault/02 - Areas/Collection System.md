@@ -660,3 +660,16 @@ created: 2026-05-30
 - Long line skip은 정상 bounded row의 session identity 수집을 방해하지 않습니다.
 
 검증: [[Commercial Readiness Hardening - Session Parser Bounds Notification Dedupe and Comment Contracts 2026-05-31#검증 증거]]
+
+## 2026-05-31 Draft artifact permissions
+
+> [!success]
+> Draft collection artifacts are now private by default, reducing local leakage before review/publish.
+
+수집 계약:
+
+- `collect` / `share`가 생성하는 draft JSON과 Markdown은 private mode로 저장됩니다.
+- Reused/rewritten draft도 permission tightening을 다시 수행합니다.
+- 이 변경은 upload payload schema를 바꾸지 않고 local artifact safety만 강화합니다.
+
+검증: [[Commercial Readiness Hardening - CLI Draft Artifact Permissions 2026-05-31#검증 증거]]

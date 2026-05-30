@@ -47,6 +47,10 @@ created: 2026-05-30
 - [x] explicit collection window에서 timestamp 없는 agent evidence row를 제외하도록 보정
 - [x] `share --json` upload output에 smoke 검증용 draft를 포함하도록 계약화
 - [x] Docker dev frontend `.next` 캐시를 named volume으로 격리해 smoke flake 방지
+- [x] Backend profile/leaderboard streak placeholder를 실제 consecutive-day 계산으로 교체
+- [x] Frontend feed time filter가 Backend `time_range` API로 전달되도록 연결
+- [x] CLI/package version metadata 단일화로 release drift 방지
+- [x] dev bootstrap에서 lockfile 기반 `npm ci`와 `.env` 우선 로딩 사용
 - [x] 실제 Cursor workspace/session format 추가 조사 후 parser 품질 상향 가능성 판단
 - [x] CLI ingest `worklog.model` → Backend 저장 → Frontend 노출 계약화
 
@@ -72,6 +76,9 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 E2E smoke gate 보강]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Docker smoke E2E 성공]]
 - [[Integration - CLI Backend Frontend#2026-05-30 share --json upload draft 계약]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Feed time_range 계약]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Leaderboard streak 계약]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Release/dev reproducibility 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 test-all gate 보강]]
 - [[Integration - CLI Backend Frontend#2026-05-30 worklog.model ingest 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Feed sort label 계약]]

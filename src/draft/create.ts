@@ -11,6 +11,7 @@ import { changedAreas } from '../summary/changed-areas.js';
 import { generateOutcome, generateSummary, generateTimeline, generateTitle } from '../summary/rule-based.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
 import { randomSuffix, shortHash } from '../utils/hash.js';
+import { AGENTFEED_TOOL_VERSION } from '../version.js';
 import { writeDraft } from './write.js';
 import { listDrafts, readDraft } from './read.js';
 
@@ -62,7 +63,7 @@ export function createEmptyDraft(input: { projectName: string; projectRoot: stri
     project: { name: String((redacted.project as { name: string }).name), repository_url: null, local_path_hash: shortHash(input.projectRoot, 16) },
     worklog: { title: String(redacted.title), summary: String(redacted.summary), user_note: redacted.user_note as string | null, agent: input.source, model: null, category: 'ai_tool', tags: [], visibility: 'private', metrics, changed_areas: redacted.changed_areas as string[], public_prompt: null, outcome: redacted.outcome as string[], timeline: redacted.timeline as LocalDraft['worklog']['timeline'] },
     privacy_scan: scan,
-    source: { agent: input.source, tool_version: 'agentfeed-cli/0.2.0', host_label: hostname(), created_at: new Date().toISOString() },
+    source: { agent: input.source, tool_version: AGENTFEED_TOOL_VERSION, host_label: hostname(), created_at: new Date().toISOString() },
     upload: { uploaded: false }
   };
 }
@@ -277,7 +278,7 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
       timeline: (redacted.timeline as LocalDraft['worklog']['timeline']).slice(0, 8)
     },
     privacy_scan: scan,
-    source: { agent: source, tool_version: 'agentfeed-cli/0.2.0', host_label: hostname(), session_id: session?.session_id ?? null, created_at: new Date().toISOString(), collection_window: actualWindow, collection_window_reason: actualWindowReason, collection_fingerprint: fingerprint },
+    source: { agent: source, tool_version: AGENTFEED_TOOL_VERSION, host_label: hostname(), session_id: session?.session_id ?? null, created_at: new Date().toISOString(), collection_window: actualWindow, collection_window_reason: actualWindowReason, collection_fingerprint: fingerprint },
     upload: { uploaded: false }
   };
   await writeDraft(root, draft);

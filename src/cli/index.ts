@@ -22,6 +22,7 @@ import { parseAgentSource } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
 import { openBrowser } from '../utils/open-browser.js';
 import { copyToClipboard } from '../utils/clipboard.js';
+import { AGENTFEED_CLI_VERSION } from '../version.js';
 import type { LocalDraft } from '../types.js';
 
 function print(text = '') { process.stdout.write(`${text}\n`); }
@@ -308,7 +309,7 @@ async function cmdHook(args: string[]) {
 async function cmdDoctor() {
   const checks: Array<[string, boolean | string]> = [];
   checks.push(['Node version', process.versions.node]);
-  checks.push(['agentfeed version', '0.2.0']);
+  checks.push(['agentfeed version', AGENTFEED_CLI_VERSION]);
   const creds = await loadCredentials();
   const apiBaseUrl = creds?.api_base_url ?? await resolveApiBaseUrl();
   const apiReachability = await checkApiReachability(apiBaseUrl);

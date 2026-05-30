@@ -193,6 +193,68 @@ P1로 남길 계약 gap:
 - `tests/cli-share.test.ts`
 - `make smoke-e2e`
 
+## 2026-05-30 Feed time_range 계약
+
+> [!success]
+> Frontend feed의 시간 필터가 더 이상 UI-only 상태가 아니며 Backend `GET /v1/feed?time_range=...` 필터로 전달됩니다.
+
+계약:
+
+| UI label | Backend query |
+| --- | --- |
+| `오늘` | `time_range=today` |
+| `이번 주` | `time_range=week` |
+| `이번 달` | `time_range=month` |
+| `전체` | `time_range=all` |
+
+Backend:
+
+- `today`: 최근 24시간
+- `week`: 최근 7일
+- `month`: 최근 30일
+- `all` 또는 알 수 없는 값: 시간 필터 없음
+
+검증:
+
+- `agentfeed-backend/tests/test_contracts.py::test_feed_time_range_filter_maps_known_public_feed_options`
+- `agentfeed-frontend/src/lib/api-contract.test.ts`
+- `agentfeed-dev/scripts/smoke-e2e.sh`의 public feed 조회가 `time_range=week`를 포함
+- `npx tsc --noEmit --pretty false`
+
+## 2026-05-30 Leaderboard streak 계약
+
+> [!success]
+> profile stats와 leaderboard `longest_streak`에서 distinct active days proxy를 제거하고 실제 consecutive-day streak 계산으로 교체했습니다.
+
+계약:
+
+- `current_streak_days`: UTC publish day 기준, 오늘 또는 어제부터 이어지는 연속 public worklog day 수
+- `longest_streak`: 선택된 leaderboard period 안에서 author별 가장 긴 연속 public worklog day 수
+- 같은 날짜에 여러 worklog가 있어도 streak day는 1일로 계산
+
+검증:
+
+- current streak yesterday grace 테스트
+- longest streak이 단순 distinct day count가 아니라 consecutive day count임을 검증
+- leaderboard streak ranking helper 테스트
+
+## 2026-05-30 Release/dev reproducibility 계약
+
+> [!success]
+> CLI release metadata와 local dev bootstrap을 상용 운영에 더 가깝게 정리했습니다.
+
+CLI:
+
+- `package.json` version을 `src/version.ts`가 읽고 `agentfeed doctor`와 draft `source.tool_version`이 같은 값을 사용합니다.
+- `agentfeed-cli/<package version>` 포맷은 유지합니다.
+
+Dev:
+
+- `agentfeed-dev/scripts/cli-link.sh`: `npm install` → `npm ci`
+- `agentfeed-dev/scripts/dev-native.sh`: `.env` 우선, 없으면 `.env.example` fallback
+- `agentfeed-dev/scripts/dev-native.sh` / `compose.yaml`: Frontend dependency install은 lockfile 기반 `npm ci`
+- `scripts/test-all.sh`에서 shell syntax와 reproducibility guard를 확인합니다.
+
 ## 2026-05-30 test-all gate 보강
 
 > [!success]

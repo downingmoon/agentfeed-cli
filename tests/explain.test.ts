@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { formatCollectionExplain } from '../src/draft/explain.js';
 import type { LocalDraft } from '../src/types.js';
+import { AGENTFEED_TOOL_VERSION } from '../src/version.js';
 
 function draftWithMetrics(metrics: LocalDraft['worklog']['metrics']): LocalDraft {
   return {
@@ -20,7 +21,7 @@ function draftWithMetrics(metrics: LocalDraft['worklog']['metrics']): LocalDraft
       timeline: []
     },
     privacy_scan: { status: 'safe', findings: [] },
-    source: { agent: 'codex', tool_version: 'agentfeed-cli/0.2.0', created_at: '2026-05-21T00:00:00Z', collection_window: { since: '2026-05-20T01:00:00.000Z', until: '2026-05-20T02:00:00.000Z' } },
+    source: { agent: 'codex', tool_version: AGENTFEED_TOOL_VERSION, created_at: '2026-05-21T00:00:00Z', collection_window: { since: '2026-05-20T01:00:00.000Z', until: '2026-05-20T02:00:00.000Z' } },
     upload: { uploaded: false }
   };
 }

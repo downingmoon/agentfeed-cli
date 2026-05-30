@@ -350,6 +350,93 @@ sequenceDiagram
 - 통합 gate:
   - `../agentfeed-dev/scripts/test-all.sh`
 
+## 2026-05-30 CLI credential file permissions
+
+> [!success]
+> CLI 저장 credential은 이제 local secret으로 취급되어 `~/.agentfeed` `0700`, `credentials.json` `0600` mode로 생성/보정됩니다. 자세한 보안 계약은 [[Auth & Credential Safety#2026-05-30 CLI credential file permissions]]에 정리합니다.
+
+검증:
+
+- `npx vitest run tests/config.test.ts --testNamePattern 'private POSIX'` RED/GREEN
+- `npm test -- --run tests/config.test.ts tests/version.test.ts`
+- `npm run typecheck`
+- `npm pack --dry-run`
+- `../agentfeed-dev/scripts/test-all.sh`
+
+## 2026-05-30 CLI npm prepack release gate
+
+> [!success]
+> npm tarball이 stale `dist/`를 배포하지 않도록 `prepack`에서 `npm run build`를 실행합니다.
+
+문제:
+
+- CLI `bin`은 `./dist/cli/index.js`를 가리키고, package `files`도 `dist`를 포함합니다.
+- publish 전 수동 build를 빼먹으면 `src` 수정과 다른 오래된 CLI binary가 npm package에 들어갈 수 있습니다.
+
+계약:
+
+- `package.json`은 `prepack: npm run build`를 유지합니다.
+- release drift 방지를 위해 `tests/version.test.ts`가 package `files`와 `prepack` 계약을 함께 검증합니다.
+
+검증:
+
+- RED: `tests/version.test.ts`의 prepack 계약 테스트가 `undefined`로 실패
+- GREEN:
+  - `npm test -- --run tests/config.test.ts tests/version.test.ts`
+  - `npm run typecheck`
+  - `npm pack --dry-run`에서 `prepack` → `build` 실행 확인
+  - `../agentfeed-dev/scripts/test-all.sh`
+
+## 2026-05-30 Backend streamed ingest payload cap
+
+> [!success]
+> `/v1/ingest/*` payload 제한을 `Content-Length` header가 아니라 실제 ASGI request body byte 수 기준으로 강제합니다.
+
+문제:
+
+- 기존 middleware는 `Content-Length > 512KB`만 빠르게 거부했습니다.
+- `Content-Length`가 없거나 실제 body보다 작게 spoof된 요청은 route parsing까지 도달할 수 있었습니다.
+- ingest endpoint는 CLI가 보낼 수 있는 nested JSON을 받으므로, public write surface에서 memory/CPU pressure가 생길 수 있습니다.
+
+계약:
+
+- honest `Content-Length`가 limit 초과이면 즉시 `413 INGESTION_PAYLOAD_TOO_LARGE`를 반환합니다.
+- header가 없거나 작아도 middleware가 request stream을 읽으며 실제 byte 수를 세고 `512KB` 초과 시 route handling 전에 `413`으로 차단합니다.
+- 제한 이하 body는 middleware가 replay 가능하게 buffer해 downstream FastAPI parsing이 기존처럼 동작합니다.
+
+검증:
+
+- RED: spoofed small `Content-Length`와 no-content-length chunked oversized body가 기존 middleware에서 `call_next`까지 도달
+- GREEN:
+  - `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q -k 'payload_limit'`
+  - `uv run --with pytest --with pytest-asyncio pytest -q`
+  - `uv run --with ruff ruff check --select I,F app/main.py tests/test_contracts.py`
+  - `../agentfeed-dev/scripts/test-all.sh`
+
+## 2026-05-30 Frontend project slug fallback
+
+> [!success]
+> Backend contract의 nullable `project.slug`와 Frontend project link 생성 계약을 맞춰, slug가 없으면 project id로 이동합니다.
+
+문제:
+
+- `ApiProjectSummary.slug`는 `string | null`입니다.
+- Frontend adapter가 `null`을 빈 문자열로 바꾸면 `/projects/` dead link가 생성됩니다.
+
+계약:
+
+- `adaptProjectSummary()`는 `p.slug ?? p.id`를 사용합니다.
+- `scripts/run-contract-tests.mjs`는 `src/lib/api-contract.test.ts`도 compile/run해서 adapter contract regression을 실제 gate에 포함합니다.
+
+검증:
+
+- RED: `npm run test:contracts`가 `project list links must fall back to project id when backend slug is null`로 실패
+- GREEN:
+  - `npm run test:contracts`
+  - `npx tsc --noEmit --pretty false`
+  - `env NEXT_PUBLIC_API_URL=http://localhost:8000 npm run build`
+  - `../agentfeed-dev/scripts/test-all.sh`
+
 ## 관련 원본
 
 - [[Cross Repo Integration Fixes#목표 end-to-end 흐름]]

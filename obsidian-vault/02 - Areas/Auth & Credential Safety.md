@@ -132,6 +132,35 @@ created: 2026-05-30
 - 통합 gate:
   - `../agentfeed-dev/scripts/test-all.sh`
 
+## 2026-05-30 CLI credential file permissions
+
+> [!success]
+> 저장 로그인으로 생성되는 `~/.agentfeed` 디렉터리와 `credentials.json` 파일을 private POSIX mode로 고정했습니다.
+
+### 문제
+
+- `saveCredentials()`가 일반 `ensureDir()` / `writeJson()`을 사용하면 디렉터리가 사용자 umask에 따라 `0755`처럼 group/world-readable이 될 수 있습니다.
+- 파일은 사후 `chmod(0600)`이 있었지만, 생성 순간의 default permission과 상위 디렉터리 공개 permission이 token 저장소 관점에서 약했습니다.
+
+### 계약
+
+- `~/.agentfeed`는 저장 로그인 시 `0700`으로 생성/보정합니다.
+- `~/.agentfeed/credentials.json`은 `0600`으로 생성/보정합니다.
+- POSIX permission이 없는 filesystem에서는 best-effort로 실패를 삼키되, 기본 저장 경로는 private-by-default를 유지합니다.
+
+### 검증
+
+- RED: `npx vitest run tests/config.test.ts --testNamePattern 'private POSIX'`가 기존 `0755` directory mode로 실패
+- GREEN:
+  - `npx vitest run tests/config.test.ts --testNamePattern 'private POSIX'`
+  - `npm test -- --run tests/config.test.ts tests/version.test.ts`
+  - `npm run typecheck`
+  - `npm pack --dry-run`
+  - `../agentfeed-dev/scripts/test-all.sh`
+
+> [!important]
+> token 저장소 관련 변경은 [[Integration - CLI Backend Frontend#2026-05-30 CLI npm prepack release gate|release packaging gate]]와 함께 검증해, npm 배포 tarball이 최신 credential storage 코드를 포함하도록 유지합니다.
+
 ## 관련 링크
 
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI ephemeral login --no-save]]
@@ -139,5 +168,7 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 Deleted user ingestion-token invalidation]]
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI auth exchange active-user gate]]
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI login/token smoke 계약]]
+- [[Integration - CLI Backend Frontend#2026-05-30 CLI npm prepack release gate]]
+- [[Integration - CLI Backend Frontend#2026-05-30 CLI credential file permissions]]
 - [[Privacy Safety]]
 - [[Active Tasks#P1 후보]]

@@ -74,6 +74,10 @@ created: 2026-05-30
 - [x] CLI browser-login exchange 단계에서 soft-deleted user의 신규 token 발급 차단
 - [x] Frontend production build에서 `NEXT_PUBLIC_API_URL` 누락 시 localhost bundle 생성 방지
 - [x] 수동 worklog 생성이 타인 project UUID에 연결되는 project stats/feed 오염 방지
+- [x] CLI credential directory/file POSIX permission을 private mode로 고정
+- [x] npm package `prepack` build gate로 stale `dist` 배포 방지
+- [x] Backend ingest payload cap을 실제 streamed body byte 기준으로 강제
+- [x] Frontend project slug null 시 id fallback으로 dead link 방지
 
 ## P2 후보
 
@@ -122,6 +126,11 @@ created: 2026-05-30
 - [[Auth & Credential Safety#2026-05-30 CLI auth exchange active-user gate]]
 - [[Runtime Configuration#2026-05-30 Frontend production API env preflight]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Worklog project ownership gate]]
+- [[Auth & Credential Safety#2026-05-30 CLI credential file permissions]]
+- [[Integration - CLI Backend Frontend#2026-05-30 CLI credential file permissions]]
+- [[Integration - CLI Backend Frontend#2026-05-30 CLI npm prepack release gate]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Backend streamed ingest payload cap]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Frontend project slug fallback]]
 - [[Collection System#2026-05-30 Generic until-window timestamp-less evidence 보정]]
 - [[Collection System#2026-05-30 Agent window timestamp-less evidence 보정]]
 - [[Collection System#2026-05-30 Codex failed spawn_agent 보정]]

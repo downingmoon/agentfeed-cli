@@ -70,6 +70,7 @@ created: 2026-05-30
 - [x] Frontend `NEXT_PUBLIC_API_URL` `/v1` 중복/trailing slash/malformed 설정 방어
 - [x] Backend GitHub OAuth state를 signed+cookie-bound로 검증해 login CSRF 방어
 - [x] CLI API POST timeout/AbortSignal로 login/publish 무기한 대기 방지
+- [x] Soft-deleted user의 ingestion token 인증과 `last_used_at` 갱신 차단
 
 ## P2 후보
 
@@ -114,6 +115,7 @@ created: 2026-05-30
 - [[Runtime Configuration#2026-05-30 Frontend API URL normalization]]
 - [[Auth & Credential Safety#2026-05-30 GitHub OAuth state CSRF protection]]
 - [[Runtime Configuration#2026-05-30 CLI API POST timeout]]
+- [[Auth & Credential Safety#2026-05-30 Deleted user ingestion-token invalidation]]
 - [[Collection System#2026-05-30 Generic until-window timestamp-less evidence 보정]]
 - [[Collection System#2026-05-30 Agent window timestamp-less evidence 보정]]
 - [[Collection System#2026-05-30 Codex failed spawn_agent 보정]]

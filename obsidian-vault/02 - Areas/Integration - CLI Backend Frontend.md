@@ -270,6 +270,25 @@ sequenceDiagram
 - `npm run build`
 - `../agentfeed-dev/scripts/test-all.sh`
 
+## 2026-05-30 Deleted user ingestion-token invalidation
+
+> [!success]
+> Backend ingestion-token dependency가 active user 조회(`users.deleted_at IS NULL`)를 통과한 뒤에만 CLI upload를 인증하도록 강화했습니다. 자세한 보안 계약은 [[Auth & Credential Safety#2026-05-30 Deleted user ingestion-token invalidation]]에 정리합니다.
+
+계약:
+
+- CLI token upload/preflight는 Backend `get_ingestion_user()` 인증 경로를 탑니다.
+- token row가 존재하고 revoke되지 않았더라도 owning user가 soft-deleted이면 `IngestionTokenInvalid`입니다.
+- `last_used_at` 갱신은 active user 확인 이후에만 수행합니다.
+- JWT/cookie path의 `get_current_user_optional()`과 ingestion-token path가 같은 active-user 기준을 사용합니다.
+
+검증:
+
+- `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q -k ingestion_token`
+- `uv run --with pytest --with pytest-asyncio pytest -q`
+- `uv run --with ruff ruff check --select I,F app/dependencies.py tests/test_contracts.py`
+- `../agentfeed-dev/scripts/test-all.sh`
+
 ## 관련 원본
 
 - [[Cross Repo Integration Fixes#목표 end-to-end 흐름]]

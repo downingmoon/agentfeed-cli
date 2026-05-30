@@ -79,10 +79,36 @@ created: 2026-05-30
 > [!warning]
 > 이 변경은 배포 중 이미 시작된 GitHub OAuth redirect에는 영향을 줄 수 있습니다. 새 login 시작부터는 state cookie가 발급되므로 정상 동작합니다.
 
+## 2026-05-30 Deleted user ingestion-token invalidation
+
+> [!success]
+> Soft-deleted user는 JWT/cookie 인증뿐 아니라 `af_live_...` ingestion token 인증에서도 즉시 거부됩니다.
+
+### 계약
+
+- Backend `get_ingestion_user()`는 ingestion token row가 유효하더라도 소유 user가 active(`users.deleted_at IS NULL`)인 경우에만 인증을 허용합니다.
+- user가 삭제되었거나 active 조회에서 누락되면 `IngestionTokenInvalid`를 반환합니다.
+- token의 `last_used_at`은 active user 확인 이후에만 갱신합니다.
+- 따라서 soft-delete된 계정의 미회수 token은 이후 CLI upload/preflight에서 성공하지 않습니다.
+
+### 검증
+
+- RED: soft-deleted user 시뮬레이션에서 기존 구현이 `last_used_at`을 먼저 갱신해 실패
+- GREEN:
+  - `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q -k ingestion_token`
+  - `uv run --with pytest --with pytest-asyncio pytest -q`
+  - `uv run --with ruff ruff check --select I,F app/dependencies.py tests/test_contracts.py`
+- 통합 gate:
+  - `../agentfeed-dev/scripts/test-all.sh`
+
+> [!important]
+> 계정 삭제/비활성화 정책을 바꿀 때는 JWT 경로(`get_current_user_optional`)와 ingestion-token 경로(`get_ingestion_user`)의 active-user filter가 계속 같아야 합니다.
+
 ## 관련 링크
 
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI ephemeral login --no-save]]
 - [[Integration - CLI Backend Frontend#2026-05-30 GitHub OAuth state CSRF protection]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Deleted user ingestion-token invalidation]]
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI login/token smoke 계약]]
 - [[Privacy Safety]]
 - [[Active Tasks#P1 후보]]

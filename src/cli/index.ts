@@ -273,9 +273,13 @@ async function cmdCollect(args: string[]) {
   print();
   print(`Preview:\n  agentfeed preview --id ${draft.id}\n`);
   print(`Upload:\n  agentfeed publish --id ${draft.id}`);
-  const config = await loadProjectConfig(process.cwd());
-  if (flag(args, '--upload') || (!flag(args, '--no-upload') && config.collection.auto_upload)) {
+  if (flag(args, '--upload')) {
     await cmdPublish(['--id', draft.id, ...(flag(args, '--open-review') ? ['--open-review'] : [])]);
+  } else {
+    const config = await loadProjectConfig(process.cwd());
+    if (!flag(args, '--no-upload') && config.collection.auto_upload) {
+      print('Note: collection.auto_upload is ignored by collect for safety. Use agentfeed collect --upload to upload explicitly.');
+    }
   }
   if (!flag(args, '--no-save-cursor')) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
 }
@@ -329,7 +333,7 @@ ${result.review_url}`);
 
 async function cmdPreview(args: string[]) {
   const id = await resolveDraftId(process.cwd(), args);
-  const draft = await readDraft(process.cwd(), id);
+  const draft = await sanitizeDraftForCliOutput(process.cwd(), await readDraft(process.cwd(), id));
   if (flag(args, '--remote')) {
     const creds = await loadCredentials();
     if (!creds) throw new Error('AgentFeed token is missing. Run: agentfeed login --token <token>');

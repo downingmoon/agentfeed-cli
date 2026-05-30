@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { initProject } from '../src/config/project-config.js';
@@ -120,5 +120,29 @@ describe('collect CLI command', () => {
     expect(draft.worklog.metrics.tokens_used).toBe(65);
     expect(draft.worklog.metrics.files_changed).toBe(1);
     expect(draft.worklog.metrics.lines_added).toBe(1);
+  });
+
+  it('does not upload from repo-local auto_upload unless --upload is explicit', async () => {
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.collection.auto_upload = true;
+    await writeFile(configPath, JSON.stringify(config, null, 2));
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = "auto-upload-disabled";\n');
+
+    const stdout = execFileSync(process.execPath, [
+      cliPath,
+      'collect',
+      '--json',
+      '--all',
+      '--no-save-cursor'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    const draft = JSON.parse(stdout);
+    expect(draft.upload.uploaded).toBe(false);
+    expect(draft.id).toMatch(/^draft_/);
   });
 });

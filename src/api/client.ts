@@ -365,7 +365,9 @@ function duplicateIngestResult(error: AgentFeedApiError, fallbackCreatedAt: stri
 
 export async function publishDraft(options: { cwd: string; id: string; credentials: AgentFeedCredentials }): Promise<PublishDraftResult> {
   const draft = await readDraft(options.cwd, options.id);
+  scanAndRedactDraftPublicFields(draft);
   if (draft.upload.uploaded && draft.upload.worklog_id && draft.upload.review_url) {
+    await writeDraft(options.cwd, draft);
     return {
       id: draft.upload.worklog_id,
       status: 'already_uploaded',
@@ -375,7 +377,6 @@ export async function publishDraft(options: { cwd: string; id: string; credentia
       reused_existing: true
     };
   }
-  scanAndRedactDraftPublicFields(draft);
   let result: PublishDraftResult;
   try {
     result = await uploadDraft(draft, options.credentials);

@@ -90,6 +90,7 @@ describe('api client', () => {
 
   it('publish reuses an already uploaded draft instead of uploading again', async () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    draft.worklog.summary = 'Already uploaded but still contains sk-abcdefghijklmnopqrstuvwxyz1234567890';
     draft.upload = {
       uploaded: true,
       worklog_id: 'worklog_existing',
@@ -108,6 +109,9 @@ describe('api client', () => {
       reused_existing: true
     });
     expect(fetchMock).not.toHaveBeenCalled();
+    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+    expect(saved.worklog.summary).toBe('Already uploaded but still contains [REDACTED_SECRET]');
+    expect(saved.privacy_scan.status).toBe('danger');
   });
 
   it('publish treats duplicate ingestion with a review URL as a successful resync', async () => {

@@ -234,7 +234,7 @@ interface AgentFeedProjectConfig {
   };
   collection: {
     auto_collect: boolean;
-    auto_upload: boolean;
+    auto_upload: boolean; // legacy/deprecated: collect ignores this unless --upload is passed
     open_review_after_upload: boolean;
     include_public_prompt: boolean;
     include_estimated_cost: boolean;
@@ -815,7 +815,6 @@ Collect local metrics and create a local worklog draft.
 agentfeed collect
 agentfeed collect --source claude-code
 agentfeed collect --source claude-code --session-file <path>
-agentfeed collect --no-upload
 agentfeed collect --upload
 agentfeed collect --open-review
 agentfeed collect --json
@@ -833,7 +832,7 @@ agentfeed collect --json
 8. Run privacy scanner.
 9. Write local draft JSON.
 10. Write local draft Markdown.
-11. Do not upload unless `--upload` is passed or `collection.auto_upload` is true.
+11. Do not upload unless `--upload` is passed. `collection.auto_upload` is kept only for legacy config compatibility and must not trigger upload by itself.
 
 ### Required Output
 

@@ -94,6 +94,10 @@ created: 2026-05-30
 - [x] Header GitHub OAuth login이 현재 route/query를 next로 보존
 - [x] Public publish 시 follower에게 `new_worklog_from_following` notification 발행
 
+- [x] Backend public feed/search/explore/projects/worklog detail에서 soft-deleted author/owner 누출 차단
+- [x] Frontend dashboard/notifications/settings/comment signed-out intent를 OAuth next로 보존
+- [x] CLI `collect` repo-local `collection.auto_upload` 무시 및 preview/publish 재-redaction 보강
+
 ## P2 후보
 
 - [x] 비용 정보는 추정 금지 원칙 유지, explicit cost field만 opt-in 보존
@@ -105,6 +109,7 @@ created: 2026-05-30
 
 ## 관련 링크
 
+- [[Commercial Readiness Hardening - Soft Delete Auth Intent and CLI Upload Safety 2026-05-30]]
 - [[CLI Product Improvements Roadmap#남은 P1 후보]]
 - [[Collection System#체크포인트]]
 - [[Collection System#Doctor 진단 UX]]

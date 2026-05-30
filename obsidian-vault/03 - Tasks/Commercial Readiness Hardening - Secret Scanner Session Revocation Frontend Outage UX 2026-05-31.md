@@ -84,3 +84,14 @@ status: completed
 - [[Runtime Configuration]]
 - [[Integration - CLI Backend Frontend]]
 - [[Commercial Readiness Hardening - CI Automation CSP Auth Recovery Rate Limits and Search Safety 2026-05-31]]
+
+## 원격 반영
+
+> [!success] Push 완료
+> 2026-05-31 현재 상용화 hardening 변경분을 3개 레포 원격 브랜치에 반영했습니다.
+
+- CLI: `downingmoon/agentfeed-cli@eae3ea0` → `main`
+- Frontend: `downingmoon/agentfeed-frontend@0210468` → `main`
+- Backend: `downingmoon/agentfeed-backend@4471e79` → `master`
+
+검증 기준은 위 [[#검증 결과]]의 `agentfeed-dev make test` 통합 gate입니다.

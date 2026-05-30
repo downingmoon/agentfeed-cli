@@ -509,3 +509,17 @@ created: 2026-05-30
 - 테스트 후 `security delete-generic-password`로 smoke credential을 삭제합니다.
 
 검증: [[Commercial Readiness Hardening - Native Keychain Smoke Notification Gates and Social Action Contracts 2026-05-31#검증 증거]]
+
+## 2026-05-31 CLI auth smoke and CI guard
+
+> [!success]
+> Browser login UX와 CI guard는 real GitHub credential 없이도 local fake auth server로 회귀 검증됩니다.
+
+계약:
+
+- `agentfeed login --no-open --no-save`는 authorize URL과 대기 UX 문구를 출력하되 raw token을 stdout에 노출하지 않습니다.
+- `--no-save` browser login은 exchange 성공 후에도 `credentials.json`을 만들지 않습니다.
+- CI env에서는 browser session API 요청을 만들기 전에 fail-fast하고 `AGENTFEED_TOKEN` 또는 `agentfeed login --token <token>` remediation을 안내합니다.
+- 의도적으로 CI에서 browser auth를 실행하려면 `--browser` override가 필요합니다.
+
+검증: [[Commercial Readiness Hardening - Concurrent Notification Migration CLI Auth Smoke and Header Contracts 2026-05-31#검증 증거]]

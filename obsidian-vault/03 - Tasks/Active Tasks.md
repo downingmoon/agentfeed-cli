@@ -130,6 +130,9 @@ created: 2026-05-30
 - [x] CLI native macOS keychain opt-in smoke 추가 및 로컬 round-trip 검증
 - [x] Backend notification settings gate + dedupe insert ordering regression 보강
 - [x] Frontend optimistic social action pure helper + contract regression 보강
+- [x] Backend notification dedupe migration online concurrent index + offline SQL compatibility 보강
+- [x] CLI browser login no-open/no-save credential-free smoke + CI no-session guard regression 보강
+- [x] Frontend Header nav/search pure helper + active route boundary contract 보강
 
 ## P2 후보
 
@@ -143,6 +146,7 @@ created: 2026-05-30
 ## 관련 링크
 
 - [[Commercial Readiness Hardening - Native Keychain Smoke Notification Gates and Social Action Contracts 2026-05-31]]
+- [[Commercial Readiness Hardening - Concurrent Notification Migration CLI Auth Smoke and Header Contracts 2026-05-31]]
 - [[Commercial Readiness Hardening - Session Parser Bounds Notification Dedupe and Comment Contracts 2026-05-31]]
 - [[Commercial Readiness Hardening - Keychain Publish Race Leaderboard Scale and Frontend Contracts 2026-05-31]]
 

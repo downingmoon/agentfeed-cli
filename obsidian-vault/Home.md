@@ -25,6 +25,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - Concurrent Notification Migration CLI Auth Smoke and Header Contracts 2026-05-31]] — concurrent notification migration, CLI auth smoke, Header contracts
+
 - [[Commercial Readiness Hardening - Native Keychain Smoke Notification Gates and Social Action Contracts 2026-05-31]] — native keychain smoke, notification gates, optimistic social action contracts
 
 - [[Commercial Readiness Hardening - Session Parser Bounds Notification Dedupe and Comment Contracts 2026-05-31]] — session parser bounds, notification dedupe, frontend comment/API contracts

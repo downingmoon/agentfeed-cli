@@ -62,6 +62,113 @@ describe('status and doctor provenance output', () => {
     expect(stdout).not.toContain('af_live_saved_secret');
   });
 
+  it('login no-open no-save prints safe browser-login status text without credentials', async () => {
+    const server = await import('node:http').then(({ createServer }) => createServer((req, res) => {
+      if (req.url === '/v1/auth/cli/sessions' && req.method === 'POST') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({
+          data: {
+            session_id: 'session-cli-ux',
+            authorize_url: 'http://127.0.0.1:3001/cli/authorize?session_id=session-cli-ux',
+            expires_at: '2026-05-20T00:05:00Z',
+            poll_interval_seconds: 1
+          }
+        }));
+        return;
+      }
+      if (req.url === '/v1/auth/cli/sessions/session-cli-ux/exchange' && req.method === 'POST') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({
+          data: {
+            token: 'af_live_cli_ux_secret',
+            token_expires_at: '2026-06-15T00:00:00Z',
+            user: { id: 'user-cli-ux', username: 'cli-ux-user' }
+          }
+        }));
+        return;
+      }
+      res.writeHead(404).end();
+    }));
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind');
+
+    try {
+      const { stdout } = await execFileAsync(process.execPath, [cliPath, 'login', '--no-open', '--no-save', '--api-base-url', `http://127.0.0.1:${address.port}/v1`], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: '',
+          AGENTFEED_CI: '0',
+          CI: '0',
+          GITHUB_ACTIONS: '0',
+          GITLAB_CI: '0',
+          BUILDKITE: '0',
+          CIRCLECI: '0',
+          JENKINS_URL: '0',
+          TF_BUILD: '0',
+          TEAMCITY_VERSION: '0',
+          VERCEL: '0',
+          NETLIFY: '0'
+        }
+      });
+
+      expect(stdout).toContain(`Using AgentFeed API: http://127.0.0.1:${address.port}/v1`);
+      expect(stdout).toContain('Open this URL to authorize AgentFeed CLI:');
+      expect(stdout).toContain('http://127.0.0.1:3001/cli/authorize?session_id=session-cli-ux');
+      expect(stdout).toContain('Waiting for browser approval. This terminal will finish automatically after approval.');
+      expect(stdout).toContain('AgentFeed browser login complete (not saved).');
+      expect(stdout).toContain('No credentials file was written. Future commands need AGENTFEED_TOKEN or a saved login.');
+      expect(stdout).not.toContain('af_live_cli_ux_secret');
+      await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('login fails fast in CI with token remediation and no browser session request', async () => {
+    let requestCount = 0;
+    const server = await import('node:http').then(({ createServer }) => createServer((_req, res) => {
+      requestCount += 1;
+      res.writeHead(500, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ error: { code: 'UNEXPECTED_BROWSER_SESSION_REQUEST' } }));
+    }));
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind');
+    const startedAt = Date.now();
+
+    try {
+      let failure: { stderr?: string; stdout?: string } | undefined;
+      try {
+        await execFileAsync(process.execPath, [cliPath, 'login', '--no-open', '--api-base-url', `http://127.0.0.1:${address.port}/v1`], {
+          cwd: dir,
+          encoding: 'utf8',
+          env: {
+            ...process.env,
+            HOME: home,
+            AGENTFEED_TOKEN: '',
+            AGENTFEED_CI: '1'
+          }
+        });
+      } catch (error) {
+        failure = error as { stderr?: string; stdout?: string };
+      }
+
+      expect(failure?.stderr).toContain('Browser login is disabled in CI.');
+      expect(failure?.stderr).toContain('AGENTFEED_TOKEN');
+      expect(failure?.stderr).toContain('agentfeed login --token <token>');
+      expect(failure?.stderr).toContain('--browser');
+      expect(failure?.stdout ?? '').toBe('');
+      expect(requestCount).toBe(0);
+      expect(Date.now() - startedAt).toBeLessThan(5000);
+      await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
 
   it('rotate replaces a saved token via the ingestion rotation endpoint without printing secrets', async () => {
     await mkdir(join(home, '.agentfeed'), { recursive: true });

@@ -1733,3 +1733,26 @@ Frontend 계약:
 - Settled request는 pending state를 해제합니다.
 
 검증: [[Commercial Readiness Hardening - Native Keychain Smoke Notification Gates and Social Action Contracts 2026-05-31#검증 증거]]
+
+## 2026-05-31 Concurrent notification migration and Header contracts
+
+> [!success]
+> Notification dedupe schema change는 운영 online migration lock을 줄이면서도 기존 offline SQL chain과 dev integration gate를 유지합니다.
+
+Backend 계약:
+
+- `notifications.dedupe_key` unique index는 online migration에서 `postgresql_concurrently=True`로 생성됩니다.
+- Alembic offline SQL mode는 transactional script와 호환되도록 plain unique index를 출력합니다.
+- downgrade도 offline/online branch를 mirror 처리합니다.
+
+CLI 계약:
+
+- Browser login happy-path UX는 credential-free fake auth server test로 고정합니다.
+- CI guard는 browser session API를 호출하지 않는 fail-fast 경로여야 합니다.
+
+Frontend 계약:
+
+- Header nav link set과 search href는 pure helper contract로 고정합니다.
+- Active route matching은 slash boundary를 사용해 `/projects-old` 같은 sibling path를 `/projects` active로 오인하지 않습니다.
+
+검증: [[Commercial Readiness Hardening - Concurrent Notification Migration CLI Auth Smoke and Header Contracts 2026-05-31#검증 증거]]

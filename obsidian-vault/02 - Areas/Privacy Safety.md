@@ -153,3 +153,17 @@ Redacted preview:
 - report row와 notification side effect는 생성되지 않습니다.
 
 관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 Private comment report visibility gate]]
+
+## 2026-05-30 Public surface published-status gate
+
+> [!success]
+> Review 전 worklog는 `visibility` 값이 public이어도 public surface와 direct non-owner read에서 제외됩니다.
+
+핵심 계약:
+
+- Public 노출 조건은 `visibility=public` 단독이 아니라 `visibility=public` + `status=public` + `published_at IS NOT NULL`입니다.
+- Project/User public stats도 같은 조건을 적용해 unpublished/private metric이 외부에 섞이지 않게 합니다.
+
+관련 링크:
+
+- [[Integration - CLI Backend Frontend#2026-05-30 Public surface published-status gate]]

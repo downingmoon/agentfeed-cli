@@ -1108,3 +1108,48 @@ Frontend 표시:
 검증:
 
 - `npx vitest run tests/cli-scan.test.ts tests/draft-id-path-safety.test.ts`
+
+## 2026-05-30 Public surface published-status gate
+
+> [!success]
+> Public feed/search/explore/project/user surfaces now require worklogs to be `visibility=public`, `status=public`, and `published_at` present.
+
+문제:
+
+- 수동 worklog create API는 `visibility`를 받을 수 있지만 `status`는 `needs_review`로 시작합니다.
+- 일부 public list/detail 보조 경로가 `visibility="public"`만 확인해 아직 review/publish되지 않은 worklog를 공개 surface에 섞을 수 있었습니다.
+- Public project stats도 unpublished/private worklog metric을 집계할 여지가 있었습니다.
+
+수정:
+
+- Backend에 `public_worklog_filters()`를 추가해 public query 조건을 단일화했습니다.
+- feed/following, explore/category, search/tag suggestion, leaderboard, user/project worklog list, public project stats가 모두 published-status gate를 사용합니다.
+- direct worklog visibility guard는 owner가 아니면 published 상태를 요구합니다. Public direct read는 `visibility=public` + `status=public`, unlisted direct-link read는 `visibility=unlisted` + `status=unlisted`를 허용하고 둘 다 `published_at`가 필요합니다.
+
+검증:
+
+- `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q -k 'unpublished_public_visibility or published_unlisted_worklog or public_list_requires_published_status or public_project_stats'`
+- `uv run --with ruff ruff check --select I,F app/services/worklog_filters.py app/services/project.py app/services/user.py app/routers/worklogs.py app/routers/feed.py app/routers/projects.py app/routers/users.py app/routers/search.py app/routers/explore.py app/routers/leaderboard.py app/routers/tags.py tests/test_contracts.py`
+- `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q`
+- `../agentfeed-dev/scripts/test-all.sh`
+
+## 2026-05-30 Frontend nullable array adapter hardening
+
+> [!success]
+> Backend/migration payload에서 `tags`, `changed_areas`, `outcome`, `timeline`, collection arrays가 `null`이어도 UI adapter가 안전한 빈 배열로 정규화합니다.
+
+문제:
+
+- 일부 렌더러는 `tags.map`, `tags.slice`, `timeline.map`처럼 배열 전제를 사용합니다.
+- API migration/legacy/corrupt payload가 `null`을 보내면 feed/worklog/project 화면이 런타임에서 깨질 수 있었습니다.
+
+수정:
+
+- `adaptWorklogCard()`, `adaptWorklog()`, `adaptProjectSummary()`, `adaptProjectDetail()`에 adapter-boundary array normalization을 추가했습니다.
+- API 타입도 nullable array payload를 반영하도록 조정했습니다.
+
+검증:
+
+- `npm run test:contracts`
+- `npx tsc --noEmit --pretty false`
+- `../agentfeed-dev/scripts/test-all.sh`

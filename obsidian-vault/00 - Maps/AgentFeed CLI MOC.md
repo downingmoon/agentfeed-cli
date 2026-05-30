@@ -74,5 +74,7 @@ graph LR
 - [[Auth & Credential Safety#2026-05-30 Header OAuth next preservation|Header OAuth next]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Publish follower notification producer|Publish follower notifications]]
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI integration test build lock|CLI integration test build lock]]
+- [[Privacy Safety#2026-05-30 Public surface published-status gate|Public published-status gate]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Frontend nullable array adapter hardening|Frontend nullable arrays]]
 - [[Integration - CLI Backend Frontend#End-to-end 흐름|End-to-end 흐름]]
 - [[Active Tasks#P1 후보|P1 후보]]

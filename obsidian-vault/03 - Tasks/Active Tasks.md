@@ -190,3 +190,8 @@ created: 2026-05-30
 - [[Auth & Credential Safety#2026-05-30 Header OAuth next preservation]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Publish follower notification producer]]
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI integration test build lock]]
+- [x] Public surfaces가 `visibility=public`만으로 needs_review worklog를 노출하지 않도록 published-status gate 보강
+- [x] Frontend adapter에서 nullable array API payload 렌더 크래시 방지
+- [[Integration - CLI Backend Frontend#2026-05-30 Public surface published-status gate]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Frontend nullable array adapter hardening]]
+- [[Privacy Safety#2026-05-30 Public surface published-status gate]]

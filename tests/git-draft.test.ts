@@ -136,7 +136,26 @@ describe('git collector and drafts', () => {
     expect(draft.worklog.metrics.collection_quality).toBeNull();
   });
 
-  it('runs the configured test command when run_tests_on_collect is true', async () => {
+  it('does not run configured project commands by default during collection', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const markerPath = join(dir, '.agentfeed', 'command-ran');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.collection.run_tests_on_collect = true;
+    config.commands.test = `${process.execPath} .agentfeed/write-marker.mjs`;
+    await writeFile(configPath, JSON.stringify(config, null, 2));
+    await writeFile(join(dir, '.agentfeed', 'write-marker.mjs'), 'import { writeFileSync } from "node:fs"; writeFileSync(".agentfeed/command-ran", "yes");\n');
+
+    const draft = await collectDraft({ cwd: dir, source: 'claude_code' });
+
+    expect(draft.worklog.metrics.tests_run).toBeNull();
+    expect(draft.worklog.metrics.tests_passed).toBeNull();
+    expect(draft.worklog.metrics.commands_run).toBeNull();
+    expect(draft.worklog.metrics.failed_commands).toBeNull();
+    await expect(readFile(markerPath, 'utf8')).rejects.toThrow();
+  });
+
+  it('runs the configured test command only when explicitly opted in', async () => {
     await initProject({ cwd: dir, noGitCheck: false });
     const configPath = join(dir, '.agentfeed', 'config.json');
     const config = JSON.parse(await readFile(configPath, 'utf8'));
@@ -145,7 +164,7 @@ describe('git collector and drafts', () => {
     await writeFile(configPath, JSON.stringify(config, null, 2));
     await writeFile(join(dir, '.agentfeed', 'test-pass.mjs'), 'process.exit(0);\n');
 
-    const draft = await collectDraft({ cwd: dir, source: 'claude_code' });
+    const draft = await collectDraft({ cwd: dir, source: 'claude_code', runConfiguredCommands: true });
 
     expect(draft.worklog.metrics.tests_run).toBe(1);
     expect(draft.worklog.metrics.tests_passed).toBe(1);
@@ -162,7 +181,7 @@ describe('git collector and drafts', () => {
     await writeFile(configPath, JSON.stringify(config, null, 2));
     await writeFile(join(dir, '.agentfeed', 'test-fail.mjs'), 'console.error("SECRET_RAW_TEST_OUTPUT"); process.exit(1);\n');
 
-    const draft = await collectDraft({ cwd: dir, source: 'claude_code' });
+    const draft = await collectDraft({ cwd: dir, source: 'claude_code', runConfiguredCommands: true });
     const payloadText = JSON.stringify(draftToIngestRequest(draft));
 
     expect(draft.worklog.metrics.tests_run).toBe(1);
@@ -182,7 +201,7 @@ describe('git collector and drafts', () => {
     await writeFile(join(dir, 'package.json'), JSON.stringify({ scripts: { test: 'node .agentfeed/test-auto.mjs' } }, null, 2));
     await writeFile(join(dir, '.agentfeed', 'test-auto.mjs'), 'process.exit(0);\n');
 
-    const draft = await collectDraft({ cwd: dir, source: 'claude_code' });
+    const draft = await collectDraft({ cwd: dir, source: 'claude_code', runConfiguredCommands: true });
 
     expect(draft.worklog.metrics.tests_run).toBe(1);
     expect(draft.worklog.metrics.tests_passed).toBe(1);
@@ -200,7 +219,7 @@ describe('git collector and drafts', () => {
     await writeFile(join(dir, '.agentfeed', 'test-pass.mjs'), 'process.exit(0);\n');
     await writeFile(join(dir, '.agentfeed', 'build-fail.mjs'), 'console.error("SECRET_RAW_BUILD_OUTPUT"); process.exit(1);\n');
 
-    const draft = await collectDraft({ cwd: dir, source: 'claude_code' });
+    const draft = await collectDraft({ cwd: dir, source: 'claude_code', runConfiguredCommands: true });
     const payloadText = JSON.stringify(draftToIngestRequest(draft));
 
     expect(draft.worklog.metrics.tests_run).toBe(1);
@@ -221,7 +240,7 @@ describe('git collector and drafts', () => {
     await writeFile(join(dir, 'package.json'), JSON.stringify({ scripts: { build: 'node .agentfeed/build-auto.mjs' } }, null, 2));
     await writeFile(join(dir, '.agentfeed', 'build-auto.mjs'), 'process.exit(0);\n');
 
-    const draft = await collectDraft({ cwd: dir, source: 'claude_code' });
+    const draft = await collectDraft({ cwd: dir, source: 'claude_code', runConfiguredCommands: true });
 
     expect(draft.worklog.metrics.tests_run).toBeNull();
     expect(draft.worklog.metrics.tests_passed).toBeNull();

@@ -13,6 +13,7 @@ export interface ShareOptions {
   until?: string | null;
   note?: string | null;
   noClipboard: boolean;
+  runConfiguredCommands: boolean;
 }
 
 export function formatMetricsRow(draft: LocalDraft): string {
@@ -70,6 +71,7 @@ export function parseShareArgs(args: string[]): ShareOptions {
     since: option(args, '--since') ?? null,
     until: option(args, '--until') ?? null,
     note: option(args, '--note') ?? null,
-    noClipboard: flag(args, '--no-clipboard') || flag(args, '--no-clip')
+    noClipboard: flag(args, '--no-clipboard') || flag(args, '--no-clip'),
+    runConfiguredCommands: flag(args, '--run-configured-commands')
   };
 }

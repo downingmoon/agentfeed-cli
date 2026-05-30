@@ -175,7 +175,20 @@ export interface CollectDraftStatus {
   reusedExisting: boolean;
 }
 
-export async function collectDraftWithStatus(options: { cwd: string; source?: AgentType; sessionFile?: string | null; since?: string | null; until?: string | null; force?: boolean; note?: string | null; inferIdleGap?: boolean; skipConfiguredCommands?: boolean }): Promise<CollectDraftStatus> {
+export interface CollectDraftOptions {
+  cwd: string;
+  source?: AgentType;
+  sessionFile?: string | null;
+  since?: string | null;
+  until?: string | null;
+  force?: boolean;
+  note?: string | null;
+  inferIdleGap?: boolean;
+  runConfiguredCommands?: boolean;
+  skipConfiguredCommands?: boolean;
+}
+
+export async function collectDraftWithStatus(options: CollectDraftOptions): Promise<CollectDraftStatus> {
   const invocationCwd = resolve(options.cwd);
   const sessionFile = options.sessionFile ? resolve(invocationCwd, options.sessionFile) : null;
   const root = await resolveProjectRoot(invocationCwd);
@@ -220,7 +233,9 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
     const existing = await findDraftByFingerprint(root, fingerprint);
     if (existing) return { draft: existing, reusedExisting: true };
   }
-  const configuredCommandMetrics = options.skipConfiguredCommands ? null : await collectConfiguredCommandMetrics(root, config);
+  const configuredCommandMetrics = options.runConfiguredCommands && !options.skipConfiguredCommands
+    ? await collectConfiguredCommandMetrics(root, config)
+    : null;
   const includeFileStats = config.collection.include_file_stats;
   const metrics: WorklogMetrics = {
     tokens_used: config.collection.include_token_usage ? session?.tokens_used ?? null : null,
@@ -285,6 +300,6 @@ export async function collectDraftWithStatus(options: { cwd: string; source?: Ag
   return { draft, reusedExisting: false };
 }
 
-export async function collectDraft(options: { cwd: string; source?: AgentType; sessionFile?: string | null; since?: string | null; until?: string | null; force?: boolean; note?: string | null; inferIdleGap?: boolean; skipConfiguredCommands?: boolean }): Promise<LocalDraft> {
+export async function collectDraft(options: CollectDraftOptions): Promise<LocalDraft> {
   return (await collectDraftWithStatus(options)).draft;
 }

@@ -1347,7 +1347,7 @@ Only collect test/build information from:
 
 ```text
 - Parsed agent actions
-- Explicit config if run_tests_on_collect is true
+- Explicit config if run_tests_on_collect is true and the user passes --run-configured-commands
 ```
 
 ## 14.2 Test Command Detection

@@ -218,6 +218,9 @@ created: 2026-05-30
 - [x] CLI invalid token upload recovery 안내를 `agentfeed rotate` 중심으로 보정
 - [x] Backend keyset cursor malformed payload 500 방지
 - [x] `/users/{username}/projects` cursor pagination과 Frontend profile projects Load more 연결
+- [x] Backend `/unpublish` public 재전환/privacy gate 우회 방지
+- [x] CLI repo-local configured command 실행을 `--run-configured-commands` 명시 opt-in으로 전환
+- [x] Frontend Feed Rising builders Follow signed-out CTA를 OAuth auth funnel로 연결
 - [x] Frontend review route/profile follow auth gate 보강
 - [x] CLI upload response visibility/review URL 검증과 malformed credentials recovery 보강
 - [[Commercial Readiness Hardening - CSRF Token Capture and Search Pagination 2026-05-30]]
@@ -308,4 +311,4 @@ created: 2026-05-30
 - [x] Project active `(owner_id, slug)` partial unique index와 Backend race retry path 추가
 - [x] CLI `AGENTFEED_TOKEN` rotation 실패 안내를 shell/secret manager remediation 중심으로 보강
 - [[Commercial Readiness Hardening - Leaderboard Pagination Slug Uniqueness Env Token UX 2026-05-30]]
-
+- [[Commercial Readiness Hardening - Unpublish Command Trust and Feed Follow Auth 2026-05-30]]

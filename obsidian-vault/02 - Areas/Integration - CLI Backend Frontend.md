@@ -45,6 +45,28 @@ sequenceDiagram
 - Linux review URL clipboard fallback 보강
 - `share --note`를 `summary` prefix가 아닌 `user_note` 별도 계약으로 승격
 
+## 2026-05-30 Frontend inert control 제거
+
+> [!success]
+> Header notification bell, feed sidebar follow/category buttons, footer placeholder links를 실제 route 또는 API-backed action으로 연결했습니다.
+
+수정:
+
+- Header 알림 버튼 → `/notifications` route 연결
+- `/notifications` page 추가: `GET /v1/me/notifications`, 개별 read, all-read, pagination 사용
+- Feed Rising builders follow 버튼 → `POST/DELETE /v1/users/{username}/follow` optimistic action 연결
+- Feed Hot categories 버튼 → feed category filter 갱신
+- Footer `href="#"` 제거 → `/changelog`, `/privacy`, `/terms`, `/docs`, GitHub link 연결
+- Changelog/Privacy/Terms/Docs static route 추가
+
+검증:
+
+- `npx tsc --noEmit --pretty false`
+- `npm run build`
+
+> [!note]
+> Frontend repo에는 아직 별도 test runner dependency가 없으므로, 새 dependency 추가 없이 TypeScript/Next build gate로 검증했습니다.
+
 ## 2026-05-30 Backend provider token at-rest 보호
 
 > [!success]

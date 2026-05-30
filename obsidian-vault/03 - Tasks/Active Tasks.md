@@ -61,6 +61,7 @@ created: 2026-05-30
 - [x] publish/upload 직전 draft public field 재-scan으로 수동 편집 secret 누출 방지
 - [x] generic/Cursor `--until` 단독 window에서 timestamp 없는 row 반복 집계 방지
 - [x] Backend GitHub provider token plaintext 저장을 encrypted at-rest 저장으로 보정
+- [x] Frontend 주요 inert control을 route/API-backed action으로 연결
 
 ## P2 후보
 
@@ -95,6 +96,7 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 Feed sort label 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Publish management 계약]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Backend provider token at-rest 보호]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Frontend inert control 제거]]
 - [[Privacy Safety#2026-05-30 Upload-time privacy re-scan]]
 - [[Collection System#2026-05-30 Generic until-window timestamp-less evidence 보정]]
 - [[Collection System#2026-05-30 Agent window timestamp-less evidence 보정]]

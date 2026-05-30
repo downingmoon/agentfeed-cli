@@ -212,6 +212,15 @@ created: 2026-05-30
 ## 새로 발견한 P1 후보 / 다음 루프
 
 
+- [x] Backend GitHub OAuth provider identity unique constraint와 deleted-user fail-closed 보강
+- [x] Backend CLI auth approve/exchange row lock으로 one-session multi-token race window 축소
+- [x] Backend legacy provider token touch-time encryption rotation path 추가
+- [x] Backend shared DB rate-limit event global retention pruning 추가
+- [x] Frontend `/cli/authorize` missing-session server fallback과 dev smoke assertion 추가
+- [x] Backend integration guide CLI install command를 `agentfeed-cli`로 정합화
+- [[Commercial Readiness Hardening - Auth Race and Login Smoke 2026-05-30]]
+
+
 - [x] CLI npm package collision 회피: package `agentfeed-cli`, bin `agentfeed` 계약화
 - [x] CLI `npm pack --dry-run` release gate와 stale dist/test artifact 방지
 - [x] CLI reused draft stdout/upload 전 public field 재-scan/redaction 보강

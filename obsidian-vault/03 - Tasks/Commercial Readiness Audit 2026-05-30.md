@@ -118,6 +118,19 @@ aliases:
 
 관련: [[Commercial Readiness Hardening - Release and Public Gates 2026-05-30]]
 
+
+## 2026-05-30 auth race/login smoke hardening 루프
+
+- `auth_accounts(provider, provider_user_id)` unique constraint와 duplicate preflight migration을 추가했습니다.
+- GitHub OAuth provider account reuse는 active user만 허용하고 deleted-user linked account는 fail-closed로 거부합니다.
+- CLI auth approve/exchange는 session row를 `FOR UPDATE`로 잠가 one-time exchange race window를 줄였습니다.
+- Legacy provider token은 auth account touch 시 encrypted `af1:` form으로 rotate됩니다.
+- DB rate-limit event store는 cold identity stale rows도 global retention pruning으로 삭제합니다.
+- `/cli/authorize` missing-session branch를 server-rendered fallback으로 만들고 dev live smoke에서 curl/grep으로 검증하도록 했습니다.
+- `./scripts/smoke-e2e.sh` live Docker stack 검증도 통과했습니다.
+
+관련: [[Commercial Readiness Hardening - Auth Race and Login Smoke 2026-05-30]]
+
 ## 검증 로그
 
 - Dev live E2E: `./scripts/smoke-e2e.sh` → passed

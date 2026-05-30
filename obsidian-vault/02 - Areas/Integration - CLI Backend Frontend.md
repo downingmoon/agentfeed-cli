@@ -45,6 +45,22 @@ sequenceDiagram
 - Linux review URL clipboard fallback 보강
 - `share --note`를 `summary` prefix가 아닌 `user_note` 별도 계약으로 승격
 
+## 2026-05-30 Landing placeholder control 제거
+
+> [!success]
+> Landing page의 public footer placeholder links와 hero sample card의 inert comment/share controls를 실제 route/action으로 연결했습니다.
+
+수정:
+
+- Landing footer `href="#"` 링크를 `/changelog`, `/privacy`, `/terms`, `/docs`, GitHub URL로 교체했습니다.
+- 샘플 worklog comment 버튼은 실제 detail route로 이동합니다.
+- 샘플 share 버튼은 Web Share API를 사용하고, 미지원 환경에서는 clipboard copy로 fallback합니다.
+
+검증:
+
+- `npx tsc --noEmit --pretty false`
+- `npm run build`
+
 ## 2026-05-30 Frontend inert control 제거
 
 > [!success]
@@ -66,6 +82,29 @@ sequenceDiagram
 
 > [!note]
 > Frontend repo에는 아직 별도 test runner dependency가 없으므로, 새 dependency 추가 없이 TypeScript/Next build gate로 검증했습니다.
+
+## 2026-05-30 Backend project_id UUID validation
+
+> [!success]
+> string으로 받던 `project_id` 입력을 schema/query validation 단계에서 UUID로 검증해 malformed ID가 router 내부 `uuid.UUID(...)` 변환으로 500을 만들지 않도록 보정했습니다.
+
+문제:
+
+- `POST /v1/worklogs` body의 `project_id`와 `GET /v1/me/worklogs?project_id=...` query는 문자열로 받은 뒤 router 내부에서 `uuid.UUID(...)`를 직접 호출했습니다.
+- 잘못된 UUID가 들어오면 FastAPI/Pydantic의 표준 422가 아니라 route 실행 중 예외로 번질 수 있었습니다.
+
+수정:
+
+- `CreateWorklogRequest.project_id`를 `uuid.UUID | None`으로 변경했습니다.
+- `get_my_worklogs.project_id` query type을 `uuid.UUID | None`으로 변경했습니다.
+- router 내부 수동 UUID 변환을 제거하고 validation된 값을 그대로 사용합니다.
+
+검증:
+
+- invalid `CreateWorklogRequest.project_id` Pydantic validation 회귀 테스트
+- `/me/worklogs` handler signature가 FastAPI UUID validation을 사용하는지 회귀 테스트
+- `uv run --with pytest --with pytest-asyncio pytest -q`
+- `uv run --with ruff ruff check --select I,F app/schemas/worklog.py app/routers/worklogs.py app/routers/me.py tests/test_contracts.py`
 
 ## 2026-05-30 CLI API base URL validation
 

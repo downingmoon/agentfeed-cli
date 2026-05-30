@@ -125,6 +125,31 @@ describe('status and doctor provenance output', () => {
     }
   });
 
+  it('rotate refuses environment tokens with secret-manager remediation and no secret output', async () => {
+    let failure: { stderr?: string } | undefined;
+    try {
+      await execFileAsync(process.execPath, [cliPath, 'rotate'], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: 'af_live_env_secret',
+          AGENTFEED_API_BASE_URL: 'http://127.0.0.1:9/v1',
+        },
+      });
+    } catch (error) {
+      failure = error as { stderr?: string };
+    }
+
+    expect(failure).toBeTruthy();
+    expect(failure?.stderr).toContain('AGENTFEED_TOKEN is set');
+    expect(failure?.stderr).toContain('secret manager');
+    expect(failure?.stderr).toContain('unset AGENTFEED_TOKEN && agentfeed rotate --browser');
+    expect(failure?.stderr).toContain('agentfeed status');
+    expect(failure?.stderr).not.toContain('af_live_env_secret');
+  });
+
   it('doctor reports credential and API source provenance before network checks', () => {
     const stdout = execFileSync(process.execPath, [cliPath, 'doctor'], {
       cwd: dir,

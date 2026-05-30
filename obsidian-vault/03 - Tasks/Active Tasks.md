@@ -296,3 +296,11 @@ created: 2026-05-30
 - [[Runtime Configuration#2026-05-30 Runtime API config failure UI]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Public metric privacy settings]]
 - [[Privacy Safety#2026-05-30 Public metric privacy settings]]
+
+## 2026-05-30 P1 hardening follow-up
+
+- [x] Backend `/v1/leaderboard` cursor pagination과 global rank metadata를 Frontend Load more UX에 연결
+- [x] Project active `(owner_id, slug)` partial unique index와 Backend race retry path 추가
+- [x] CLI `AGENTFEED_TOKEN` rotation 실패 안내를 shell/secret manager remediation 중심으로 보강
+- [[Commercial Readiness Hardening - Leaderboard Pagination Slug Uniqueness Env Token UX 2026-05-30]]
+

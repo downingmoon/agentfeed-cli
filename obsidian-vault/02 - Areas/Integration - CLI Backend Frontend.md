@@ -1620,3 +1620,40 @@ API/UX 정합성:
 - Panel이 열려 있는 동안 rotate/revoke button을 disable해 one-time secret handoff를 먼저 완료하게 합니다.
 
 관련 구현: [[Commercial Readiness Hardening - CSRF Token Capture and Search Pagination 2026-05-30]]
+
+## 2026-05-30 Leaderboard cursor pagination contract
+
+> [!success]
+> Backend `/v1/leaderboard`의 `cursor` parameter가 실제 query와 Frontend Load more UX에 연결되었습니다.
+
+계약:
+
+- Response envelope은 `{ data: { type, period, items }, pagination: { next_cursor, has_more } }`입니다.
+- Cursor는 `{ offset }` 기반이며 malformed cursor는 첫 페이지로 fallback합니다.
+- Ranking은 metric desc + user id asc로 stable tie-breaker를 갖습니다.
+- Frontend는 row index가 아니라 Backend `rank` 값을 표시해 추가 페이지에서도 global rank를 유지합니다.
+- Auth next allowlist는 `/leaderboard`에서 `type`, `period`, `cursor`, `limit`만 보존합니다.
+
+검증: [[Commercial Readiness Hardening - Leaderboard Pagination Slug Uniqueness Env Token UX 2026-05-30#검증 결과]]
+
+## 2026-05-30 Project slug uniqueness and race safety
+
+> [!success]
+> Project slug source of truth를 DB partial unique index로 고정하고 Backend create/ingest race path가 같은 constraint로 수렴하도록 보강했습니다.
+
+계약:
+
+- Active project uniqueness는 `projects(owner_id, slug) WHERE deleted_at IS NULL`입니다.
+- `POST /v1/projects`는 application precheck 뒤 DB unique race가 발생해도 slug suffix를 재시도합니다.
+- Ingest auto-create는 duplicate race 시 rollback 후 existing active project를 다시 조회합니다.
+- `/users/{username}/projects/{project_slug}`는 legacy duplicate가 있어도 deterministic first row를 반환합니다.
+
+운영 주의:
+
+> [!warning]
+> 운영 DB에 active duplicate가 있으면 `009_project_slug_unique` migration은 merge를 요구하며 중단됩니다.
+
+검증: [[Commercial Readiness Hardening - Leaderboard Pagination Slug Uniqueness Env Token UX 2026-05-30#검증 결과]]
+
+관련 구현: [[Commercial Readiness Hardening - Leaderboard Pagination Slug Uniqueness Env Token UX 2026-05-30]]
+

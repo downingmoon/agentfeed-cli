@@ -293,3 +293,20 @@ created: 2026-05-30
 - 기존 token raw value는 error message에 포함하지 않습니다.
 
 검증: [[Commercial Readiness Hardening - CSRF Token Capture and Search Pagination 2026-05-30#검증 결과]]
+
+## 2026-05-30 Environment token rotation remediation
+
+> [!success]
+> `AGENTFEED_TOKEN` source에서 `agentfeed rotate`를 실행할 때 env var를 in-place로 수정할 수 없다는 점과 안전한 다음 행동을 명확히 안내합니다.
+
+계약:
+
+- CLI는 raw token을 stdout/stderr에 출력하지 않습니다.
+- Saved credential token은 `agentfeed rotate`로 API rotate 후 credential file에 저장합니다.
+- `AGENTFEED_TOKEN` source는 AgentFeed Settings 또는 secret manager에서 새 token을 발급/rotate한 뒤 shell/secret manager 값을 교체합니다.
+- saved credential flow로 전환하려면 `unset AGENTFEED_TOKEN && agentfeed rotate --browser`를 사용합니다.
+
+검증: [[Commercial Readiness Hardening - Leaderboard Pagination Slug Uniqueness Env Token UX 2026-05-30#검증 결과]]
+
+관련 구현: [[Commercial Readiness Hardening - Leaderboard Pagination Slug Uniqueness Env Token UX 2026-05-30]]
+

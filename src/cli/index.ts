@@ -193,7 +193,12 @@ async function cmdRotate(args: string[]) {
     return;
   }
   if (credentialResolution.token_source === 'environment') {
-    throw new Error('AGENTFEED_TOKEN is set, so AgentFeed cannot update that token in-place. Unset AGENTFEED_TOKEN or run: agentfeed rotate --browser');
+    throw new Error([
+      'AGENTFEED_TOKEN is set, so AgentFeed cannot update that environment variable in-place.',
+      'Rotate or issue a new token in AgentFeed Settings, then update AGENTFEED_TOKEN in your shell or secret manager.',
+      'Alternatively run: unset AGENTFEED_TOKEN && agentfeed rotate --browser',
+      'Then verify with: agentfeed status',
+    ].join('\n'));
   }
   try {
     const rotated = await rotateIngestionToken(creds);
@@ -494,7 +499,7 @@ async function main() {
     case '--help':
     case '-h':
       print('Usage: agentfeed <init|login|rotate|status|collect|share|preview|publish|scan|hook|doctor|drafts|discard|open>');
-      print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --no-save\n  agentfeed login --token <token>\n  agentfeed login --token <token> --no-save\n  agentfeed rotate\n  agentfeed rotate --browser\n  agentfeed token rotate');
+      print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --no-save\n  agentfeed login --token <token>\n  agentfeed login --token <token> --no-save\n  agentfeed rotate\n  agentfeed rotate --browser\n  unset AGENTFEED_TOKEN && agentfeed rotate --browser\n  agentfeed token rotate');
       print('\nCollect:\n  agentfeed collect\n  agentfeed collect --explain\n  agentfeed collect --source codex\n  agentfeed collect --source gemini-cli\n  agentfeed collect --source claude-code --session-file <path>\n  agentfeed collect --since 2026-05-20T01:00:00Z\n  agentfeed collect --all');
       print('\nShare:\n  agentfeed share\n  agentfeed share --dry\n  agentfeed share --open-review\n  agentfeed share --since 2026-05-20T01:00:00Z\n  agentfeed share --all\n  agentfeed share --note "Fixed auth flow"\n  agentfeed share --no-clipboard');
       print('\nScan:\n  agentfeed scan --id <draft_id>\n  agentfeed scan --id <draft_id> --dry-run\n  agentfeed scan --path . --json');

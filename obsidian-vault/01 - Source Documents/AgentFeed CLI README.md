@@ -30,6 +30,7 @@ agentfeed --help
 ```bash
 agentfeed init
 agentfeed login --token af_live_xxx
+agentfeed rotate
 agentfeed hook install claude-code
 agentfeed collect
 agentfeed collect --explain
@@ -49,6 +50,29 @@ agentfeed publish --latest --open-review
 The CLI creates `.agentfeed/drafts/*.json` first and uploads only reviewable private drafts. It does not upload raw diffs, raw transcripts, `.env` contents, or secrets.
 
 
+## Login and token rotation
+
+`agentfeed login` opens the AgentFeed browser approval flow by default, or accepts a one-time token with `--token`.
+
+When a saved device token is near expiry or compromised, run:
+
+```bash
+agentfeed rotate
+agentfeed rotate --browser
+agentfeed token rotate
+```
+
+`agentfeed rotate` replaces the saved token through the API, saves the new secret locally, and does not print the raw token. If the saved token is already invalid or expired, the command falls back to the browser login replacement flow.
+
+| Token source | Recommended rotation path | Result |
+| --- | --- | --- |
+| Saved credentials file | `agentfeed rotate` | Rotates through the API and writes the replacement to `~/.agentfeed/credentials.json`. |
+| Browser replacement | `agentfeed rotate --browser` | Opens AgentFeed approval and saves the replacement token locally. |
+| `AGENTFEED_TOKEN` environment variable | Rotate or issue a token in AgentFeed Settings, update your shell/secret manager, then run `agentfeed status`. Or run `unset AGENTFEED_TOKEN && agentfeed rotate --browser` to switch back to saved credentials. | The CLI never mutates environment variables in place and never prints raw browser-issued tokens. |
+
+Use `agentfeed doctor` to check server-side token validity and expiry.
+
+
 ## One-command sharing
 
 `agentfeed share` is the recommended daily command. It creates a local draft, prints the public-safe preview that will be uploaded, then uploads it as a private AgentFeed review draft.
@@ -65,7 +89,7 @@ agentfeed share --source gemini-cli --session-file ./session.jsonl
 
 `--note` is stored as a separate public-safe author note, not folded into the generated worklog summary.
 
-Use `--json` for automation.
+Use `--json` for automation. Dry-run output is shaped as `{ dry_run, reused_existing_draft, draft }`; upload output is shaped as `{ dry_run, reused_existing_draft, draft_id, draft, upload }` so scripts can verify the exact public-safe draft that was uploaded alongside the review URL.
 
 ## Scoped and incremental collection
 
@@ -102,6 +126,3 @@ agentfeed scan --id <draft_id>
 ```
 
 `--dry-run` prints finding severity, field, redaction placeholder, and redacted preview without showing the original secret or modifying the draft. Without `--dry-run`, `scan` updates the draft's uploadable public fields with redacted values and saves the `privacy_scan` result.
-
-> [!tip] 관련 노트
-> 자세한 정책은 [[Privacy Safety#Redaction dry-run UX]] 참고.

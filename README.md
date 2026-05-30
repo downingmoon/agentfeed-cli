@@ -46,7 +46,13 @@ agentfeed rotate --browser
 agentfeed token rotate
 ```
 
-`agentfeed rotate` replaces the saved token through the API, saves the new secret locally, and does not print the raw token. If the saved token is already invalid or expired, the command falls back to the browser login replacement flow. If `AGENTFEED_TOKEN` is set, unset it or use `agentfeed rotate --browser` because environment variables cannot be updated in place.
+`agentfeed rotate` replaces the saved token through the API, saves the new secret locally, and does not print the raw token. If the saved token is already invalid or expired, the command falls back to the browser login replacement flow.
+
+| Token source | Recommended rotation path | Result |
+| --- | --- | --- |
+| Saved credentials file | `agentfeed rotate` | Rotates through the API and writes the replacement to `~/.agentfeed/credentials.json`. |
+| Browser replacement | `agentfeed rotate --browser` | Opens AgentFeed approval and saves the replacement token locally. |
+| `AGENTFEED_TOKEN` environment variable | Rotate or issue a token in AgentFeed Settings, update your shell/secret manager, then run `agentfeed status`. Or run `unset AGENTFEED_TOKEN && agentfeed rotate --browser` to switch back to saved credentials. | The CLI never mutates environment variables in place and never prints raw browser-issued tokens. |
 
 Use `agentfeed doctor` to check server-side token validity and expiry.
 

@@ -1429,3 +1429,18 @@ Frontend 표시:
 - client-side hydrated card 내용은 browser automation 없이 HTML에 존재한다고 가정하지 않습니다.
 
 관련 구현: [[Commercial Readiness Hardening - Auth Maintenance and Rendered Smoke 2026-05-30]]
+
+
+## 2026-05-30 WorklogCard action wiring
+
+> [!success]
+> Public feed/search/profile/project cards의 Variant A comment/share controls가 더 이상 inert하지 않습니다.
+
+계약:
+
+- comment action은 worklog detail로 이동합니다.
+- share action은 native share → clipboard permalink → detail open 순서로 fallback합니다.
+- permalink는 `/worklogs/{id}`를 기준으로 생성하고 id를 URL encode합니다.
+- contract test가 native share와 clipboard fallback URL을 검증합니다.
+
+관련 구현: [[Commercial Readiness Hardening - Token Quotas Privacy Tags and Card Actions 2026-05-30]]

@@ -196,6 +196,23 @@ created: 2026-05-30
 
 관련 구현: [[Commercial Readiness Hardening - Auth Maintenance and Rendered Smoke 2026-05-30]]
 
+
+## 2026-05-30 Ingestion token quota and issue gate
+
+> [!success]
+> Browser-login exchange와 수동 ingestion token 생성이 같은 quota-aware issuance helper를 사용합니다.
+
+계약:
+
+- `MAX_ACTIVE_INGESTION_TOKENS_PER_USER`는 기본 50이며 1보다 작으면 startup validation에서 실패합니다.
+- token 발급 전 active user row를 `FOR UPDATE`로 잠그고, revoked 되지 않은 active token 수를 확인합니다.
+- quota 초과 시 `INGESTION_TOKEN_LIMIT_EXCEEDED` 409로 실패하며 raw token을 만들거나 DB row를 추가하지 않습니다.
+- CLI auth exchange는 quota 초과 시 session을 consumed 처리하지 않습니다.
+- `/v1/me/ingestion-tokens` create/delete mutation은 rate-limit bucket에 포함됩니다.
+- token name은 trim 후 1~100자로 제한합니다.
+
+관련 구현: [[Commercial Readiness Hardening - Token Quotas Privacy Tags and Card Actions 2026-05-30]]
+
 ## 관련 링크
 
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI ephemeral login --no-save]]
@@ -207,6 +224,7 @@ created: 2026-05-30
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI credential file permissions]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Backend critical path rate-limit]]
 - [[Commercial Readiness Hardening - Auth Maintenance and Rendered Smoke 2026-05-30]]
+- [[Commercial Readiness Hardening - Token Quotas Privacy Tags and Card Actions 2026-05-30]]
 - [[Privacy Safety]]
 - [[Active Tasks#P1 후보]]
 

@@ -192,3 +192,17 @@ created: 2026-05-30
 - `uv run --no-sync --python 3.12 alembic upgrade head --sql`
 
 관련: [[Auth & Credential Safety#2026-05-30 Shared database rate-limit store]]
+
+
+## 2026-05-30 Production API docs exposure gate
+
+> [!success]
+> Production mode에서는 FastAPI schema/docs endpoints를 공개하지 않습니다.
+
+계약:
+
+- `settings.is_production`이 true이면 `docs_url`, `redoc_url`, `openapi_url`이 모두 `None`입니다.
+- development/local mode에서는 `/docs`, `/redoc`, `/openapi.json`을 유지해 로컬 개발 편의성을 보존합니다.
+- JWT `sub` malformed value는 authenticated user로 처리하지 않고 anonymous로 degrade합니다.
+
+관련 구현: [[Commercial Readiness Hardening - Token Quotas Privacy Tags and Card Actions 2026-05-30]]

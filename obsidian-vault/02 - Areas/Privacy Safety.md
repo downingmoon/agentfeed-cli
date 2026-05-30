@@ -248,3 +248,17 @@ Redacted preview:
 - `uv run --with pytest --with pytest-asyncio pytest -q` → 84 passed
 
 관련: [[Commercial Readiness Audit 2026-05-30#Backend public/privacy boundary]]
+
+
+## 2026-05-30 Tags search-indexing privacy gate
+
+> [!success]
+> Public tag aggregation도 search-indexing opt-out을 존중합니다.
+
+계약:
+
+- `/v1/tags`는 public/published worklog만 집계합니다.
+- `user_settings.allow_search_indexing=false`인 author의 tags는 aggregation에서 제외합니다.
+- query filtering branch와 default top-tags branch가 같은 privacy predicate를 사용합니다.
+
+관련 구현: [[Commercial Readiness Hardening - Token Quotas Privacy Tags and Card Actions 2026-05-30]]

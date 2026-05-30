@@ -221,6 +221,10 @@ created: 2026-05-30
 - [x] Backend auth account duplicate/legacy-token maintenance dry-run 도구 추가
 - [x] Dev live smoke가 review/feed rendered shell까지 검증하도록 확장
 - [[Commercial Readiness Hardening - Auth Maintenance and Rendered Smoke 2026-05-30]]
+- [x] Backend ingestion token 발급 quota/rate-limit/active-user lock 보강
+- [x] Backend production API docs 비활성화, tags search-indexing privacy gate, malformed JWT sub 방어
+- [x] Frontend WorklogCardA comment/share inert control 제거
+- [[Commercial Readiness Hardening - Token Quotas Privacy Tags and Card Actions 2026-05-30]]
 - [[Commercial Readiness Hardening - Auth Race and Login Smoke 2026-05-30]]
 
 

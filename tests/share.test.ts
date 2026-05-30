@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyDraft } from '../src/draft/create.js';
 import { formatSharePreview, parseShareArgs } from '../src/cli/share.js';
+import { option } from '../src/cli/args.js';
 
 describe('share command helpers', () => {
   it('renders a private-review preview before upload', () => {
@@ -47,6 +48,12 @@ describe('share command helpers', () => {
       noClipboard: true,
       runConfiguredCommands: true
     });
+  });
+
+  it('rejects missing option values before treating flags as values', () => {
+    expect(() => option(['--token', '--no-save'], '--token')).toThrow(/--token requires a value/);
+    expect(() => option(['--source='], '--source')).toThrow(/--source requires a value/);
+    expect(() => parseShareArgs(['--source', '--json'])).toThrow(/--source requires a value/);
   });
 
   it('rejects unsupported share source values before creating drafts', () => {

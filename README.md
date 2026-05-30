@@ -69,6 +69,7 @@ agentfeed share --dry        # collect + preview only, keep the local draft
 agentfeed share --open-review
 agentfeed share --note "Fixed auth flow"
 agentfeed share --no-clipboard
+agentfeed share --json --clipboard   # automation JSON keeps clipboard off unless explicitly requested
 agentfeed share --source codex
 agentfeed share --source gemini-cli --session-file ./session.jsonl
 agentfeed share --run-configured-commands
@@ -76,7 +77,7 @@ agentfeed share --run-configured-commands
 
 `--note` is stored as a separate public-safe author note, not folded into the generated worklog summary.
 
-Use `--json` for automation. Dry-run output is shaped as `{ dry_run, reused_existing_draft, draft }`; upload output is shaped as `{ dry_run, reused_existing_draft, draft_id, draft, upload }` so scripts can verify the exact public-safe draft that was uploaded alongside the review URL.
+Use `--json` for automation. Dry-run output is shaped as `{ dry_run, reused_existing_draft, draft }`; upload output is shaped as `{ dry_run, reused_existing_draft, draft_id, draft, upload }` so scripts can verify the exact public-safe draft that was uploaded alongside the review URL. JSON mode has no clipboard side effects unless `--clipboard` is passed explicitly.
 
 ## Scoped and incremental collection
 

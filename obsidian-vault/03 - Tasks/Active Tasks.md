@@ -106,6 +106,13 @@ created: 2026-05-30
 - [x] Backend follow/like/bookmark idempotent race handling 및 self-follow DB constraint 보강
 - [x] Frontend feed/search/explore/profile/project list adapter malformed row isolation 보강
 
+- [x] CLI CI/browser login guard를 일반 CI env까지 확장
+- [x] CLI `--json` publish/share clipboard side effect를 explicit `--clipboard` opt-in으로 전환
+- [x] CLI flag-like option value와 non-HTTP Git remote upload 누출 방지
+- [x] Backend authenticated/read helper route rate-limit coverage와 static path normalization 보강
+- [x] Backend public URL private host 차단과 search wildcard escaping 보강
+- [x] Frontend nonce 기반 CSP, auth outage redirect loop 방지, GET Content-Type 제거
+
 ## P2 후보
 
 - [x] 비용 정보는 추정 금지 원칙 유지, explicit cost field만 opt-in 보존
@@ -375,3 +382,4 @@ created: 2026-05-30
 - [x] Frontend route/global branded error boundary 추가
 - [x] Backend Bearer+cookie mutation도 CSRF Origin gate를 우회하지 않도록 계약 테스트 고정
 - [[Commercial Readiness Hardening - Auth Validation Pagination CSP and CSRF Contract 2026-05-31]]
+- [[Commercial Readiness Hardening - CI Automation CSP Auth Recovery Rate Limits and Search Safety 2026-05-31]]

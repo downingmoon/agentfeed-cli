@@ -4,6 +4,11 @@ import { stripUrlUserInfo } from './url.js';
 
 export type PublicScanFields = Record<string, unknown>;
 
+function normalizeDraftRepositoryUrl(value?: string | null): string | null {
+  if (value === '[REDACTED_URL]') return value;
+  return stripUrlUserInfo(value);
+}
+
 export function publicScanFieldsFromDraft(draft: LocalDraft): PublicScanFields {
   return {
     title: draft.worklog.title,
@@ -33,7 +38,7 @@ export function applyRedactedPublicFields(draft: LocalDraft, redacted: PublicSca
   if (Array.isArray(redacted.tags)) draft.worklog.tags = redacted.tags as string[];
   if (redacted.project && typeof redacted.project === 'object') {
     draft.project = redacted.project as LocalDraft['project'];
-    draft.project.repository_url = stripUrlUserInfo(draft.project.repository_url);
+    draft.project.repository_url = normalizeDraftRepositoryUrl(draft.project.repository_url);
   }
 }
 

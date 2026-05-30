@@ -40,8 +40,28 @@ export async function waitForCliAuthExchange(options: {
   throw lastError instanceof Error ? lastError : new Error('CLI authorization was not completed.');
 }
 
+const CI_ENVIRONMENT_VARIABLES = [
+  'AGENTFEED_CI',
+  'CI',
+  'GITHUB_ACTIONS',
+  'GITLAB_CI',
+  'BUILDKITE',
+  'CIRCLECI',
+  'JENKINS_URL',
+  'TF_BUILD',
+  'TEAMCITY_VERSION',
+  'VERCEL',
+  'NETLIFY',
+];
+
+function isTruthyEnvironmentValue(value: string | undefined): boolean {
+  return value !== undefined && value !== '' && value !== '0' && value.toLowerCase() !== 'false';
+}
+
 function ciBrowserLoginBlocked(options: { allowCiBrowser?: boolean }): boolean {
-  return Boolean(process.env.AGENTFEED_CI) && !process.env.AGENTFEED_TOKEN && options.allowCiBrowser !== true;
+  return CI_ENVIRONMENT_VARIABLES.some((name) => isTruthyEnvironmentValue(process.env[name]))
+    && !process.env.AGENTFEED_TOKEN
+    && options.allowCiBrowser !== true;
 }
 
 export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: boolean; waitMs?: number; save?: boolean; cwd?: string; storedApiBaseUrl?: string; allowCiBrowser?: boolean } = {}) {

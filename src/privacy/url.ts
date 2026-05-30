@@ -3,13 +3,15 @@ export function stripUrlUserInfo(value?: string | null): string | null {
   if (!trimmed) return null;
   try {
     const url = new URL(trimmed);
+    if (!['http:', 'https:'].includes(url.protocol)) return null;
     if (url.username || url.password) {
       url.username = '';
       url.password = '';
-      return url.toString();
     }
+    return url.toString();
   } catch {
-    return trimmed;
+    // SCP-style and other non-URL Git remotes can expose private hosts or org/repo
+    // names. Omit them from public-safe drafts unless they are explicit HTTP(S) URLs.
+    return null;
   }
-  return trimmed;
 }

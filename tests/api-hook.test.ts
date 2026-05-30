@@ -18,6 +18,8 @@ let home: string;
 const execFileAsync = promisify(execFile);
 const oldHome = process.env.HOME;
 const oldAgentFeedCi = process.env.AGENTFEED_CI;
+const oldCi = process.env.CI;
+const oldGithubActions = process.env.GITHUB_ACTIONS;
 const oldAgentFeedToken = process.env.AGENTFEED_TOKEN;
 
 beforeEach(async () => {
@@ -32,6 +34,10 @@ afterEach(async () => {
   delete process.env.AGENTFEED_TRUST_REPO_API_BASE;
   if (oldAgentFeedCi === undefined) delete process.env.AGENTFEED_CI;
   else process.env.AGENTFEED_CI = oldAgentFeedCi;
+  if (oldCi === undefined) delete process.env.CI;
+  else process.env.CI = oldCi;
+  if (oldGithubActions === undefined) delete process.env.GITHUB_ACTIONS;
+  else process.env.GITHUB_ACTIONS = oldGithubActions;
   if (oldAgentFeedToken === undefined) delete process.env.AGENTFEED_TOKEN;
   else process.env.AGENTFEED_TOKEN = oldAgentFeedToken;
   vi.unstubAllGlobals();
@@ -95,7 +101,7 @@ describe('api client', () => {
 
     expect(ingestPayload?.worklog.summary).toBe('Deploy with [REDACTED_SECRET]');
     expect(ingestPayload?.worklog.public_prompt).toBe('Use [REDACTED_SECRET] carefully');
-    expect(ingestPayload?.project.repository_url).toBe('[REDACTED_URL]');
+    expect(ingestPayload?.project.repository_url).toBeNull();
     expect(ingestPayload?.privacy_scan.status).toBe('danger');
     const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
     expect(saved.worklog.summary).toBe('Deploy with [REDACTED_SECRET]');
@@ -368,14 +374,18 @@ describe('api client', () => {
     expect(JSON.stringify(payload)).not.toContain('secret-token');
   });
 
-  it('strips URL userinfo from non-HTTP repository URLs before upload', () => {
+  it.each([
+    'ssh://deploy:secret-token@git.example/group/repo.git',
+    'git@github.com:org/private.git'
+  ])('omits non-HTTP repository remotes before upload: %s', (remote) => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
-    draft.project.repository_url = 'ssh://deploy:secret-token@git.example/group/repo.git';
+    draft.project.repository_url = remote;
 
     const payload = draftToIngestRequest(draft);
 
-    expect(payload.project.repository_url).toBe('ssh://git.example/group/repo.git');
+    expect(payload.project.repository_url).toBeNull();
     expect(JSON.stringify(payload)).not.toContain('secret-token');
+    expect(JSON.stringify(payload)).not.toContain('git@github.com');
   });
 
   it('includes the collected model in the ingest worklog payload', () => {
@@ -628,8 +638,8 @@ describe('api client', () => {
   });
 
 
-  it('fails fast in CI instead of opening browser auth when no token or browser override is provided', async () => {
-    process.env.AGENTFEED_CI = '1';
+  it.each(['AGENTFEED_CI', 'CI', 'GITHUB_ACTIONS'])('fails fast in %s instead of opening browser auth when no token or browser override is provided', async (envName) => {
+    process.env[envName] = '1';
     delete process.env.AGENTFEED_TOKEN;
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({ data: {} }), { status: 200, headers: { 'content-type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchMock);

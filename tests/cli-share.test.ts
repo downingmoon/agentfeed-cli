@@ -374,7 +374,7 @@ describe('share CLI command', () => {
     }
   });
 
-  it('prints machine-readable publish JSON and copies the review URL by default', async () => {
+  it('prints machine-readable publish JSON and copies the review URL only when requested', async () => {
     const server = createServer(async (req, res) => {
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
@@ -404,7 +404,7 @@ describe('share CLI command', () => {
       draft.worklog.summary = 'Machine readable publish output';
       await writeDraft(dir, draft);
 
-      const publish = await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id, '--json'], {
+      const publish = await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id, '--json', '--clipboard'], {
         cwd: dir,
         encoding: 'utf8',
         env: {

@@ -4,7 +4,15 @@ export function flag(args: string[], name: string): boolean {
 
 export function option(args: string[], name: string): string | undefined {
   const index = args.indexOf(name);
-  if (index >= 0) return args[index + 1];
+  if (index >= 0) {
+    const value = args[index + 1];
+    if (!value || value.startsWith('--')) throw new Error(`${name} requires a value.`);
+    return value;
+  }
   const prefix = `${name}=`;
-  return args.find((arg) => arg.startsWith(prefix))?.slice(prefix.length);
+  const inline = args.find((arg) => arg.startsWith(prefix));
+  if (inline === undefined) return undefined;
+  const value = inline.slice(prefix.length);
+  if (!value) throw new Error(`${name} requires a value.`);
+  return value;
 }

@@ -538,3 +538,18 @@ created: 2026-05-30
 - `agentfeed open --latest`와 `agentfeed open --id <draft_id>`는 help/README에 노출됩니다.
 
 검증: [[Commercial Readiness Hardening - Cross Platform Open Config Validation and Settings Partial Failure 2026-05-31#검증 증거]]
+
+
+## 2026-05-31 OAuth next hash preservation
+
+> [!success]
+> GitHub OAuth sign-in redirect가 safe hash fragment를 보존하면서 token/code/state leakage hash는 fail-closed로 제거합니다.
+
+계약:
+
+- `authNextPath('/search', 'q=codex', '#results')`는 `/search?q=codex#results`를 반환합니다.
+- pathname에 inline hash가 있어도 safe hash는 보존됩니다.
+- `javascript:`, `//evil`, control char, `access_token`, `id_token`, `token`, `oauth_token`, `oauth_verifier`, `code`, `state`가 포함된 hash는 제거됩니다.
+- Header sign-in button과 AppContext forced sign-in redirect가 모두 `window.location.hash`를 반영합니다.
+
+검증: [[Commercial Readiness Hardening - Feed Keyset and OAuth Hash Redirect 2026-05-31#검증 증거]]

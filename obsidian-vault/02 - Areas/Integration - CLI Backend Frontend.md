@@ -1779,3 +1779,24 @@ Frontend 계약:
 - integrations/tokens 장애는 section-level alert로 표시하고 privacy/notification controls를 blank 처리하지 않습니다.
 
 검증: [[Commercial Readiness Hardening - Cross Platform Open Config Validation and Settings Partial Failure 2026-05-31#검증 증거]]
+
+
+## 2026-05-31 Aggregate feed keyset and OAuth hash redirect
+
+> [!success]
+> Feed pagination 안정성과 OAuth redirect 복귀 위치가 상용화 기준으로 보강되었습니다.
+
+Backend 계약:
+
+- `/v1/feed`와 `/v1/feed/following`의 `most_liked`, `most_discussed`, `trending` sort는 더 이상 offset cursor를 사용하지 않습니다.
+- Aggregate cursor는 `score`, `published_at`, `id`를 포함합니다.
+- Aggregate order와 cursor predicate는 `score DESC`, `published_at DESC`, `id DESC` 순서로 맞춥니다.
+- `latest` / `most_shipped`도 `published_at DESC`, `id DESC` tie-breaker를 사용합니다.
+
+Frontend 계약:
+
+- OAuth next allowlist는 safe hash fragment를 보존하고 unsafe hash를 strip합니다.
+- Header sign-in UX와 forced auth redirect helper가 같은 hash-aware next builder를 사용합니다.
+- Docs page는 실제 CLI command인 `agentfeed share --open-review`만 안내합니다.
+
+검증: [[Commercial Readiness Hardening - Feed Keyset and OAuth Hash Redirect 2026-05-31#검증 증거]]

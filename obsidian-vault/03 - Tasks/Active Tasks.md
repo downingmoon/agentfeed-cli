@@ -23,6 +23,10 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Backend aggregate feed sort offset cursor를 score/published_at/id keyset cursor로 교체
+- [x] Frontend GitHub OAuth next redirect safe hash fragment 보존 및 unsafe hash strip
+- [x] Frontend Docs CLI quick start의 제거된 `share --upload` 안내 수정
+
 - [x] CLI Windows browser opener + `agentfeed open` trusted review URL regression 보강
 - [x] Backend `API_ALLOWED_HOSTS` / `TRUSTED_PROXY_IPS` startup validation 보강
 - [x] Frontend SettingsPage integrations/token section-level failure isolation 보강
@@ -148,6 +152,8 @@ created: 2026-05-30
 - [x] Frontend unpublish control을 실제 published status 기준으로 축소
 
 ## 관련 링크
+
+- [[Commercial Readiness Hardening - Feed Keyset and OAuth Hash Redirect 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Cross Platform Open Config Validation and Settings Partial Failure 2026-05-31]]
 

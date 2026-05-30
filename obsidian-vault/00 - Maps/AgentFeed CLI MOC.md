@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Feed Keyset and OAuth Hash Redirect 2026-05-31]]
+
 - [[Commercial Readiness Hardening - Cross Platform Open Config Validation and Settings Partial Failure 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Concurrent Notification Migration CLI Auth Smoke and Header Contracts 2026-05-31]]
@@ -71,6 +73,9 @@ graph LR
 - [[Cross Repo Integration Fixes]]
 
 ## 주요 개념 링크
+
+- [[Auth & Credential Safety#2026-05-31 OAuth next hash preservation|OAuth next hash preservation]]
+- [[Integration - CLI Backend Frontend#2026-05-31 Aggregate feed keyset and OAuth hash redirect|Aggregate feed keyset + OAuth hash redirect]]
 
 - [[Auth & Credential Safety#2026-05-31 Cross-platform browser opener and open command trust|Cross-platform opener + open trust]]
 - [[Runtime Configuration#2026-05-31 Backend host and proxy config fail-fast|Backend host/proxy config fail-fast]]

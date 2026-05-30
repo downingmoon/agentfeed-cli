@@ -308,6 +308,48 @@ sequenceDiagram
 - `uv run --with ruff ruff check --select I,F app/routers/auth.py tests/test_contracts.py`
 - `../agentfeed-dev/scripts/test-all.sh`
 
+## 2026-05-30 Frontend production API env preflight
+
+> [!success]
+> Frontend가 production build에서 `NEXT_PUBLIC_API_URL` 누락 시 사용자 브라우저의 localhost를 호출하는 bundle을 만들지 않도록 preflight를 추가했습니다. 자세한 runtime 계약은 [[Runtime Configuration#2026-05-30 Frontend production API env preflight]]에 정리합니다.
+
+계약:
+
+- `npm run build`는 `node scripts/check-env.mjs && next build` 순서로 실행합니다.
+- env 누락/invalid protocol/query/hash/credential은 Next build 전에 명시적으로 실패합니다.
+- API root resolution은 lazy하게 수행해 module import/prerender 단계에서 불명확한 crash가 나지 않게 합니다.
+- `agentfeed-dev/scripts/test-all.sh`는 명시적인 local API root로 Frontend build를 실행합니다.
+
+검증:
+
+- `npm run test:contracts`
+- `npx tsc --noEmit --pretty false`
+- `env NEXT_PUBLIC_API_URL=http://localhost:8000 npm run build`
+- `env -u NEXT_PUBLIC_API_URL npm run build` 실패 메시지 확인
+- `../agentfeed-dev/scripts/test-all.sh`
+
+## 2026-05-30 Worklog project ownership gate
+
+> [!success]
+> 수동 `POST /v1/worklogs` 생성 경로가 다른 사용자의 project UUID에 worklog를 붙여 project stats/feed를 오염시키지 못하도록 Backend ownership gate를 추가했습니다.
+
+계약:
+
+- `CreateWorklogRequest.project_id`가 있으면 `projects.id`, `projects.owner_id`, `projects.deleted_at IS NULL` 조건을 모두 만족해야 합니다.
+- project가 없거나 현재 user 소유가 아니거나 soft-deleted이면 `Project not found`로 실패합니다.
+- 성공 시 검증된 owned project id만 `Worklog.project_id`로 저장합니다.
+- `project_id=None`인 worklog 생성 경로는 유지합니다.
+
+검증:
+
+- RED: 기존 `create_worklog()`는 project 조회 없이 `body.project_id`를 그대로 저장해 foreign/missing project test가 실패
+- GREEN:
+  - `uv run --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q -k 'owned_active_project or rejects_foreign'`
+  - `uv run --with pytest --with pytest-asyncio pytest -q`
+  - `uv run --with ruff ruff check --select I,F app/routers/worklogs.py tests/test_contracts.py`
+- 통합 gate:
+  - `../agentfeed-dev/scripts/test-all.sh`
+
 ## 관련 원본
 
 - [[Cross Repo Integration Fixes#목표 end-to-end 흐름]]

@@ -43,6 +43,34 @@ created: 2026-05-30
 > [!note]
 > CLI는 `/v1` 포함 API base URL을 사용하고, Frontend는 API root를 사용하는 게 원칙입니다. 다만 현업 설정 실수를 흡수하기 위해 Frontend도 최종 `/v1` suffix는 root로 정규화합니다.
 
+## 2026-05-30 Frontend production API env preflight
+
+> [!success]
+> Frontend production build는 `NEXT_PUBLIC_API_URL`이 없을 때 더 이상 localhost API root로 조용히 빌드되지 않고, 명시적인 preflight 오류로 중단됩니다.
+
+### 계약
+
+- `npm run build`는 `scripts/check-env.mjs`를 먼저 실행합니다.
+- `NEXT_PUBLIC_API_URL`은 production build에서 필수입니다.
+- 값은 `http`/`https` URL이어야 하며 hostname이 필요합니다.
+- URL credential, query, hash fragment는 금지합니다.
+- app module import 단계에서는 API root를 lazy resolution하므로, env 누락 오류는 Next prerender stack trace가 아니라 preflight 메시지로 드러납니다.
+- local/dev stack과 CI gate는 명시적으로 `NEXT_PUBLIC_API_URL=http://localhost:8000` 또는 `.env` 값을 전달합니다.
+
+### 검증
+
+- RED: `normalizeApiRoot(undefined, { nodeEnv: 'production' })` 계약 테스트가 기존 함수 signature에서 실패
+- GREEN:
+  - `npm run test:contracts`
+  - `npx tsc --noEmit --pretty false`
+  - `env NEXT_PUBLIC_API_URL=http://localhost:8000 npm run build`
+  - `env -u NEXT_PUBLIC_API_URL npm run build`가 `NEXT_PUBLIC_API_URL is required`로 실패하는지 확인
+- 통합 gate:
+  - `../agentfeed-dev/scripts/test-all.sh`
+
+> [!important]
+> 실제 배포 환경에서는 `NEXT_PUBLIC_API_URL=https://<backend-api-root>`를 설정해야 합니다. Frontend env의 의미는 `/v1`을 제외한 API root입니다.
+
 ## 2026-05-30 CLI API POST timeout
 
 > [!success]
@@ -74,6 +102,7 @@ created: 2026-05-30
 ## 관련 링크
 
 - [[Integration - CLI Backend Frontend#2026-05-30 Frontend API URL normalization]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Frontend production API env preflight]]
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI API POST timeout]]
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI API base URL validation]]
 - [[Active Tasks#P1 후보]]

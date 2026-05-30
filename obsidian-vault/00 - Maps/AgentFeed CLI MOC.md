@@ -51,6 +51,8 @@ graph LR
 - [[Auth & Credential Safety#2026-05-30 Deleted user ingestion-token invalidation|Deleted user token invalidation]]
 - [[Auth & Credential Safety#2026-05-30 CLI auth exchange active-user gate|CLI auth exchange gate]]
 - [[Runtime Configuration#2026-05-30 Frontend API URL normalization|Frontend API URL normalization]]
+- [[Runtime Configuration#2026-05-30 Frontend production API env preflight|Frontend production API preflight]]
 - [[Runtime Configuration#2026-05-30 CLI API POST timeout|CLI API POST timeout]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Worklog project ownership gate|Worklog project ownership gate]]
 - [[Integration - CLI Backend Frontend#End-to-end 흐름|End-to-end 흐름]]
 - [[Active Tasks#P1 후보|P1 후보]]

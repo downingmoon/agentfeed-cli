@@ -72,6 +72,8 @@ created: 2026-05-30
 - [x] CLI API POST timeout/AbortSignal로 login/publish 무기한 대기 방지
 - [x] Soft-deleted user의 ingestion token 인증과 `last_used_at` 갱신 차단
 - [x] CLI browser-login exchange 단계에서 soft-deleted user의 신규 token 발급 차단
+- [x] Frontend production build에서 `NEXT_PUBLIC_API_URL` 누락 시 localhost bundle 생성 방지
+- [x] 수동 worklog 생성이 타인 project UUID에 연결되는 project stats/feed 오염 방지
 
 ## P2 후보
 
@@ -118,6 +120,8 @@ created: 2026-05-30
 - [[Runtime Configuration#2026-05-30 CLI API POST timeout]]
 - [[Auth & Credential Safety#2026-05-30 Deleted user ingestion-token invalidation]]
 - [[Auth & Credential Safety#2026-05-30 CLI auth exchange active-user gate]]
+- [[Runtime Configuration#2026-05-30 Frontend production API env preflight]]
+- [[Integration - CLI Backend Frontend#2026-05-30 Worklog project ownership gate]]
 - [[Collection System#2026-05-30 Generic until-window timestamp-less evidence 보정]]
 - [[Collection System#2026-05-30 Agent window timestamp-less evidence 보정]]
 - [[Collection System#2026-05-30 Codex failed spawn_agent 보정]]

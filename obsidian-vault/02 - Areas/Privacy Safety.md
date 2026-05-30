@@ -300,3 +300,29 @@ Redacted preview:
 - public/unlisted publish 차단 자체는 Backend review publish API의 unresolved high-severity finding gate가 담당합니다.
 
 검증: [[Commercial Readiness Hardening - CLI Private Review Privacy Policy 2026-05-31#검증 증거]]
+
+## 2026-05-31 Smoke user_note privacy contract
+
+> [!success]
+> E2E smoke가 owner-only `user_note`를 public detail/feed에서 비노출하는 계약을 확인하도록 정렬했습니다.
+
+- Review API: owner context용 `worklog.user_note` 보존
+- Public detail/feed: `user_note`는 `None`, raw note text 없음
+- Smoke script: 두 boundary를 모두 검증
+
+관련 구현: [[Commercial Readiness Hardening - Smoke User Note Privacy Contract 2026-05-31]]
+
+
+## 2026-05-31 Publish privacy severity fail-closed
+
+> [!success]
+> Public/unlisted publish는 unresolved `info`/`low`/`medium` 외 privacy severity를 모두 blocking으로 처리합니다.
+
+계약:
+
+- Backend publish API는 `high`, `critical`, `unknown`, blank/unknown taxonomy를 fail-closed blocking으로 처리합니다.
+- Frontend review action도 같은 taxonomy로 publish button과 error copy를 제어합니다.
+- Review API는 `PrivacyFinding` DB row가 있으면 stale `worklog.privacy_scan_json`보다 fresh row 상태를 우선합니다.
+- Resolve 후 review payload는 fresh `resolved: true` / `resolution` 값을 반환하고, publish는 unresolved blocking finding이 없을 때만 허용됩니다.
+
+검증: [[Commercial Readiness Hardening - Publish Privacy Severity Auth Smoke and Alembic Version Gate 2026-05-31#검증 증거]]

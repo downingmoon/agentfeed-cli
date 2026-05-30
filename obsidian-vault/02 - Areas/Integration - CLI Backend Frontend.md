@@ -763,7 +763,8 @@ Dev:
 ## 2026-05-30 user_note 계약
 
 > [!important]
-> 사용자가 `agentfeed share --note`로 입력한 공개 메모는 생성 요약(`summary`)에 섞지 않고 DB column `worklogs.user_note`를 기준으로 Backend → Frontend → CLI 계약을 맞춥니다.
+> [!warning] Superseded 2026-05-31
+> 이 절의 “공개 메모” 표현은 폐기되었습니다. 현재 `user_note`는 생성 요약(`summary`)과 분리된 **owner review context**이며 public detail/feed/card에는 노출하지 않습니다.
 
 - DB 기준 컬럼: `worklogs.user_note`
 - Backend:
@@ -1814,3 +1815,33 @@ Frontend 계약:
 - CLI JSON automation은 `privacy_policy` 필드로 review 필요 여부를 판단할 수 있습니다.
 
 관련 구현: [[Commercial Readiness Hardening - CLI Private Review Privacy Policy 2026-05-31]]
+
+## 2026-05-31 Smoke user_note privacy contract
+
+> [!success]
+> `agentfeed-dev` smoke gate가 현재 `user_note` privacy boundary를 검증하도록 보정했습니다.
+
+계약:
+
+- CLI `share --note`는 draft/upload payload와 Backend review API의 `worklog.user_note`에는 보존됩니다.
+- Backend public detail/feed/card payload는 `user_note: None`을 반환하고 raw note 문자열을 포함하지 않습니다.
+- Frontend public adapter도 `user_note`를 public rendering model에 매핑하지 않습니다.
+- `scripts/smoke-e2e.sh`는 review 단계에서는 note 보존을, public detail/feed 단계에서는 note 비노출을 검증합니다.
+
+관련 구현: [[Commercial Readiness Hardening - Smoke User Note Privacy Contract 2026-05-31]]
+
+
+## 2026-05-31 CLI auth publish privacy smoke and Alembic version gate
+
+> [!success]
+> `make smoke-e2e`가 CLI auth session token exchange부터 privacy block/resolve/publish/feed까지 live dev stack에서 통과했습니다.
+
+통합 계약:
+
+- CLI auth session create/approve/exchange가 `authorize_url` query shape와 one-time ingestion token 발급을 보장합니다.
+- Smoke upload는 browser-login exchange로 받은 ingestion token을 사용해 실제 CLI upload 경로와 연결됩니다.
+- Backend publish는 unresolved blocking privacy finding을 422 `UNRESOLVED_PRIVACY_FINDING`으로 거부하고 finding id를 반환합니다.
+- Resolve API 이후 Review API는 stale `privacy_scan_json`이 아니라 fresh row 상태를 보여주며, publish 재시도는 성공합니다.
+- Alembic `011_visibility_status_constraints`는 긴 revision id chain을 위해 `alembic_version.version_num`을 64자로 확장합니다.
+
+검증: [[Commercial Readiness Hardening - Publish Privacy Severity Auth Smoke and Alembic Version Gate 2026-05-31#검증 증거]]

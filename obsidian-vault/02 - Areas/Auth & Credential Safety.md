@@ -553,3 +553,17 @@ created: 2026-05-30
 - Header sign-in button과 AppContext forced sign-in redirect가 모두 `window.location.hash`를 반영합니다.
 
 검증: [[Commercial Readiness Hardening - Feed Keyset and OAuth Hash Redirect 2026-05-31#검증 증거]]
+
+## 2026-05-31 CLI auth exchange live smoke token path
+
+> [!success]
+> Dev smoke가 seed token 대신 CLI auth session exchange로 발급된 ingestion token을 사용해 upload를 수행합니다.
+
+계약:
+
+- `/v1/auth/cli/sessions` 응답의 `authorize_url`은 frontend `/cli/authorize?session_id=...`만 포함합니다.
+- Browser 승인 API는 authenticated access token으로 session을 approved 상태로 전환합니다.
+- Exchange API는 verifier를 확인한 뒤 `af_live_...` ingestion token을 한 번만 반환합니다.
+- Smoke는 반환된 token으로 `/v1/ingest/status`와 CLI `share --json` upload를 실행합니다.
+
+검증: [[Commercial Readiness Hardening - Publish Privacy Severity Auth Smoke and Alembic Version Gate 2026-05-31#검증 증거]]

@@ -56,9 +56,19 @@ aliases:
 
 - [x] Backend rate-limit identity가 untrusted `X-Forwarded-For`를 우선 신뢰하는 문제: trusted proxy allowlist 적용
 - [x] Backend production safety가 `ENVIRONMENT=production` exact match에 의존하는 문제: non-development fail-closed 적용
-- [ ] Backend rate-limit shared store: multi-worker/global quota용 Redis 등 backend 필요
+- [x] Backend rate-limit shared store: Redis 신규 의존성 대신 기존 Postgres 기반 `rate_limit_events` + advisory lock으로 multi-worker/global quota 보강
 - [x] Frontend `npm audit --omit=dev`의 Next/PostCSS moderate advisory: stable Next는 아직 vulnerable PostCSS를 pin하므로 targeted `overrides.next.postcss=8.5.15`와 audit gate로 mitigation
 - [ ] Backend full Ruff repo-wide cleanup: 현재 patch scope targeted ruff는 통과하나 기존 style noise 존재
+
+## 2026-05-30 backend shared rate-limit store 추가 루프
+
+- Production/non-development의 `RATE_LIMIT_STORE=auto`는 database store로 해석됩니다.
+- Development의 `auto`는 기존 in-memory store를 사용해 local bootstrapping을 가볍게 유지합니다.
+- `RATE_LIMIT_STORE=memory`는 production-like env에서 fail-closed로 거부됩니다.
+- Shared store는 `rate_limit_events(bucket_name, identity_hash, occurred_at)`와 PostgreSQL `pg_advisory_xact_lock`으로 bucket 단위 transaction race를 줄입니다.
+- identity는 raw token/IP가 아니라 SHA-256 hash로 저장됩니다.
+
+관련: [[Auth & Credential Safety#2026-05-30 Shared database rate-limit store]]
 
 ## 2026-05-30 backend 운영 보안 추가 루프
 

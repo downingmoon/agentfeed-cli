@@ -175,8 +175,8 @@ created: 2026-05-30
 - Social/comment mutation은 resource UUID를 `{id}`로 정규화해 resource id를 바꿔도 같은 endpoint bucket에 걸립니다.
 - 429는 `RATE_LIMITED` error code와 `Retry-After` header를 제공합니다.
 
-> [!warning]
-> in-memory limiter는 process-local입니다. 운영 scale-out 시 shared bucket store로 바꾸는 follow-up이 필요합니다.
+> [!note]
+> Production/non-development scale-out bucket은 이후 [[#2026-05-30 Shared database rate-limit store]]에서 Postgres shared store로 보강했습니다.
 
 관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 Backend critical path rate-limit]]
 
@@ -273,7 +273,7 @@ created: 2026-05-30
 - XFF chain은 오른쪽부터 trusted proxy hop을 제거한 뒤 rightmost untrusted IP를 선택합니다.
 - invalid forwarded value는 무시하고 socket client IP로 fallback합니다.
 - `TRUSTED_PROXY_IPS`는 comma-separated IP 또는 CIDR을 지원합니다.
-- 운영 scale-out에서 process-local bucket 한계는 남아 있으므로 shared limiter store는 별도 P1 follow-up입니다.
+- 운영 scale-out bucket은 [[#2026-05-30 Shared database rate-limit store]]의 Postgres shared store로 보강했습니다.
 
 검증:
 
@@ -281,6 +281,33 @@ created: 2026-05-30
 - `uv run --with pytest --with pytest-asyncio pytest -q` → 89 passed
 
 관련: [[Commercial Readiness Audit 2026-05-30#2026-05-30 backend 운영 보안 추가 루프]]
+
+
+## 2026-05-30 Shared database rate-limit store
+
+> [!success]
+> Production-like backend는 process-local memory limiter로 시작하지 않고 database-backed shared limiter를 사용합니다.
+
+보안 계약:
+
+- `RATE_LIMIT_STORE=auto`는 development에서 `memory`, non-development에서 `database`입니다.
+- `RATE_LIMIT_STORE=memory`는 non-development에서 startup validation error로 거부합니다.
+- Database store는 `rate_limit_events`에 bucket events를 저장하지만 identity는 SHA-256 hash만 저장합니다.
+- Bucket check는 PostgreSQL transaction-scoped advisory lock으로 serialize합니다.
+- Endpoint/identity isolation, window expiry, retry-after 계산은 async shared-store path에서도 유지됩니다.
+
+검증:
+
+- `tests/test_rate_limit_store.py`
+  - two-worker shared bucket block
+  - endpoint/identity bucket isolation
+  - shared window expiry/retry-after
+  - database advisory lock + identity hash persistence
+  - production config fail-closed
+- `pytest tests -q` → 95 passed
+- Alembic offline chain에서 `006_rate_limit_events` 생성 확인
+
+관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 Backend shared database rate-limit store]]
 
 ## 2026-05-30 Backend production environment fail-closed
 

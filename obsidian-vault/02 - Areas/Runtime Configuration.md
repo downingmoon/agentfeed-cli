@@ -168,3 +168,27 @@ created: 2026-05-30
 - `npm run test:contracts && npm run lint && NEXT_PUBLIC_API_URL=http://localhost:8000 npm run build`
 
 관련: [[Commercial Readiness Audit 2026-05-30#아직 남은 P1 후보]]
+
+
+## 2026-05-30 Backend RATE_LIMIT_STORE
+
+> [!success]
+> Backend rate-limit store selection is environment-aware: local은 memory, production-like는 Postgres database store입니다.
+
+계약:
+
+- `RATE_LIMIT_STORE=auto`가 기본값입니다.
+- `ENVIRONMENT=development|dev|local`에서는 `auto -> memory`입니다.
+- 그 외 env에서는 `auto -> database`입니다.
+- `RATE_LIMIT_STORE=memory`는 non-development에서 fail-closed validation error입니다.
+- database store는 기존 `DATABASE_URL` Postgres를 사용하므로 Redis 신규 의존성을 추가하지 않습니다.
+- migration `006_rate_limit_events`가 적용되어야 production limiter가 동작합니다.
+
+검증:
+
+- `Settings(_env_file=None).rate_limit_store == "memory"`
+- production settings의 `rate_limit_store == "database"`
+- production `RATE_LIMIT_STORE=memory`는 `ValueError`
+- `uv run --no-sync --python 3.12 alembic upgrade head --sql`
+
+관련: [[Auth & Credential Safety#2026-05-30 Shared database rate-limit store]]

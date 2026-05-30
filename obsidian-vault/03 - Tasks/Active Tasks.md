@@ -214,7 +214,7 @@ created: 2026-05-30
 - [x] Backend bookmark/search/public source/privacy scan exposure boundary 보강
 - [x] Frontend safe API error, anti-clickjacking headers, production HTTPS API URL gate, review preview/project detail 계약 보강
 - [x] Backend trusted proxy 기반 rate-limit identity 보강
-- [ ] Backend shared limiter store 설계/구현
+- [x] Backend shared limiter store 설계/구현
 - [x] Backend production ENV fail-closed 정책 보강
 - [x] Frontend Next/PostCSS moderate audit advisory를 PostCSS override와 audit gate로 보정
 - [x] `agentfeed-dev/scripts/test-all.sh`에 CLI/Frontend `npm audit --omit=dev --audit-level=moderate` gate 추가

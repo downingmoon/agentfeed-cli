@@ -1279,10 +1279,39 @@ Frontend 표시:
 - `uv run --python 3.12 --with pytest --with pytest-asyncio pytest tests/test_contracts.py -q` → `72 passed`
 - `uv run --python 3.12 --with ruff ruff check app/main.py app/exceptions.py app/middleware/rate_limit.py tests/test_contracts.py --select F,I`
 
-> [!warning] 운영 메모
-> 현재 limiter는 dependency-free in-memory 구현이라 process-local입니다. 단일 프로세스/초기 운영 abuse guard로는 충분하지만, horizontal scaling에서 전역 quota가 필요해지면 Redis 등 shared store로 bucket backend를 교체해야 합니다.
+> [!note] 운영 메모
+> 초기 limiter는 dependency-free in-memory 구현이었지만, 이후 [[Auth & Credential Safety#2026-05-30 Shared database rate-limit store|shared database rate-limit store]]로 production/non-development scale-out bucket을 보강했습니다.
 
 관련: [[Auth & Credential Safety#2026-05-30 Backend critical path rate-limit]]
+
+
+## 2026-05-30 Backend shared database rate-limit store
+
+> [!success]
+> Backend rate-limit bucket을 production/non-development에서 Postgres 공유 저장소로 전환해 multi-worker/global quota가 process boundary를 넘도록 보강했습니다.
+
+문제:
+
+- 기존 `_RATE_LIMIT_BUCKETS`는 Python process-local map이라 uvicorn workers/horizontal replicas가 각각 quota를 따로 계산했습니다.
+- Trusted proxy identity를 고쳐도 store가 process-local이면 scale-out 환경에서 burst abuse가 worker 수만큼 증폭될 수 있었습니다.
+
+수정:
+
+- `RATE_LIMIT_STORE=auto|memory|database` 설정을 추가했습니다.
+- development `auto`는 memory, non-development `auto`는 database로 해석합니다.
+- non-development에서 `RATE_LIMIT_STORE=memory`는 startup validation에서 거부합니다.
+- `rate_limit_events` Alembic migration/model을 추가하고 `(bucket_name, identity_hash, occurred_at)` index를 둡니다.
+- database store는 bucket+identity별 `pg_advisory_xact_lock` transaction lock을 잡은 뒤 expired event 삭제, active count/oldest 조회, allowed event insert를 수행합니다.
+- persisted identity는 raw token/IP가 아니라 SHA-256 hash입니다.
+- Middleware는 async limiter path를 사용하며, rule이 없는 endpoint는 store를 열지 않습니다.
+
+검증:
+
+- `uv run --python 3.12 --with pytest --with pytest-asyncio pytest tests -q` → 95 passed
+- `uv run --python 3.12 --with ruff ruff check app/config.py app/main.py app/middleware/rate_limit.py app/models/__init__.py app/models/rate_limit.py tests/test_rate_limit_store.py alembic/versions/006_rate_limit_events.py`
+- `uv run --no-sync --python 3.12 alembic upgrade head --sql` → `006_rate_limit_events` table/index SQL generated
+
+관련: [[Auth & Credential Safety#2026-05-30 Shared database rate-limit store]], [[Runtime Configuration#2026-05-30 Backend RATE_LIMIT_STORE]]
 
 ## 2026-05-30 Frontend OAuth next allowlist + runtime API config UI
 

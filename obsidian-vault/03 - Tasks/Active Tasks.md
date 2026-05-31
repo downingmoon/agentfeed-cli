@@ -171,6 +171,7 @@ created: 2026-05-30
 - [x] Frontend profile edit / username update surface를 Backend `/me/profile`, `/me/username` 계약에 연결
 - [x] Frontend project create/edit/delete 관리 surface를 Backend project mutation API에 연결
 - [x] Backend/Frontend project edit nullable field clear semantics를 explicit null PATCH 계약으로 정렬
+- [x] dev smoke-e2e가 project PATCH omitted-vs-null clear와 hydrated detail DOM을 검증하도록 보강
 - [x] Frontend public activity tab을 Backend `/users/{username}/activity`에 연결
 
 ## P2 후보
@@ -189,6 +190,8 @@ created: 2026-05-30
 - [x] Frontend unpublish control을 실제 published status 기준으로 축소
 
 ## 관련 링크
+
+- [[Commercial Readiness Hardening - Project Clear Smoke Gate 2026-06-01]]
 
 - [[Commercial Readiness Hardening - Project Nullable Field Clear Semantics 2026-06-01]]
 

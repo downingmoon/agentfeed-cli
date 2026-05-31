@@ -113,6 +113,26 @@ sequenceDiagram
 
 관련 작업 노트: [[Commercial Readiness Hardening - Project Nullable Field Clear Semantics 2026-06-01]]
 
+## 2026-06-01 Project clear smoke gate
+
+> [!success]
+> `agentfeed-dev make smoke-e2e`가 project nullable clear semantics를 API와 hydrated Frontend DOM까지 검증합니다.
+
+수정:
+
+- smoke가 CLI upload로 생성된 project id를 owner-authenticated worklog detail에서 가져옵니다.
+- project `PATCH`에서 omitted nullable fields가 기존 값을 유지하는지 검증합니다.
+- project `PATCH`에서 explicit `null` nullable fields가 clear되는지 검증합니다.
+- clear 후 project detail API와 hydrated project detail DOM이 이전 description/repository/homepage 값을 노출하지 않는지 검증합니다.
+- Backend timestamp response의 `Z` suffix를 smoke parser가 허용하도록 보강했습니다.
+
+검증:
+
+- `make test` in `agentfeed-dev` passed
+- `make smoke-e2e` in `agentfeed-dev` passed
+
+관련 작업 노트: [[Commercial Readiness Hardening - Project Clear Smoke Gate 2026-06-01]]
+
 ## 2026-06-01 Public activity tab
 
 > [!success]

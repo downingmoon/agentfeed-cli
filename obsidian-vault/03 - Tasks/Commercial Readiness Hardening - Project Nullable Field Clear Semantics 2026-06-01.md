@@ -46,8 +46,15 @@ tags:
 - `node scripts/check-openapi-contract.mjs` in `agentfeed-dev` → passed (`client contracts: 66`, backend-only: `2`)
 - `make test` in `agentfeed-dev` → passed
 
+
+## 후속 smoke 승격
+
+> [!success]
+> [[Commercial Readiness Hardening - Project Clear Smoke Gate 2026-06-01]]에서 이 계약을 `agentfeed-dev make smoke-e2e`의 API + hydrated DOM gate로 승격했습니다.
+
 ## 관련 링크
 
+- [[Commercial Readiness Hardening - Project Clear Smoke Gate 2026-06-01]]
 - [[Integration - CLI Backend Frontend#2026-06-01 Project nullable field clear semantics]]
 - [[Commercial Readiness Hardening - Project Mutation Surface 2026-06-01]]
 - [[Commercial Readiness Hardening - Cross Repo OpenAPI Contract Gate 2026-05-31]]

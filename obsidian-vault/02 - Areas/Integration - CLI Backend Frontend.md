@@ -179,6 +179,27 @@ sequenceDiagram
 
 관련 작업 노트: [[Commercial Readiness Hardening - CLI NPM Package Metadata 2026-06-01]]
 
+## 2026-06-01 Frontend CSP fail-closed and Backend readiness
+
+> [!success]
+> Frontend runtime CSP가 invalid API URL을 localhost로 대체하지 않고 fail-closed 하며, Backend는 DB/migration-aware readiness probe를 제공합니다.
+
+수정:
+
+- Frontend API URL normalization을 `src/lib/api-url.ts`로 분리하고 `api.ts`와 `security-headers.ts`가 공유합니다.
+- CSP `connect-src`는 valid API origin만 추가하고, invalid API root는 `'self'`만 허용합니다.
+- Backend `/health/ready`가 DB connectivity, current Alembic revision, expected migration head를 비교합니다.
+- DB unavailable 또는 stale migration이면 readiness가 `503`을 반환합니다.
+- Dev Compose Backend healthcheck와 wait output을 `/health/ready` 기준으로 전환했습니다.
+
+검증:
+
+- Frontend `npm run ci` 및 manual invalid env checks → passed/failed as expected
+- Backend ruff + full pytest + Alembic offline migration chain → passed
+- Dev wait-ready contract, OpenAPI contract, Compose config → passed
+
+관련 작업 노트: [[Commercial Readiness Hardening - Frontend CSP and Backend Readiness 2026-06-01]]
+
 ## 2026-06-01 Cross repo CI gates
 
 > [!success]

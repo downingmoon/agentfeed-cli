@@ -8,7 +8,17 @@ const packageJson = JSON.parse(readFileSync(resolve('package.json'), 'utf8')) as
   name: string;
   version: string;
   bin?: Record<string, string>;
+  bugs?: {
+    url?: string;
+  };
   scripts?: Record<string, string>;
+  homepage?: string;
+  keywords?: string[];
+  packageManager?: string;
+  repository?: {
+    type?: string;
+    url?: string;
+  };
   files?: string[];
 };
 const packageVersion = packageJson.version;
@@ -30,5 +40,25 @@ describe('CLI version metadata', () => {
     expect(packageJson.files).toContain('dist');
     expect(packageJson.scripts?.postbuild).toBe('node scripts/ensure-bin-executable.mjs');
     expect(packageJson.scripts?.prepack).toBe('npm run clean && npm run build && npm run typecheck && npm test -- --run');
+  });
+
+  it('declares npm launch metadata for discovery, support, and reproducibility', () => {
+    expect(packageJson.keywords).toEqual(expect.arrayContaining([
+      'agentfeed',
+      'ai-agent',
+      'worklog',
+      'cli',
+      'codex',
+      'claude-code',
+      'gemini-cli',
+      'cursor'
+    ]));
+    expect(packageJson.homepage).toBe('https://agentfeed.dev');
+    expect(packageJson.repository).toEqual({
+      type: 'git',
+      url: 'git+https://github.com/downingmoon/agentfeed-cli.git'
+    });
+    expect(packageJson.bugs?.url).toBe('https://github.com/downingmoon/agentfeed-cli/issues');
+    expect(packageJson.packageManager).toBe('npm@11.6.0');
   });
 });

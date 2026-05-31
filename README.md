@@ -4,11 +4,18 @@ Local CLI MVP for creating public-safe AgentFeed worklog drafts from AI-assisted
 
 ## Install
 
-The npm package is published as `agentfeed-cli` and exposes the `agentfeed` command:
+Requires Node.js 20+. The npm package name is `agentfeed-cli` and it exposes the `agentfeed` command after publishing:
 
 ```bash
 npm install -g agentfeed-cli
 agentfeed --help
+```
+
+For local release verification before the package is published, build and inspect the npm tarball from this repository:
+
+```bash
+npm ci
+npm pack --dry-run
 ```
 
 ```bash

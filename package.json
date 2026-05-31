@@ -2,6 +2,24 @@
   "name": "agentfeed-cli",
   "version": "0.2.0",
   "description": "AgentFeed CLI for collecting, reviewing, and publishing AI agent worklogs",
+  "keywords": [
+    "agentfeed",
+    "ai-agent",
+    "worklog",
+    "cli",
+    "codex",
+    "claude-code",
+    "gemini-cli",
+    "cursor"
+  ],
+  "homepage": "https://agentfeed.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/downingmoon/agentfeed-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/downingmoon/agentfeed-cli/issues"
+  },
   "type": "module",
   "bin": {
     "agentfeed": "./dist/cli/index.js"
@@ -18,6 +36,7 @@
   "engines": {
     "node": ">=20"
   },
+  "packageManager": "npm@11.6.0",
   "files": [
     "dist",
     "README.md"

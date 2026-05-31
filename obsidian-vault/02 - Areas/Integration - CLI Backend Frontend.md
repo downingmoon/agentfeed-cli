@@ -45,6 +45,26 @@ sequenceDiagram
 - Linux review URL clipboard fallback 보강
 - `share --note`를 `summary` prefix가 아닌 `user_note` 별도 계약으로 승격
 
+## 2026-06-01 CLI npm package launch metadata
+
+> [!success]
+> CLI package metadata와 README install guidance가 npm launch 전 상태와 맞도록 정렬되었습니다.
+
+수정:
+
+- `package.json`에 keywords, homepage, repository, bugs URL, `packageManager`를 추가했습니다.
+- README가 Node.js 20+ 요구사항과 pre-publish `npm pack --dry-run` 검증 경로를 안내합니다.
+- README에서 실제 publish 전 registry 상태와 맞지 않는 “published” 표현을 제거했습니다.
+- `tests/version.test.ts`가 release metadata drift를 막습니다.
+
+검증:
+
+- `npm view agentfeed-cli version` → registry `E404 Not Found` 확인
+- `npm --version` → `11.6.0`
+- 최종 CLI package gate는 작업 노트 검증 목록을 따릅니다.
+
+관련 작업 노트: [[Commercial Readiness Hardening - CLI NPM Package Metadata 2026-06-01]]
+
 ## 2026-05-31 Cross-repo OpenAPI contract gate
 
 > [!success]

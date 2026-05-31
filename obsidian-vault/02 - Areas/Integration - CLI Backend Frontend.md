@@ -48,6 +48,29 @@ sequenceDiagram
 
 
 
+
+## 2026-06-01 Feed Search retry UX
+
+> [!success]
+> Feed/Search public discovery 화면이 transient API failure에서 현재 context를 보존한 retry path를 제공합니다.
+
+수정:
+
+- `useFeed()`가 현재 feed params를 다시 요청하는 `retryFeed()` trigger를 제공합니다.
+- Feed initial failure는 현재 필터 보존 retry CTA를 렌더링합니다.
+- Feed load-more failure는 기존 목록을 유지하고 retry CTA만 표시합니다.
+- Search initial failure는 query/filter URL state를 보존한 `retrySearch()`를 제공합니다.
+- Search load-more failure는 기존 결과를 유지하고 일반 Load more CTA와 retry CTA 중복을 방지합니다.
+- Source contract가 retry trigger, context-preserving copy, duplicate CTA 방지를 고정합니다.
+
+검증:
+
+- Frontend contracts/typecheck/lint/build passed
+- `agentfeed-dev make test` passed
+- Parallel code-review agent 지적사항 반영 완료
+
+관련 작업 노트: [[Commercial Readiness Hardening - Feed Search Retry UX 2026-06-01]]
+
 ## 2026-06-01 Landing API-backed preview
 
 > [!success]

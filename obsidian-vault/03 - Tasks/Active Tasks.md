@@ -80,6 +80,7 @@ created: 2026-05-30
 - [x] Explore popular tag 링크와 Feed `tag` filter 계약 연결
 - [x] Worklog card author static mock user fallback 제거
 - [x] Landing hero preview static demo worklog 제거 및 API-backed 전환
+- [x] Feed/Search public discovery API failure retry UX 보강
 - [x] CLI/package version metadata 단일화로 release drift 방지
 - [x] CLI npm package launch metadata와 README install state 정렬
 - [x] dev bootstrap에서 lockfile 기반 `npm ci`와 `.env` 우선 로딩 사용
@@ -194,6 +195,8 @@ created: 2026-05-30
 - [x] Frontend unpublish control을 실제 published status 기준으로 축소
 
 ## 관련 링크
+
+- [[Commercial Readiness Hardening - Feed Search Retry UX 2026-06-01]]
 
 - [[Commercial Readiness Hardening - Landing API Backed Preview 2026-06-01]]
 

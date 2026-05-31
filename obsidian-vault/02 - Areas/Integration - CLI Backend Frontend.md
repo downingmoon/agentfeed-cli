@@ -46,6 +46,28 @@ sequenceDiagram
 - `share --note`를 `summary` prefix가 아닌 `user_note` 별도 계약으로 승격
 
 
+
+## 2026-06-01 Worklog author mock fallback removal
+
+> [!success]
+> Worklog card author identity가 Frontend static demo user map으로 오염되지 않도록 `_author` 우선 + generic username fallback 계약으로 정렬했습니다.
+
+수정:
+
+- `getWorklogAuthor()`에서 `USERS` import와 static mock fallback을 제거했습니다.
+- Backend-normalized adapter `_author`가 있을 때만 display name/avatar metadata를 사용합니다.
+- `_author`가 없으면 username 기반 generic identity와 deterministic avatar colors를 생성합니다.
+- Source contract가 static mock user fallback 재도입을 차단합니다.
+
+검증:
+
+- `npm run test:contracts` in `agentfeed-frontend` → passed
+- `npm run lint` in `agentfeed-frontend` → passed
+- `NEXT_PUBLIC_API_URL=https://api.agentfeed.dev/v1 npm run build` in `agentfeed-frontend` → passed
+- `make test` in `agentfeed-dev` → passed
+
+관련 작업 노트: [[Commercial Readiness Hardening - Worklog Author Mock Fallback Removal 2026-06-01]]
+
 ## 2026-06-01 Feed tag filter contract
 
 > [!success]

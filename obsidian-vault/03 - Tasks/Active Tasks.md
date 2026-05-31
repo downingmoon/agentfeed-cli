@@ -78,6 +78,7 @@ created: 2026-05-30
 - [x] Backend profile/leaderboard streak placeholder를 실제 consecutive-day 계산으로 교체
 - [x] Frontend feed time filter가 Backend `time_range` API로 전달되도록 연결
 - [x] Explore popular tag 링크와 Feed `tag` filter 계약 연결
+- [x] Worklog card author static mock user fallback 제거
 - [x] CLI/package version metadata 단일화로 release drift 방지
 - [x] CLI npm package launch metadata와 README install state 정렬
 - [x] dev bootstrap에서 lockfile 기반 `npm ci`와 `.env` 우선 로딩 사용
@@ -192,6 +193,8 @@ created: 2026-05-30
 - [x] Frontend unpublish control을 실제 published status 기준으로 축소
 
 ## 관련 링크
+
+- [[Commercial Readiness Hardening - Worklog Author Mock Fallback Removal 2026-06-01]]
 
 - [[Commercial Readiness Hardening - Feed Tag Filter Contract 2026-06-01]]
 

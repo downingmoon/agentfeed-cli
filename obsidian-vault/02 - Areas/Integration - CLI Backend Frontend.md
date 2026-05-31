@@ -2144,3 +2144,18 @@ Frontend 계약:
 - `WorklogCard` schema는 실제 Backend card builder와 같은 public fields를 가져야 합니다.
 
 검증: [[Commercial Readiness Hardening - Public Interaction Response Models 2026-05-31#검증 증거]]
+
+## 2026-05-31 User dashboard worklog response model contract
+
+> [!success]
+> Backend user/profile/dashboard/worklog 핵심 route가 OpenAPI와 contract test에서 명시 response model을 갖도록 보강했습니다.
+
+계약:
+
+- User profile/follow/worklog list route는 `PublicUser`, `FollowResponse`, `WorklogCard` schema로 고정합니다.
+- Me dashboard route는 `DashboardSummaryResponse`와 `DashboardRecentWorklog`로 고정합니다.
+- Worklog create/detail/update/delete/review/privacy-finding/publish/unpublish route는 전용 response schema 또는 `OkResponse`로 고정합니다.
+- Worklog detail schema는 `social` / `viewer_state`를 포함해 response model filtering으로 Frontend state가 사라지지 않게 합니다.
+- Project family와 activity histogram은 shape 설계가 더 필요한 별도 slice로 남겼습니다.
+
+검증: [[Commercial Readiness Hardening - User Dashboard Worklog Contracts and Collect JSON Stability 2026-05-31#검증 증거]]

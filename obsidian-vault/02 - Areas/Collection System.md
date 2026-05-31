@@ -702,3 +702,17 @@ created: 2026-05-30
 - valid encoded file URI는 기존처럼 relative changed file로 집계됩니다.
 
 검증: [[Commercial Readiness Hardening - OAuth Cookie Scope JSON Upload and Signout State 2026-05-31#검증 증거]]
+
+## 2026-05-31 collect JSON root contract
+
+> [!success]
+> `agentfeed collect --json`의 자동화 출력 shape를 README와 test로 명시해, 추후 `share --json` envelope와 혼동해 breaking change가 들어가지 않도록 했습니다.
+
+계약:
+
+- `collect --json` 출력 root는 local draft object입니다.
+- scripts는 `id`, `source`, `worklog`, `privacy_policy`, `upload`를 root에서 읽습니다.
+- `collect --json --upload`도 root shape를 유지하고 `upload` field만 성공 결과로 갱신합니다.
+- `{ draft, upload }` envelope는 `share --json` 계약이며 `collect --json`에는 적용하지 않습니다.
+
+검증: [[Commercial Readiness Hardening - User Dashboard Worklog Contracts and Collect JSON Stability 2026-05-31#검증 증거]]

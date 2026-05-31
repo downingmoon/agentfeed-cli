@@ -88,6 +88,11 @@ describe('collect CLI command', () => {
 
     const draft = JSON.parse(stdout);
 
+    expect(draft.id).toMatch(/^draft_/);
+    expect(draft.worklog).toBeTruthy();
+    expect(draft.source).toBeTruthy();
+    expect(draft.draft).toBeUndefined();
+    expect(draft.draft_id).toBeUndefined();
     expect(draft.source.collection_window.until).toBe('2026-05-20T02:00:00.000Z');
     await expect(readCollectionState(dir)).resolves.toEqual({ last_collected_at: '2026-05-20T02:00:00.000Z' });
   });
@@ -206,6 +211,10 @@ describe('collect CLI command', () => {
       const draft = JSON.parse(stdout);
       expect(requestCount).toBe(1);
       expect(uploadedPayload?.worklog).toBeTruthy();
+      expect(draft.id).toMatch(/^draft_/);
+      expect(draft.worklog).toBeTruthy();
+      expect(draft.draft).toBeUndefined();
+      expect(draft.draft_id).toBeUndefined();
       expect(draft.upload).toMatchObject({
         uploaded: true,
         worklog_id: 'worklog_collect_json_upload',

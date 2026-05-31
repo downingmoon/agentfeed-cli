@@ -87,6 +87,10 @@ agentfeed share --run-configured-commands
 
 Use `--json` for automation. Dry-run output is shaped as `{ dry_run, reused_existing_draft, draft, privacy_policy }`; upload output is shaped as `{ dry_run, reused_existing_draft, draft_id, draft, upload, privacy_policy }` so scripts can verify the exact public-safe draft that was uploaded alongside the review URL. JSON mode has no clipboard side effects unless `--clipboard` is passed explicitly.
 
+## `collect --json` automation contract
+
+`agentfeed collect --json` prints the local draft object as the JSON root. Automation should read draft fields such as `id`, `source`, `worklog`, `privacy_policy`, and `upload` directly from the root object. When `--upload` is also passed, the same draft-root shape is preserved and `draft.upload` is updated with the upload result (`uploaded`, `worklog_id`, `review_url`, `uploaded_at`). Unlike `share --json`, `collect --json` is intentionally **not** wrapped in a `{ draft, upload }` envelope; this keeps existing scripts compatible.
+
 ## Scoped and incremental collection
 
 By default, successful `collect` and non-dry `share` runs save `.agentfeed/state.json` with the last collection timestamp. Later runs use that timestamp as the default lower bound so long-lived agent sessions do not get counted repeatedly.

@@ -25,6 +25,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - Profile Follow Hydration and Leaderboard Resilience 2026-05-31]] — profile follow hydration and leaderboard malformed-row resilience
+
 - [[Commercial Readiness Hardening - Rate Limit and Privacy Finding Ownership 2026-05-31]] — backend random Bearer throttle and server-owned finding resolution
 
 - [[Commercial Readiness Hardening - Settings Privacy Controls 2026-05-31]] — Settings default visibility and public metric controls

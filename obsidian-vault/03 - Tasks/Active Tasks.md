@@ -162,6 +162,8 @@ created: 2026-05-30
 
 ## P2 후보
 
+- [x] Frontend leaderboard malformed row isolation으로 public ranking crash 방지
+- [x] Backend profile `viewer_state.following` + Frontend follow hydration/own-profile suppression 보강
 - [x] CLI privacy scanner authorization header/credentialed URL/private IPv6 redaction 보강
 - [x] Frontend Settings token-management UI에서 named ingestion token create/one-time reveal 지원
 - [x] 비용 정보는 추정 금지 원칙 유지, explicit cost field만 opt-in 보존
@@ -173,6 +175,7 @@ created: 2026-05-30
 
 ## 관련 링크
 
+- [[Commercial Readiness Hardening - Profile Follow Hydration and Leaderboard Resilience 2026-05-31]]
 - [[Commercial Readiness Hardening - Rate Limit and Privacy Finding Ownership 2026-05-31]]
 - [[Commercial Readiness Hardening - Settings Privacy Controls 2026-05-31]]
 - [[Commercial Readiness Hardening - CLI Privacy Scanner Header and URL Redaction 2026-05-31]]

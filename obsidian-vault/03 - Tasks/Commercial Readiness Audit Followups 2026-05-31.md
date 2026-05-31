@@ -26,18 +26,6 @@ tags:
 - 문제: 현재 ingestion token 자체만으로 `/v1/ingest/token/rotate`가 가능하면 leaked token이 새 장기 token으로 self-rotate할 수 있습니다.
 - 후보: browser/session-authenticated token management rotate만 기본 권장하고, token-authenticated renewal은 만료 임박 window / token-family reuse detection / notification / suspicious reuse family revoke를 검토합니다.
 
-### Frontend leaderboard malformed-row isolation
-
-- 파일: `agentfeed-frontend/src/components/pages/LeaderboardPage.tsx`
-- 문제: malformed leaderboard item 하나가 `row.user.*` 또는 `row.main_metric.*` access에서 list를 crash시킬 수 있습니다.
-- 최소 수정: adapter에서 usable user identity와 `main_metric.label/value`가 있는 row만 남깁니다.
-
-### Frontend profile follow control hydration
-
-- 파일: `agentfeed-frontend/src/components/pages/ProfilePage.tsx`
-- 문제: `following=false`로 시작해 profile API/viewer state로 hydrate하지 않고, own profile Follow button suppression도 부족합니다.
-- 후보: backend 지원 상태 확인 후 `ApiUserPublic` viewer follow state를 hydrate하고 pending/error rollback contract test를 추가합니다.
-
 ## 처리 완료로 이동된 항목
 
 - [x] Backend invalid/random Bearer header rate-limit bypass
@@ -47,4 +35,6 @@ tags:
 - [x] CLI configured command sensitive env scrub
 - [x] CLI literal argv token login default-disable
 - [x] CLI privacy scanner authorization header / credentialed URL / IPv6 private URL redaction
+- [x] Frontend leaderboard malformed-row isolation — [[Commercial Readiness Hardening - Profile Follow Hydration and Leaderboard Resilience 2026-05-31]]
+- [x] Frontend profile follow control hydration — [[Commercial Readiness Hardening - Profile Follow Hydration and Leaderboard Resilience 2026-05-31]]
 

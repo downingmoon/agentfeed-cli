@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Profile Follow Hydration and Leaderboard Resilience 2026-05-31]]
+
 - [[Commercial Readiness Hardening - Rate Limit and Privacy Finding Ownership 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Settings Privacy Controls 2026-05-31]]
@@ -103,6 +105,8 @@ graph LR
 - [[Cross Repo Integration Fixes]]
 
 ## 주요 개념 링크
+
+- [[Integration - CLI Backend Frontend#2026-05-31 Profile follow hydration and leaderboard resilience|Profile follow hydration + leaderboard resilience]]
 
 - [[Auth & Credential Safety#2026-05-31 Public and ingest IP-based rate-limit identity|Public and ingest IP-based rate-limit identity]]
 - [[Privacy Safety#2026-05-31 Server-owned privacy finding resolution|Server-owned privacy finding resolution]]

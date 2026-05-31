@@ -46,6 +46,34 @@ sequenceDiagram
 - `share --note`를 `summary` prefix가 아닌 `user_note` 별도 계약으로 승격
 
 
+## 2026-05-31 Profile follow hydration and leaderboard resilience
+
+> [!success]
+> Profile follow controls now use Backend viewer state, and leaderboard rows are filtered before entering React render state.
+
+문제:
+
+- `/leaderboard`는 malformed row 하나가 `row.user.*` 또는 `row.main_metric.*` access에서 public page crash로 번질 수 있었습니다.
+- `/profile/{username}` follow control은 profile response에 viewer follow state가 없어 stale default state로 시작했습니다.
+- 자기 profile Follow button suppression과 follow mutation pending/error handling이 계약화되지 않았습니다.
+
+수정:
+
+- Backend `/v1/users/{username}` response에 authenticated viewer용 `viewer_state.following`을 추가했습니다.
+- self profile은 `viewer_state.following=false`로 반환하고 follow lookup을 생략합니다.
+- Frontend `safeLeaderboardItems()`가 usable identity와 `main_metric`이 있는 leaderboard row만 통과시킵니다.
+- Frontend Profile page가 `profile.viewer_state?.following`으로 hydrate하고, 자기 profile에서는 follow control을 숨깁니다.
+- Follow/unfollow 중복 클릭 lock, optimistic rollback, error message를 추가했습니다.
+
+검증:
+
+- Backend: targeted profile tests, full `pytest` 205 passed, `ruff`, `git diff --check`
+- Frontend: `npm run lint`, `npm run test:contracts`, production `npm run build`, `git diff --check`
+- Cross-repo: `make test` in `agentfeed-dev` passed
+
+관련 작업 노트: [[Commercial Readiness Hardening - Profile Follow Hydration and Leaderboard Resilience 2026-05-31]]
+
+
 
 ## 2026-05-31 Settings named ingestion token creation 계약
 

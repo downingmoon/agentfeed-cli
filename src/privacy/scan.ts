@@ -14,6 +14,8 @@ interface PatternRule {
 
 const patterns: PatternRule[] = [
   { type: 'database_url', severity: 'high', regex: /\b(?:postgres|postgresql|mysql|mongodb|redis):\/\/[^\s'"<>]+/gi, replacement: '[REDACTED_DATABASE_URL]', message: 'Possible database URL detected.' },
+  { type: 'api_key_pattern', severity: 'high', regex: /\b(Authorization\s*:\s*(?:Bearer|Basic|Token)\s+)[A-Za-z0-9._~+/=-]{8,}/gi, replacement: '$1[REDACTED_SECRET]', sampleRedacted: '[REDACTED_SECRET]', message: 'Possible Authorization header secret detected.' },
+  { type: 'private_url', severity: 'high', regex: /\bhttps?:\/\/(?:[^:\s'"<>/@]+(?::[^@\s'"<>/]*)?|[^@\s'"<>/]+)@[^\s'"<>]+/gi, replacement: '[REDACTED_URL]', message: 'Credentialed URL detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\bsk-ant-[A-Za-z0-9_-]{20,}\b/gi, replacement: '[REDACTED_SECRET]', message: 'Possible Anthropic API key detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\bsk-[A-Za-z0-9_-]{20,}\b/gi, replacement: '[REDACTED_SECRET]', message: 'Possible API key detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\baf_(?:live|test|dev)_[A-Za-z0-9_-]{8,}\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible AgentFeed token detected.' },
@@ -25,7 +27,7 @@ const patterns: PatternRule[] = [
   { type: 'api_key_pattern', severity: 'high', regex: /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g, replacement: '[REDACTED_SECRET]', message: 'Possible private key block detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\b((?:[A-Z][A-Z0-9_]*_)?(?:API[_-]?KEY|SECRET|TOKEN|PASSWORD|PASSWD|PRIVATE[_-]?KEY|ACCESS[_-]?TOKEN|REFRESH[_-]?TOKEN)\s*[:=]\s*)(["']?)[^\s'"`<>]{8,}\2/gi, replacement: '$1$2[REDACTED_SECRET]$2', sampleRedacted: '[REDACTED_SECRET]', message: 'Possible secret assignment detected.' },
   { type: 'email_address', severity: 'medium', regex: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, replacement: '[REDACTED_EMAIL]', message: 'Email address detected.' },
-  { type: 'private_url', severity: 'medium', regex: /https?:\/\/(?:localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(?:1[6-9]|2\d|3[01])\.\d+\.\d+)(?::\d+)?[^\s'"<>]*/gi, replacement: '[REDACTED_URL]', message: 'Private or localhost URL detected.' },
+  { type: 'private_url', severity: 'medium', regex: /https?:\/\/(?:localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(?:1[6-9]|2\d|3[01])\.\d+\.\d+|169\.254\.\d+\.\d+|\[(?:::1|f[cd][0-9a-f]{2}:[0-9a-f:]+|fe80:[0-9a-f:]+)\])(?::\d+)?[^\s'"<>]*/gi, replacement: '[REDACTED_URL]', message: 'Private or localhost URL detected.' },
   { type: 'sensitive_path', severity: 'medium', regex: /(?<!\S)[A-Za-z]:\\(?:[^\\\r\n/:*?"<>|]+\\){1,}[^\\\s\r\n/:*?"<>|]+/g, replacement: '[REDACTED_PATH]', message: 'Windows absolute local path detected.' },
   { type: 'sensitive_path', severity: 'medium', regex: /(?<!\S)\\\\(?:[^\\\r\n/:*?"<>|]+\\){2,}[^\\\s\r\n/:*?"<>|]+/g, replacement: '[REDACTED_PATH]', message: 'UNC local path detected.' },
   { type: 'sensitive_path', severity: 'medium', regex: /(?<!\S)(?:~|\/)(?:[^/\r\n'"<>]+\/){1,}[^/\s\r\n'"<>]+/gu, replacement: '[REDACTED_PATH]', message: 'Absolute local path detected.' },

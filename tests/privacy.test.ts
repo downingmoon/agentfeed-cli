@@ -107,4 +107,48 @@ describe('privacy scanner', () => {
     expect(result.scan.status).toBe('danger');
     expect(result.scan.findings.some((finding) => finding.message === 'Possible private key block detected.')).toBe(true);
   });
+
+  it.each([
+    ['Authorization: Bearer abcdef1234567890abcdef1234567890', 'Authorization: Bearer [REDACTED_SECRET]'],
+    ['authorization: Basic dXNlcjpwYXNzd29yZA==', 'authorization: Basic [REDACTED_SECRET]'],
+    ['Authorization: Token ghp_abcdefghijklmnopqrstuvwxyz1234567890', 'Authorization: Token [REDACTED_SECRET]']
+  ])('redacts secret-bearing authorization headers: %s', (input, expected) => {
+    const result = scanAndRedactFields({ summary: input });
+
+    expect(result.redacted.summary).toBe(expected);
+    expect(result.scan.status).toBe('danger');
+    expect(result.scan.findings.some((finding) =>
+      finding.type === 'api_key_pattern' &&
+      finding.message === 'Possible Authorization header secret detected.'
+    )).toBe(true);
+  });
+
+  it.each([
+    ['https://user:pass@example.com/repo.git'],
+    ['http://token@example.com/path?x=1']
+  ])('redacts credentialed public URLs: %s', (url) => {
+    const result = scanAndRedactFields({ summary: `Remote ${url}` });
+
+    expect(result.redacted.summary).toBe('Remote [REDACTED_URL]');
+    expect(result.scan.status).toBe('danger');
+    expect(result.scan.findings.some((finding) =>
+      finding.type === 'private_url' &&
+      finding.message === 'Credentialed URL detected.'
+    )).toBe(true);
+  });
+
+  it.each([
+    ['http://169.254.169.254/latest/meta-data/'],
+    ['http://[::1]:3000/callback'],
+    ['https://[fd00::1]/internal'],
+    ['https://[fe80::1]/metadata']
+  ])('redacts IPv6 and link-local private URLs: %s', (url) => {
+    const result = scanAndRedactFields({ summary: `Fetched ${url}` });
+
+    expect(result.redacted.summary).toBe('Fetched [REDACTED_URL]');
+    expect(result.scan.findings.some((finding) =>
+      finding.type === 'private_url' &&
+      finding.message === 'Private or localhost URL detected.'
+    )).toBe(true);
+  });
 });

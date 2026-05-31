@@ -59,15 +59,10 @@ tags:
 - 문제: `following=false`로 시작해 profile API/viewer state로 hydrate하지 않고, own profile Follow button suppression도 부족합니다.
 - 후보: backend 지원 상태 확인 후 `ApiUserPublic` viewer follow state를 hydrate하고 pending/error rollback contract test를 추가합니다.
 
-### CLI privacy scanner additional public-text patterns
-
-- 파일: `src/privacy/scan.ts`, `src/privacy/draft-sanitizer.ts`
-- 문제: `Authorization: Bearer ...`, credentialed URLs, IPv6 loopback/link-local/private hosts 같은 public text leak pattern이 더 필요합니다.
-- 후보 검증: `npx vitest run tests/privacy.test.ts -t "redacts bearer tokens and credentialed URLs"`.
-
 ## 처리 완료로 이동된 항목
 
 - [x] CLI configured command shell wrapper refusal
 - [x] CLI configured command sensitive env scrub
 - [x] CLI literal argv token login default-disable
+- [x] CLI privacy scanner authorization header / credentialed URL / IPv6 private URL redaction
 

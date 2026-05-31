@@ -354,3 +354,16 @@ Redacted preview:
 - chmod가 의미 없는 filesystem에서는 best-effort로 실패를 무시합니다.
 
 검증: [[Commercial Readiness Hardening - CLI Draft Artifact Permissions 2026-05-31#검증 증거]]
+
+## 2026-05-31 Header and URL privacy scanner expansion
+
+> [!success]
+> CLI public-safe scanner가 secret-bearing authorization header와 credentialed/private URL 패턴을 추가로 redaction합니다.
+
+계약:
+
+- `Authorization: Bearer|Basic|Token ...` header secret은 header prefix를 보존하고 value만 `[REDACTED_SECRET]`로 치환합니다.
+- credentialed HTTP(S) URL은 전체 URL을 `[REDACTED_URL]`로 치환해 username/password/token userinfo를 노출하지 않습니다.
+- IPv6 loopback, ULA/link-local, `169.254.0.0/16` metadata URL도 private URL로 redaction합니다.
+
+검증: [[Commercial Readiness Hardening - CLI Privacy Scanner Header and URL Redaction 2026-05-31#검증 증거]]

@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - CLI Privacy Scanner Header and URL Redaction 2026-05-31]]
+
 - [[Commercial Readiness Hardening - CLI Command and Token Trust Boundary 2026-05-31]]
 
 - [[Commercial Readiness Audit Followups 2026-05-31]]
@@ -97,6 +99,8 @@ graph LR
 - [[Cross Repo Integration Fixes]]
 
 ## 주요 개념 링크
+
+- [[Privacy Safety#2026-05-31 Header and URL privacy scanner expansion|Header and URL privacy scanner expansion]]
 
 - [[Collection System#2026-05-31 Configured command trust boundary|Configured command trust boundary]]
 - [[Auth & Credential Safety#2026-05-31 Literal argv token guard|Literal argv token guard]]

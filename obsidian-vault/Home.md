@@ -25,6 +25,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - CLI Privacy Scanner Header and URL Redaction 2026-05-31]] — scanner authorization header and URL redaction
+
 - [[Commercial Readiness Hardening - CLI Command and Token Trust Boundary 2026-05-31]] — configured command and argv token trust boundary
 
 - [[Commercial Readiness Audit Followups 2026-05-31]] — backend/frontend/CLI audit follow-up backlog

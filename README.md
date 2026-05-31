@@ -125,6 +125,6 @@ agentfeed scan --id <draft_id> --dry-run
 agentfeed scan --id <draft_id>
 ```
 
-`--dry-run` prints finding severity, field, redaction placeholder, and redacted preview without showing the original secret or modifying the draft. Without `--dry-run`, `scan` updates the draft's uploadable public fields with redacted values and saves the `privacy_scan` result.
+`--dry-run` prints finding severity, field, redaction placeholder, and redacted preview without showing the original secret or modifying the draft. Without `--dry-run`, `scan` updates the draft's uploadable public fields with redacted values and saves the `privacy_scan` result. The scanner redacts common API tokens, secret assignments, private key blocks, authorization headers, credentialed URLs, local/private URLs including IPv6/link-local metadata URLs, emails, and local filesystem paths.
 
 `share` and `publish` upload a **private review draft**, not a public worklog. If high-severity findings remain, the CLI now states that public/unlisted publishing is blocked in AgentFeed until those findings are resolved, while the private review upload is still allowed so you can resolve the findings in the web review.

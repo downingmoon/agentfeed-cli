@@ -1,12 +1,36 @@
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import type { AgentFeedProjectConfig, WorklogMetrics } from '../types.js';
 import { pathExists, readJson } from '../utils/fs.js';
-import { run } from '../utils/shell.js';
+import { createScrubbedCommandEnv, run } from '../utils/shell.js';
 
 interface ResolvedCommand {
   command: string;
   args: string[];
+}
+
+const SHELL_INTERPRETER_COMMANDS = new Set([
+  'bash',
+  'cmd',
+  'cmd.exe',
+  'csh',
+  'dash',
+  'fish',
+  'ksh',
+  'powershell',
+  'powershell.exe',
+  'pwsh',
+  'pwsh.exe',
+  'sh',
+  'tcsh',
+  'zsh'
+]);
+
+function assertSafeConfiguredCommand(command: string): void {
+  const name = basename(command).toLowerCase();
+  if (SHELL_INTERPRETER_COMMANDS.has(name)) {
+    throw new Error(`Refusing to run configured command through a shell interpreter (${command}). Configure a direct test/build command instead.`);
+  }
 }
 
 function splitCommandLine(commandLine: string): string[] {
@@ -51,7 +75,9 @@ async function resolveConfiguredCommand(cwd: string, configured: 'auto' | string
   if (!configured) return null;
   if (configured === 'auto') return infer(cwd);
   const [command, ...args] = splitCommandLine(configured);
-  return command ? { command, args } : null;
+  if (!command) return null;
+  assertSafeConfiguredCommand(command);
+  return { command, args };
 }
 
 async function resolveConfiguredCommands(cwd: string, config: AgentFeedProjectConfig): Promise<{ test: ResolvedCommand | null; build: ResolvedCommand | null } | null> {
@@ -65,19 +91,20 @@ async function resolveConfiguredCommands(cwd: string, config: AgentFeedProjectCo
 export async function collectConfiguredCommandMetrics(cwd: string, config: AgentFeedProjectConfig): Promise<Pick<WorklogMetrics, 'tests_run' | 'tests_passed' | 'failed_commands' | 'commands_run'> | null> {
   const commands = await resolveConfiguredCommands(cwd, config);
   if (!commands) return null;
+  const commandEnv = createScrubbedCommandEnv();
   let testsRun: number | null = null;
   let testsPassed: number | null = null;
   let failedCommands = 0;
   let commandsRun = 0;
   if (commands.test) {
-    const result = await run(commands.test.command, commands.test.args, cwd);
+    const result = await run(commands.test.command, commands.test.args, cwd, { env: commandEnv });
     commandsRun += 1;
     testsRun = 1;
     testsPassed = result.ok ? 1 : 0;
     if (!result.ok) failedCommands += 1;
   }
   if (commands.build) {
-    const result = await run(commands.build.command, commands.build.args, cwd);
+    const result = await run(commands.build.command, commands.build.args, cwd, { env: commandEnv });
     commandsRun += 1;
     if (!result.ok) failedCommands += 1;
   }

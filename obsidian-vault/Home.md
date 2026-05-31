@@ -25,6 +25,10 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - CLI Command and Token Trust Boundary 2026-05-31]] — configured command and argv token trust boundary
+
+- [[Commercial Readiness Audit Followups 2026-05-31]] — backend/frontend/CLI audit follow-up backlog
+
 - [[Commercial Readiness Hardening - Settings Named Token Creation 2026-05-31]] — Settings named ingestion token creation and one-time reveal
 
 - [[Commercial Readiness Hardening - Dashboard Recent Worklog Actions 2026-05-31]] — Dashboard recent worklogs status-aware action route

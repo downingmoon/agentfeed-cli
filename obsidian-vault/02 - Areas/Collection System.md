@@ -673,3 +673,18 @@ created: 2026-05-30
 - 이 변경은 upload payload schema를 바꾸지 않고 local artifact safety만 강화합니다.
 
 검증: [[Commercial Readiness Hardening - CLI Draft Artifact Permissions 2026-05-31#검증 증거]]
+
+## 2026-05-31 Configured command trust boundary
+
+> [!success]
+> `--run-configured-commands`가 shell wrapper나 inherited secret env를 통해 repo-local config trust boundary를 넓히지 않도록 보강했습니다.
+
+계약:
+
+- Repo-local test/build command 실행은 여전히 `--run-configured-commands` 명시 opt-in에서만 가능합니다.
+- `sh`, `bash`, `zsh`, `cmd.exe`, PowerShell 계열 shell interpreter command는 opt-in이 있어도 실행 전에 거부합니다.
+- 구성된 command는 direct executable 형태여야 합니다. 예: `npm test`, `pytest`, `go test ./...`, `make test`.
+- command 실행 env에서 `AGENTFEED_TOKEN`, npm auth token, cloud credentials, common `*_TOKEN` / `*_SECRET` 계열을 scrub합니다.
+- 필요한 경우만 `AGENTFEED_CONFIGURED_COMMAND_ENV_ALLOWLIST=NAME1,NAME2`로 명시 통과시킵니다.
+
+검증: [[Commercial Readiness Hardening - CLI Command and Token Trust Boundary 2026-05-31#검증 증거]]

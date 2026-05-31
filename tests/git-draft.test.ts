@@ -195,6 +195,55 @@ describe('git collector and drafts', () => {
     expect(draft.worklog.metrics.failed_commands).toBeNull();
   });
 
+  it('refuses shell-interpreter configured commands even when command execution is explicitly opted in', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const markerPath = join(dir, '.agentfeed', 'unsafe-command-ran');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.collection.run_tests_on_collect = true;
+    config.commands.test = 'sh -c "echo unsafe > .agentfeed/unsafe-command-ran"';
+    await writeFile(configPath, JSON.stringify(config, null, 2));
+
+    await expect(collectDraft({ cwd: dir, source: 'claude_code', runConfiguredCommands: true })).rejects.toThrow(/Refusing to run configured command through a shell interpreter/);
+    await expect(readFile(markerPath, 'utf8')).rejects.toThrow();
+  });
+
+  it('does not pass AgentFeed token environment variables to configured commands', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const markerPath = join(dir, '.agentfeed', 'leaked-token');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.collection.run_tests_on_collect = true;
+    config.commands.test = 'node .agentfeed/check-env.mjs';
+    await writeFile(configPath, JSON.stringify(config, null, 2));
+    await writeFile(join(dir, '.agentfeed', 'check-env.mjs'), [
+      'import { writeFileSync } from "node:fs";',
+      'if (process.env.AGENTFEED_TOKEN) {',
+      '  writeFileSync(".agentfeed/leaked-token", process.env.AGENTFEED_TOKEN);',
+      '  process.exit(7);',
+      '}',
+      'process.exit(0);',
+      ''
+    ].join('\n'));
+    const previousToken = process.env.AGENTFEED_TOKEN;
+    const previousAllowlist = process.env.AGENTFEED_CONFIGURED_COMMAND_ENV_ALLOWLIST;
+    process.env.AGENTFEED_TOKEN = 'af_live_should_not_leak_to_configured_commands';
+    delete process.env.AGENTFEED_CONFIGURED_COMMAND_ENV_ALLOWLIST;
+    try {
+      const draft = await collectDraft({ cwd: dir, source: 'claude_code', runConfiguredCommands: true });
+
+      expect(draft.worklog.metrics.tests_run).toBe(1);
+      expect(draft.worklog.metrics.tests_passed).toBe(1);
+      expect(draft.worklog.metrics.commands_run).toBe(1);
+      await expect(readFile(markerPath, 'utf8')).rejects.toThrow();
+    } finally {
+      if (previousToken === undefined) delete process.env.AGENTFEED_TOKEN;
+      else process.env.AGENTFEED_TOKEN = previousToken;
+      if (previousAllowlist === undefined) delete process.env.AGENTFEED_CONFIGURED_COMMAND_ENV_ALLOWLIST;
+      else process.env.AGENTFEED_CONFIGURED_COMMAND_ENV_ALLOWLIST = previousAllowlist;
+    }
+  });
+
   it('records configured test command failures without uploading raw output', async () => {
     await initProject({ cwd: dir, noGitCheck: false });
     const configPath = join(dir, '.agentfeed', 'config.json');

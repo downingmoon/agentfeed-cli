@@ -22,6 +22,12 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] CLI configured command shell wrapper를 거부해 `--run-configured-commands` trust boundary 축소
+- [x] CLI configured command 실행 env에서 sensitive token/credential scrub
+- [x] CLI literal `login --token <token>`을 기본 비활성화하고 stdin-first 경로로 고정
+- [ ] Backend invalid/random Bearer header rate-limit bypass 차단
+- [ ] Backend ingested privacy finding pre-resolved publish bypass 차단
+- [ ] Frontend Settings privacy/default visibility controls 노출
 - [x] Dashboard recent worklogs link를 status-aware review/public action으로 분기
 - [x] Backend ingestion `project.repository_url`이 public URL validator를 우회하지 않도록 보강
 - [x] CLI `agentfeed login --token` argv/history 노출을 stdin-first token 입력으로 보강
@@ -165,6 +171,9 @@ created: 2026-05-30
 - [x] Frontend unpublish control을 실제 published status 기준으로 축소
 
 ## 관련 링크
+
+- [[Commercial Readiness Hardening - CLI Command and Token Trust Boundary 2026-05-31]]
+- [[Commercial Readiness Audit Followups 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Ingest Repository URL Safety 2026-05-31]]
 

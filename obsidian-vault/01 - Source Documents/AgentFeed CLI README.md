@@ -62,7 +62,7 @@ printf '%s' "$AGENTFEED_TOKEN" | agentfeed login --token-stdin
 printf '%s' "$AGENTFEED_TOKEN" | agentfeed login --token - --no-save
 ```
 
-`agentfeed login --token <token>` remains available for local throwaway/dev use, but it can expose the token through shell history and process listings.
+Literal `agentfeed login --token <token>` input is disabled by default because raw secrets can leak through shell history and process listings. Use stdin (`--token-stdin` or `--token -`) for existing tokens; a local throwaway development escape hatch exists only when `AGENTFEED_ALLOW_UNSAFE_ARGV_TOKEN=1` is set.
 
 When a saved device token is near expiry or compromised, run:
 
@@ -119,7 +119,7 @@ agentfeed share --all             # same for one-command sharing
 
 `collect` combines Git metrics with local agent session metadata when available. Claude Code JSONL transcripts, Codex JSONL rollouts, Gemini CLI chat logs, and OMC/OMX/Superpowers metadata are parsed locally for safe aggregate data such as edited file paths, line counts, token usage, test commands, failed commands, tool calls, skills used, subagent counts, collection quality, model, and session id; raw transcript content is not stored in the draft. Unknown local agent/plugin metadata is collected as low-confidence aggregate signals when no known agent session is found, and `--explain` shows the non-path source summary used for the draft.
 
-Repo-local test/build commands are never executed by default, even when `.agentfeed/config.json` enables `collection.run_tests_on_collect`. Use `agentfeed collect --run-configured-commands` or `agentfeed share --run-configured-commands` only in repositories whose config and scripts you trust.
+Repo-local test/build commands are never executed by default, even when `.agentfeed/config.json` enables `collection.run_tests_on_collect`. Use `agentfeed collect --run-configured-commands` or `agentfeed share --run-configured-commands` only in repositories whose config and scripts you trust. Shell-interpreter wrappers such as `sh -c`, `bash -lc`, `zsh -c`, `cmd.exe /c`, or PowerShell are refused even with this flag; configure a direct test/build command such as `npm test`, `npm run build`, `pytest`, `go test ./...`, or `make test` instead. Configured commands also run with sensitive environment variables scrubbed (`AGENTFEED_TOKEN`, npm auth tokens, cloud credentials, and common `*_TOKEN`/`*_SECRET` names); use `AGENTFEED_CONFIGURED_COMMAND_ENV_ALLOWLIST=NAME1,NAME2` only when you intentionally need to pass a specific variable.
 
 
 ## Diagnostics and duplicate safety

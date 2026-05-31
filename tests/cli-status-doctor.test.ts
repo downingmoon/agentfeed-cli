@@ -168,6 +168,44 @@ describe('status and doctor provenance output', () => {
     expect(saved.ingestion_token).toBe(token);
   });
 
+  it('does not advertise literal argv token login in help output', () => {
+    const stdout = execFileSync(process.execPath, [cliPath, '--help'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    expect(stdout).toContain('agentfeed login --token-stdin');
+    expect(stdout).toContain('agentfeed login --token - --no-save');
+    expect(stdout).not.toContain('agentfeed login --token <token>');
+  });
+
+  it('rejects literal argv token login by default before saving credentials', async () => {
+    const token = 'af_live_argv_should_not_be_accepted';
+
+    let failure: { stderr?: string; stdout?: string } | undefined;
+    try {
+      await execFileAsync(process.execPath, [cliPath, 'login', '--token', token, '--api-base-url', 'http://127.0.0.1:9/v1'], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_ALLOW_UNSAFE_ARGV_TOKEN: '',
+          AGENTFEED_CREDENTIAL_STORE: 'file'
+        }
+      });
+    } catch (error) {
+      failure = error as { stderr?: string; stdout?: string };
+    }
+
+    expect(failure?.stderr).toContain('Literal token input through --token <token> is disabled');
+    expect(failure?.stderr).toContain('agentfeed login --token-stdin');
+    expect(failure?.stderr).not.toContain(token);
+    expect(failure?.stdout ?? '').toBe('');
+    await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
   it('login fails fast in CI with token remediation and no browser session request', async () => {
     let requestCount = 0;
     const server = await import('node:http').then(({ createServer }) => createServer((_req, res) => {

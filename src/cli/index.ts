@@ -205,7 +205,10 @@ async function cmdLogin(args: string[]) {
   const tokenOption = option(args, '--token');
   const tokenFromStdin = flag(args, '--token-stdin') || tokenOption === '-';
   if (tokenOption && tokenOption !== '-' && tokenFromStdin) {
-    throw new Error('Use only one token input method: --token <token>, --token -, or --token-stdin.');
+    throw new Error('Use only one token input method: --token -, or --token-stdin.');
+  }
+  if (tokenOption && tokenOption !== '-' && process.env.AGENTFEED_ALLOW_UNSAFE_ARGV_TOKEN !== '1') {
+    throw new Error('Literal token input through --token <token> is disabled because argv can leak through shell history and process listings. Pipe the token instead: printf %s "$TOKEN" | agentfeed login --token-stdin. For local throwaway development only, set AGENTFEED_ALLOW_UNSAFE_ARGV_TOKEN=1.');
   }
   const token = tokenFromStdin ? await readTokenFromStdin() : tokenOption;
   const apiBaseUrl = option(args, '--api-base-url');
@@ -583,7 +586,7 @@ async function main() {
     case '--help':
     case '-h':
       print('Usage: agentfeed <init|login|rotate|status|collect|share|preview|publish|scan|hook|doctor|drafts|discard|open>');
-      print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --no-save\n  agentfeed login --browser\n  printf %s "$TOKEN" | agentfeed login --token-stdin\n  printf %s "$TOKEN" | agentfeed login --token - --no-save\n  agentfeed login --token <token>\n  agentfeed rotate\n  agentfeed rotate --browser\n  unset AGENTFEED_TOKEN && agentfeed rotate --browser\n  agentfeed token rotate');
+      print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --no-save\n  agentfeed login --browser\n  printf %s "$TOKEN" | agentfeed login --token-stdin\n  printf %s "$TOKEN" | agentfeed login --token - --no-save\n  agentfeed rotate\n  agentfeed rotate --browser\n  unset AGENTFEED_TOKEN && agentfeed rotate --browser\n  agentfeed token rotate');
       print('\nCollect:\n  agentfeed collect\n  agentfeed collect --explain\n  agentfeed collect --source codex\n  agentfeed collect --source gemini-cli\n  agentfeed collect --source claude-code --session-file <path>\n  agentfeed collect --since 2026-05-20T01:00:00Z\n  agentfeed collect --all\n  agentfeed collect --run-configured-commands');
       print('\nShare:\n  agentfeed share\n  agentfeed share --dry\n  agentfeed share --open-review\n  agentfeed share --since 2026-05-20T01:00:00Z\n  agentfeed share --all\n  agentfeed share --note "Fixed auth flow"\n  agentfeed share --no-clipboard\n  agentfeed share --json --clipboard\n  agentfeed share --run-configured-commands');
       print('\nPublish:\n  agentfeed publish --latest\n  agentfeed publish --id <draft_id>\n  agentfeed publish --json\n  agentfeed publish --json --clipboard\n  agentfeed publish --no-clipboard\n  agentfeed publish --open-review');

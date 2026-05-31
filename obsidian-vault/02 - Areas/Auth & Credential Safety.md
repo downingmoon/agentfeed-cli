@@ -584,3 +584,17 @@ created: 2026-05-30
 - Smoke는 반환된 token으로 `/v1/ingest/status`와 CLI `share --json` upload를 실행합니다.
 
 검증: [[Commercial Readiness Hardening - Publish Privacy Severity Auth Smoke and Alembic Version Gate 2026-05-31#검증 증거]]
+
+## 2026-05-31 Literal argv token guard
+
+> [!success]
+> Raw ingestion token이 shell history/process argv/support screenshot에 남지 않도록 literal `agentfeed login --token <token>`을 기본 비활성화했습니다.
+
+계약:
+
+- 기본 login은 browser approval flow입니다.
+- 이미 token을 가진 사용자는 `--token-stdin` 또는 `--token -`로 stdin을 사용합니다.
+- CLI help와 README는 literal argv token login을 권장 예시에서 제거합니다.
+- local throwaway dev escape hatch는 `AGENTFEED_ALLOW_UNSAFE_ARGV_TOKEN=1`이 있을 때만 동작합니다.
+
+검증: [[Commercial Readiness Hardening - CLI Command and Token Trust Boundary 2026-05-31#검증 증거]]

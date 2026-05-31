@@ -33,6 +33,10 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - CLI Command and Token Trust Boundary 2026-05-31]]
+
+- [[Commercial Readiness Audit Followups 2026-05-31]]
+
 - [[Commercial Readiness Hardening - Settings Named Token Creation 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Dashboard Recent Worklog Actions 2026-05-31]]
@@ -93,6 +97,9 @@ graph LR
 - [[Cross Repo Integration Fixes]]
 
 ## 주요 개념 링크
+
+- [[Collection System#2026-05-31 Configured command trust boundary|Configured command trust boundary]]
+- [[Auth & Credential Safety#2026-05-31 Literal argv token guard|Literal argv token guard]]
 
 - [[Auth & Credential Safety#2026-05-31 OAuth next hash preservation|OAuth next hash preservation]]
 - [[Integration - CLI Backend Frontend#2026-05-31 Aggregate feed keyset and OAuth hash redirect|Aggregate feed keyset + OAuth hash redirect]]

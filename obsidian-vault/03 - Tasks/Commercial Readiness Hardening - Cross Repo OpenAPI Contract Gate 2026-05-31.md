@@ -24,7 +24,7 @@ status: done
 
 - `agentfeed-dev/scripts/check-openapi-contract.mjs`를 추가했습니다.
 - 이 스크립트는 sibling `agentfeed-backend`의 FastAPI app을 import해 현재 OpenAPI schema를 export합니다.
-- CLI runtime endpoint 6개와 Frontend runtime endpoint 56개를 `{method, path}` 단위로 검증합니다.
+- CLI runtime endpoint 6개와 Frontend runtime endpoint 57개를 `{method, path}` 단위로 검증합니다.
 - client가 JSON을 parse하는 endpoint는 OpenAPI의 success response에 `application/json` content가 있어야 합니다.
 - client가 아직 소비하지 않는 Backend endpoint는 `backend-only` allowlist가 아니라 **명시적 분류 목록**에 reason과 함께 들어가야 합니다.
 - `agentfeed-dev/scripts/test-all.sh`에 syntax check와 실행 check를 넣어 `make test`에 자동 포함했습니다.
@@ -40,15 +40,14 @@ status: done
 - `POST /v1/projects` — project create UI 미연결
 - `PATCH /v1/projects/{project_id}` — project edit UI 미연결
 - `DELETE /v1/projects/{project_id}` — project delete UI 미연결
-- `GET /v1/users/{username}/activity` — public activity tab 미연결
 
 ## 검증 증거
 
 - `node --check scripts/check-openapi-contract.mjs` in `agentfeed-dev` → pass
 - `node scripts/check-openapi-contract.mjs` in `agentfeed-dev` → pass
   - OpenAPI operations checked: 68
-  - Client contracts checked: 62 (`cli: 6`, `frontend: 56`)
-  - Classified backend-only operations: 6
+  - Client contracts checked: 63 (`cli: 6`, `frontend: 57`)
+  - Classified backend-only operations: 5
 - `env NEXT_PUBLIC_API_URL=http://localhost:8000 npm run test:contracts` in `agentfeed-frontend` → pass
 - `make test` in `agentfeed-dev` → pass
   - CLI: `251 passed`
@@ -61,4 +60,5 @@ status: done
 - [[Commercial Readiness Hardening - Full JSON API Response Contract 2026-05-31]]
 - [[Commercial Readiness Hardening - Profile Username Settings Surface 2026-05-31]]
 - [[Commercial Readiness Hardening - Report Actions Surface 2026-06-01]]
+- [[Commercial Readiness Hardening - Public Activity Tab 2026-06-01]]
 - [[Active Tasks#P1 후보]]

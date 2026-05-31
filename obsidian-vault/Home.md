@@ -25,6 +25,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - Dashboard Recent Worklog Actions 2026-05-31]] — Dashboard recent worklogs status-aware action route
+
 - [[Commercial Readiness Hardening - Ingest Repository URL Safety 2026-05-31]] — Backend ingestion repository URL public-host validation
 
 - [[Commercial Readiness Hardening - CLI Token Stdin Login 2026-05-31]] — CLI token login stdin-first hardening

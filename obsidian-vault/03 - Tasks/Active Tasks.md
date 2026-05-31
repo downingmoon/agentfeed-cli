@@ -22,7 +22,7 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
-- [ ] Dashboard recent worklogs link를 status-aware review/public action으로 분기
+- [x] Dashboard recent worklogs link를 status-aware review/public action으로 분기
 - [x] Backend ingestion `project.repository_url`이 public URL validator를 우회하지 않도록 보강
 - [x] CLI `agentfeed login --token` argv/history 노출을 stdin-first token 입력으로 보강
 - [x] Project public link/detail을 owner-aware route로 전환해 slug collision/false 404 방지
@@ -169,6 +169,8 @@ created: 2026-05-30
 - [[Commercial Readiness Hardening - Ingest Repository URL Safety 2026-05-31]]
 
 - [[Commercial Readiness Hardening - CLI Token Stdin Login 2026-05-31]]
+
+- [[Commercial Readiness Hardening - Dashboard Recent Worklog Actions 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Owner Aware Project Routes 2026-05-31]]
 

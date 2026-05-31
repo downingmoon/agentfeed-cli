@@ -47,6 +47,36 @@ sequenceDiagram
 
 
 
+## 2026-05-31 Dashboard recent worklog action route 계약
+
+> [!success]
+> Dashboard recent worklogs가 status와 무관하게 public detail route로 이동하던 UX를 Backend `action_url` 계약과 Frontend status-aware helper로 보강했습니다.
+
+문제:
+
+- `/me/dashboard/recent-worklogs`는 `id`, `title`, `status`, `created_at`만 반환했습니다.
+- Frontend Dashboard는 모든 row를 `/worklogs/{id}`로 연결했습니다.
+- `needs_review`, `draft`, `private` worklog는 사용자가 review/manage flow로 가야 하는데 public detail route로 먼저 이동할 수 있었습니다.
+
+수정:
+
+- Backend recent worklog row에 `action_url`을 추가했습니다.
+- `public` / `unlisted`는 `/worklogs/{id}`로, 그 외 상태는 `/worklogs/{id}/review`로 연결합니다.
+- Frontend는 `dashboardRecentWorklogHref()`를 통해 Backend action URL을 우선 사용합니다.
+- Frontend helper는 외부/unsafe action URL을 거부하고 status 기반 fallback을 사용합니다.
+
+검증:
+
+- `uv run --python 3.12 --locked --group dev pytest tests/test_contracts.py -q -k dashboard_recent_worklogs`
+- `uv run --python 3.12 --locked --group dev ruff check app/routers/me.py tests/test_contracts.py`
+- `uv run --python 3.12 --locked --group dev pytest -q` → 201 passed
+- `npm run test:contracts`
+- `npm run lint`
+- `NEXT_PUBLIC_API_URL=https://api.agentfeed.dev/v1 npm run build`
+- `make test` in `agentfeed-dev` → passed
+
+관련 작업 노트: [[Commercial Readiness Hardening - Dashboard Recent Worklog Actions 2026-05-31]]
+
 ## 2026-05-31 Ingest repository URL safety
 
 > [!success]
@@ -100,9 +130,7 @@ sequenceDiagram
 > Sidecar audit 기준으로 아직 구현되지 않은 상용화 후보입니다. 다음 작업은 API 계약을 먼저 고정하고 Frontend UX를 맞추는 순서가 안전합니다.
 
 - **P1**: Dashboard recent worklogs가 public detail route(`/worklogs/{id}`)만 가리켜 private/review 상태 worklog의 다음 행동이 끊길 수 있습니다.
-  - 현재: `agentfeed-frontend/src/components/pages/DashboardPage.tsx` recent card link가 status와 무관하게 public detail route를 사용합니다.
-  - 권장: Backend `/me/dashboard/recent-worklogs`가 `action_url` 또는 `review_url` 성격의 필드를 제공하거나, Frontend가 status 기반으로 `/worklogs/{id}/review`와 public detail route를 분기합니다.
-  - 검증: dashboard source contract + review/public status smoke.
+  - 완료: [[Commercial Readiness Hardening - Dashboard Recent Worklog Actions 2026-05-31]]
 - **P2**: Frontend Settings token-management UI는 Backend `POST /me/ingestion-tokens`를 직접 사용해 named ingestion token을 생성하지 못하고, CLI login 안내 중심입니다.
   - 권장: token name 입력 → create → one-time token reveal → copy/download UX.
 

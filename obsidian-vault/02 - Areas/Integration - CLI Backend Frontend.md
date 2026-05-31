@@ -179,6 +179,30 @@ sequenceDiagram
 
 관련 작업 노트: [[Commercial Readiness Hardening - CLI NPM Package Metadata 2026-06-01]]
 
+## 2026-06-01 CLI release preflight and provenance
+
+> [!success]
+> CLI npm publish 전 repository-side preflight가 package metadata, built tarball contents, local-only payload exclusion, provenance caveat를 한 번에 검증합니다.
+
+수정:
+
+- `npm run release:preflight`가 `npm pack --dry-run --json`을 통해 `prepack` build/typecheck/test gate와 tarball contents를 검증합니다.
+- Pack JSON parser가 lifecycle stdout prefix를 허용하고, direct-run guard가 Windows-style path에서도 silent no-op으로 빠지지 않도록 보강했습니다.
+- `tests/release-preflight.test.ts`가 required built files, forbidden local-only files, metadata/public publish guardrail, direct invocation guard를 행동 기반으로 고정합니다.
+- README에 npm provenance/trusted publishing 공식 문서와 private repo caveat를 명시했습니다.
+- `UNLICENSED`는 owner license 결정 전 all rights reserved / no usage grant 상태로 유지합니다.
+
+검증:
+
+- `node --check scripts/release-preflight.mjs` → passed
+- `npm test -- --run tests/version.test.ts tests/release-preflight.test.ts` → passed
+- `npm run typecheck` → passed
+- `npm run release:preflight` → passed
+- `npm test -- --run && npm run typecheck` → passed
+- `make test` in `agentfeed-dev` → passed
+
+관련 작업 노트: [[Commercial Readiness Hardening - CLI Release Preflight and Provenance 2026-06-01]]
+
 ## 2026-05-31 Cross-repo OpenAPI contract gate
 
 > [!success]

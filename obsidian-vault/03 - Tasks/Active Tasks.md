@@ -156,7 +156,7 @@ created: 2026-05-30
 
 ## P2 후보
 
-- [ ] Frontend Settings token-management UI에서 named ingestion token create/one-time reveal 지원
+- [x] Frontend Settings token-management UI에서 named ingestion token create/one-time reveal 지원
 - [x] 비용 정보는 추정 금지 원칙 유지, explicit cost field만 opt-in 보존
 - [x] `doctor` 출력에 source별 개선 가이드 더 구체화
 - [x] privacy redaction dry-run 상세 표시
@@ -171,6 +171,8 @@ created: 2026-05-30
 - [[Commercial Readiness Hardening - CLI Token Stdin Login 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Dashboard Recent Worklog Actions 2026-05-31]]
+
+- [[Commercial Readiness Hardening - Settings Named Token Creation 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Owner Aware Project Routes 2026-05-31]]
 

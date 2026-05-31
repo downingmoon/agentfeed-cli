@@ -47,6 +47,34 @@ sequenceDiagram
 
 
 
+## 2026-05-31 Settings named ingestion token creation 계약
+
+> [!success]
+> Frontend Settings가 Backend의 named ingestion token create API를 직접 사용해 새 CLI 기기 연결을 시작할 수 있게 했습니다.
+
+문제:
+
+- Backend에는 `POST /me/ingestion-tokens`가 있었지만 Frontend Settings는 list/rotate/revoke 중심이었습니다.
+- 사용자는 Settings에서 새 이름의 token을 만들고 one-time secret을 복사하는 self-serve 경로가 없었습니다.
+- token handoff 안내도 최신 stdin-first CLI 경로와 맞아야 했습니다.
+
+수정:
+
+- `me.createIngestionToken(name)` API client를 추가했습니다.
+- Settings token section에 name input + create button을 추가했습니다.
+- 생성 성공 시 token list를 refresh하고 one-time secret panel을 표시합니다.
+- 생성/회전 secret panel은 같은 one-time reveal UX를 사용합니다.
+- CLI handoff 안내는 `agentfeed login --token-stdin`를 사용합니다.
+
+검증:
+
+- `npm run test:contracts`
+- `npm run lint`
+- `NEXT_PUBLIC_API_URL=https://api.agentfeed.dev/v1 npm run build`
+- `make test` in `agentfeed-dev` → passed
+
+관련 작업 노트: [[Commercial Readiness Hardening - Settings Named Token Creation 2026-05-31]]
+
 ## 2026-05-31 Dashboard recent worklog action route 계약
 
 > [!success]

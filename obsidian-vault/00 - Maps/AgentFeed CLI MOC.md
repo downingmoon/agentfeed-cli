@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Settings Named Token Creation 2026-05-31]]
+
 - [[Commercial Readiness Hardening - Dashboard Recent Worklog Actions 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Ingest Repository URL Safety 2026-05-31]]

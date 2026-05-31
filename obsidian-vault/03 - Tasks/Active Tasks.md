@@ -85,6 +85,7 @@ created: 2026-05-30
 - [x] CLI/package version metadata 단일화로 release drift 방지
 - [x] CLI npm package launch metadata와 README install state 정렬
 - [x] CLI npm release preflight와 provenance/private repo caveat 문서화
+- [x] CLI/API/Frontend PR/push CI gate와 dev 통합 gate 정렬
 - [x] dev bootstrap에서 lockfile 기반 `npm ci`와 `.env` 우선 로딩 사용
 - [x] 실제 Cursor workspace/session format 추가 조사 후 parser 품질 상향 가능성 판단
 - [x] CLI ingest `worklog.model` → Backend 저장 → Frontend 노출 계약화
@@ -197,6 +198,8 @@ created: 2026-05-30
 - [x] Frontend unpublish control을 실제 published status 기준으로 축소
 
 ## 관련 링크
+
+- [[Commercial Readiness Hardening - Cross Repo CI Gates 2026-06-01]]
 
 - [[Commercial Readiness Hardening - CLI Release Preflight and Provenance 2026-06-01]]
 

@@ -179,6 +179,29 @@ sequenceDiagram
 
 관련 작업 노트: [[Commercial Readiness Hardening - CLI NPM Package Metadata 2026-06-01]]
 
+## 2026-06-01 Cross repo CI gates
+
+> [!success]
+> CLI, Frontend, Backend에 PR/push CI gate를 추가하고, `agentfeed-dev make test`가 동일한 핵심 gate를 로컬 통합 검증으로 실행하도록 정렬했습니다.
+
+수정:
+
+- CLI CI가 tests, typecheck, `release:preflight`, production dependency audit를 실행합니다.
+- CLI `release:preflight`가 built `agentfeed --help` smoke를 검증합니다.
+- Frontend CI가 `scripts/run-ci.mjs`를 통해 typecheck, API contract tests, production build를 한 번에 실행합니다.
+- Frontend `.env.local.example`과 README를 추가해 `NEXT_PUBLIC_API_URL` 배포 계약을 문서화했습니다.
+- Backend CI가 locked uv sync, ruff, pytest, Alembic offline migration chain을 실행합니다.
+- `agentfeed-dev/scripts/test-all.sh`가 CLI `release:preflight`와 Frontend `ci` script를 직접 호출하도록 업데이트했습니다.
+
+검증:
+
+- CLI targeted release tests/typecheck/preflight/audit → passed
+- Frontend `npm run ci` + audit → passed
+- Backend ruff/pytest/offline Alembic → passed
+- `make test` in `agentfeed-dev` → passed
+
+관련 작업 노트: [[Commercial Readiness Hardening - Cross Repo CI Gates 2026-06-01]]
+
 ## 2026-06-01 CLI release preflight and provenance
 
 > [!success]

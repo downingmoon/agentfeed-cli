@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Compose Health Readiness 2026-06-01]]
+
 - [[Commercial Readiness Hardening - Feed Search Retry UX 2026-06-01]]
 
 - [[Commercial Readiness Hardening - Landing API Backed Preview 2026-06-01]]

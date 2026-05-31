@@ -49,6 +49,30 @@ sequenceDiagram
 
 
 
+
+## 2026-06-01 Compose health readiness
+
+> [!success]
+> `agentfeed-dev` local Compose stack이 Backend/Frontend healthcheck와 detached readiness gate를 갖췄습니다.
+
+수정:
+
+- Postgres, Backend, Frontend에 `restart: unless-stopped`를 추가했습니다.
+- Backend는 `/health`, Frontend는 Next dev root route를 컨테이너 내부 healthcheck로 확인합니다.
+- Frontend는 Backend `service_healthy` 이후 시작합니다.
+- `make up`은 detached stack 시작 후 `scripts/wait-ready.sh`로 세 서비스 healthy 상태를 기다립니다.
+- `make wait`는 이미 떠 있는 stack의 동일 readiness contract를 확인합니다.
+- `scripts/test-wait-ready.sh`가 Docker stub으로 healthy/missing/unhealthy/timeout 경로를 검증합니다.
+
+검증:
+
+- `./scripts/test-wait-ready.sh` passed
+- `docker compose --env-file .env.example config --quiet` passed
+- `agentfeed-dev make test` passed
+- Parallel code-review agent 지적사항 반영 완료
+
+관련 작업 노트: [[Commercial Readiness Hardening - Compose Health Readiness 2026-06-01]]
+
 ## 2026-06-01 Feed Search retry UX
 
 > [!success]

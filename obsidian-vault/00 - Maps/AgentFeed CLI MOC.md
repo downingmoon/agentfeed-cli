@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Owner Aware Project Routes 2026-05-31]]
+
 - [[Commercial Readiness Hardening - Smoke User Note Privacy Contract 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Publish Privacy Severity Auth Smoke and Alembic Version Gate 2026-05-31]]

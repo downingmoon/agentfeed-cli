@@ -25,6 +25,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - Owner Aware Project Routes 2026-05-31]] — owner-aware project route로 slug collision/false 404 방지
+
 - [[Commercial Readiness Hardening - Smoke User Note Privacy Contract 2026-05-31]] — smoke-e2e user_note public privacy 계약 정렬
 
 - [[Commercial Readiness Hardening - Publish Privacy Severity Auth Smoke and Alembic Version Gate 2026-05-31]] — publish privacy severity fail-closed, CLI auth exchanged token smoke, Alembic version gate

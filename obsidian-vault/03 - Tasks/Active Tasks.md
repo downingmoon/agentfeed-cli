@@ -22,6 +22,7 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] Project public link/detail을 owner-aware route로 전환해 slug collision/false 404 방지
 - [x] smoke-e2e가 owner-only user_note public 비노출 계약을 검증하도록 수정
 - [x] Backend/Frontend publish privacy severity taxonomy를 fail-closed 기준으로 정렬
 - [x] Backend review privacy_scan_json stale override 제거
@@ -160,6 +161,8 @@ created: 2026-05-30
 - [x] Frontend unpublish control을 실제 published status 기준으로 축소
 
 ## 관련 링크
+
+- [[Commercial Readiness Hardening - Owner Aware Project Routes 2026-05-31]]
 
 - [[Commercial Readiness Hardening - CLI Draft Artifact Permissions 2026-05-31]]
 

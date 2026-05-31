@@ -45,6 +45,33 @@ sequenceDiagram
 - Linux review URL clipboard fallback 보강
 - `share --note`를 `summary` prefix가 아닌 `user_note` 별도 계약으로 승격
 
+## 2026-05-31 Owner-aware project route 계약
+
+> [!success]
+> Project slug uniqueness가 owner scope인 DB 계약에 맞춰 Backend response와 Frontend links/detail lookup을 owner-aware route로 정렬했습니다.
+
+문제:
+
+- Backend는 `Project.slug`를 `(owner_id, slug)` 기준으로 unique하게 관리합니다.
+- 기존 Frontend public link는 `/projects/{slug}`였고, ProjectDetail은 `/projects/{id}` 실패 후 paginated `/projects` scan으로 slug를 찾았습니다.
+- 이 방식은 같은 slug를 가진 다른 owner가 생기면 ambiguous하고, pagination 범위 밖 프로젝트를 false 404로 처리할 수 있습니다.
+
+수정:
+
+- Backend `/v1/users/{username}/projects/{project_slug}` detail payload에 `project.owner`를 포함합니다.
+- Backend search/explore project card에 `owner`를 포함합니다.
+- Frontend는 owner를 알고 있는 project link를 `/projects/{owner}/{slug}`로 생성합니다.
+- Frontend ProjectDetail은 owner route에서 `/v1/users/{owner}/projects/{slug}`를 직접 호출하고, legacy route는 id-only lookup으로 유지합니다.
+- paginated project list scan fallback은 제거했습니다.
+
+검증:
+
+- Backend contract/full tests: 200 passed
+- Frontend contract tests/typecheck/build: passed
+- Cross-repo `agentfeed-dev make test`: passed
+
+관련 작업 노트: [[Commercial Readiness Hardening - Owner Aware Project Routes 2026-05-31]]
+
 ## 2026-05-30 Landing placeholder control 제거
 
 > [!success]

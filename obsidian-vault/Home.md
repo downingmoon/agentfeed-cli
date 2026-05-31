@@ -25,6 +25,9 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - Rate Limit Fallback Detail Payload Resilience and Credential Fallback Warning 2026-05-31]] — rate-limit fallback, detail/review payload resilience, credential fallback warning
+
+
 - [[Commercial Readiness Hardening - OAuth Cookie Scope JSON Upload and Signout State 2026-05-31]] — OAuth cookie scope, JSON collect upload, metadata URI resilience, sign-out state reset
 
 

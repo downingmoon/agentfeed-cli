@@ -374,3 +374,16 @@ created: 2026-05-30
 - 개발 환경에서도 malformed trusted proxy entry는 startup validation에서 실패합니다.
 
 검증: [[Commercial Readiness Hardening - Cross Platform Open Config Validation and Settings Partial Failure 2026-05-31#검증 증거]]
+
+## 2026-05-31 Database rate-limit store process-local fallback
+
+> [!success]
+> shared database rate-limit store check 실패 시 raw 500 대신 process-local limiter로 degrade합니다.
+
+계약:
+
+- 정상 production 설정은 database store를 유지합니다.
+- store check 예외는 warning log와 함께 fallback store로 처리합니다.
+- fallback은 동일 bucket/identity/rule로 제한을 적용해 완전한 bypass가 되지 않도록 합니다.
+
+검증: [[Commercial Readiness Hardening - Rate Limit Fallback Detail Payload Resilience and Credential Fallback Warning 2026-05-31#검증 증거]]

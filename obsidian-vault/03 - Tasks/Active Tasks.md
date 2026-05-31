@@ -177,6 +177,9 @@ created: 2026-05-30
 
 ## 관련 링크
 
+- [[Commercial Readiness Hardening - Rate Limit Fallback Detail Payload Resilience and Credential Fallback Warning 2026-05-31]]
+
+
 - [[Commercial Readiness Hardening - OAuth Cookie Scope JSON Upload and Signout State 2026-05-31]]
 
 

@@ -2085,3 +2085,17 @@ Frontend 계약:
 - stale social action error banner도 sign-out 시 제거합니다.
 
 검증: [[Commercial Readiness Hardening - OAuth Cookie Scope JSON Upload and Signout State 2026-05-31#검증 증거]]
+
+## 2026-05-31 Frontend detail and review payload resilience
+
+> [!success]
+> Frontend 단일 detail/review object 경로가 partial/malformed API payload를 렌더 crash 대신 error fallback/fail-closed publish guard로 처리합니다.
+
+계약:
+
+- Worklog detail adapter는 unusable payload를 명시 error로 거부합니다.
+- Review page는 nested `worklog`/`preview` payload를 렌더링 전 검증합니다.
+- malformed privacy finding severity는 blocking으로 처리합니다.
+- `preview.public_fields`는 string list로 normalize합니다.
+
+검증: [[Commercial Readiness Hardening - Rate Limit Fallback Detail Payload Resilience and Credential Fallback Warning 2026-05-31#검증 증거]]

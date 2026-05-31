@@ -22,6 +22,7 @@ type StoredCredentialRecord = Partial<AgentFeedCredentials> & {
   credential_store?: PersistedCredentialStore;
   keychain_service?: string;
   keychain_account?: string;
+  credential_store_warning?: string;
 };
 
 export interface SecretStore {
@@ -81,8 +82,12 @@ async function writePrivateJsonFile(value: unknown): Promise<void> {
   try { await chmod(credentialsPath(), 0o600); } catch { /* best-effort on non-POSIX filesystems */ }
 }
 
-async function writePrivateCredentialsFile(credentials: AgentFeedCredentials): Promise<void> {
-  await writePrivateJsonFile({ ...credentials, credential_store: 'file' satisfies PersistedCredentialStore });
+async function writePrivateCredentialsFile(credentials: AgentFeedCredentials, warning?: string): Promise<void> {
+  await writePrivateJsonFile({
+    ...credentials,
+    credential_store: 'file' satisfies PersistedCredentialStore,
+    ...(warning ? { credential_store_warning: warning } : {})
+  });
 }
 
 async function writeKeychainMetadataFile(credentials: AgentFeedCredentials, store: SecretStore): Promise<void> {
@@ -273,6 +278,7 @@ export async function saveCredentials(token: string, options: { apiBaseUrl?: str
   const credentials = await credentialsFromToken(token, options);
   await ensurePrivateAgentFeedDir();
   const preference = credentialStorePreference(options.credentialStore);
+  let fileFallbackWarning: string | undefined;
 
   if (preference !== 'file') {
     const store = options.secretStore ?? nativeKeychainStore();
@@ -287,13 +293,17 @@ export async function saveCredentials(token: string, options: { apiBaseUrl?: str
           const detail = error instanceof Error && error.message ? ` ${error.message}` : '';
           throw new Error(`Unable to save AgentFeed credentials to the OS keychain.${detail}`);
         }
+        const detail = error instanceof Error && error.message ? ` ${error.message}` : '';
+        fileFallbackWarning = `OS keychain credential storage failed; saved token in the private credentials file instead.${detail}`;
       }
     } else if (preference === 'keychain') {
       throw new Error('OS keychain credential storage is not available. Use AGENTFEED_CREDENTIAL_STORE=file to save an encrypted-at-rest alternative externally, or AGENTFEED_TOKEN for environment-managed secrets.');
+    } else {
+      fileFallbackWarning = 'OS keychain credential storage is not available; saved token in the private credentials file instead. Set AGENTFEED_CREDENTIAL_STORE=keychain to require keychain storage or AGENTFEED_CREDENTIAL_STORE=file to make file storage explicit.';
     }
   }
 
-  await writePrivateCredentialsFile(credentials);
+  await writePrivateCredentialsFile(credentials, fileFallbackWarning);
   return credentials;
 }
 
@@ -358,7 +368,15 @@ export async function loadCredentialsWithMetadata(options: { cwd?: string } & Cr
     await resolveApiBaseUrlWithMetadata({ cwd: options.cwd, storedApiBaseUrl: base?.api_base_url }),
     Boolean(token),
   );
-  const warnings = [...fileResult.warnings, ...stored.warnings, ...api.warnings];
+  const persistedStoreWarning = typeof base?.credential_store_warning === 'string' && base.credential_store_warning.trim()
+    ? base.credential_store_warning
+    : null;
+  const warnings = [
+    ...fileResult.warnings,
+    ...stored.warnings,
+    ...(persistedStoreWarning && tokenSource === 'credentials_file' ? [persistedStoreWarning] : []),
+    ...api.warnings
+  ];
   const tokenExpiresAt = process.env.AGENTFEED_TOKEN ? null : base?.token_expires_at ?? null;
   const credentialStore = process.env.AGENTFEED_TOKEN
     ? 'environment'

@@ -648,3 +648,16 @@ created: 2026-05-30
 - callback success와 logout은 같은 path로 cookie를 삭제합니다.
 
 검증: [[Commercial Readiness Hardening - OAuth Cookie Scope JSON Upload and Signout State 2026-05-31#검증 증거]]
+
+## 2026-05-31 Keychain auto fallback warning provenance
+
+> [!success]
+> `AGENTFEED_CREDENTIAL_STORE=auto`가 OS keychain을 사용할 수 없을 때 private credentials file fallback 사실을 저장/출력합니다.
+
+계약:
+
+- explicit `file` 저장은 warning 없이 의도된 file storage로 남습니다.
+- explicit `keychain` 저장은 keychain unavailable/write failure에서 계속 실패합니다.
+- `auto` fallback은 `credential_store_warning` metadata를 저장하고 `login`/`status`/`doctor`에서 warning으로 노출합니다.
+
+검증: [[Commercial Readiness Hardening - Rate Limit Fallback Detail Payload Resilience and Credential Fallback Warning 2026-05-31#검증 증거]]

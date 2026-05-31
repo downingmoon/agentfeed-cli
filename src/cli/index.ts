@@ -219,6 +219,10 @@ async function cmdLogin(args: string[]) {
     print(noSave ? '\nAgentFeed browser login complete (not saved).\n' : '\nAgentFeed browser login complete.\n');
     print(`API: ${creds.api_base_url}`);
     if (creds.token_expires_at) print(`Token expires at: ${formatTokenExpiry(creds.token_expires_at)}`);
+    if (!noSave) {
+      const saved = await loadCredentialsWithMetadata({ cwd: process.cwd() });
+      for (const warning of saved.warnings) print(`Warning: ${warning}`);
+    }
     print(noSave
       ? 'No credentials file was written. Future commands need AGENTFEED_TOKEN or a saved login.'
       : 'Next:\n  agentfeed status');
@@ -229,6 +233,10 @@ async function cmdLogin(args: string[]) {
   print(noSave ? 'AgentFeed token loaded for this command only (not saved).\n' : 'AgentFeed credentials saved.\n');
   print(`API: ${creds.api_base_url}`);
   if (creds.token_expires_at) print(`Token expires at: ${formatTokenExpiry(creds.token_expires_at)}`);
+  if (!noSave) {
+    const saved = await loadCredentialsWithMetadata({ cwd: process.cwd() });
+    for (const warning of saved.warnings) print(`Warning: ${warning}`);
+  }
   print(noSave
     ? 'No credentials file was written. Future commands need AGENTFEED_TOKEN or a saved login.'
     : 'Next:\n  agentfeed status');

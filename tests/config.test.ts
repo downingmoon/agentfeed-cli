@@ -171,11 +171,13 @@ describe('project config', () => {
 
     const metadataFile = await readFile(credentialsPath(), 'utf8');
     expect(metadataFile).toContain('"credential_store": "file"');
+    expect(metadataFile).toContain('credential_store_warning');
     expect(metadataFile).toContain('af_live_file_fallback');
 
     const resolved = await loadCredentialsWithMetadata({ cwd: dir, secretStore: unavailableKeychain });
     expect(resolved.token_source).toBe('credentials_file');
     expect(resolved.credential_store).toBe('file');
+    expect(resolved.warnings.join('\n')).toMatch(/keychain credential storage is not available/i);
   });
 
   it('requires explicit fallback when keychain-only storage is unavailable', async () => {

@@ -80,7 +80,7 @@ sequenceDiagram
 - Projects page가 signed-in create form을 제공하고 성공 시 owner-aware project route로 이동합니다.
 - Project detail page가 owner-gated edit/delete panel을 제공하고 Backend project id로 mutation합니다.
 - Delete는 project name confirmation 후 soft-delete API를 호출하고 `/projects`로 이동합니다.
-- Backend PATCH가 optional field null clear를 지원하지 않는 현재 계약은 UI에서 명시적으로 차단합니다.
+- Backend/Frontend project mutation surface를 먼저 연결했고, nullable field clear는 후속 [[Commercial Readiness Hardening - Project Nullable Field Clear Semantics 2026-06-01]]에서 해결했습니다.
 - Dev OpenAPI gate에서 `POST/PATCH/DELETE /v1/projects`를 frontend client contract로 승격했습니다.
 
 검증:
@@ -91,6 +91,27 @@ sequenceDiagram
 - `make test` in `agentfeed-dev` → passed
 
 관련 작업 노트: [[Commercial Readiness Hardening - Project Mutation Surface 2026-06-01]]
+
+## 2026-06-01 Project nullable field clear semantics
+
+> [!success]
+> Project edit에서 `description`, `repository_url`, `homepage_url`을 빈 값으로 지우면 Frontend가 explicit `null`을 보내고 Backend가 nullable column clear로 저장합니다.
+
+수정:
+
+- Backend `PATCH /v1/projects/{project_id}`가 `exclude_unset=True`로 omitted field와 explicit `null`을 구분합니다.
+- Backend는 `description`, `repository_url`, `homepage_url`만 nullable clear 대상으로 허용하고 non-nullable fields의 explicit `null`은 기존 값을 보존합니다.
+- Frontend create serializer는 blank optional fields를 omit하고, update serializer는 blank nullable fields를 `null`로 보냅니다.
+- Project detail edit 화면의 clear 차단 guard를 제거했습니다.
+
+검증:
+
+- Backend targeted project update/null-clear tests + ruff passed
+- Frontend contract + typecheck/lint passed
+- Dev OpenAPI contract gate passed
+- `make test` in `agentfeed-dev` passed
+
+관련 작업 노트: [[Commercial Readiness Hardening - Project Nullable Field Clear Semantics 2026-06-01]]
 
 ## 2026-06-01 Public activity tab
 

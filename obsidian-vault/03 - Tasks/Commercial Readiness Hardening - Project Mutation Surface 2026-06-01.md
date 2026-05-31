@@ -25,7 +25,7 @@ tags:
 - Project detail 화면에서 owner만 edit/delete control을 볼 수 있게 했습니다.
 - Project edit은 Backend project id 기준으로 `PATCH /v1/projects/{project_id}`를 호출합니다.
 - Project delete는 project name 입력 confirmation 후 `DELETE /v1/projects/{project_id}`를 호출하고 `/projects`로 이동합니다.
-- Backend `PATCH`가 `null` clear를 무시하는 현재 계약을 UI에서 숨기지 않도록, 기존 optional field를 빈 값으로 지우는 시도는 명시적으로 막았습니다.
+- 초기 연결 당시 Backend `PATCH`의 `null` clear 미지원은 UI guard로 막았고, 후속 [[Commercial Readiness Hardening - Project Nullable Field Clear Semantics 2026-06-01]]에서 Backend/Frontend clear 계약까지 정렬했습니다.
 - Dev OpenAPI gate에서 project mutation 3개 endpoint를 frontend client contract로 승격했습니다.
 
 ## 계약 기준
@@ -40,13 +40,14 @@ tags:
 - `node scripts/check-openapi-contract.mjs` in `agentfeed-dev` → passed (`client contracts: 66`, backend-only: `2`)
 - `make test` in `agentfeed-dev` → passed
 
-## 남은 리스크
+## 후속 정리
 
-> [!warning]
-> Backend project update가 `body.model_dump(exclude_none=True)`를 사용하므로 description/repository/homepage를 `null`로 clear하는 UX는 아직 제공하지 않습니다. 실제 clear 기능이 필요하면 Backend update semantics부터 별도 설계해야 합니다.
+> [!success]
+> 기존 남은 리스크였던 nullable field clear UX는 [[Commercial Readiness Hardening - Project Nullable Field Clear Semantics 2026-06-01]]에서 해결되었습니다.
 
 ## 관련 링크
 
+- [[Commercial Readiness Hardening - Project Nullable Field Clear Semantics 2026-06-01]]
 - [[Integration - CLI Backend Frontend#2026-06-01 Project mutation surface]]
 - [[Commercial Readiness Hardening - Cross Repo OpenAPI Contract Gate 2026-05-31]]
 - [[Active Tasks#P1 후보]]

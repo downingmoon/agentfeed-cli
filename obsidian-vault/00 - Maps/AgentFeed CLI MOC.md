@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Backend Request ID Observability 2026-06-01]]
+
 - [[Commercial Readiness Hardening - Frontend CSP and Backend Readiness 2026-06-01]]
 
 - [[Commercial Readiness Hardening - Cross Repo CI Gates 2026-06-01]]

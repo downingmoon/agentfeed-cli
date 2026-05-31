@@ -22,6 +22,7 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] Backend request correlation ID와 query-secret-safe structured request logging 추가
 - [x] CLI configured command shell wrapper를 거부해 `--run-configured-commands` trust boundary 축소
 - [x] CLI configured command 실행 env에서 sensitive token/credential scrub
 - [x] CLI literal `login --token <token>`을 기본 비활성화하고 stdin-first 경로로 고정
@@ -199,6 +200,8 @@ created: 2026-05-30
 - [x] Frontend unpublish control을 실제 published status 기준으로 축소
 
 ## 관련 링크
+
+- [[Commercial Readiness Hardening - Backend Request ID Observability 2026-06-01]]
 
 - [[Commercial Readiness Hardening - Frontend CSP and Backend Readiness 2026-06-01]]
 

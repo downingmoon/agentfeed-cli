@@ -50,6 +50,21 @@ sequenceDiagram
 
 
 
+
+## 2026-06-01 Backend request ID observability
+
+> [!success]
+> Backend HTTP response와 request log에 `X-Request-ID` 기반 correlation contract를 추가했습니다.
+
+계약:
+
+- safe inbound `X-Request-ID`는 echo하고 unsafe/missing value는 opaque ID로 교체합니다.
+- 정상 응답, middleware reject 응답, controlled internal-error 응답 모두 `X-Request-ID`를 포함합니다.
+- request log는 `request_id`, `method`, query 없는 `path`, `status_code`, `duration_ms`만 structured field로 남깁니다.
+- unexpected error 응답은 `INTERNAL_SERVER_ERROR` envelope와 `request_id`만 반환해 raw exception을 숨깁니다.
+
+검증: [[Commercial Readiness Hardening - Backend Request ID Observability 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Compose health readiness
 
 > [!success]

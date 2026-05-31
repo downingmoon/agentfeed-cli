@@ -51,6 +51,21 @@ sequenceDiagram
 
 
 
+
+## 2026-06-01 Frontend interaction pending guards
+
+> [!success]
+> Landing hero preview의 local-only like/bookmark illusion을 제거하고 Feed rising-builders follow에 per-username pending guard를 추가했습니다.
+
+계약:
+
+- Landing hero like/bookmark는 shared social action path(`toggleLike`, `toggleBookmark`)와 `getWorklogSocialState()`를 사용합니다.
+- Landing hero share는 `shareWorklogLink()`를 사용하며 `sharePendingRef`로 duplicate share launch를 막습니다.
+- Feed rising-builder follow는 username별 pending ref/state로 중복 mutation을 차단합니다.
+- Follow 실패는 sidebar action-level error로 표시하고 optimistic state를 rollback합니다.
+
+검증: [[Commercial Readiness Hardening - Frontend Interaction Pending Guards 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Backend request ID observability
 
 > [!success]

@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Browser Approved Token Rotation 2026-05-31]]
+
 - [[Commercial Readiness Hardening - Profile Follow Hydration and Leaderboard Resilience 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Rate Limit and Privacy Finding Ownership 2026-05-31]]
@@ -105,6 +107,8 @@ graph LR
 - [[Cross Repo Integration Fixes]]
 
 ## 주요 개념 링크
+
+- [[Auth & Credential Safety#2026-05-31 Browser-approved ingestion token rotation|Browser-approved token rotation]]
 
 - [[Integration - CLI Backend Frontend#2026-05-31 Profile follow hydration and leaderboard resilience|Profile follow hydration + leaderboard resilience]]
 

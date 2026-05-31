@@ -162,6 +162,7 @@ created: 2026-05-30
 
 ## P2 후보
 
+- [x] Backend/CLI token-authenticated ingestion token self-rotation 차단 및 browser-approved replacement 전환
 - [x] Frontend leaderboard malformed row isolation으로 public ranking crash 방지
 - [x] Backend profile `viewer_state.following` + Frontend follow hydration/own-profile suppression 보강
 - [x] CLI privacy scanner authorization header/credentialed URL/private IPv6 redaction 보강
@@ -175,6 +176,7 @@ created: 2026-05-30
 
 ## 관련 링크
 
+- [[Commercial Readiness Hardening - Browser Approved Token Rotation 2026-05-31]]
 - [[Commercial Readiness Hardening - Profile Follow Hydration and Leaderboard Resilience 2026-05-31]]
 - [[Commercial Readiness Hardening - Rate Limit and Privacy Finding Ownership 2026-05-31]]
 - [[Commercial Readiness Hardening - Settings Privacy Controls 2026-05-31]]

@@ -9,7 +9,7 @@ import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 import { formatCollectionExplain } from '../draft/explain.js';
-import { AgentFeedApiError, checkApiReachability, checkIngestionToken, isTrustedReviewUrl, previewDraftRemote, publishDraft, rotateIngestionToken } from '../api/client.js';
+import { checkApiReachability, checkIngestionToken, isTrustedReviewUrl, previewDraftRemote, publishDraft } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
 import { applyRedactedPublicFields, publicScanFieldsFromDraft, scanAndRedactDraftPublicFields, type PublicScanFields } from '../privacy/draft-sanitizer.js';
@@ -234,11 +234,19 @@ async function cmdLogin(args: string[]) {
     : 'Next:\n  agentfeed status');
 }
 
-async function rotateViaBrowserLogin(args: string[], message: string) {
+async function replacementTokenIdForSavedCredentials(creds: NonNullable<Awaited<ReturnType<typeof loadCredentialsWithMetadata>>['credentials']>): Promise<string | undefined> {
+  const check = await checkIngestionToken(creds);
+  const id = check.ok && typeof check.data?.token?.id === 'string' && check.data.token.id.length > 0
+    ? check.data.token.id
+    : undefined;
+  return id;
+}
+
+async function rotateViaBrowserLogin(args: string[], message: string, replaceTokenId?: string) {
   const apiBaseUrl = option(args, '--api-base-url');
   const noSave = flag(args, '--no-save');
   const existing = await loadCredentialsWithMetadata({ cwd: process.cwd() });
-  const creds = await browserLogin({ apiBaseUrl, noOpen: flag(args, '--no-open'), save: !noSave, cwd: process.cwd(), storedApiBaseUrl: existing.credentials?.api_base_url, allowCiBrowser: flag(args, '--browser') });
+  const creds = await browserLogin({ apiBaseUrl, noOpen: flag(args, '--no-open'), save: !noSave, cwd: process.cwd(), storedApiBaseUrl: existing.credentials?.api_base_url, allowCiBrowser: flag(args, '--browser'), replaceTokenId: noSave ? undefined : replaceTokenId });
   print(`${message}\n`);
   print(`API: ${creds.api_base_url}`);
   if (creds.token_expires_at) print(`Token expires at: ${formatTokenExpiry(creds.token_expires_at)}`);
@@ -253,7 +261,16 @@ async function cmdRotate(args: string[]) {
   const credentialResolution = await loadCredentialsWithMetadata({ cwd: process.cwd() });
   const creds = credentialResolution.credentials;
   if (forceBrowser || noSave || !creds) {
-    await rotateViaBrowserLogin(args, creds ? 'AgentFeed browser rotation complete.' : 'No saved token found. Starting browser login replacement.');
+    const replaceTokenId = creds && !noSave ? await replacementTokenIdForSavedCredentials(creds) : undefined;
+    await rotateViaBrowserLogin(
+      args,
+      creds
+        ? replaceTokenId
+          ? 'AgentFeed browser rotation complete. Previous saved token was revoked.'
+          : 'AgentFeed browser replacement complete. Previous saved token could not be verified for revocation.'
+        : 'No saved token found. Starting browser login replacement.',
+      replaceTokenId,
+    );
     return;
   }
   if (credentialResolution.token_source === 'environment') {
@@ -264,26 +281,14 @@ async function cmdRotate(args: string[]) {
       'Then verify with: agentfeed status',
     ].join('\n'));
   }
-  try {
-    const rotated = await rotateIngestionToken(creds);
-    const saved = await saveCredentials(rotated.token, {
-      apiBaseUrl: creds.api_base_url,
-      user: rotated.user ?? creds.user,
-      tokenExpiresAt: rotated.token_expires_at ?? rotated.expires_at
-    });
-    print('AgentFeed token rotated.\n');
-    print(`Rotated from: ${rotated.rotated_from}`);
-    print(`New token ID: ${rotated.id}`);
-    print(`API: ${saved.api_base_url}`);
-    if (saved.token_expires_at) print(`Token expires at: ${formatTokenExpiry(saved.token_expires_at)}`);
-    print('Raw token was saved and not printed. Next:\n  agentfeed doctor');
-  } catch (error) {
-    if (error instanceof AgentFeedApiError && (error.status === 401 || error.code === 'INGESTION_TOKEN_INVALID')) {
-      await rotateViaBrowserLogin(args, 'Saved token is invalid or expired. Browser login issued a replacement token.');
-      return;
-    }
-    throw error;
-  }
+  const replaceTokenId = await replacementTokenIdForSavedCredentials(creds);
+  await rotateViaBrowserLogin(
+    args,
+    replaceTokenId
+      ? 'AgentFeed token rotated after browser approval. Previous saved token was revoked.'
+      : 'Saved token could not be verified. Browser login issued a replacement token, but the previous token may need manual revocation in Settings.',
+    replaceTokenId,
+  );
 }
 
 async function cmdStatus() {

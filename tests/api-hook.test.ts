@@ -470,6 +470,8 @@ describe('api client', () => {
     const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
       expect(init?.signal).toBeInstanceOf(AbortSignal);
       if (url.endsWith('/auth/cli/sessions')) {
+        const body = JSON.parse(String(init?.body ?? '{}')) as { verifier?: string; device_name?: string; replace_token_id?: string };
+        expect(body.replace_token_id).toBe('token-old');
         return new Response(JSON.stringify({
           data: {
             session_id: 'session-1',
@@ -482,19 +484,25 @@ describe('api client', () => {
       return new Response(JSON.stringify({
         data: {
           token: 'af_live_test',
+          token_id: 'token-new',
           token_expires_at: '2026-06-15T00:00:00Z',
+          rotated_from: 'token-old',
+          rotated_at: '2026-05-30T00:01:00Z',
           user: { id: 'user-1', username: 'downingmoon' }
         }
       }), { status: 200, headers: { 'content-type': 'application/json' } });
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const session = await createCliAuthSession('https://api.agentfeed.dev/v1', { verifier: 'verifier-1', deviceName: 'devbox' });
+    const session = await createCliAuthSession('https://api.agentfeed.dev/v1', { verifier: 'verifier-1', deviceName: 'devbox', replaceTokenId: 'token-old' });
     const exchange = await exchangeCliAuthSession('https://api.agentfeed.dev/v1', session.session_id, 'verifier-1');
 
     expect(session.authorize_url).toContain('/cli/authorize');
     expect(exchange.token).toBe('af_live_test');
+    expect(exchange.token_id).toBe('token-new');
     expect(exchange.token_expires_at).toBe('2026-06-15T00:00:00Z');
+    expect(exchange.rotated_from).toBe('token-old');
+    expect(exchange.rotated_at).toBe('2026-05-30T00:01:00Z');
     expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.agentfeed.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
     expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://api.agentfeed.dev/v1/auth/cli/sessions/session-1/exchange', expect.objectContaining({ method: 'POST' }));
   });

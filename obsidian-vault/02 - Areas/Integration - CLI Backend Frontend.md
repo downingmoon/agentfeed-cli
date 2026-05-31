@@ -45,6 +45,31 @@ sequenceDiagram
 - Linux review URL clipboard fallback 보강
 - `share --note`를 `summary` prefix가 아닌 `user_note` 별도 계약으로 승격
 
+## 2026-05-31 Browser-approved token rotation contract
+
+> [!success]
+> CLI, Backend, and Frontend token rotation now share one trust boundary: raw replacement tokens require browser/session-authenticated ownership, not just possession of an ingestion token.
+
+Backend:
+
+- Ingestion-token endpoint `/ingest/token/rotate` is disabled for minting replacements.
+- CLI auth session create accepts `replace_token_id`.
+- CLI auth exchange rotates the requested token only after browser approval and user ownership verification.
+- Settings-managed `/me/ingestion-tokens/{id}/rotate` remains the browser-session path for manual token management.
+
+CLI:
+
+- `agentfeed rotate` no longer calls token self-rotation.
+- It uses `/ingest/status` only to discover the saved token id, then hands replacement to browser-approved exchange.
+- README documents the new rotation model.
+
+Frontend:
+
+- Existing Settings token rotation remains valid because it uses `/me/ingestion-tokens/{id}/rotate`.
+
+관련 작업 노트: [[Commercial Readiness Hardening - Browser Approved Token Rotation 2026-05-31]]
+
+
 
 ## 2026-05-31 Profile follow hydration and leaderboard resilience
 

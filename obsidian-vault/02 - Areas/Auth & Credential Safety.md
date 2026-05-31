@@ -16,6 +16,28 @@ created: 2026-05-30
 > [!abstract] 목적
 > AgentFeed CLI가 브라우저 로그인과 token login을 제공하되, 사용자가 원할 때 로컬 credential 파일을 남기지 않는 안전한 경로를 보장합니다.
 
+
+## 2026-05-31 Browser-approved ingestion token rotation
+
+> [!success]
+> A bearer ingestion token can no longer mint a fresh replacement token by itself. Rotation now requires browser-approved CLI auth or Settings session auth.
+
+계약:
+
+- `POST /v1/ingest/token/rotate` returns `INGESTION_TOKEN_ROTATION_REQUIRES_SESSION` and never returns a raw replacement token.
+- `agentfeed rotate` verifies the saved token id through `/ingest/status`, then starts CLI browser auth with `replace_token_id`.
+- Browser-approved exchange revokes the previous token and returns the replacement raw token exactly once.
+- If the previous token cannot be verified, CLI still uses browser approval to issue a replacement but warns that stale tokens should be revoked in Settings.
+- `AGENTFEED_TOKEN` remains externally managed; CLI does not rewrite environment variables or print browser-issued raw tokens.
+
+검증:
+
+- Backend full tests: 206 passed
+- CLI full tests: 247 passed
+- Frontend Settings contracts/build passed
+
+관련 작업 노트: [[Commercial Readiness Hardening - Browser Approved Token Rotation 2026-05-31]]
+
 ## 2026-05-30 CLI ephemeral login --no-save
 
 > [!success]

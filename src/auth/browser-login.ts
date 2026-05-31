@@ -64,7 +64,7 @@ function ciBrowserLoginBlocked(options: { allowCiBrowser?: boolean }): boolean {
     && options.allowCiBrowser !== true;
 }
 
-export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: boolean; waitMs?: number; save?: boolean; cwd?: string; storedApiBaseUrl?: string; allowCiBrowser?: boolean } = {}) {
+export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: boolean; waitMs?: number; save?: boolean; cwd?: string; storedApiBaseUrl?: string; allowCiBrowser?: boolean; replaceTokenId?: string } = {}) {
   if (ciBrowserLoginBlocked(options)) {
     throw new Error('Browser login is disabled in CI. Set AGENTFEED_TOKEN or pipe a token with: printf %s "$TOKEN" | agentfeed login --token-stdin. To intentionally run browser auth anyway, pass --browser.');
   }
@@ -81,6 +81,7 @@ export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: bool
   const session = await createCliAuthSession(apiBaseUrl, {
     verifier,
     deviceName: hostname(),
+    replaceTokenId: options.replaceTokenId,
   });
 
   output.write(`\nOpen this URL to authorize AgentFeed CLI:\n${session.authorize_url}\n\n`);

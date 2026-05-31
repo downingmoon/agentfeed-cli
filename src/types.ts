@@ -69,7 +69,10 @@ export interface CliAuthSession {
 
 export interface CliAuthExchangeResult {
   token: string;
+  token_id?: string;
   token_expires_at?: string | null;
+  rotated_from?: string;
+  rotated_at?: string;
   user?: { id?: string; username?: string | null; display_name?: string | null };
 }
 

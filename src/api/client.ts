@@ -388,13 +388,30 @@ function parsePublishDraftResult(value: unknown, apiBaseUrl: string): PublishDra
 function parseCliAuthExchangeResult(value: unknown): CliAuthExchangeResult {
   if (!isRecord(value)) throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid CLI auth exchange response.');
   const token = stringField(value.token);
+  const tokenId = optionalStringField(value.token_id);
   const hasTokenExpiresAt = Object.hasOwn(value, 'token_expires_at');
   const tokenExpiresAt = hasTokenExpiresAt ? validOptionalDateString(value.token_expires_at) : undefined;
+  const rotatedFrom = optionalStringField(value.rotated_from);
+  const rotatedAt = optionalStringField(value.rotated_at);
   const user = parseOptionalUser(value.user);
-  if (!token || (hasTokenExpiresAt && tokenExpiresAt === undefined) || user === null) {
+  if (
+    !token
+    || (Object.hasOwn(value, 'token_id') && tokenId === undefined)
+    || (hasTokenExpiresAt && tokenExpiresAt === undefined)
+    || (Object.hasOwn(value, 'rotated_from') && rotatedFrom === undefined)
+    || (Object.hasOwn(value, 'rotated_at') && (rotatedAt === undefined || (rotatedAt !== null && !Number.isFinite(Date.parse(rotatedAt)))))
+    || user === null
+  ) {
     throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid CLI auth exchange response.');
   }
-  return { token, token_expires_at: tokenExpiresAt, user };
+  return {
+    token,
+    token_id: tokenId ?? undefined,
+    token_expires_at: tokenExpiresAt,
+    rotated_from: rotatedFrom ?? undefined,
+    rotated_at: rotatedAt ?? undefined,
+    user
+  };
 }
 
 function parseRotatedIngestionTokenResult(value: unknown): RotatedIngestionTokenResult {
@@ -454,10 +471,11 @@ async function postJson<T>(apiBaseUrl: string, path: string, body: Record<string
   return (data as { data: T }).data;
 }
 
-export async function createCliAuthSession(apiBaseUrl: string, input: { verifier: string; deviceName?: string }): Promise<CliAuthSession> {
+export async function createCliAuthSession(apiBaseUrl: string, input: { verifier: string; deviceName?: string; replaceTokenId?: string }): Promise<CliAuthSession> {
   const data = await postJson<unknown>(apiBaseUrl, '/auth/cli/sessions', {
     verifier: input.verifier,
-    device_name: input.deviceName
+    device_name: input.deviceName,
+    replace_token_id: input.replaceTokenId
   });
   return parseCliAuthSession(data, apiBaseUrl);
 }

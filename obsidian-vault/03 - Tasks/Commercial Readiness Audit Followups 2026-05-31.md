@@ -20,11 +20,8 @@ tags:
 
 ## P2
 
-### Backend token-authenticated ingestion token rotation risk
-
-- 파일: `agentfeed-backend/app/dependencies.py`, `agentfeed-backend/app/routers/ingest.py`, `agentfeed-backend/app/services/ingestion_tokens.py`, `agentfeed-backend/app/config.py`
-- 문제: 현재 ingestion token 자체만으로 `/v1/ingest/token/rotate`가 가능하면 leaked token이 새 장기 token으로 self-rotate할 수 있습니다.
-- 후보: browser/session-authenticated token management rotate만 기본 권장하고, token-authenticated renewal은 만료 임박 window / token-family reuse detection / notification / suspicious reuse family revoke를 검토합니다.
+> [!success]
+> 2026-05-31 기준 새 audit follow-up P2 항목은 모두 처리 완료로 이동했습니다.
 
 ## 처리 완료로 이동된 항목
 
@@ -37,4 +34,5 @@ tags:
 - [x] CLI privacy scanner authorization header / credentialed URL / IPv6 private URL redaction
 - [x] Frontend leaderboard malformed-row isolation — [[Commercial Readiness Hardening - Profile Follow Hydration and Leaderboard Resilience 2026-05-31]]
 - [x] Frontend profile follow control hydration — [[Commercial Readiness Hardening - Profile Follow Hydration and Leaderboard Resilience 2026-05-31]]
+- [x] Backend token-authenticated ingestion token rotation risk — [[Commercial Readiness Hardening - Browser Approved Token Rotation 2026-05-31]]
 

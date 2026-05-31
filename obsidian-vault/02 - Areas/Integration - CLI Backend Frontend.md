@@ -45,6 +45,30 @@ sequenceDiagram
 - Linux review URL clipboard fallback 보강
 - `share --note`를 `summary` prefix가 아닌 `user_note` 별도 계약으로 승격
 
+
+## 2026-06-01 Feed tag filter contract
+
+> [!success]
+> Explore popular tag 링크가 Feed URL state와 Backend `/v1/feed?tag=` request까지 유지됩니다.
+
+수정:
+
+- Frontend `feedQueryFromParams()`가 `tag`를 URL sync에 포함합니다.
+- Feed page가 `searchParams.get('tag')`를 hydrate하고 `useFeed()` params로 전달합니다.
+- Active tag chip과 clear action을 추가했습니다.
+- Feed header의 hard-coded `최근 24시간 ↑ 36` metric을 제거했습니다.
+- Source contract가 Explore tag link, Feed tag hydration, Backend param propagation, hard-coded metric 제거를 고정합니다.
+
+검증:
+
+- `npm run test:contracts` in `agentfeed-frontend` → passed
+- `npm run lint` in `agentfeed-frontend` → passed
+- `NEXT_PUBLIC_API_URL=https://api.agentfeed.dev/v1 npm run build` in `agentfeed-frontend` → passed
+- `node scripts/check-openapi-contract.mjs` in `agentfeed-dev` → passed
+- `make test` in `agentfeed-dev` → passed
+
+관련 작업 노트: [[Commercial Readiness Hardening - Feed Tag Filter Contract 2026-06-01]]
+
 ## 2026-06-01 CLI npm package launch metadata
 
 > [!success]

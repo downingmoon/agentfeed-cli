@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Feed Tag Filter Contract 2026-06-01]]
+
 - [[Commercial Readiness Hardening - CLI NPM Package Metadata 2026-06-01]]
 
 - [[Commercial Readiness Hardening - Project Clear Smoke Gate 2026-06-01]]

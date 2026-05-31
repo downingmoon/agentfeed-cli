@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Settings Privacy Controls 2026-05-31]]
+
 - [[Commercial Readiness Hardening - CLI Privacy Scanner Header and URL Redaction 2026-05-31]]
 
 - [[Commercial Readiness Hardening - CLI Command and Token Trust Boundary 2026-05-31]]
@@ -99,6 +101,9 @@ graph LR
 - [[Cross Repo Integration Fixes]]
 
 ## 주요 개념 링크
+
+- [[Integration - CLI Backend Frontend#2026-05-31 Settings privacy controls|Settings privacy controls]]
+- [[Privacy Safety#2026-05-31 Settings privacy controls|Settings privacy controls]]
 
 - [[Privacy Safety#2026-05-31 Header and URL privacy scanner expansion|Header and URL privacy scanner expansion]]
 

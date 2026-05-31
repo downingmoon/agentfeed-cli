@@ -367,3 +367,14 @@ Redacted preview:
 - IPv6 loopback, ULA/link-local, `169.254.0.0/16` metadata URL도 private URL로 redaction합니다.
 
 검증: [[Commercial Readiness Hardening - CLI Privacy Scanner Header and URL Redaction 2026-05-31#검증 증거]]
+
+## 2026-05-31 Settings privacy controls
+
+> [!success]
+> 사용자가 기본 공개 범위와 public metric 노출 여부를 Settings에서 직접 조정할 수 있습니다.
+
+- Worklog / project default visibility는 API 필드명 그대로 UI state에 연결합니다.
+- Estimated cost / file count / line count / test count public exposure toggle을 모두 추가했습니다.
+- Database/API naming contract를 따라 frontend expectation을 backend field명에 맞췄습니다.
+
+검증: [[Commercial Readiness Hardening - Settings Privacy Controls 2026-05-31#검증 증거]]

@@ -32,13 +32,6 @@ tags:
 - 최소 수정: ingestion input에서 `resolved` / `resolution`을 무시하고 server-side `resolved=False`, `resolution=None`으로 저장합니다. Resolution은 review endpoint에서만 허용합니다.
 - 검증 후보: `uv run pytest -q -p no:cacheprovider tests/test_contracts.py -k 'privacy and publish'`, `uv run ruff check --no-cache app tests`.
 
-### Frontend Settings privacy/default visibility controls
-
-- 파일: `agentfeed-frontend/src/lib/api.ts`, `agentfeed-frontend/src/components/pages/SettingsPage.tsx`
-- 문제: `ApiPrivacySettings`의 default visibility와 public metric toggles 일부가 Settings UI에 없습니다.
-- 최소 수정: `default_worklog_visibility`, `default_project_visibility`, `show_estimated_cost_publicly`, `show_file_count_publicly`, `show_line_count_publicly`, `show_test_count_publicly` controls를 추가하고 contract test로 field coverage를 고정합니다.
-- 검증 후보: `npm run lint`, `npm run test:contracts`.
-
 ## P2
 
 ### Backend token-authenticated ingestion token rotation risk
@@ -61,6 +54,7 @@ tags:
 
 ## 처리 완료로 이동된 항목
 
+- [x] Frontend Settings privacy/default visibility controls
 - [x] CLI configured command shell wrapper refusal
 - [x] CLI configured command sensitive env scrub
 - [x] CLI literal argv token login default-disable

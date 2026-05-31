@@ -25,6 +25,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - Settings Privacy Controls 2026-05-31]] — Settings default visibility and public metric controls
+
 - [[Commercial Readiness Hardening - CLI Privacy Scanner Header and URL Redaction 2026-05-31]] — scanner authorization header and URL redaction
 
 - [[Commercial Readiness Hardening - CLI Command and Token Trust Boundary 2026-05-31]] — configured command and argv token trust boundary

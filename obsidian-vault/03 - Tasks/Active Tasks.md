@@ -27,7 +27,7 @@ created: 2026-05-30
 - [x] CLI literal `login --token <token>`을 기본 비활성화하고 stdin-first 경로로 고정
 - [ ] Backend invalid/random Bearer header rate-limit bypass 차단
 - [ ] Backend ingested privacy finding pre-resolved publish bypass 차단
-- [ ] Frontend Settings privacy/default visibility controls 노출
+- [x] Frontend Settings privacy/default visibility controls 노출
 - [x] Dashboard recent worklogs link를 status-aware review/public action으로 분기
 - [x] Backend ingestion `project.repository_url`이 public URL validator를 우회하지 않도록 보강
 - [x] CLI `agentfeed login --token` argv/history 노출을 stdin-first token 입력으로 보강
@@ -173,6 +173,7 @@ created: 2026-05-30
 
 ## 관련 링크
 
+- [[Commercial Readiness Hardening - Settings Privacy Controls 2026-05-31]]
 - [[Commercial Readiness Hardening - CLI Privacy Scanner Header and URL Redaction 2026-05-31]]
 - [[Commercial Readiness Hardening - CLI Command and Token Trust Boundary 2026-05-31]]
 - [[Commercial Readiness Audit Followups 2026-05-31]]

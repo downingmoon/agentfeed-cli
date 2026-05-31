@@ -2003,3 +2003,16 @@ Frontend 계약:
 - 새 npm dependency 없이 Node built-in WebSocket과 Chrome DevTools Protocol만 사용합니다.
 
 검증: [[Commercial Readiness Hardening - Hydrated Browser Privacy Smoke 2026-05-31#검증 증거]]
+
+## 2026-05-31 Settings privacy controls
+
+> [!success]
+> Backend privacy settings contract에 있는 default visibility와 public metric toggles가 Frontend Settings UI에 노출되었습니다.
+
+계약:
+
+- `default_worklog_visibility`, `default_project_visibility`는 Settings select로 조작합니다.
+- `show_estimated_cost_publicly`, `show_file_count_publicly`, `show_line_count_publicly`, `show_test_count_publicly`는 Settings toggle로 조작합니다.
+- Frontend source contract가 해당 field들의 SettingsPage 렌더/save 경로를 고정합니다.
+
+검증: [[Commercial Readiness Hardening - Settings Privacy Controls 2026-05-31#검증 증거]]

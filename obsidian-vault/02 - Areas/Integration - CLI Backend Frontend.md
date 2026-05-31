@@ -45,6 +45,26 @@ sequenceDiagram
 - Linux review URL clipboard fallback 보강
 - `share --note`를 `summary` prefix가 아닌 `user_note` 별도 계약으로 승격
 
+## 2026-05-31 Cross-repo OpenAPI contract gate
+
+> [!success]
+> `agentfeed-dev make test`가 Backend OpenAPI를 export하고 CLI/Frontend runtime API endpoint matrix를 검증하므로, 3개 레포 간 path/method/JSON response drift가 CI 전에 로컬에서 잡힙니다.
+
+수정:
+
+- `scripts/check-openapi-contract.mjs`가 FastAPI app에서 OpenAPI schema를 생성합니다.
+- CLI 6개, Frontend 52개 endpoint의 `{method, path}` 존재와 JSON success response를 확인합니다.
+- Backend-only endpoint 10개는 reason과 함께 분류해 숨은 제품 gap이 되지 않도록 했습니다.
+- `scripts/test-all.sh`와 `README.md`에 gate를 연결했습니다.
+
+검증:
+
+- `node scripts/check-openapi-contract.mjs` → passed
+- `make test` in `agentfeed-dev` → passed
+
+관련 작업 노트: [[Commercial Readiness Hardening - Cross Repo OpenAPI Contract Gate 2026-05-31]]
+
+
 ## 2026-05-31 Browser-approved token rotation contract
 
 > [!success]

@@ -165,6 +165,12 @@ created: 2026-05-30
 - [x] CLI `collect --json` raw draft root 계약 문서화 및 회귀 테스트 고정
 
 - [x] Backend JSON API route response_model coverage를 redirect/deprecated 예외 외 전체로 확장
+- [x] `agentfeed-dev make test`에 cross-repo OpenAPI client contract gate 추가
+
+- [ ] Frontend comment/worklog report actions를 Backend report API에 연결할지 제품 결정 후 구현
+- [ ] Frontend profile edit / username update surface를 Backend `/me/profile`, `/me/username` 계약에 연결
+- [ ] Frontend project create/edit/delete 관리 surface를 Backend project mutation API에 연결
+- [ ] Frontend public activity tab을 Backend `/users/{username}/activity`에 연결
 
 ## P2 후보
 
@@ -182,6 +188,8 @@ created: 2026-05-30
 - [x] Frontend unpublish control을 실제 published status 기준으로 축소
 
 ## 관련 링크
+
+- [[Commercial Readiness Hardening - Cross Repo OpenAPI Contract Gate 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Rate Limit Fallback Detail Payload Resilience and Credential Fallback Warning 2026-05-31]]
 

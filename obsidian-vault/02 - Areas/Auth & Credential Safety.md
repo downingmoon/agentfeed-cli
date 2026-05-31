@@ -598,3 +598,16 @@ created: 2026-05-30
 - local throwaway dev escape hatch는 `AGENTFEED_ALLOW_UNSAFE_ARGV_TOKEN=1`이 있을 때만 동작합니다.
 
 검증: [[Commercial Readiness Hardening - CLI Command and Token Trust Boundary 2026-05-31#검증 증거]]
+
+## 2026-05-31 Public and ingest IP-based rate-limit identity
+
+> [!success]
+> Rate limit middleware가 auth보다 먼저 실행되는 경로에서 random Bearer header가 IP throttle을 우회하지 못하도록 보정했습니다.
+
+계약:
+
+- Public/bootstrap/ingest route는 Bearer header 유무와 무관하게 IP/network-origin identity로 bucket을 잡습니다.
+- Private authenticated route는 기존 token/cookie identity를 유지합니다.
+- Trusted proxy forwarding 처리는 기존 `_request_ip_identity` 경로를 공유합니다.
+
+검증: [[Commercial Readiness Hardening - Rate Limit and Privacy Finding Ownership 2026-05-31#검증 증거]]

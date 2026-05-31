@@ -378,3 +378,16 @@ Redacted preview:
 - Database/API naming contract를 따라 frontend expectation을 backend field명에 맞췄습니다.
 
 검증: [[Commercial Readiness Hardening - Settings Privacy Controls 2026-05-31#검증 증거]]
+
+## 2026-05-31 Server-owned privacy finding resolution
+
+> [!success]
+> Ingest client가 privacy finding을 pre-resolved 상태로 보내도 Backend가 unresolved 상태로 저장합니다.
+
+계약:
+
+- `privacy_scan.findings[].resolved` / `resolution`은 ingest 저장 시 무시합니다.
+- DB privacy finding row와 worklog `privacy_scan_json` 모두 unresolved로 시작합니다.
+- Public/unlisted publish는 review route에서 resolution 처리된 뒤에만 blocking finding을 통과시킵니다.
+
+검증: [[Commercial Readiness Hardening - Rate Limit and Privacy Finding Ownership 2026-05-31#검증 증거]]

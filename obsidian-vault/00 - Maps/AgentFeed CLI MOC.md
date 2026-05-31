@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Rate Limit and Privacy Finding Ownership 2026-05-31]]
+
 - [[Commercial Readiness Hardening - Settings Privacy Controls 2026-05-31]]
 
 - [[Commercial Readiness Hardening - CLI Privacy Scanner Header and URL Redaction 2026-05-31]]
@@ -101,6 +103,9 @@ graph LR
 - [[Cross Repo Integration Fixes]]
 
 ## 주요 개념 링크
+
+- [[Auth & Credential Safety#2026-05-31 Public and ingest IP-based rate-limit identity|Public and ingest IP-based rate-limit identity]]
+- [[Privacy Safety#2026-05-31 Server-owned privacy finding resolution|Server-owned privacy finding resolution]]
 
 - [[Integration - CLI Backend Frontend#2026-05-31 Settings privacy controls|Settings privacy controls]]
 - [[Privacy Safety#2026-05-31 Settings privacy controls|Settings privacy controls]]

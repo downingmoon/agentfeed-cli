@@ -18,20 +18,6 @@ tags:
 
 ## P1
 
-### Backend invalid/random Bearer rate-limit bypass
-
-- 파일: `agentfeed-backend/app/main.py`, `agentfeed-backend/app/middleware/rate_limit.py`
-- 문제: rate limit middleware가 endpoint auth보다 먼저 실행되지만, 임의 `Authorization: Bearer ...` 값을 token fingerprint bucket으로 신뢰하면 public/bootstrap endpoint에서 IP bucket을 우회할 수 있습니다.
-- 최소 수정: unauthenticated/bootstrap/public route는 IP bucket을 항상 적용하거나, token bucket과 IP bucket을 둘 다 검사해 하나라도 제한되면 reject합니다.
-- 검증 후보: `uv run pytest -q -p no:cacheprovider tests/test_rate_limit_store.py tests/test_contracts.py -k 'rate_limit or cli'`, `uv run ruff check --no-cache app tests`.
-
-### Backend ingested privacy findings must not arrive pre-resolved
-
-- 파일: `agentfeed-backend/app/schemas/worklog.py`, `agentfeed-backend/app/routers/ingest.py`, `agentfeed-backend/app/routers/worklogs.py`
-- 문제: ingest payload의 `PrivacyFinding.resolved=true`를 그대로 저장하면 critical/high/unknown finding이 publish gate를 우회할 수 있습니다.
-- 최소 수정: ingestion input에서 `resolved` / `resolution`을 무시하고 server-side `resolved=False`, `resolution=None`으로 저장합니다. Resolution은 review endpoint에서만 허용합니다.
-- 검증 후보: `uv run pytest -q -p no:cacheprovider tests/test_contracts.py -k 'privacy and publish'`, `uv run ruff check --no-cache app tests`.
-
 ## P2
 
 ### Backend token-authenticated ingestion token rotation risk
@@ -54,6 +40,8 @@ tags:
 
 ## 처리 완료로 이동된 항목
 
+- [x] Backend invalid/random Bearer header rate-limit bypass
+- [x] Backend ingested privacy finding pre-resolved publish bypass
 - [x] Frontend Settings privacy/default visibility controls
 - [x] CLI configured command shell wrapper refusal
 - [x] CLI configured command sensitive env scrub

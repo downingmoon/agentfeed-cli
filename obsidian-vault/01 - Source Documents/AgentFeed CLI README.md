@@ -29,7 +29,7 @@ agentfeed --help
 
 ```bash
 agentfeed init
-agentfeed login --token af_live_xxx
+agentfeed login
 agentfeed rotate
 agentfeed hook install claude-code
 agentfeed collect
@@ -55,7 +55,14 @@ The CLI creates `.agentfeed/drafts/*.json` first and uploads only reviewable pri
 
 ## Login and token rotation
 
-`agentfeed login` opens the AgentFeed browser approval flow by default, or accepts a one-time token with `--token`.
+`agentfeed login` opens the AgentFeed browser approval flow by default. If you already have a token from AgentFeed Settings or a secret manager, prefer stdin so the raw secret is not stored in shell history or process argv:
+
+```bash
+printf '%s' "$AGENTFEED_TOKEN" | agentfeed login --token-stdin
+printf '%s' "$AGENTFEED_TOKEN" | agentfeed login --token - --no-save
+```
+
+`agentfeed login --token <token>` remains available for local throwaway/dev use, but it can expose the token through shell history and process listings.
 
 When a saved device token is near expiry or compromised, run:
 

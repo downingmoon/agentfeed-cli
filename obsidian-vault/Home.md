@@ -25,6 +25,10 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - Ingest Repository URL Safety 2026-05-31]] — Backend ingestion repository URL public-host validation
+
+- [[Commercial Readiness Hardening - CLI Token Stdin Login 2026-05-31]] — CLI token login stdin-first hardening
+
 - [[Commercial Readiness Hardening - Owner Aware Project Routes 2026-05-31]] — owner-aware project route로 slug collision/false 404 방지
 
 - [[Commercial Readiness Hardening - Smoke User Note Privacy Contract 2026-05-31]] — smoke-e2e user_note public privacy 계약 정렬

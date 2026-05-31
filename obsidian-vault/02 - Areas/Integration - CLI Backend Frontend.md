@@ -45,6 +45,67 @@ sequenceDiagram
 - Linux review URL clipboard fallback 보강
 - `share --note`를 `summary` prefix가 아닌 `user_note` 별도 계약으로 승격
 
+
+
+## 2026-05-31 Ingest repository URL safety
+
+> [!success]
+> CLI upload path뿐 아니라 direct ingestion API caller도 unsafe repository URL을 저장하지 못하도록 Backend schema boundary를 보강했습니다.
+
+문제:
+
+- 일반 project create/update schema는 public URL validator를 사용했습니다.
+- ingestion schema의 `project.repository_url`은 같은 validator를 적용하지 않아 direct API caller가 `localhost`, private IP, credential-bearing URL을 저장할 수 있었습니다.
+
+수정:
+
+- `IngestProject.repository_url`에 `validate_public_http_url()`를 적용했습니다.
+- blank value는 `None`으로 normalize합니다.
+- 회귀 테스트가 unsafe/private/userinfo URL reject와 public GitHub URL accept를 고정합니다.
+
+검증:
+
+- `uv run --python 3.12 --locked --group dev pytest tests/test_contracts.py -q -k 'public_url_schemas or ingest'`
+- `uv run --python 3.12 --locked --group dev ruff check app/schemas/ingestion.py tests/test_contracts.py`
+- `uv run --python 3.12 --locked --group dev pytest -q` → 200 passed
+- `make test` in `agentfeed-dev` → passed
+
+관련 작업 노트: [[Commercial Readiness Hardening - Ingest Repository URL Safety 2026-05-31]]
+
+## 2026-05-31 CLI token stdin login 계약
+
+> [!success]
+> CLI token handoff 문서와 runtime remediation을 stdin-first로 정렬해 raw token이 argv/history에 남는 경로를 줄였습니다.
+
+수정:
+
+- `agentfeed login --token-stdin`과 `agentfeed login --token -`를 추가했습니다.
+- README quick start는 browser login 기본값을 사용합니다.
+- token handoff 예시는 secret-manager/env token을 stdin으로 pipe하는 방식으로 변경했습니다.
+- CI browser guard, preview/publish missing-token error, help text가 stdin-first remediation을 안내합니다.
+
+검증:
+
+- `npm test -- --run tests/cli-status-doctor.test.ts`
+- `npm run typecheck`
+- `npm test -- --run` → 234 passed
+- `npm pack --dry-run` → passed
+- `make test` in `agentfeed-dev` → passed
+
+관련 작업 노트: [[Commercial Readiness Hardening - CLI Token Stdin Login 2026-05-31]]
+
+## 2026-05-31 남은 cross-repo readiness 후보
+
+> [!todo]
+> Sidecar audit 기준으로 아직 구현되지 않은 상용화 후보입니다. 다음 작업은 API 계약을 먼저 고정하고 Frontend UX를 맞추는 순서가 안전합니다.
+
+- **P1**: Dashboard recent worklogs가 public detail route(`/worklogs/{id}`)만 가리켜 private/review 상태 worklog의 다음 행동이 끊길 수 있습니다.
+  - 현재: `agentfeed-frontend/src/components/pages/DashboardPage.tsx` recent card link가 status와 무관하게 public detail route를 사용합니다.
+  - 권장: Backend `/me/dashboard/recent-worklogs`가 `action_url` 또는 `review_url` 성격의 필드를 제공하거나, Frontend가 status 기반으로 `/worklogs/{id}/review`와 public detail route를 분기합니다.
+  - 검증: dashboard source contract + review/public status smoke.
+- **P2**: Frontend Settings token-management UI는 Backend `POST /me/ingestion-tokens`를 직접 사용해 named ingestion token을 생성하지 못하고, CLI login 안내 중심입니다.
+  - 권장: token name 입력 → create → one-time token reveal → copy/download UX.
+
 ## 2026-05-31 Owner-aware project route 계약
 
 > [!success]

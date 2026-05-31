@@ -76,6 +76,19 @@ function shouldCopyReviewUrl(options: { json?: boolean; noClipboard?: boolean; c
   return true;
 }
 
+async function readStdinText(): Promise<string> {
+  let text = '';
+  process.stdin.setEncoding('utf8');
+  for await (const chunk of process.stdin) text += chunk;
+  return text;
+}
+
+async function readTokenFromStdin(): Promise<string> {
+  const token = (await readStdinText()).trim();
+  if (!token) throw new Error('No token received on stdin. Pipe a token with: printf %s "$AGENTFEED_TOKEN" | agentfeed login --token-stdin');
+  return token;
+}
+
 const CI_ENVIRONMENT_VARIABLES = [
   'AGENTFEED_CI',
   'CI',
@@ -189,7 +202,12 @@ async function cmdInit(args: string[]) {
 }
 
 async function cmdLogin(args: string[]) {
-  const token = option(args, '--token');
+  const tokenOption = option(args, '--token');
+  const tokenFromStdin = flag(args, '--token-stdin') || tokenOption === '-';
+  if (tokenOption && tokenOption !== '-' && tokenFromStdin) {
+    throw new Error('Use only one token input method: --token <token>, --token -, or --token-stdin.');
+  }
+  const token = tokenFromStdin ? await readTokenFromStdin() : tokenOption;
   const apiBaseUrl = option(args, '--api-base-url');
   const noSave = flag(args, '--no-save');
   if (!token) {
@@ -380,7 +398,7 @@ async function cmdPreview(args: string[]) {
   const draft = await sanitizeDraftForCliOutput(process.cwd(), await readDraft(process.cwd(), id));
   if (flag(args, '--remote')) {
     const creds = await loadCredentials();
-    if (!creds) throw new Error('AgentFeed token is missing. Run: agentfeed login --token <token>');
+    if (!creds) throw new Error('AgentFeed token is missing. Run: agentfeed login, or pipe a token with: printf %s "$TOKEN" | agentfeed login --token-stdin');
     const remote = await previewDraftRemote(draft, creds);
     print(flag(args, '--json') ? JSON.stringify(remote, null, 2) : `Remote preview: ${remote.valid ? 'valid' : 'invalid'}\nWarnings: ${remote.warnings.length ? remote.warnings.join(', ') : 'none'}\nTitle: ${String(remote.preview.title ?? draft.worklog.title)}`);
     return;
@@ -401,7 +419,7 @@ async function cmdPreview(args: string[]) {
 
 async function cmdPublish(args: string[]) {
   const creds = await loadCredentials();
-  if (!creds) throw new Error('AgentFeed token is missing. Run: agentfeed login --token <token>');
+  if (!creds) throw new Error('AgentFeed token is missing. Run: agentfeed login, or pipe a token with: printf %s "$TOKEN" | agentfeed login --token-stdin');
   const id = await resolveDraftId(process.cwd(), args);
   const result = await publishDraft({ cwd: process.cwd(), id, credentials: creds });
   const savedDraft = await readDraft(process.cwd(), id);
@@ -565,7 +583,7 @@ async function main() {
     case '--help':
     case '-h':
       print('Usage: agentfeed <init|login|rotate|status|collect|share|preview|publish|scan|hook|doctor|drafts|discard|open>');
-      print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --no-save\n  agentfeed login --browser\n  agentfeed login --token <token>\n  agentfeed login --token <token> --no-save\n  agentfeed rotate\n  agentfeed rotate --browser\n  unset AGENTFEED_TOKEN && agentfeed rotate --browser\n  agentfeed token rotate');
+      print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --no-save\n  agentfeed login --browser\n  printf %s "$TOKEN" | agentfeed login --token-stdin\n  printf %s "$TOKEN" | agentfeed login --token - --no-save\n  agentfeed login --token <token>\n  agentfeed rotate\n  agentfeed rotate --browser\n  unset AGENTFEED_TOKEN && agentfeed rotate --browser\n  agentfeed token rotate');
       print('\nCollect:\n  agentfeed collect\n  agentfeed collect --explain\n  agentfeed collect --source codex\n  agentfeed collect --source gemini-cli\n  agentfeed collect --source claude-code --session-file <path>\n  agentfeed collect --since 2026-05-20T01:00:00Z\n  agentfeed collect --all\n  agentfeed collect --run-configured-commands');
       print('\nShare:\n  agentfeed share\n  agentfeed share --dry\n  agentfeed share --open-review\n  agentfeed share --since 2026-05-20T01:00:00Z\n  agentfeed share --all\n  agentfeed share --note "Fixed auth flow"\n  agentfeed share --no-clipboard\n  agentfeed share --json --clipboard\n  agentfeed share --run-configured-commands');
       print('\nPublish:\n  agentfeed publish --latest\n  agentfeed publish --id <draft_id>\n  agentfeed publish --json\n  agentfeed publish --json --clipboard\n  agentfeed publish --no-clipboard\n  agentfeed publish --open-review');

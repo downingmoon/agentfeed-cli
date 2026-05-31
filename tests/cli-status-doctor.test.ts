@@ -10,6 +10,19 @@ const repoRoot = resolve('.');
 const cliPath = join(repoRoot, 'dist', 'cli', 'index.js');
 const execFileAsync = promisify(execFile);
 
+function execFileWithInput(args: string[], input: string, options: Parameters<typeof execFile>[2] = {}): Promise<{ stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    const child = execFile(process.execPath, [cliPath, ...args], options, (error, stdout, stderr) => {
+      if (error) {
+        reject(Object.assign(error, { stdout, stderr }));
+        return;
+      }
+      resolve({ stdout: String(stdout), stderr: String(stderr) });
+    });
+    child.stdin?.end(input);
+  });
+}
+
 let dir: string;
 let home: string;
 
@@ -128,6 +141,33 @@ describe('status and doctor provenance output', () => {
     }
   });
 
+  it('login reads a token from stdin without requiring the secret in argv or output', async () => {
+    const token = 'af_live_stdin_secret';
+
+    const { stdout, stderr } = await execFileWithInput(
+      ['login', '--token-stdin', '--api-base-url', 'http://127.0.0.1:9/v1'],
+      `${token}\n`,
+      {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: '',
+          AGENTFEED_CI: '1',
+          AGENTFEED_CREDENTIAL_STORE: 'file'
+        }
+      }
+    );
+
+    expect(stdout).toContain('AgentFeed credentials saved.');
+    expect(stdout).toContain('API: http://127.0.0.1:9/v1');
+    expect(stdout).not.toContain(token);
+    expect(stderr).not.toContain(token);
+    const saved = JSON.parse(await readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8'));
+    expect(saved.ingestion_token).toBe(token);
+  });
+
   it('login fails fast in CI with token remediation and no browser session request', async () => {
     let requestCount = 0;
     const server = await import('node:http').then(({ createServer }) => createServer((_req, res) => {
@@ -159,7 +199,7 @@ describe('status and doctor provenance output', () => {
 
       expect(failure?.stderr).toContain('Browser login is disabled in CI.');
       expect(failure?.stderr).toContain('AGENTFEED_TOKEN');
-      expect(failure?.stderr).toContain('agentfeed login --token <token>');
+      expect(failure?.stderr).toContain('agentfeed login --token-stdin');
       expect(failure?.stderr).toContain('--browser');
       expect(failure?.stdout ?? '').toBe('');
       expect(requestCount).toBe(0);

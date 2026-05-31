@@ -303,7 +303,7 @@ export async function loadCredentials(): Promise<AgentFeedCredentials | null> {
 
 export async function resolveCredentials(base: AgentFeedCredentials | null): Promise<AgentFeedCredentials> {
   const token = process.env.AGENTFEED_TOKEN || base?.ingestion_token;
-  if (!token) throw new Error('AgentFeed token is missing. Run: agentfeed login --token <token>');
+  if (!token) throw new Error('AgentFeed token is missing. Run: agentfeed login, or pipe a token with: printf %s "$TOKEN" | agentfeed login --token-stdin');
   const api = protectRepoDiscoveredApiBase(
     await resolveApiBaseUrlWithMetadata({ storedApiBaseUrl: base?.api_base_url }),
     Boolean(token),

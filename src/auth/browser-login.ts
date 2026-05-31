@@ -66,7 +66,7 @@ function ciBrowserLoginBlocked(options: { allowCiBrowser?: boolean }): boolean {
 
 export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: boolean; waitMs?: number; save?: boolean; cwd?: string; storedApiBaseUrl?: string; allowCiBrowser?: boolean } = {}) {
   if (ciBrowserLoginBlocked(options)) {
-    throw new Error('Browser login is disabled in CI. Set AGENTFEED_TOKEN or run: agentfeed login --token <token>. To intentionally run browser auth anyway, pass --browser.');
+    throw new Error('Browser login is disabled in CI. Set AGENTFEED_TOKEN or pipe a token with: printf %s "$TOKEN" | agentfeed login --token-stdin. To intentionally run browser auth anyway, pass --browser.');
   }
   const apiResolution = await resolveApiBaseUrlWithMetadata({
     cwd: options.cwd,

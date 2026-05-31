@@ -510,6 +510,23 @@ created: 2026-05-30
 
 검증: [[Commercial Readiness Hardening - Native Keychain Smoke Notification Gates and Social Action Contracts 2026-05-31#검증 증거]]
 
+
+## 2026-05-31 CLI token stdin login
+
+> [!success]
+> 이미 발급된 ingestion token을 CLI에 연결할 때 raw secret이 shell history/process argv에 남지 않도록 stdin-first login 경로를 추가했습니다.
+
+계약:
+
+- 기본 `agentfeed login`은 browser approval flow를 유지합니다.
+- 이미 token을 가진 사용자는 `printf '%s' "$AGENTFEED_TOKEN" | agentfeed login --token-stdin` 또는 `agentfeed login --token -`로 stdin 입력을 사용할 수 있습니다.
+- stdin token은 credential 저장 또는 `--no-save` ephemeral 경로에 모두 사용할 수 있습니다.
+- stdout/stderr에는 raw token을 출력하지 않습니다.
+- CI browser-login guard와 missing-token remediation은 `--token-stdin`을 우선 안내합니다.
+- `agentfeed login --token <token>`은 backward-compatible dev escape hatch로 남기지만 권장 경로는 아닙니다.
+
+검증: [[Commercial Readiness Hardening - CLI Token Stdin Login 2026-05-31#검증 증거]]
+
 ## 2026-05-31 CLI auth smoke and CI guard
 
 > [!success]
@@ -519,7 +536,7 @@ created: 2026-05-30
 
 - `agentfeed login --no-open --no-save`는 authorize URL과 대기 UX 문구를 출력하되 raw token을 stdout에 노출하지 않습니다.
 - `--no-save` browser login은 exchange 성공 후에도 `credentials.json`을 만들지 않습니다.
-- CI env에서는 browser session API 요청을 만들기 전에 fail-fast하고 `AGENTFEED_TOKEN` 또는 `agentfeed login --token <token>` remediation을 안내합니다.
+- CI env에서는 browser session API 요청을 만들기 전에 fail-fast하고 `AGENTFEED_TOKEN` 또는 `agentfeed login --token-stdin` remediation을 안내합니다.
 - 의도적으로 CI에서 browser auth를 실행하려면 `--browser` override가 필요합니다.
 
 검증: [[Commercial Readiness Hardening - Concurrent Notification Migration CLI Auth Smoke and Header Contracts 2026-05-31#검증 증거]]

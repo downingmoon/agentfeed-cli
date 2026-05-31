@@ -22,6 +22,9 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [ ] Dashboard recent worklogs link를 status-aware review/public action으로 분기
+- [x] Backend ingestion `project.repository_url`이 public URL validator를 우회하지 않도록 보강
+- [x] CLI `agentfeed login --token` argv/history 노출을 stdin-first token 입력으로 보강
 - [x] Project public link/detail을 owner-aware route로 전환해 slug collision/false 404 방지
 - [x] smoke-e2e가 owner-only user_note public 비노출 계약을 검증하도록 수정
 - [x] Backend/Frontend publish privacy severity taxonomy를 fail-closed 기준으로 정렬
@@ -153,6 +156,7 @@ created: 2026-05-30
 
 ## P2 후보
 
+- [ ] Frontend Settings token-management UI에서 named ingestion token create/one-time reveal 지원
 - [x] 비용 정보는 추정 금지 원칙 유지, explicit cost field만 opt-in 보존
 - [x] `doctor` 출력에 source별 개선 가이드 더 구체화
 - [x] privacy redaction dry-run 상세 표시
@@ -161,6 +165,10 @@ created: 2026-05-30
 - [x] Frontend unpublish control을 실제 published status 기준으로 축소
 
 ## 관련 링크
+
+- [[Commercial Readiness Hardening - Ingest Repository URL Safety 2026-05-31]]
+
+- [[Commercial Readiness Hardening - CLI Token Stdin Login 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Owner Aware Project Routes 2026-05-31]]
 

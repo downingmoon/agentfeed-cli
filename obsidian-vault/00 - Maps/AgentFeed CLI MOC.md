@@ -33,6 +33,10 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Ingest Repository URL Safety 2026-05-31]]
+
+- [[Commercial Readiness Hardening - CLI Token Stdin Login 2026-05-31]]
+
 - [[Commercial Readiness Hardening - Owner Aware Project Routes 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Smoke User Note Privacy Contract 2026-05-31]]

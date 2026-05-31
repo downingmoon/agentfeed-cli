@@ -2159,3 +2159,17 @@ Frontend 계약:
 - Project family와 activity histogram은 shape 설계가 더 필요한 별도 slice로 남겼습니다.
 
 검증: [[Commercial Readiness Hardening - User Dashboard Worklog Contracts and Collect JSON Stability 2026-05-31#검증 증거]]
+
+## 2026-05-31 Full JSON API response model contract
+
+> [!success]
+> Frontend/CLI가 소비하는 일반 JSON `/v1` route는 redirect 및 deprecated disabled endpoint를 제외하고 모두 `response_model`을 갖습니다.
+
+계약:
+
+- Project, user project/activity, search, explore, notifications, integrations, auth CLI session, ingest response에 전용 schema를 추가했습니다.
+- Project stats는 Backend 실제 반환 key인 `worklog_count`, `total_files`, `total_lines_added`, `total_lines_removed`, `total_tests`, `total_commits`, `contributor_count`를 기준으로 정렬했습니다.
+- Notification target은 `extra=allow`를 유지해 `username` 같은 frontend navigation payload가 response filtering으로 사라지지 않게 합니다.
+- 의도적 예외는 OAuth redirect 2개와 deprecated 403-only ingestion token rotate endpoint뿐입니다.
+
+검증: [[Commercial Readiness Hardening - Full JSON API Response Contract 2026-05-31#검증 증거]]

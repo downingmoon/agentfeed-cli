@@ -164,6 +164,8 @@ created: 2026-05-30
 
 - [x] CLI `collect --json` raw draft root 계약 문서화 및 회귀 테스트 고정
 
+- [x] Backend JSON API route response_model coverage를 redirect/deprecated 예외 외 전체로 확장
+
 ## P2 후보
 
 - [x] Backend/CLI token-authenticated ingestion token self-rotation 차단 및 browser-approved replacement 전환
@@ -510,3 +512,4 @@ created: 2026-05-30
 - [x] `WorklogCard` schema를 실제 public card payload(`status`, `changed_areas`, `public_prompt`)와 정렬
 - [[Commercial Readiness Hardening - Public Interaction Response Models 2026-05-31]]
 - [[Commercial Readiness Hardening - User Dashboard Worklog Contracts and Collect JSON Stability 2026-05-31]]
+- [[Commercial Readiness Hardening - Full JSON API Response Contract 2026-05-31]]

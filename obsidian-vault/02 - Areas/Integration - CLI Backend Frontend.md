@@ -53,8 +53,8 @@ sequenceDiagram
 수정:
 
 - `scripts/check-openapi-contract.mjs`가 FastAPI app에서 OpenAPI schema를 생성합니다.
-- CLI 6개, Frontend 52개 endpoint의 `{method, path}` 존재와 JSON success response를 확인합니다.
-- Backend-only endpoint 10개는 reason과 함께 분류해 숨은 제품 gap이 되지 않도록 했습니다.
+- CLI 6개, Frontend 56개 endpoint의 `{method, path}` 존재와 JSON success response를 확인합니다.
+- Backend-only endpoint 6개는 reason과 함께 분류해 숨은 제품 gap이 되지 않도록 했습니다.
 - `scripts/test-all.sh`와 `README.md`에 gate를 연결했습니다.
 
 검증:
@@ -63,6 +63,28 @@ sequenceDiagram
 - `make test` in `agentfeed-dev` → passed
 
 관련 작업 노트: [[Commercial Readiness Hardening - Cross Repo OpenAPI Contract Gate 2026-05-31]]
+
+
+
+## 2026-06-01 Report actions surface
+
+> [!success]
+> Backend의 worklog/comment report API가 Frontend Worklog detail UX와 dev OpenAPI client gate에 연결되어, moderation report endpoints가 더 이상 backend-only product gap이 아닙니다.
+
+수정:
+
+- Frontend `social.reportWorklog()` / `social.reportComment()` helper를 추가했습니다.
+- Worklog detail page가 worklog와 comment report action을 제공합니다.
+- signed-out report 시도는 현재 경로를 보존한 로그인 흐름으로 이어집니다.
+- report form은 Backend reason enum과 optional description 계약을 그대로 사용합니다.
+- Dev OpenAPI gate에서 report endpoints를 client contract로 승격했습니다.
+
+검증:
+
+- Frontend contract + typecheck/lint passed
+- Dev OpenAPI contract gate passed
+
+관련 작업 노트: [[Commercial Readiness Hardening - Report Actions Surface 2026-06-01]]
 
 
 ## 2026-05-31 Profile username settings surface

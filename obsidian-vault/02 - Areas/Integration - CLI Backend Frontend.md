@@ -67,6 +67,31 @@ sequenceDiagram
 
 
 
+
+
+## 2026-06-01 Project mutation surface
+
+> [!success]
+> Project create/edit/delete Backend API가 Frontend Projects/Project Detail UX와 dev OpenAPI client gate에 연결되어, project mutation endpoints가 더 이상 backend-only product gap이 아닙니다.
+
+수정:
+
+- Frontend `projects.create()` / `projects.update()` / `projects.delete()` helper를 추가했습니다.
+- Projects page가 signed-in create form을 제공하고 성공 시 owner-aware project route로 이동합니다.
+- Project detail page가 owner-gated edit/delete panel을 제공하고 Backend project id로 mutation합니다.
+- Delete는 project name confirmation 후 soft-delete API를 호출하고 `/projects`로 이동합니다.
+- Backend PATCH가 optional field null clear를 지원하지 않는 현재 계약은 UI에서 명시적으로 차단합니다.
+- Dev OpenAPI gate에서 `POST/PATCH/DELETE /v1/projects`를 frontend client contract로 승격했습니다.
+
+검증:
+
+- `npm run test:contracts` in `agentfeed-frontend` → passed
+- `npm run lint` in `agentfeed-frontend` → passed
+- `node scripts/check-openapi-contract.mjs` in `agentfeed-dev` → passed (`client contracts: 66`, backend-only: `2`)
+- `make test` in `agentfeed-dev` → passed
+
+관련 작업 노트: [[Commercial Readiness Hardening - Project Mutation Surface 2026-06-01]]
+
 ## 2026-06-01 Public activity tab
 
 > [!success]

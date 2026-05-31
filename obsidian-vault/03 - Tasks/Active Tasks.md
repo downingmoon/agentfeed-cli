@@ -169,7 +169,7 @@ created: 2026-05-30
 
 - [x] Frontend comment/worklog report actions를 Backend report API에 연결할지 제품 결정 후 구현
 - [x] Frontend profile edit / username update surface를 Backend `/me/profile`, `/me/username` 계약에 연결
-- [ ] Frontend project create/edit/delete 관리 surface를 Backend project mutation API에 연결
+- [x] Frontend project create/edit/delete 관리 surface를 Backend project mutation API에 연결
 - [x] Frontend public activity tab을 Backend `/users/{username}/activity`에 연결
 
 ## P2 후보
@@ -188,6 +188,8 @@ created: 2026-05-30
 - [x] Frontend unpublish control을 실제 published status 기준으로 축소
 
 ## 관련 링크
+
+- [[Commercial Readiness Hardening - Project Mutation Surface 2026-06-01]]
 
 - [[Commercial Readiness Hardening - Public Activity Tab 2026-06-01]]
 

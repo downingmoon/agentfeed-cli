@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   isDirectInvocation,
   parsePackJson,
+  validateCliSmokeOutput,
   validatePackageMetadata,
   validatePackResult
 } from '../scripts/release-preflight.mjs';
@@ -92,6 +93,12 @@ describe('release preflight guardrails', () => {
       ...validPackageJson,
       private: true
     })).toThrow('must not be marked private');
+  });
+
+  it('validates the built CLI help smoke output', () => {
+    expect(() => validateCliSmokeOutput('Usage: agentfeed <init|collect>\nagentfeed collect\n')).not.toThrow();
+    expect(() => validateCliSmokeOutput('Usage: other')).toThrow('usage banner');
+    expect(() => validateCliSmokeOutput('Usage: agentfeed <init|collect>')).toThrow('collection guidance');
   });
 
   it('runs only when invoked as this script, including Windows-style paths', () => {

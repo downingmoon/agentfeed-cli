@@ -82,6 +82,11 @@ export function validatePackResult(packResult, pkg) {
   assert(Number(result.unpackedSize ?? 0) > 0, 'npm dry-run must report non-empty unpacked package size.');
 }
 
+export function validateCliSmokeOutput(output) {
+  assert(output.includes('Usage: agentfeed'), 'built CLI --help output must include the usage banner.');
+  assert(output.includes('agentfeed collect'), 'built CLI --help output must include collection guidance.');
+}
+
 function runPackDryRun() {
   const stdout = execFileSync('npm', ['pack', '--dry-run', '--json'], {
     cwd: repoRoot,
@@ -100,15 +105,26 @@ export function isDirectInvocation(argvPath = process.argv[1], modulePath = scri
   return comparablePath(argvPath) === comparablePath(modulePath);
 }
 
+function runCliSmoke() {
+  const output = execFileSync(process.execPath, [join(repoRoot, 'dist/cli/index.js'), '--help'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  validateCliSmokeOutput(output);
+}
+
 function main() {
   const pkg = readJson(packagePath);
   validatePackageMetadata(pkg);
   const packResult = runPackDryRun();
   validatePackResult(packResult, pkg);
+  runCliSmoke();
 
   console.log('AgentFeed CLI release preflight passed.');
   console.log(`- Package: ${pkg.name}@${pkg.version}`);
   console.log('- Tarball: npm pack --dry-run --json validated');
+  console.log('- CLI smoke: built agentfeed --help validated');
   if (pkg.license === 'UNLICENSED') console.log('- License: UNLICENSED (proprietary/no open-source grant; change only after owner approval).');
   console.log('- Next: publish from a public GitHub repository with npm provenance/trusted publishing, or document that manual local publish will not include provenance.');
 }

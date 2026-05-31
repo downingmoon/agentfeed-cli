@@ -76,6 +76,7 @@ describe('CLI version metadata', () => {
     expect(releaseScript).toContain("fileSet.has('dist/cli/index.js')");
     expect(releaseScript).toContain("files.some(file => file === forbidden.replace");
     expect(releaseScript).toContain("pkg.publishConfig?.access === 'public'");
+    expect(releaseScript).toContain('validateCliSmokeOutput');
     expect(readme).toContain('npm run release:preflight');
     expect(readme).toContain('npm publish --provenance --access public');
     expect(readme).toContain('https://docs.npmjs.com/generating-provenance-statements');

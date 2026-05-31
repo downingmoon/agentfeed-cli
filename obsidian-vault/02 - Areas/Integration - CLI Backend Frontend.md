@@ -47,6 +47,27 @@ sequenceDiagram
 
 
 
+
+## 2026-06-01 Landing API-backed preview
+
+> [!success]
+> Landing page hero preview가 Backend public Explore/Feed API와 연결되어, production 첫 화면이 static demo worklog 대신 실제 공개 worklog 또는 안전한 fallback을 표시합니다.
+
+수정:
+
+- Frontend landing preview가 `explore.get()`의 `trending_worklogs`를 우선 사용합니다.
+- Explore 결과가 없으면 `feed.list({ sort: 'trending', time_range: 'all', limit: 1 })`로 fallback합니다.
+- `adaptWorklogCards()`로 API payload를 shared worklog card contract에 맞게 정규화합니다.
+- API failure/empty state에서 `/feed` 안내 card를 표시합니다.
+- Source contract test가 `WORKLOGS[0]` / `USERS[` fixture 회귀를 차단합니다.
+
+검증:
+
+- Frontend contracts/lint/build passed
+- `agentfeed-dev make test` passed
+
+관련 작업 노트: [[Commercial Readiness Hardening - Landing API Backed Preview 2026-06-01]]
+
 ## 2026-06-01 Worklog author mock fallback removal
 
 > [!success]

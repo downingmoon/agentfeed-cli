@@ -1,14 +1,17 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { execFileSync } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
+import { createServer, type IncomingMessage } from 'node:http';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { promisify } from 'node:util';
 import { initProject } from '../src/config/project-config.js';
 import { readCollectionState } from '../src/config/collection-state.js';
 import { ensureCliBuilt } from './build-cli.js';
 
 const repoRoot = resolve('.');
 const cliPath = join(repoRoot, 'dist', 'cli', 'index.js');
+const execFileAsync = promisify(execFile);
 
 let dir: string;
 let home: string;
@@ -34,6 +37,12 @@ afterEach(async () => {
   await rm(dir, { recursive: true, force: true });
   await rm(home, { recursive: true, force: true });
 });
+
+async function readRequestBody(req: IncomingMessage): Promise<Record<string, unknown>> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) chunks.push(Buffer.from(chunk));
+  return JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>;
+}
 
 describe('collect CLI command', () => {
   it('rejects unsupported source values before creating a draft', async () => {
@@ -144,5 +153,66 @@ describe('collect CLI command', () => {
     const draft = JSON.parse(stdout);
     expect(draft.upload.uploaded).toBe(false);
     expect(draft.id).toMatch(/^draft_/);
+  });
+
+  it('uploads before printing JSON when --json and --upload are combined', async () => {
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = "json-upload";\n');
+    let requestCount = 0;
+    let uploadedPayload: Record<string, unknown> | null = null;
+    const server = createServer(async (req, res) => {
+      if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
+        requestCount += 1;
+        uploadedPayload = await readRequestBody(req);
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({
+          data: {
+            id: 'worklog_collect_json_upload',
+            status: 'needs_review',
+            visibility: 'private',
+            review_url: 'http://localhost:3001/worklogs/worklog_collect_json_upload/review',
+            created_at: '2026-05-31T00:00:00Z'
+          }
+        }));
+        return;
+      }
+      res.writeHead(404, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ error: { code: 'NOT_FOUND' } }));
+    });
+    await new Promise<void>((resolve, reject) => {
+      server.once('error', reject);
+      server.listen(0, '127.0.0.1', resolve);
+    });
+    try {
+      const address = server.address();
+      if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+      const { stdout } = await execFileAsync(process.execPath, [
+        cliPath,
+        'collect',
+        '--json',
+        '--upload',
+        '--all',
+        '--no-save-cursor'
+      ], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: 'af_live_collect_json_upload',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+        }
+      });
+
+      const draft = JSON.parse(stdout);
+      expect(requestCount).toBe(1);
+      expect(uploadedPayload?.worklog).toBeTruthy();
+      expect(draft.upload).toMatchObject({
+        uploaded: true,
+        worklog_id: 'worklog_collect_json_upload',
+        review_url: 'http://localhost:3001/worklogs/worklog_collect_json_upload/review'
+      });
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
   });
 });

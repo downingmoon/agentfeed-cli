@@ -330,6 +330,13 @@ async function cmdCollect(args: string[]) {
   const collection = await collectDraftWithStatus({ cwd: process.cwd(), source, sessionFile: option(args, '--session-file') ?? null, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all'), runConfiguredCommands: flag(args, '--run-configured-commands') });
   const draft = await sanitizeDraftForCliOutput(process.cwd(), collection.draft);
   if (flag(args, '--json')) {
+    if (flag(args, '--upload')) {
+      const creds = await loadCredentials();
+      if (!creds) throw new Error('AgentFeed token is missing. Run: agentfeed login');
+      const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds });
+      draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, uploaded_at: result.created_at };
+      if (flag(args, '--open-review')) await openBrowser(result.review_url);
+    }
     if (!flag(args, '--no-save-cursor')) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
     print(JSON.stringify(draft, null, 2));
     return;

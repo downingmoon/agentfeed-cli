@@ -25,6 +25,9 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - OAuth Cookie Scope JSON Upload and Signout State 2026-05-31]] — OAuth cookie scope, JSON collect upload, metadata URI resilience, sign-out state reset
+
+
 - [[Commercial Readiness Hardening - Browser Approved Token Rotation 2026-05-31]] — browser-approved CLI token replacement and self-rotation shutdown
 
 - [[Commercial Readiness Hardening - Profile Follow Hydration and Leaderboard Resilience 2026-05-31]] — profile follow hydration and leaderboard malformed-row resilience

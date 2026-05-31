@@ -688,3 +688,17 @@ created: 2026-05-30
 - 필요한 경우만 `AGENTFEED_CONFIGURED_COMMAND_ENV_ALLOWLIST=NAME1,NAME2`로 명시 통과시킵니다.
 
 검증: [[Commercial Readiness Hardening - CLI Command and Token Trust Boundary 2026-05-31#검증 증거]]
+
+## 2026-05-31 JSON collect upload and metadata URI resilience
+
+> [!success]
+> `agentfeed collect --json --upload`가 upload를 수행한 뒤 JSON draft를 출력하고, malformed `file://` metadata URI가 전체 collection을 중단하지 않도록 보정했습니다.
+
+계약:
+
+- `collect --json --upload`는 credential을 확인하고 `/ingest/worklogs` upload를 수행합니다.
+- 출력 JSON은 `upload.uploaded`, `worklog_id`, `review_url`, `uploaded_at`을 포함합니다.
+- malformed percent-encoded file URI는 decode exception을 전파하지 않고 row-level로 무시됩니다.
+- valid encoded file URI는 기존처럼 relative changed file로 집계됩니다.
+
+검증: [[Commercial Readiness Hardening - OAuth Cookie Scope JSON Upload and Signout State 2026-05-31#검증 증거]]

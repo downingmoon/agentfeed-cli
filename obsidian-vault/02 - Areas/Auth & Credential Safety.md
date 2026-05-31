@@ -635,3 +635,16 @@ created: 2026-05-30
 - Trusted proxy forwarding 처리는 기존 `_request_ip_identity` 경로를 공유합니다.
 
 검증: [[Commercial Readiness Hardening - Rate Limit and Privacy Finding Ownership 2026-05-31#검증 증거]]
+
+## 2026-05-31 OAuth browser session cookie path
+
+> [!success]
+> GitHub OAuth callback에서 발급하는 browser `access_token` cookie와 OAuth state cookie의 path scope를 `/`로 고정했습니다.
+
+계약:
+
+- `/v1/auth/github` state cookie는 `Path=/`로 발급됩니다.
+- `/v1/auth/github/callback` access token cookie는 `Path=/`로 발급되어 `/v1/me` 등 API route에서 누락되지 않습니다.
+- callback success와 logout은 같은 path로 cookie를 삭제합니다.
+
+검증: [[Commercial Readiness Hardening - OAuth Cookie Scope JSON Upload and Signout State 2026-05-31#검증 증거]]

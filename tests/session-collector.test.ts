@@ -985,6 +985,28 @@ describe('agent session collector', () => {
     ]);
   });
 
+  it('ignores malformed file URI metadata paths without aborting generic collection', async () => {
+    const sessionFile = join(dir, 'generic-malformed-file-uri.jsonl');
+    await writeJsonl(sessionFile, [
+      {
+        timestamp: '2026-05-20T01:00:00Z',
+        session_id: 'generic-malformed-file-uri',
+        tokens_used: 12,
+        changed_files: [
+          { uri: 'file:///%E0%A4%A', lines_added: 99 },
+          { uri: `file://${encodeURIComponent(join(dir, 'src', 'safe-uri.ts'))}`, lines_added: 1 }
+        ]
+      }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'other', sessionFile });
+
+    expect(metrics?.session_id).toBe('generic-malformed-file-uri');
+    expect(metrics?.tokens_used).toBe(12);
+    expect(metrics?.changed_files.map((file) => file.path)).toEqual(['src/safe-uri.ts']);
+    expect(metrics?.lines_added).toBe(1);
+  });
+
   it('auto-collects project-local Cursor metadata without counting metadata files as code changes', async () => {
     await mkdir(join(dir, '.cursor'), { recursive: true });
     await writeFile(join(dir, '.cursor', 'session-metrics.json'), JSON.stringify({

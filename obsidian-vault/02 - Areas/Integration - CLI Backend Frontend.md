@@ -2072,3 +2072,16 @@ Frontend 계약:
 - Frontend source contract가 해당 field들의 SettingsPage 렌더/save 경로를 고정합니다.
 
 검증: [[Commercial Readiness Hardening - Settings Privacy Controls 2026-05-31#검증 증거]]
+
+## 2026-05-31 Sign-out social state reset
+
+> [!success]
+> Frontend sign-out이 auth-scoped optimistic social state와 pending refs를 초기화합니다.
+
+계약:
+
+- sign-out 후 `likes`, `bookmarks`, `likePending`, `bookmarkPending`은 빈 state가 됩니다.
+- pending refs도 빈 object로 갱신해 다음 로그인 사용자의 action guard에 stale id가 남지 않습니다.
+- stale social action error banner도 sign-out 시 제거합니다.
+
+검증: [[Commercial Readiness Hardening - OAuth Cookie Scope JSON Upload and Signout State 2026-05-31#검증 증거]]

@@ -957,6 +957,16 @@ function firstString(record: Record<string, unknown>, keys: string[]): string | 
   return null;
 }
 
+function normalizedGenericPath(rawPath: string): string {
+  if (!rawPath.startsWith('file://')) return rawPath;
+  const encodedPath = rawPath.slice('file://'.length);
+  try {
+    return decodeURIComponent(encodedPath);
+  } catch {
+    return encodedPath;
+  }
+}
+
 function applyGenericChangedFile(cwd: string, raw: unknown, files: Map<string, ChangedFileSummary>, fallbackPath?: string) {
   if (typeof raw === 'string') {
     const rel = relativeProjectPath(cwd, raw);
@@ -967,7 +977,7 @@ function applyGenericChangedFile(cwd: string, raw: unknown, files: Map<string, C
   if (!record) return;
   const rawPath = firstString(record, ['path', 'file_path', 'filePath', 'file', 'uri']) ?? fallbackPath ?? null;
   if (!rawPath) return;
-  const normalizedPath = rawPath.startsWith('file://') ? decodeURIComponent(rawPath.slice('file://'.length)) : rawPath;
+  const normalizedPath = normalizedGenericPath(rawPath);
   const rel = relativeProjectPath(cwd, normalizedPath);
   if (!rel) return;
   const diff = asString(record.unified_diff) ?? asString(record.diff) ?? asString(record.patch);

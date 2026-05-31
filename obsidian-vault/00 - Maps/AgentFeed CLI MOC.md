@@ -33,6 +33,9 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - OAuth Cookie Scope JSON Upload and Signout State 2026-05-31]]
+
+
 - [[Commercial Readiness Hardening - Browser Approved Token Rotation 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Profile Follow Hydration and Leaderboard Resilience 2026-05-31]]

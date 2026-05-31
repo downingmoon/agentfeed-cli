@@ -15,8 +15,39 @@ For local release verification before the package is published, build and inspec
 
 ```bash
 npm ci
-npm pack --dry-run
+npm run release:preflight
 ```
+
+`release:preflight` runs the normal `prepack` build/typecheck/test gate through
+`npm pack --dry-run --json`, then verifies that the publish tarball contains the
+built CLI and excludes source, tests, local drafts, env files, and agent runtime
+state.
+
+## Release and provenance
+
+The package is configured for public npm publishing (`publishConfig.access:
+public`) but keeps `"license": "UNLICENSED"` until the project owner chooses an
+open-source or commercial license. Treat that as all rights reserved / no usage
+grant for consumers; do not replace it with an SPDX license without an explicit
+owner decision.
+
+Recommended release gate:
+
+```bash
+npm ci
+npm run release:preflight
+```
+
+For provenance-backed npm releases, use npm trusted publishing or a GitHub
+Actions publish job with OIDC and `npm publish --provenance --access public`.
+npm's current provenance requirements include a public source repository whose
+`package.json.repository` matches the publishing repository. If this GitHub repo
+stays private, the package can still be manually published after preflight, but
+that publish will not carry npm provenance. See:
+
+- https://docs.npmjs.com/generating-provenance-statements
+- https://docs.npmjs.com/trusted-publishers
+- https://docs.npmjs.com/cli/v10/commands/npm-publish/
 
 ```bash
 agentfeed init

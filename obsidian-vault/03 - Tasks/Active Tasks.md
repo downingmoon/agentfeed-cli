@@ -487,3 +487,12 @@ created: 2026-05-30
 - [x] Frontend profile/project/dashboard/explore secondary API failure isolation
 - [x] Frontend projects/leaderboard/profile/project/notifications pagination dedup helper 적용
 - [[Commercial Readiness Hardening - Payload Caps Report Idempotency Secondary Failure Isolation 2026-05-31]]
+
+
+## 2026-05-31 auth response/json side-effect continuation
+
+- [x] Backend `/health`, `/v1/auth/me`, `/v1/me/settings*` high-traffic response model first slice 고정
+- [x] Backend `AuthMeResponse.location`을 추가해 DB/Backend/Frontend auth profile 계약 정렬
+- [x] Frontend `auth.me()` payload 정규화와 AppContext signed-in gate 보강
+- [x] CLI `share --json` 기본 no clipboard/browser side effect, explicit opt-in, failure no-side-effect regression 보강
+- [[Commercial Readiness Hardening - Auth Identity Response Models and JSON Side Effects 2026-05-31]]

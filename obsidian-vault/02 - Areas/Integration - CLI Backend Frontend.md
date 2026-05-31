@@ -2099,3 +2099,31 @@ Frontend 계약:
 - `preview.public_fields`는 string list로 normalize합니다.
 
 검증: [[Commercial Readiness Hardening - Rate Limit Fallback Detail Payload Resilience and Credential Fallback Warning 2026-05-31#검증 증거]]
+
+
+## 2026-05-31 High-traffic response model first slice
+
+> [!success]
+> Backend high-traffic auth/settings/health route의 response model metadata를 고정해 Frontend/CLI가 기대하는 shape를 OpenAPI와 contract test에서 확인할 수 있게 했습니다.
+
+계약:
+
+- `/health` → `HealthResponse`
+- `/v1/auth/me` → `DataResponse[AuthMeResponse]`
+- `/v1/me/settings*` → `DataResponse[UserSettingsResponse]`
+- `AuthMeResponse.location`을 포함해 Frontend `ApiAuthMe`와 auth profile field를 정렬합니다.
+
+검증: [[Commercial Readiness Hardening - Auth Identity Response Models and JSON Side Effects 2026-05-31#검증 증거]]
+
+## 2026-05-31 CLI share JSON side-effect contract
+
+> [!success]
+> `agentfeed share --json`은 자동화 출력 모드이므로 기본적으로 stdout JSON 외 side effect를 만들지 않습니다.
+
+계약:
+
+- 기본 `share --json`은 clipboard/browser opener를 호출하지 않습니다.
+- `--clipboard`와 `--open-review`가 명시될 때만 해당 side effect가 발생합니다.
+- upload 실패 시 명시 flag가 있어도 side effect를 실행하지 않습니다.
+
+검증: [[Commercial Readiness Hardening - Auth Identity Response Models and JSON Side Effects 2026-05-31#검증 증거]]

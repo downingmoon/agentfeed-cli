@@ -661,3 +661,19 @@ created: 2026-05-30
 - `auto` fallback은 `credential_store_warning` metadata를 저장하고 `login`/`status`/`doctor`에서 warning으로 노출합니다.
 
 검증: [[Commercial Readiness Hardening - Rate Limit Fallback Detail Payload Resilience and Credential Fallback Warning 2026-05-31#검증 증거]]
+
+
+## 2026-05-31 Auth identity normalization boundary
+
+> [!success]
+> Frontend `currentUser`는 이제 raw `/auth/me` payload가 아니라 정규화된 `ApiAuthMe` 또는 `null`만 받습니다.
+
+계약:
+
+- `normalizeAuthMe()`는 `id` 또는 `username`이 usable string인 payload만 통과시킵니다.
+- `display_name`은 `display_name → username → id` 순서로 fallback합니다.
+- profile URL, `location`, timezone은 string/null로 제한합니다.
+- malformed successful identity payload는 signed-in state가 아니라 signed-out state로 처리합니다.
+- CLI authorization page도 `auth.me()`가 `null`을 반환하면 GitHub sign-in flow로 유도합니다.
+
+검증: [[Commercial Readiness Hardening - Auth Identity Response Models and JSON Side Effects 2026-05-31#검증 증거]]

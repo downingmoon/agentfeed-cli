@@ -25,6 +25,9 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - Auth Identity Response Models and JSON Side Effects 2026-05-31]] — auth identity normalization, backend response models, CLI JSON side-effect contracts
+
+
 - [[Commercial Readiness Hardening - Rate Limit Fallback Detail Payload Resilience and Credential Fallback Warning 2026-05-31]] — rate-limit fallback, detail/review payload resilience, credential fallback warning
 
 

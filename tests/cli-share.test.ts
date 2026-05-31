@@ -69,6 +69,19 @@ async function readRequestBody(req: IncomingMessage): Promise<Record<string, unk
   return JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>;
 }
 
+async function writeCodexShareSession(sessionId: string, model: string, exportName: string): Promise<string> {
+  const sessionFile = join(dir, '.agentfeed', `${sessionId}.jsonl`);
+  await writeFile(sessionFile, [
+    JSON.stringify({ timestamp: '2026-05-31T00:00:00Z', type: 'session_meta', payload: { id: sessionId, cwd: dir, model } }),
+    JSON.stringify({ timestamp: '2026-05-31T00:01:00Z', type: 'event_msg', payload: { type: 'token_count', info: { total_token_usage: { total_tokens: 31 } } } }),
+    JSON.stringify({ timestamp: '2026-05-31T00:02:00Z', type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: {
+      [join(dir, 'src', 'api.ts')]: { type: 'modify', unified_diff: `--- a/src/api.ts\n+++ b/src/api.ts\n@@\n export const ok = true;\n+export const ${exportName} = true;\n` }
+    } } })
+  ].join('\n') + '\n');
+  await writeFile(join(dir, 'src', 'api.ts'), `export const ok = true;\nexport const ${exportName} = true;\n`);
+  return sessionFile;
+}
+
 describe('share CLI command', () => {
   it('refuses unsafe cached review URLs before invoking the browser opener', async () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
@@ -232,6 +245,185 @@ describe('share CLI command', () => {
       expect(output.draft?.worklog?.model).toBe('gpt-share-json');
       expect((ingestPayload?.worklog as { user_note?: string } | undefined)?.user_note).toBe('Smoke author note');
     } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('does not copy or open review URLs for share JSON by default', async () => {
+    const server = createServer(async (req, res) => {
+      if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
+        res.writeHead(404).end();
+        return;
+      }
+      await readRequestBody(req);
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({
+        data: {
+          id: 'worklog_share_json_default_side_effects',
+          status: 'needs_review',
+          visibility: 'private',
+          review_url: 'http://localhost:3001/worklogs/worklog_share_json_default_side_effects/review',
+          created_at: '2026-05-31T00:00:00.000Z'
+        }
+      }));
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    const fakeBin = await mkdtemp(join(tmpdir(), 'agentfeed-json-side-effects-bin-'));
+    const clipboardLog = await installFakeClipboard(fakeBin);
+    const browserLog = await installFakeBrowserOpener(fakeBin);
+
+    try {
+      const sessionFile = await writeCodexShareSession('share-json-default-side-effects', 'gpt-share-json-default', 'jsonDefaultSideEffects');
+      const { stdout } = await execFileAsync(process.execPath, [
+        cliPath,
+        'share',
+        '--json',
+        '--source',
+        'codex',
+        '--session-file',
+        sessionFile,
+        '--all'
+      ], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          PATH: `${fakeBin}:${process.env.PATH ?? ''}`,
+          AGENTFEED_TEST_CLIPBOARD_LOG: clipboardLog,
+          AGENTFEED_TEST_BROWSER_LOG: browserLog,
+          AGENTFEED_TOKEN: 'af_live_test_token',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+        }
+      });
+
+      const output = JSON.parse(stdout) as { upload?: { id?: string; review_url?: string } };
+      expect(output.upload?.id).toBe('worklog_share_json_default_side_effects');
+      expect(output.upload?.review_url).toBe('http://localhost:3001/worklogs/worklog_share_json_default_side_effects/review');
+      await expect(readFile(clipboardLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+      await expect(readFile(browserLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+    } finally {
+      await rm(fakeBin, { recursive: true, force: true });
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('copies and opens review URLs for share JSON only when explicitly requested', async () => {
+    const server = createServer(async (req, res) => {
+      if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
+        res.writeHead(404).end();
+        return;
+      }
+      await readRequestBody(req);
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({
+        data: {
+          id: 'worklog_share_json_requested_side_effects',
+          status: 'needs_review',
+          visibility: 'private',
+          review_url: 'http://localhost:3001/worklogs/worklog_share_json_requested_side_effects/review',
+          created_at: '2026-05-31T00:00:00.000Z'
+        }
+      }));
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    const fakeBin = await mkdtemp(join(tmpdir(), 'agentfeed-json-side-effects-bin-'));
+    const clipboardLog = await installFakeClipboard(fakeBin);
+    const browserLog = await installFakeBrowserOpener(fakeBin);
+
+    try {
+      const sessionFile = await writeCodexShareSession('share-json-requested-side-effects', 'gpt-share-json-requested', 'jsonRequestedSideEffects');
+      const { stdout } = await execFileAsync(process.execPath, [
+        cliPath,
+        'share',
+        '--json',
+        '--source',
+        'codex',
+        '--session-file',
+        sessionFile,
+        '--all',
+        '--clipboard',
+        '--open-review'
+      ], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          PATH: `${fakeBin}:${process.env.PATH ?? ''}`,
+          AGENTFEED_TEST_CLIPBOARD_LOG: clipboardLog,
+          AGENTFEED_TEST_BROWSER_LOG: browserLog,
+          AGENTFEED_TOKEN: 'af_live_test_token',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+        }
+      });
+
+      const output = JSON.parse(stdout) as { upload?: { review_url?: string } };
+      expect(output.upload?.review_url).toBe('http://localhost:3001/worklogs/worklog_share_json_requested_side_effects/review');
+      await expect(readFile(clipboardLog, 'utf8')).resolves.toBe('http://localhost:3001/worklogs/worklog_share_json_requested_side_effects/review');
+      await expect(readFile(browserLog, 'utf8')).resolves.toBe('http://localhost:3001/worklogs/worklog_share_json_requested_side_effects/review\n');
+    } finally {
+      await rm(fakeBin, { recursive: true, force: true });
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('does not copy or open review URLs when share JSON upload fails', async () => {
+    const server = createServer(async (req, res) => {
+      if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
+        res.writeHead(404).end();
+        return;
+      }
+      await readRequestBody(req);
+      res.writeHead(500, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ error: { code: 'SERVER_ERROR', message: 'boom', details: {} } }));
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    const fakeBin = await mkdtemp(join(tmpdir(), 'agentfeed-json-side-effects-bin-'));
+    const clipboardLog = await installFakeClipboard(fakeBin);
+    const browserLog = await installFakeBrowserOpener(fakeBin);
+
+    try {
+      const sessionFile = await writeCodexShareSession('share-json-failed-side-effects', 'gpt-share-json-failed', 'jsonFailedSideEffects');
+      const run = execFileAsync(process.execPath, [
+        cliPath,
+        'share',
+        '--json',
+        '--source',
+        'codex',
+        '--session-file',
+        sessionFile,
+        '--all',
+        '--clipboard',
+        '--open-review'
+      ], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          PATH: `${fakeBin}:${process.env.PATH ?? ''}`,
+          AGENTFEED_TEST_CLIPBOARD_LOG: clipboardLog,
+          AGENTFEED_TEST_BROWSER_LOG: browserLog,
+          AGENTFEED_TOKEN: 'af_live_test_token',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+        }
+      });
+
+      await expect(run).rejects.toMatchObject({ code: 1 });
+      await expect(readFile(clipboardLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+      await expect(readFile(browserLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+    } finally {
+      await rm(fakeBin, { recursive: true, force: true });
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
   });

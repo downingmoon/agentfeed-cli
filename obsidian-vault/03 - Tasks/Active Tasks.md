@@ -163,6 +163,7 @@ created: 2026-05-30
 ## P2 후보
 
 - [x] Backend/CLI token-authenticated ingestion token self-rotation 차단 및 browser-approved replacement 전환
+- [x] CLI stale self-rotation helper/test 제거 및 Backend OpenAPI deprecated 403 계약화
 - [x] Frontend leaderboard malformed row isolation으로 public ranking crash 방지
 - [x] Backend profile `viewer_state.following` + Frontend follow hydration/own-profile suppression 보강
 - [x] CLI privacy scanner authorization header/credentialed URL/private IPv6 redaction 보강

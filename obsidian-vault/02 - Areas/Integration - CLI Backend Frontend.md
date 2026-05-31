@@ -53,6 +53,7 @@ sequenceDiagram
 Backend:
 
 - Ingestion-token endpoint `/ingest/token/rotate` is disabled for minting replacements.
+- The disabled endpoint is deprecated in OpenAPI and exposes only the 403 remediation contract, not a raw-token success schema.
 - CLI auth session create accepts `replace_token_id`.
 - CLI auth exchange rotates the requested token only after browser approval and user ownership verification.
 - Settings-managed `/me/ingestion-tokens/{id}/rotate` remains the browser-session path for manual token management.
@@ -60,6 +61,7 @@ Backend:
 CLI:
 
 - `agentfeed rotate` no longer calls token self-rotation.
+- The stale `rotateIngestionToken()` helper and success mock were removed so internal tests cannot reintroduce the old trust boundary.
 - It uses `/ingest/status` only to discover the saved token id, then hands replacement to browser-approved exchange.
 - README documents the new rotation model.
 
@@ -205,15 +207,14 @@ Frontend:
 
 관련 작업 노트: [[Commercial Readiness Hardening - CLI Token Stdin Login 2026-05-31]]
 
-## 2026-05-31 남은 cross-repo readiness 후보
+## 2026-05-31 cross-repo readiness 후보 처리 상태
 
-> [!todo]
-> Sidecar audit 기준으로 아직 구현되지 않은 상용화 후보입니다. 다음 작업은 API 계약을 먼저 고정하고 Frontend UX를 맞추는 순서가 안전합니다.
+> [!success]
+> Sidecar audit에서 남아 있던 cross-repo readiness 후보는 구현 노트로 이동했고, 현재 미처리 API/Frontend contract 후보는 없습니다.
 
-- **P1**: Dashboard recent worklogs가 public detail route(`/worklogs/{id}`)만 가리켜 private/review 상태 worklog의 다음 행동이 끊길 수 있습니다.
-  - 완료: [[Commercial Readiness Hardening - Dashboard Recent Worklog Actions 2026-05-31]]
-- **P2**: Frontend Settings token-management UI는 Backend `POST /me/ingestion-tokens`를 직접 사용해 named ingestion token을 생성하지 못하고, CLI login 안내 중심입니다.
-  - 권장: token name 입력 → create → one-time token reveal → copy/download UX.
+- [x] Dashboard recent worklogs의 private/review 다음 행동 단절 → [[Commercial Readiness Hardening - Dashboard Recent Worklog Actions 2026-05-31]]
+- [x] Frontend Settings named ingestion token create / one-time reveal UX → [[Commercial Readiness Hardening - Settings Named Token Creation 2026-05-31]]
+- [x] Backend/CLI token-authenticated self-rotation trust boundary → [[Commercial Readiness Hardening - Browser Approved Token Rotation 2026-05-31]]
 
 ## 2026-05-31 Owner-aware project route 계약
 
@@ -727,6 +728,7 @@ Frontend:
 - [x] CLI → Backend → Frontend review/publish/feed smoke 재확인
 - [x] OAuth 없이 재현 가능한 CLI browser-login token exchange 경로 test 보강
 - [x] smoke 전용 ingestion token을 `/v1/ingest/status`로 upload 전 검증
+- [x] smoke에서 token-authenticated self-rotation 403과 browser-approved replacement/old-token invalidation 검증
 - [ ] 실제 GitHub OAuth / CLI browser login happy path 재확인
 - [ ] 실제 사용자 작업 repo에서 `agentfeed share --open-review` smoke
 
@@ -1038,6 +1040,7 @@ Frontend 표시:
 - exchange request는 같은 verifier로 session token을 교환합니다.
 - 성공 시 `~/.agentfeed/credentials.json`에 `ingestion_token`, `api_base_url`, `user`가 저장됩니다.
 - `agentfeed-dev/scripts/smoke-e2e.sh`는 upload 전에 seed ingestion token을 `GET /v1/ingest/status`로 검증합니다.
+- 같은 smoke에서 `POST /v1/ingest/token/rotate` 403 remediation, browser-approved `replace_token_id` exchange, old-token invalidation, replacement-token upload를 검증합니다.
 
 남은 수동 확인:
 

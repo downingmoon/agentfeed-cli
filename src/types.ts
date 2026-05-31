@@ -76,18 +76,6 @@ export interface CliAuthExchangeResult {
   user?: { id?: string; username?: string | null; display_name?: string | null };
 }
 
-export interface RotatedIngestionTokenResult {
-  id: string;
-  name: string;
-  token: string;
-  created_at: string;
-  expires_at: string;
-  token_expires_at?: string | null;
-  rotated_from: string;
-  rotated_at: string;
-  user?: { id?: string; username?: string | null; display_name?: string | null };
-}
-
 export interface WorklogMetrics {
   tokens_used?: number | null;
   estimated_cost_usd?: number | null;

@@ -25,6 +25,7 @@ created: 2026-05-30
 계약:
 
 - `POST /v1/ingest/token/rotate` returns `INGESTION_TOKEN_ROTATION_REQUIRES_SESSION` and never returns a raw replacement token.
+- The route is deprecated in OpenAPI and does not advertise a raw-token success response model.
 - `agentfeed rotate` verifies the saved token id through `/ingest/status`, then starts CLI browser auth with `replace_token_id`.
 - Browser-approved exchange revokes the previous token and returns the replacement raw token exactly once.
 - If the previous token cannot be verified, CLI still uses browser approval to issue a replacement but warns that stale tokens should be revoked in Settings.
@@ -35,6 +36,7 @@ created: 2026-05-30
 - Backend full tests: 206 passed
 - CLI full tests: 247 passed
 - Frontend Settings contracts/build passed
+- `agentfeed-dev make smoke-e2e` validates self-rotation 403, browser-approved replacement, old-token invalidation, upload/review/publish/feed.
 
 관련 작업 노트: [[Commercial Readiness Hardening - Browser Approved Token Rotation 2026-05-31]]
 

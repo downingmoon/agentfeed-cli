@@ -7,7 +7,7 @@ import { promisify } from 'node:util';
 import { initProject } from '../src/config/project-config.js';
 import { writeDraft } from '../src/draft/write.js';
 import { createEmptyDraft } from '../src/draft/create.js';
-import { checkApiReachability, checkIngestionToken, createCliAuthSession, draftToIngestRequest, exchangeCliAuthSession, previewDraftRemote, publishDraft, rotateIngestionToken } from '../src/api/client.js';
+import { checkApiReachability, checkIngestionToken, createCliAuthSession, draftToIngestRequest, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
 import { browserLogin, waitForCliAuthExchange } from '../src/auth/browser-login.js';
 import { buildClaudeCodeStopHookCommand, installClaudeCodeHook, uninstallClaudeCodeHook } from '../src/hooks/claude-code-settings.js';
 import { pathExists } from '../src/utils/fs.js';
@@ -249,36 +249,12 @@ describe('api client', () => {
     }
   });
 
-
-  it('rotates the current ingestion token without printing or uploading draft data', async () => {
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
-      data: {
-        id: 'token-new',
-        name: 'CLI: MacBook',
-        token: 'af_live_new_secret',
-        created_at: '2026-05-30T00:00:00Z',
-        expires_at: '2026-06-15T00:00:00Z',
-        token_expires_at: '2026-06-15T00:00:00Z',
-        rotated_from: 'token-old',
-        rotated_at: '2026-05-30T00:01:00Z',
-        user: { id: 'user-1', username: 'downingmoon' }
-      }
-    }), { status: 200, headers: { 'content-type': 'application/json' } }));
-    vi.stubGlobal('fetch', fetchMock);
-
-    const result = await rotateIngestionToken({ ingestion_token: 'af_live_old_secret', api_base_url: 'http://localhost:8001/v1', created_at: 'now' });
-
-    expect(result).toMatchObject({ id: 'token-new', token: 'af_live_new_secret', rotated_from: 'token-old' });
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/v1/ingest/token/rotate', expect.objectContaining({
-      method: 'POST',
-      headers: { authorization: 'Bearer af_live_old_secret' }
-    }));
-  });
-
-
   it.each([
     { data: { token: '' }, label: 'empty token' },
+    { data: { token: 'af_live_test', token_id: 123 }, label: 'invalid token_id' },
     { data: { token: 'af_live_bad_expiry', token_expires_at: 'not-a-date' }, label: 'invalid token_expires_at' },
+    { data: { token: 'af_live_test', rotated_from: ['token-old'] }, label: 'invalid rotated_from' },
+    { data: { token: 'af_live_test', rotated_at: 'tomorrow-ish' }, label: 'invalid rotated_at' },
     { data: { token: 'af_live_bad_user', user: { id: 123 } }, label: 'unsafe user object' }
   ])('rejects malformed browser exchange responses before credentials can be saved: $label', async ({ data }) => {
     await saveCredentials('af_live_existing', {
@@ -306,25 +282,6 @@ describe('api client', () => {
       .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).resolves.toBe(before);
-  });
-
-  it.each([
-    { data: { id: 'token-new', name: 'CLI', token: '', created_at: '2026-05-30T00:00:00Z', expires_at: '2026-06-15T00:00:00Z', rotated_from: 'token-old', rotated_at: '2026-05-30T00:01:00Z' }, label: 'empty token' },
-    { data: { id: 'token-new', name: 'CLI', token: 'af_live_new', created_at: '2026-05-30T00:00:00Z', expires_at: '2026-06-15T00:00:00Z', token_expires_at: 'tomorrow-ish', rotated_from: 'token-old', rotated_at: '2026-05-30T00:01:00Z' }, label: 'invalid token_expires_at' },
-    { data: { id: 'token-new', name: 'CLI', token: 'af_live_new', created_at: '2026-05-30T00:00:00Z', expires_at: '2026-06-15T00:00:00Z', rotated_from: 'token-old', rotated_at: '2026-05-30T00:01:00Z', user: { id: ['user-1'] } }, label: 'unsafe user object' }
-  ])('rejects malformed token rotation responses and leaves credentials unchanged: $label', async ({ data }) => {
-    await saveCredentials('af_live_existing_rotate', {
-      apiBaseUrl: 'https://api.agentfeed.dev/v1',
-      user: { id: 'user-existing', username: 'existing' },
-      tokenExpiresAt: '2026-06-01T00:00:00Z'
-    });
-    const before = await readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8');
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ data }), { status: 200, headers: { 'content-type': 'application/json' } })));
-
-    await expect(rotateIngestionToken({ ingestion_token: 'af_live_existing_rotate', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' }))
-      .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
-
     await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).resolves.toBe(before);
   });
 

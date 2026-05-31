@@ -65,6 +65,27 @@ sequenceDiagram
 관련 작업 노트: [[Commercial Readiness Hardening - Cross Repo OpenAPI Contract Gate 2026-05-31]]
 
 
+## 2026-05-31 Profile username settings surface
+
+> [!success]
+> Backend의 `/v1/me/profile`, `/v1/me/username` 계약이 Frontend Settings UX와 dev OpenAPI client gate에 연결되어, public identity API가 더 이상 backend-only product gap이 아닙니다.
+
+수정:
+
+- Backend profile update가 blank text를 normalize하고 nullable profile fields를 clear할 수 있게 했습니다.
+- Frontend `me.updateProfile()` / `me.setUsername()` helper를 추가했습니다.
+- Settings page가 display name, username, bio, location, website, GitHub, X를 저장하고 AppContext identity를 즉시 갱신합니다.
+- Dev OpenAPI gate에서 profile/username endpoints를 client contract로 승격했습니다.
+
+검증:
+
+- Backend targeted profile tests + ruff passed
+- Frontend contract + typecheck passed
+- Dev OpenAPI contract gate passed
+
+관련 작업 노트: [[Commercial Readiness Hardening - Profile Username Settings Surface 2026-05-31]]
+
+
 ## 2026-05-31 Browser-approved token rotation contract
 
 > [!success]

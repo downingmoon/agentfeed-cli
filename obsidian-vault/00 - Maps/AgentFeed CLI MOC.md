@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Profile Username Settings Surface 2026-05-31]]
+
 - [[Commercial Readiness Hardening - Cross Repo OpenAPI Contract Gate 2026-05-31]]
 
 - [[Commercial Readiness Hardening - Full JSON API Response Contract 2026-05-31]]

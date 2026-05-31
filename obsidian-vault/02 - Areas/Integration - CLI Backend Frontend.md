@@ -2127,3 +2127,20 @@ Frontend 계약:
 - upload 실패 시 명시 flag가 있어도 side effect를 실행하지 않습니다.
 
 검증: [[Commercial Readiness Hardening - Auth Identity Response Models and JSON Side Effects 2026-05-31#검증 증거]]
+
+
+## 2026-05-31 Public discovery and interaction response models
+
+> [!success]
+> Frontend가 직접 소비하는 public feed/discovery/social/comment route에 response model contract를 부여했습니다.
+
+계약:
+
+- Public card list routes는 `ListResponse[WorklogCard]`를 사용합니다.
+- Tags/search suggestions는 `DataResponse[list[TagItem]]`, `DataResponse[list[SearchSuggestion]]`를 사용합니다.
+- Like/bookmark는 `DataResponse[LikeResponse]`, `DataResponse[BookmarkResponse]`를 사용합니다.
+- Comments는 `ListResponse[Comment]` / `DataResponse[Comment]`를 사용합니다.
+- Report mutation은 `OkResponse`를 사용합니다.
+- `WorklogCard` schema는 실제 Backend card builder와 같은 public fields를 가져야 합니다.
+
+검증: [[Commercial Readiness Hardening - Public Interaction Response Models 2026-05-31#검증 증거]]

@@ -33,6 +33,9 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Public Interaction Response Models 2026-05-31]]
+
+
 - [[Commercial Readiness Hardening - Auth Identity Response Models and JSON Side Effects 2026-05-31]]
 
 

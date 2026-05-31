@@ -25,6 +25,9 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - Public Interaction Response Models 2026-05-31]] — public feed/discovery/social/comment response model coverage
+
+
 - [[Commercial Readiness Hardening - Auth Identity Response Models and JSON Side Effects 2026-05-31]] — auth identity normalization, backend response models, CLI JSON side-effect contracts
 
 

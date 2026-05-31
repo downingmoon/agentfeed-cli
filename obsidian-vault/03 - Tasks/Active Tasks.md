@@ -496,3 +496,12 @@ created: 2026-05-30
 - [x] Frontend `auth.me()` payload 정규화와 AppContext signed-in gate 보강
 - [x] CLI `share --json` 기본 no clipboard/browser side effect, explicit opt-in, failure no-side-effect regression 보강
 - [[Commercial Readiness Hardening - Auth Identity Response Models and JSON Side Effects 2026-05-31]]
+
+
+## 2026-05-31 public interaction response model continuation
+
+- [x] Backend `/v1/feed`, `/v1/feed/following`, `/v1/explore/categories/{slug}/worklogs` response model 고정
+- [x] Backend `/v1/tags`, `/v1/search/suggestions` discovery response model 고정
+- [x] Backend like/bookmark/comment/report interaction response model 고정
+- [x] `WorklogCard` schema를 실제 public card payload(`status`, `changed_areas`, `public_prompt`)와 정렬
+- [[Commercial Readiness Hardening - Public Interaction Response Models 2026-05-31]]

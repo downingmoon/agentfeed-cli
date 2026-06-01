@@ -134,7 +134,12 @@ export function validatePackResult(packResult, pkg) {
 
 export function validateCliSmokeOutput(output) {
   assert(output.includes('Usage: agentfeed'), 'built CLI --help output must include the usage banner.');
+  assert(output.includes('Version:'), 'built CLI --help output must include the installed package version.');
   assert(output.includes('agentfeed collect'), 'built CLI --help output must include collection guidance.');
+}
+
+export function validateCliVersionOutput(output, pkg) {
+  assert(output.trim() === pkg.version, 'built CLI --version output must match package.json version exactly.');
 }
 
 function runPackDryRun() {
@@ -155,13 +160,20 @@ export function isDirectInvocation(argvPath = process.argv[1], modulePath = scri
   return comparablePath(argvPath) === comparablePath(modulePath);
 }
 
-function runCliSmoke() {
-  const output = execFileSync(process.execPath, [join(repoRoot, 'dist/cli/index.js'), '--help'], {
+function runCliSmoke(pkg) {
+  const helpOutput = execFileSync(process.execPath, [join(repoRoot, 'dist/cli/index.js'), '--help'], {
     cwd: repoRoot,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   });
-  validateCliSmokeOutput(output);
+  validateCliSmokeOutput(helpOutput);
+
+  const versionOutput = execFileSync(process.execPath, [join(repoRoot, 'dist/cli/index.js'), '--version'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  validateCliVersionOutput(versionOutput, pkg);
 }
 
 function main() {
@@ -170,13 +182,13 @@ function main() {
   validateTrustedPublishingWorkflow(readFileSync(releaseWorkflowPath, 'utf8'));
   const packResult = runPackDryRun();
   validatePackResult(packResult, pkg);
-  runCliSmoke();
+  runCliSmoke(pkg);
 
   console.log('AgentFeed CLI release preflight passed.');
   console.log(`- Package: ${pkg.name}@${pkg.version}`);
   console.log('- Trusted publishing: release workflow OIDC/toolchain contract validated');
   console.log('- Tarball: npm pack --dry-run --json --ignore-scripts validated');
-  console.log('- CLI smoke: built agentfeed --help validated');
+  console.log('- CLI smoke: built agentfeed --help and --version validated');
   if (pkg.license === 'UNLICENSED') console.log('- License: UNLICENSED (proprietary/no open-source grant; change only after owner approval).');
   console.log('- Next: configure npm trusted publishing for the Release workflow from a public GitHub repository before production publish.');
 }

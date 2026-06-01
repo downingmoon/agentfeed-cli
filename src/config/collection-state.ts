@@ -23,7 +23,11 @@ async function statePath(cwd: string): Promise<string> {
 export async function readCollectionState(cwd: string): Promise<CollectionState> {
   const path = await statePath(cwd);
   if (!(await pathExists(path))) return {};
-  return readJson<CollectionState>(path);
+  try {
+    return await readJson<CollectionState>(path);
+  } catch {
+    return {};
+  }
 }
 
 export async function writeCollectionState(cwd: string, state: CollectionState): Promise<void> {

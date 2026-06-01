@@ -79,6 +79,50 @@ describe('collect CLI command', () => {
     expect(stderr).toMatch(/Unsupported agent source/i);
   });
 
+
+  it('ignores a malformed collection cursor instead of blocking collection', async () => {
+    await writeFile(join(dir, '.agentfeed', 'state.json'), '{not-json');
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = "cursor-recovered";\n');
+
+    const stdout = execFileSync(process.execPath, [
+      cliPath,
+      'collect',
+      '--json',
+      '--until',
+      '2026-05-20T02:00:00Z',
+      '--no-save-cursor'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    const draft = JSON.parse(stdout);
+    expect(draft.id).toMatch(/^draft_/);
+    expect(draft.source.collection_window.since).toBeNull();
+    expect(draft.source.collection_window.until).toBe('2026-05-20T02:00:00.000Z');
+  });
+
+  it('fails malformed project config with actionable recovery guidance', async () => {
+    await writeFile(join(dir, '.agentfeed', 'config.json'), '{not-json');
+
+    let failure: { stderr?: string; stdout?: string } | undefined;
+    try {
+      await execFileAsync(process.execPath, [cliPath, 'collect', '--json'], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: { ...process.env, HOME: home }
+      });
+    } catch (error) {
+      failure = error as { stderr?: string; stdout?: string };
+    }
+
+    expect(failure?.stderr).toContain('AgentFeed config is unreadable or invalid JSON');
+    expect(failure?.stderr).toContain('Re-run agentfeed init or restore the file from backup');
+    expect(failure?.stderr).not.toContain('Unexpected token');
+    expect(failure?.stdout ?? '').toBe('');
+  });
+
   it('persists collection cursor when rendering JSON output', async () => {
     await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = false;\n');
 

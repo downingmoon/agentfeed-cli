@@ -355,7 +355,15 @@ async function cmdStatus() {
   const drafts = config ? await listDrafts(root) : [];
   const pending = await Promise.all(drafts.map((d) => readDraft(root, d.id))).then((rows) => rows.filter((d) => !d.upload.uploaded).length).catch(() => 0);
   const settingsPath = config ? resolveClaudeSettingsPath({ projectRoot: root, scope: config.agents.claude_code.hook_scope }) : '';
-  const hook = settingsPath && await pathExists(settingsPath) ? hasAgentFeedHook(await readJson<Record<string, unknown>>(settingsPath)) ? 'installed' : 'not installed' : 'unknown';
+  let hook = 'unknown';
+  const statusWarnings: string[] = [];
+  if (settingsPath && await pathExists(settingsPath)) {
+    try {
+      hook = hasAgentFeedHook(await readJson<Record<string, unknown>>(settingsPath)) ? 'installed' : 'not installed';
+    } catch {
+      statusWarnings.push(`Claude Code settings could not be parsed at ${settingsPath}; hook status is unknown.`);
+    }
+  }
   print(`User/token: ${creds ? 'configured' : 'missing'}`);
   print(`User/token source: ${credentialSourceLabel(credentialResolution.token_source)}`);
   print(`Credential store: ${credentialStoreLabel(credentialResolution.credential_store)}`);
@@ -369,7 +377,7 @@ async function cmdStatus() {
     const warning = tokenExpiryWarning(creds.token_expires_at);
     if (warning) print(`Warning: ${warning}`);
   }
-  for (const warning of credentialResolution.warnings) print(`Warning: ${warning}`);
+  for (const warning of [...credentialResolution.warnings, ...statusWarnings]) print(`Warning: ${warning}`);
   print(`Project initialized: ${config ? 'yes' : 'no'}`);
   if (config) print(`Project name: ${config.project.name}`);
   const git = await collectGitMetrics(process.cwd());
@@ -653,10 +661,15 @@ async function main() {
     case 'drafts': return cmdDrafts();
     case 'discard': return cmdDiscard(args);
     case 'open': return cmdOpen(args);
+    case '--version':
+    case '-v':
+      print(AGENTFEED_CLI_VERSION);
+      return;
     case undefined:
     case '--help':
     case '-h':
       print('Usage: agentfeed <init|login|rotate|status|collect|share|preview|publish|scan|hook|doctor|drafts|discard|open>');
+      print(`Version: ${AGENTFEED_CLI_VERSION}`);
       print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --no-save\n  agentfeed login --browser\n  printf %s "$TOKEN" | agentfeed login --token-stdin\n  printf %s "$TOKEN" | agentfeed login --token - --no-save\n  agentfeed rotate\n  agentfeed rotate --browser\n  unset AGENTFEED_TOKEN && agentfeed rotate --browser\n  agentfeed token rotate');
       print('\nCollect:\n  agentfeed collect\n  agentfeed collect --explain\n  agentfeed collect --source codex\n  agentfeed collect --source gemini-cli\n  agentfeed collect --source claude-code --session-file <path>\n  agentfeed collect --since 2026-05-20T01:00:00Z\n  agentfeed collect --all\n  agentfeed collect --run-configured-commands');
       print('\nShare:\n  agentfeed share\n  agentfeed share --dry\n  agentfeed share --open-review\n  agentfeed share --since 2026-05-20T01:00:00Z\n  agentfeed share --all\n  agentfeed share --note "Fixed auth flow"\n  agentfeed share --no-clipboard\n  agentfeed share --json --clipboard\n  agentfeed share --run-configured-commands');

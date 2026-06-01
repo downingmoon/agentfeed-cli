@@ -791,3 +791,17 @@ created: 2026-05-30
 - `commands_run`과 `failed_commands`는 계속 command 실행 결과를 보존합니다.
 
 검증: [[Commercial Readiness Hardening - Test Metrics Activity Range OAuth Timeout and Notification Feedback 2026-06-01#검증 증거]]
+
+## 2026-06-01 CLI diagnostics and collection metadata resilience
+
+> [!success]
+> CLI collection no longer hard-fails on a malformed local cursor file, and public npm installs expose an exact `--version` diagnostic path.
+
+계약:
+
+- `agentfeed --version` and `agentfeed -v` print the package version exactly.
+- Release preflight validates both built `agentfeed --help` and `agentfeed --version`.
+- Malformed `.agentfeed/state.json` is ignored for collection window resolution instead of blocking draft creation.
+- Malformed `.agentfeed/config.json` fails with actionable recovery guidance, not raw parser output.
+
+검증: [[Commercial Readiness Hardening - CLI Diagnostics Backend Privacy Rescan and Feed Backdrop 2026-06-01#검증 증거]]

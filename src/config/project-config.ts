@@ -35,7 +35,13 @@ export async function resolveProjectRoot(cwd = processCwd()): Promise<string> {
 export async function loadProjectConfig(cwd = processCwd()): Promise<AgentFeedProjectConfig> {
   const root = await findUp(cwd, '.agentfeed');
   if (!root) throw new Error('AgentFeed project is not initialized. Run: agentfeed init');
-  const config = await readJson<AgentFeedProjectConfig>(join(root, '.agentfeed', 'config.json'));
+  const path = join(root, '.agentfeed', 'config.json');
+  let config: AgentFeedProjectConfig;
+  try {
+    config = await readJson<AgentFeedProjectConfig>(path);
+  } catch {
+    throw new Error(`AgentFeed config is unreadable or invalid JSON at ${path}. Re-run agentfeed init or restore the file from backup.`);
+  }
   if (config.version !== '0.2') throw new Error('Unsupported AgentFeed config version.');
   return config;
 }

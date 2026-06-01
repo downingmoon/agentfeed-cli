@@ -445,3 +445,16 @@ created: 2026-05-30
 - Auth recovery buttons that appear in `authError` branches must not call helpers that explicitly no-op while `authError` is set.
 
 검증: [[Commercial Readiness Hardening - Frontend API Timeout and Auth Recovery 2026-06-01#검증 증거]]
+
+## 2026-06-01 CLI status and package diagnostics
+
+> [!success]
+> Installed CLI diagnostics are now version-addressable, and status survives malformed local Claude settings.
+
+운영 규칙:
+
+- `agentfeed --version` / `-v` must match `package.json` exactly.
+- `agentfeed status` reports malformed `.claude/settings.json` as a warning and keeps hook status `unknown`.
+- Release preflight must include built help/version smoke before npm publish.
+
+검증: [[Commercial Readiness Hardening - CLI Diagnostics Backend Privacy Rescan and Feed Backdrop 2026-06-01#검증 증거]]

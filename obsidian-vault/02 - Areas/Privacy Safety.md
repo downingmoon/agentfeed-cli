@@ -419,3 +419,16 @@ Redacted preview:
 - DNS lookup 실패는 storage-time availability를 위해 기존 hostname validation으로 fallback합니다.
 
 검증: [[Commercial Readiness Hardening - Backend Public URL Resolution Safety 2026-06-01#검증 증거]]
+
+## 2026-06-01 Backend publish-time client scan rescan
+
+> [!success]
+> Client-supplied privacy scan JSON is no longer a terminal trust boundary for public/unlisted publish.
+
+계약:
+
+- Ingested scan JSON is labeled `source: client`.
+- Publish trusts only `source: server_publish_fallback` as a terminal server-verified scan.
+- A client `safe` scan with no findings still receives server fallback scanning before public/unlisted publish.
+
+검증: [[Commercial Readiness Hardening - CLI Diagnostics Backend Privacy Rescan and Feed Backdrop 2026-06-01#검증 증거]]

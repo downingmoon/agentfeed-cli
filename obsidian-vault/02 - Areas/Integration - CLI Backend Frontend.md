@@ -3064,3 +3064,16 @@ Frontend 계약:
 - Public Landing/Footer copy must not advertise preview-only version strings or demo tool-stack badges.
 
 검증: [[Commercial Readiness Hardening - Frontend API Timeout and Auth Recovery 2026-06-01#검증 증거]]
+
+## 2026-06-01 CLI Backend Frontend hardening loop
+
+> [!success]
+> This loop tightened CLI package diagnostics, Backend publish-time privacy verification, and Frontend feed filter semantic controls.
+
+계약:
+
+- CLI package version diagnostics are part of release smoke.
+- Backend public/unlisted publish re-verifies untrusted client scan payloads with server fallback scan.
+- Frontend feed filter backdrop is a named button, not a click-only div.
+
+검증: [[Commercial Readiness Hardening - CLI Diagnostics Backend Privacy Rescan and Feed Backdrop 2026-06-01#검증 증거]]

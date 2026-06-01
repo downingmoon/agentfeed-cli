@@ -168,6 +168,44 @@ describe('status and doctor provenance output', () => {
     expect(saved.ingestion_token).toBe(token);
   });
 
+
+
+  it('status survives malformed Claude Code settings and reports hook as unknown', async () => {
+    execFileSync(process.execPath, [cliPath, 'init', '--no-git-check', '--project-name', 'broken-hook'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+    await mkdir(join(dir, '.claude'), { recursive: true });
+    await writeFile(join(dir, '.claude', 'settings.json'), '{not-json');
+
+    const stdout = execFileSync(process.execPath, [cliPath, 'status'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home, AGENTFEED_TOKEN: '' }
+    });
+
+    expect(stdout).toContain('Claude Code hook: unknown');
+    expect(stdout).toContain('Warning: Claude Code settings could not be parsed');
+    expect(stdout).toContain(join(dir, '.claude', 'settings.json'));
+  });
+
+  it('prints package version for npm-installed CLI diagnostics', () => {
+    const stdout = execFileSync(process.execPath, [cliPath, '--version'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+    const shortStdout = execFileSync(process.execPath, [cliPath, '-v'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    expect(stdout.trim()).toMatch(/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/);
+    expect(shortStdout).toBe(stdout);
+  });
+
   it('does not advertise literal argv token login in help output', () => {
     const stdout = execFileSync(process.execPath, [cliPath, '--help'], {
       cwd: dir,

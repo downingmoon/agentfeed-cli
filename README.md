@@ -8,6 +8,7 @@ Requires Node.js 20+. The npm package name is `agentfeed-cli` and it exposes the
 
 ```bash
 npm install -g agentfeed-cli
+agentfeed --version
 agentfeed --help
 ```
 

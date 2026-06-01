@@ -3,6 +3,7 @@ import {
   isDirectInvocation,
   parsePackJson,
   validateCliSmokeOutput,
+  validateCliVersionOutput,
   validatePackageMetadata,
   validatePackResult,
   validateTrustedPublishingWorkflow
@@ -163,10 +164,13 @@ describe('release preflight guardrails', () => {
     expect(() => validateTrustedPublishingWorkflow(`${validTrustedPublishingWorkflow}\n      - run: echo "$NODE_AUTH_TOKEN"\n`)).toThrow('long-lived npm tokens');
   });
 
-  it('validates the built CLI help smoke output', () => {
-    expect(() => validateCliSmokeOutput('Usage: agentfeed <init|collect>\nagentfeed collect\n')).not.toThrow();
+  it('validates the built CLI help and version smoke output', () => {
+    expect(() => validateCliSmokeOutput('Usage: agentfeed <init|collect>\nVersion: 0.2.0\nagentfeed collect\n')).not.toThrow();
     expect(() => validateCliSmokeOutput('Usage: other')).toThrow('usage banner');
-    expect(() => validateCliSmokeOutput('Usage: agentfeed <init|collect>')).toThrow('collection guidance');
+    expect(() => validateCliSmokeOutput('Usage: agentfeed <init|collect>\nagentfeed collect\n')).toThrow('installed package version');
+    expect(() => validateCliSmokeOutput('Usage: agentfeed <init|collect>\nVersion: 0.2.0')).toThrow('collection guidance');
+    expect(() => validateCliVersionOutput('0.2.0\n', validPackageJson)).not.toThrow();
+    expect(() => validateCliVersionOutput('0.2.1\n', validPackageJson)).toThrow('package.json version');
   });
 
   it('runs only when invoked as this script, including Windows-style paths', () => {

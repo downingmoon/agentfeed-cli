@@ -8,6 +8,10 @@ const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const scriptPath = fileURLToPath(import.meta.url);
 const packagePath = join(repoRoot, 'package.json');
 const releaseWorkflowPath = join(repoRoot, '.github', 'workflows', 'release.yml');
+const PINNED_RELEASE_ACTIONS = {
+  'actions/checkout': 'de0fac2e4500dabe0009e67214ff5f5447ce83dd',
+  'actions/setup-node': '48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e',
+};
 
 function fail(message) {
   throw new Error(message);
@@ -31,6 +35,17 @@ function normalizeTarballPath(path) {
 
 function includesLine(text, pattern) {
   return pattern.test(text);
+}
+
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function assertPinnedWorkflowAction(workflowText, actionName, expectedSha) {
+  const pattern = new RegExp(`uses:\\s*${escapeRegex(actionName)}@([0-9a-f]{40})\\b`);
+  const match = workflowText.match(pattern);
+  assert(match, `release workflow must pin ${actionName} to a 40-character commit SHA.`);
+  assert(match[1] === expectedSha, `release workflow must pin ${actionName}@${expectedSha}; update this preflight after intentionally refreshing the upstream action pin.`);
 }
 
 export function parsePackJson(raw) {
@@ -59,7 +74,10 @@ export function validatePackageMetadata(pkg) {
   assert(pkg.engines?.node === '>=20', 'package engines.node must stay >=20.');
   assert(pkg.packageManager?.startsWith('npm@'), 'packageManager must pin npm for reproducible release commands.');
   assert(pkg.bin?.agentfeed === './dist/cli/index.js', 'agentfeed bin must point at ./dist/cli/index.js.');
-  assert(Array.isArray(pkg.files) && pkg.files.includes('dist') && pkg.files.includes('README.md'), 'package files must include dist and README.md.');
+  assert(
+    Array.isArray(pkg.files) && JSON.stringify(pkg.files) === JSON.stringify(['dist', 'README.md']),
+    'package files must be exactly ["dist", "README.md"] so local docs/state never ship in the npm tarball.'
+  );
   assert(pkg.scripts?.prepack === 'npm run clean && npm run build && npm run typecheck && npm test -- --run', 'prepack must keep build, typecheck, and test gates.');
   assert(pkg.scripts?.['release:preflight'] === 'node scripts/release-preflight.mjs', 'package.json must expose npm run release:preflight.');
   assert(pkg.repository?.type === 'git' && pkg.repository?.url === 'git+https://github.com/downingmoon/agentfeed-cli.git', 'repository metadata must point at the canonical GitHub repo.');
@@ -76,8 +94,9 @@ export function validateTrustedPublishingWorkflow(workflowText) {
   assert(includesLine(workflowText, /^\s*contents:\s*read\s*$/m), 'release workflow must grant contents: read.');
   assert(includesLine(workflowText, /^\s*id-token:\s*write\s*$/m), 'release workflow must grant id-token: write for npm OIDC trusted publishing.');
   assert(includesLine(workflowText, /^\s*runs-on:\s*ubuntu-latest\s*$/m), 'release workflow must use a GitHub-hosted ubuntu-latest runner for trusted publishing.');
-  assert(workflowText.includes('actions/checkout@v6'), 'release workflow must use actions/checkout@v6 to avoid deprecated Node.js action runtimes.');
-  assert(workflowText.includes('actions/setup-node@v6'), 'release workflow must use actions/setup-node@v6 to avoid deprecated Node.js action runtimes.');
+  for (const [actionName, expectedSha] of Object.entries(PINNED_RELEASE_ACTIONS)) {
+    assertPinnedWorkflowAction(workflowText, actionName, expectedSha);
+  }
   assert(includesLine(workflowText, /^\s*environment:\s*npm-publish\s*$/m), 'release workflow must use the npm-publish environment for release approval/audit controls.');
   assert(includesLine(workflowText, /^\s*node-version:\s*22\.14\.0\s*$/m), 'release workflow must use Node.js 22.14.0 or newer for npm trusted publishing.');
   assert(includesLine(workflowText, /^\s*registry-url:\s*https:\/\/registry\.npmjs\.org\s*$/m), 'release workflow must publish to the npm registry.');
@@ -100,8 +119,14 @@ export function validatePackResult(packResult, pkg) {
   assert(fileSet.has('package.json'), 'npm tarball must include package.json.');
   assert(fileSet.has('dist/cli/index.js'), 'npm tarball must include built CLI entrypoint.');
   assert(fileSet.has('dist/version.js'), 'npm tarball must include built version metadata at dist/version.js.');
-  for (const forbidden of ['src/', 'tests/', 'scripts/', '.agentfeed/', '.omx/', '.omc/', '.env']) {
+  for (const forbidden of ['src/', 'tests/', 'scripts/', 'docs/', 'obsidian-vault/', 'AGENTS.md', '.agentfeed/', '.omx/', '.omc/', '.codex/', '.github/', '.env']) {
     assert(!files.some(file => file === forbidden.replace(/\/$/, '') || file.startsWith(forbidden)), `npm tarball must not include ${forbidden}.`);
+  }
+  for (const file of files) {
+    assert(
+      file === 'README.md' || file === 'package.json' || file.startsWith('dist/'),
+      `npm tarball must contain only built dist files plus README.md/package.json, found ${file}.`
+    );
   }
   assert(Number(result.entryCount ?? files.length) >= 1, 'npm dry-run must report at least one packed file.');
   assert(Number(result.unpackedSize ?? 0) > 0, 'npm dry-run must report non-empty unpacked package size.');
@@ -113,7 +138,7 @@ export function validateCliSmokeOutput(output) {
 }
 
 function runPackDryRun() {
-  const stdout = execFileSync('npm', ['pack', '--dry-run', '--json'], {
+  const stdout = execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
     cwd: repoRoot,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'inherit'],
@@ -150,7 +175,7 @@ function main() {
   console.log('AgentFeed CLI release preflight passed.');
   console.log(`- Package: ${pkg.name}@${pkg.version}`);
   console.log('- Trusted publishing: release workflow OIDC/toolchain contract validated');
-  console.log('- Tarball: npm pack --dry-run --json validated');
+  console.log('- Tarball: npm pack --dry-run --json --ignore-scripts validated');
   console.log('- CLI smoke: built agentfeed --help validated');
   if (pkg.license === 'UNLICENSED') console.log('- License: UNLICENSED (proprietary/no open-source grant; change only after owner approval).');
   console.log('- Next: configure npm trusted publishing for the Release workflow from a public GitHub repository before production publish.');

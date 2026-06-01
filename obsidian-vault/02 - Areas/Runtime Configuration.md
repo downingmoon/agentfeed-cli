@@ -418,3 +418,17 @@ created: 2026-05-30
 - fallback은 동일 bucket/identity/rule로 제한을 적용해 완전한 bypass가 되지 않도록 합니다.
 
 검증: [[Commercial Readiness Hardening - Rate Limit Fallback Detail Payload Resilience and Credential Fallback Warning 2026-05-31#검증 증거]]
+
+## 2026-06-01 Release supply chain and API security headers
+
+> [!success]
+> Release runtime and API runtime now fail closed on two deployment-class gaps: mutable action refs and missing API security headers.
+
+운영 규칙:
+
+- GitHub Actions release dependencies are immutable SHA pins with version comments for readability.
+- To refresh an action, update the workflow SHA and the expected SHA in `scripts/release-preflight.mjs` together.
+- `npm pack` verification in preflight uses `--ignore-scripts`; build/typecheck/test remain explicit gates, preventing nested lifecycle race conditions.
+- Backend production responses include `Strict-Transport-Security` and API-only CSP through `apply_security_headers()`.
+
+검증: [[Commercial Readiness Hardening - Release Supply Chain and API Security Headers 2026-06-01#검증 증거]]

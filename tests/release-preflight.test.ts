@@ -57,8 +57,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: npm-publish
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: 22.14.0
           registry-url: https://registry.npmjs.org
@@ -107,10 +107,22 @@ describe('release preflight guardrails', () => {
       ...validPackResult[0],
       files: [...validPackResult[0].files, { path: 'package/src/cli/index.ts' }]
     }], validPackageJson)).toThrow('src/');
+
+    for (const forbidden of ['docs/todo.md', 'obsidian-vault/Home.md', 'AGENTS.md', '.github/workflows/ci.yml']) {
+      expect(() => validatePackResult([{
+        ...validPackResult[0],
+        files: [...validPackResult[0].files, { path: `package/${forbidden}` }]
+      }], validPackageJson)).toThrow();
+    }
   });
 
   it('validates npm release metadata contract', () => {
     expect(() => validatePackageMetadata(validPackageJson)).not.toThrow();
+
+    expect(() => validatePackageMetadata({
+      ...validPackageJson,
+      files: ['dist', 'README.md', 'obsidian-vault']
+    })).toThrow('exactly');
 
     expect(() => validatePackageMetadata({
       ...validPackageJson,
@@ -139,6 +151,14 @@ describe('release preflight guardrails', () => {
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('id-token: write', 'id-token: read'))).toThrow('id-token');
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('node-version: 22.14.0', 'node-version: 20'))).toThrow('Node.js 22.14.0');
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('npm install -g npm@11.6.0', 'npm install -g npm@10'))).toThrow('npm 11.6.0');
+    expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace(
+      'actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6',
+      'actions/checkout@v6'
+    ))).toThrow('commit SHA');
+    expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace(
+      'actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6',
+      'actions/setup-node@0000000000000000000000000000000000000000 # v6'
+    ))).toThrow('48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e');
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('npm publish --access public', 'npm publish --provenance --access public'))).toThrow('must not pass --provenance');
     expect(() => validateTrustedPublishingWorkflow(`${validTrustedPublishingWorkflow}\n      - run: echo "$NODE_AUTH_TOKEN"\n`)).toThrow('long-lived npm tokens');
   });

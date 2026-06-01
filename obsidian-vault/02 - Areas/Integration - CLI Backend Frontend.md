@@ -3036,3 +3036,17 @@ Frontend 계약:
 - 새 URL-bearing request field는 이 shared validator를 재사용해야 합니다.
 
 검증: [[Commercial Readiness Hardening - Backend Public URL Resolution Safety 2026-06-01#검증 증거]]
+
+## 2026-06-01 Release supply chain and API security headers
+
+> [!success]
+> CLI npm release gate and Backend API response hardening now share a commercial-readiness security boundary.
+
+계약:
+
+- Release workflow action refs are pinned to explicit 40-character commit SHAs, not mutable version tags.
+- `release:preflight` validates the pins and tarball allowlist before publish.
+- CLI npm tarball may contain only `dist/**`, `README.md`, and `package.json`.
+- Backend API responses carry common security headers, with HSTS/API CSP added in production mode.
+
+검증: [[Commercial Readiness Hardening - Release Supply Chain and API Security Headers 2026-06-01#검증 증거]]

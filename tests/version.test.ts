@@ -41,7 +41,7 @@ describe('CLI version metadata', () => {
   it('builds dist before npm packaging', () => {
     expect(packageJson.name).toBe('agentfeed-cli');
     expect(packageJson.bin?.agentfeed).toBe('./dist/cli/index.js');
-    expect(packageJson.files).toContain('dist');
+    expect(packageJson.files).toEqual(['dist', 'README.md']);
     expect(packageJson.scripts?.postbuild).toBe('node scripts/ensure-bin-executable.mjs');
     expect(packageJson.scripts?.prepack).toBe('npm run clean && npm run build && npm run typecheck && npm test -- --run');
     expect(packageJson.scripts?.['release:preflight']).toBe('node scripts/release-preflight.mjs');
@@ -73,9 +73,10 @@ describe('CLI version metadata', () => {
   it('keeps the release preflight tarball and provenance guardrails documented', () => {
     const releaseScript = readFileSync(resolve('scripts/release-preflight.mjs'), 'utf8');
     const readme = readFileSync(resolve('README.md'), 'utf8');
-    expect(releaseScript).toContain("execFileSync('npm', ['pack', '--dry-run', '--json']");
+    expect(releaseScript).toContain("execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts']");
     expect(releaseScript).toContain("fileSet.has('dist/cli/index.js')");
-    expect(releaseScript).toContain("files.some(file => file === forbidden.replace");
+    expect(releaseScript).toContain("'obsidian-vault/'");
+    expect(releaseScript).toContain('npm tarball must contain only built dist files');
     expect(releaseScript).toContain("pkg.publishConfig?.access === 'public'");
     expect(releaseScript).toContain("pkg.publishConfig?.provenance === true");
     expect(releaseScript).toContain('validateTrustedPublishingWorkflow');

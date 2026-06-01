@@ -22,6 +22,8 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] CLI browser auth approval 화면 session metadata 검증/표시 및 fail-closed 처리
+- 관련 노트: [[Commercial Readiness Hardening - CLI Auth Session Metadata 2026-06-01]]
 - [x] Backend publish server fallback privacy scan 및 user-scoped rate-limit bucket 보강
 - [x] Frontend public metric redaction fail-closed adapter 보강
 - [x] CLI helper env scrub 및 global-only git attribution 방지

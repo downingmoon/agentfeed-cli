@@ -22,6 +22,8 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] Verifier가 발견한 CLI redacted draft cached reuse false stale 회귀 보정
+- [x] Verifier가 발견한 Backend GitHub username unique flush race 보정
 - [x] Backend 신규 GitHub OAuth user에 unique username을 부여해 public profile/author link 404 방지
 - [x] Backend publish fallback privacy scan이 공개 `model` 필드 secret을 차단
 - 관련 노트: [[Commercial Readiness Hardening - Backend OAuth Username and Model Privacy Scan 2026-06-01]]

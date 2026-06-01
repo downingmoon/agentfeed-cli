@@ -168,6 +168,33 @@ describe('api client', () => {
     expect(saved.privacy_scan.status).toBe('danger');
   });
 
+  it('reuses an unchanged uploaded draft after the first upload redacts public fields', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    draft.worklog.summary = 'First upload contains sk-abcdefghijklmnopqrstuvwxyz1234567890';
+    await writeDraft(dir, draft);
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ data: { id: 'worklog_redacted_reuse', status: 'needs_review', visibility: 'private', review_url: 'https://agentfeed.dev/review/redacted-reuse', created_at: '2026-05-19T00:00:00Z' } }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const first = await publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } });
+    expect(first.id).toBe('worklog_redacted_reuse');
+    const afterFirst = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+    expect(afterFirst.worklog.summary).toBe('First upload contains [REDACTED_SECRET]');
+    expect(afterFirst.privacy_scan.status).toBe('danger');
+
+    fetchMock.mockClear();
+    const second = await publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } });
+
+    expect(second).toMatchObject({
+      id: 'worklog_redacted_reuse',
+      review_url: 'https://agentfeed.dev/review/redacted-reuse',
+      reused_existing: true
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+    const afterSecond = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+    expect(afterSecond.privacy_scan.status).toBe('danger');
+    expect(afterSecond.upload.payload_hash).toBe(afterFirst.upload.payload_hash);
+  });
+
   it('fails closed when an uploaded draft cache no longer matches the local redacted payload', async () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
     draft.worklog.summary = 'Original private review payload';

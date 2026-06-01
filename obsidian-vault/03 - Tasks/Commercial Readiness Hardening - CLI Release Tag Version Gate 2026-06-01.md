@@ -44,7 +44,7 @@ repositories:
 > - Targeted full release-preflight test + typecheck: `npm test -- --run tests/release-preflight.test.ts && npm run typecheck` 통과.
 > - Ref guard smoke: CI branch `release:preflight` 통과, Release workflow branch ref 차단 확인.
 > - CLI full test: `npm test -- --run` → 295 passed.
-> - Cross-repo gate: `../agentfeed-dev/scripts/test-all.sh` → CLI 295, Frontend CI/build, Backend 267, Alembic chain 통과.
+> - Cross-repo gate: `../agentfeed-dev/scripts/test-all.sh` → CLI 296, Frontend CI/build, Backend 268, Alembic chain 통과.
 
 ## 남은 검증
 

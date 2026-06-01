@@ -50,8 +50,17 @@ repositories:
 > - RED: `uv run pytest tests/test_contracts.py -k "github_login_assigns_unique_sanitized_username_from_login or github_login_preserves_missing_login_without_username or publish_server_privacy_scan_blocks_secret_in_model_field_when_scan_missing"` → 2 failed, 1 passed.
 > - Lint: `uv run ruff check app/services/auth.py app/routers/worklogs.py tests/test_contracts.py` → All checks passed.
 > - Targeted GREEN: 같은 `pytest -k ...` → 3 passed.
-> - Backend regression: `uv run pytest tests/test_contracts.py tests/test_rate_limit_store.py tests/test_auth_maintenance.py` → 267 passed, 1 warning.
-> - Cross-repo gate: `../agentfeed-dev/scripts/test-all.sh` → CLI 295, Frontend CI/build, Backend 267, Alembic chain 통과.
+> - Backend regression: `uv run pytest tests/test_contracts.py tests/test_rate_limit_store.py tests/test_auth_maintenance.py` → 268 passed, 1 warning.
+> - Cross-repo gate: `../agentfeed-dev/scripts/test-all.sh` → CLI 296, Frontend CI/build, Backend 268, Alembic chain 통과.
+
+
+
+> [!bug] Verifier regression repair
+> 독립 verifier가 username availability check와 `flush()` 사이의 DB unique race를 재현했습니다. 신규 user flush에서 `IntegrityError`가 발생하면 rollback 후 existing GitHub auth account를 재확인하고, 없으면 충돌 username을 제외한 다음 suffix 후보로 재시도합니다.
+>
+> - RED: `uv run pytest tests/test_contracts.py -k "github_login_retries_username_suffix_after_unique_flush_race"` → unhandled `IntegrityError` 실패.
+> - GREEN: `uv run pytest tests/test_contracts.py -k "github_login_retries_username_suffix_after_unique_flush_race or github_login_assigns_unique_sanitized_username_from_login or github_login_preserves_missing_login_without_username" && uv run ruff check app/services/auth.py tests/test_contracts.py` → 3 passed + ruff 통과.
+> - Backend regression after repair: `uv run ruff check app/services/auth.py app/routers/worklogs.py tests/test_contracts.py && uv run pytest tests/test_contracts.py tests/test_rate_limit_store.py tests/test_auth_maintenance.py` → 268 passed, 1 warning.
 
 ## 남은 검증
 

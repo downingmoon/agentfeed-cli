@@ -57,8 +57,16 @@ repositories:
 > - Affected share/auth gate: `npm test -- --run tests/api-hook.test.ts tests/cli-share.test.ts && npm run typecheck` → 75 passed + typecheck 통과.
 > - RED: `npm test -- --run tests/api-hook.test.ts tests/cli-status-doctor.test.ts --testNamePattern "environment token|already present"`가 CI + `AGENTFEED_TOKEN` browser session request로 실패.
 > - GREEN: `npm test -- --run tests/api-hook.test.ts tests/cli-status-doctor.test.ts --testNamePattern "environment token|already present|token remediation" && npm run typecheck` → 6 passed + typecheck 통과.
-> - CLI full gate: `npm test -- --run && npm run typecheck && npm run release:preflight` → 295 passed + typecheck/preflight 통과.
-> - Cross-repo gate: `../agentfeed-dev/scripts/test-all.sh` → CLI 295, Frontend CI/build, Backend 267, Alembic chain 통과.
+> - Affected CLI gate: `npm test -- --run tests/api-hook.test.ts tests/cli-share.test.ts tests/cli-status-doctor.test.ts tests/release-preflight.test.ts && npm run typecheck && npm run release:preflight` → 101 passed + typecheck/preflight 통과.
+> - Cross-repo gate: `../agentfeed-dev/scripts/test-all.sh` → CLI 296, Frontend CI/build, Backend 268, Alembic chain 통과.
+
+
+
+> [!bug] Verifier regression repair
+> 독립 verifier가 첫 업로드에서 secret redaction이 발생한 draft를 두 번째 publish/share할 때 `privacy_scan`이 `danger`에서 `safe`로 바뀌며 hash false-positive가 나는 문제를 재현했습니다. `publishDraft()`의 pre-hash scan을 `preserveResolvedFindings: true`로 고정해, unchanged redacted draft는 같은 payload hash를 유지하고 실제 content drift만 stale로 실패하게 했습니다.
+>
+> - RED: `npm test -- --run tests/api-hook.test.ts --testNamePattern "unchanged uploaded draft"` → `DRAFT_UPLOAD_STALE`로 실패.
+> - GREEN: `npm test -- --run tests/api-hook.test.ts --testNamePattern "unchanged uploaded draft|uploaded draft cache|already uploaded draft|cached uploaded draft review URLs" && npm run typecheck` → 6 passed + typecheck 통과.
 
 ## 남은 검증
 

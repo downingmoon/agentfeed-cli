@@ -555,7 +555,7 @@ function duplicateIngestResult(error: AgentFeedApiError, fallbackCreatedAt: stri
 
 export async function publishDraft(options: { cwd: string; id: string; credentials: AgentFeedCredentials }): Promise<PublishDraftResult> {
   const draft = await readDraft(options.cwd, options.id);
-  scanAndRedactDraftPublicFields(draft);
+  scanAndRedactDraftPublicFields(draft, { preserveResolvedFindings: true });
   const payloadHash = draftUploadPayloadHash(draft);
   if (draft.upload.uploaded && draft.upload.worklog_id && draft.upload.review_url) {
     let cached: PublishDraftResult;

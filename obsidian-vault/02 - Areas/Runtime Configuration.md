@@ -16,6 +16,21 @@ created: 2026-05-30
 > [!abstract] 목적
 > CLI, Backend, Frontend가 같은 API endpoint 계약을 바라보도록 runtime URL과 환경변수를 검증·정규화합니다.
 
+## 2026-06-01 Production config private-host and CI-env gates
+
+> [!success]
+> Production Frontend API root와 Backend CI environment가 runtime allowlist를 벗어나면 fail-closed 되도록 계약을 보강했습니다.
+
+계약:
+
+- Frontend `NEXT_PUBLIC_API_URL`은 production에서 public HTTPS API root여야 합니다.
+- Private IPv4, ULA/link-local IPv6, IPv4-mapped loopback, `.local`, `.internal`, `.lan`, `.home`, `.corp` host는 production API root로 거부합니다.
+- `AGENTFEED_ALLOW_LOCAL_API_BUILD=1`은 loopback smoke 예외에만 사용합니다.
+- Backend GitHub Actions CI는 `ENVIRONMENT=development`로 `Settings` allowlist와 local CI URL 조합을 만족해야 합니다.
+- Dev `test-all.sh`는 private API URL negative preflight와 Backend CI env 정렬을 static gate로 확인합니다.
+
+검증: [[Commercial Readiness Hardening - Production Config Private Host and CI Env Gates 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Backend ENVIRONMENT fail-fast
 
 > [!success]
@@ -116,6 +131,7 @@ created: 2026-05-30
 
 ## 관련 링크
 
+- [[Integration - CLI Backend Frontend#2026-06-01 Production config private-host and CI-env gates]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Frontend API URL normalization]]
 - [[Integration - CLI Backend Frontend#2026-05-30 Frontend production API env preflight]]
 - [[Integration - CLI Backend Frontend#2026-05-30 CLI API POST timeout]]

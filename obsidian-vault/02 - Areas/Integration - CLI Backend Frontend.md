@@ -33,6 +33,20 @@ sequenceDiagram
 > [!important]
 > 파라미터 충돌이 있으면 **Database column name → Backend → Frontend → CLI** 순서로 맞춥니다.
 
+## 2026-06-01 Production config private-host and CI-env gates
+
+> [!success]
+> Frontend production API URL gate, Backend CI env, Dev 통합 gate가 같은 runtime configuration 계약을 바라보도록 정렬했습니다.
+
+계약:
+
+- Frontend production bundle은 private/internal Backend API origin을 포함할 수 없습니다.
+- Backend CI workflow의 `ENVIRONMENT`는 Backend `Settings` allowlist와 실제 local CI config로 검증됩니다.
+- `agentfeed-dev/scripts/test-all.sh`는 두 계약을 cross-repo gate로 재검증합니다.
+
+검증: [[Commercial Readiness Hardening - Production Config Private Host and CI Env Gates 2026-06-01#검증 증거]]
+
+
 
 
 

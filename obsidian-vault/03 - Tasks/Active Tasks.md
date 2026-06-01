@@ -22,6 +22,8 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] Frontend production API URL private/internal host fail-closed 및 Backend CI env allowlist 정렬
+- 관련 노트: [[Commercial Readiness Hardening - Production Config Private Host and CI Env Gates 2026-06-01]]
 - [x] Dev live smoke가 실제 Frontend Header `Sign out` click으로 logout/session cutoff를 검증
 - [x] browser-dom-dump에 bounded post-hydration click/action assertion 지원 추가
 - 관련 노트: [[Commercial Readiness Hardening - Frontend Signout Click Smoke 2026-06-01]]

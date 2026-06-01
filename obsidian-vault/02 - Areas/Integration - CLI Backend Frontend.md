@@ -45,6 +45,19 @@ sequenceDiagram
 - Linux review URL clipboard fallback 보강
 - `share --note`를 `summary` prefix가 아닌 `user_note` 별도 계약으로 승격
 
+## 2026-06-01 Backend rate-limit store fail-closed degraded mode
+
+> [!success]
+> Backend production/shared rate-limit store 장애가 CLI/Frontend 요청 quota 우회로 이어지지 않도록 fail-closed + observable degraded response 계약을 추가했습니다.
+
+계약:
+
+- Backend middleware는 store exception을 process-local fallback으로 재시도하지 않습니다.
+- CLI/Frontend/API clients는 `503 RATE_LIMIT_STORE_UNAVAILABLE`를 retryable infrastructure degradation으로 구분할 수 있습니다.
+- 기존 `429 RATE_LIMITED` 응답 shape는 유지되어 일반 quota 초과와 장애 상태를 분리합니다.
+
+검증: [[Commercial Readiness Hardening - Backend Rate Limit Store Fail Closed 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Frontend dynamic auth next query allowlist
 
 > [!success]

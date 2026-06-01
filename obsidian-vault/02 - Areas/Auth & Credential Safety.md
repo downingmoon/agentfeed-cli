@@ -17,6 +17,20 @@ created: 2026-05-30
 > AgentFeed CLI가 브라우저 로그인과 token login을 제공하되, 사용자가 원할 때 로컬 credential 파일을 남기지 않는 안전한 경로를 보장합니다.
 
 
+## 2026-06-01 Backend rate-limit store fail-closed degraded mode
+
+> [!success]
+> Shared database rate-limit store 장애 시 process-local memory bucket으로 downgrade하지 않고 `RATE_LIMIT_STORE_UNAVAILABLE` degraded response로 fail-closed 처리합니다.
+
+계약:
+
+- Store unavailable은 `503 RATE_LIMIT_STORE_UNAVAILABLE` + `Retry-After`로 응답합니다.
+- 정상 quota 초과는 기존 `429 RATE_LIMITED` 계약을 유지합니다.
+- Degraded response도 `X-Request-ID`를 유지해 운영 trace가 가능합니다.
+- Error log는 `bucket_name`, `rate_limit_degraded=True`, stack trace만 남기며 token/raw identity를 남기지 않습니다.
+
+검증: [[Commercial Readiness Hardening - Backend Rate Limit Store Fail Closed 2026-06-01#검증 증거]]
+
 ## 2026-05-31 Browser-approved ingestion token rotation
 
 > [!success]

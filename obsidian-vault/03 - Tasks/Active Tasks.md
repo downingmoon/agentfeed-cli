@@ -26,7 +26,7 @@ created: 2026-05-30
 - [x] Frontend worklog detail malformed payload를 controlled retry/partial-safe failure로 처리
 - [x] Frontend dynamic auth next route의 safe query allowlist 보존 계약 보강
 - [x] Frontend CSP `style-src` unsafe-inline 제거 또는 nonce/hash 기반 production-safe policy로 전환
-- [ ] Backend production DB rate-limit store failure fallback 정책을 fail-closed/observable degraded mode로 재검토
+- [x] Backend production DB rate-limit store failure fallback 정책을 fail-closed/observable degraded mode로 재검토
 - [x] Backend production `ENVIRONMENT` missing/typo startup fail-fast 정책 확정 및 구현
 - [x] CLI structured cwd 없는 agent session attribution을 stricter project-bound evidence로 제한
 - [x] CLI keychain unavailable 시 plaintext credential fallback을 explicit insecure opt-in으로 제한
@@ -216,6 +216,7 @@ created: 2026-05-30
 
 ## 관련 링크
 
+- [[Commercial Readiness Hardening - Backend Rate Limit Store Fail Closed 2026-06-01]]
 - [[Commercial Readiness Hardening - Frontend Dynamic Auth Next Query Allowlist 2026-06-01]]
 - [[Commercial Readiness Hardening - Frontend Worklog Detail Retry Safety 2026-06-01]]
 

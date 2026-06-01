@@ -45,6 +45,20 @@ sequenceDiagram
 - Linux review URL clipboard fallback 보강
 - `share --note`를 `summary` prefix가 아닌 `user_note` 별도 계약으로 승격
 
+## 2026-06-01 Frontend dynamic auth next query allowlist
+
+> [!success]
+> Dynamic auth `next` redirect가 review/profile/project/worklog route-local safe query를 보존하면서 nested token/code/state류 query는 계속 제거하도록 고정했습니다.
+
+계약:
+
+- Exact path allowlist는 기존 static route 계약을 유지합니다.
+- Dynamic route는 prefix allowlist로만 query key를 추가합니다.
+- `/worklogs/:id/review`의 `finding`/`tab` deep-link context는 로그인 왕복 후 보존됩니다.
+- Unknown query와 OAuth/security-sensitive query는 encoded `next` 안에서도 제거됩니다.
+
+검증: [[Commercial Readiness Hardening - Frontend Dynamic Auth Next Query Allowlist 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Frontend worklog detail retry safety
 
 > [!success]

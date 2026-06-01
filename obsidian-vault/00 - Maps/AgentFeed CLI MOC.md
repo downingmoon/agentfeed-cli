@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Frontend Dynamic Auth Next Query Allowlist 2026-06-01]]
+
 - [[Commercial Readiness Hardening - Frontend Worklog Detail Retry Safety 2026-06-01]]
 
 - [[Commercial Readiness Hardening - CLI Project Bound Session Discovery 2026-06-01]]

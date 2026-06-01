@@ -207,6 +207,12 @@ async function sessionFileMayBelongToProject(sessionFile: string, cwd: string): 
   return !state.sawStructuredCwd || state.matchedProject;
 }
 
+async function sessionFileCanBeAutoDiscovered(sessionFile: string, cwd: string, options: { allowProjectScopedNoCwd?: boolean } = {}): Promise<boolean> {
+  const state = await structuredCwdMatchState(sessionFile, cwd);
+  if (state.matchedProject) return true;
+  return Boolean(options.allowProjectScopedNoCwd && !state.sawStructuredCwd);
+}
+
 function languageFor(path: string): string | null {
   const ext = extname(path).toLowerCase();
   return ({ '.ts': 'TypeScript', '.tsx': 'TypeScript', '.js': 'JavaScript', '.py': 'Python', '.go': 'Go', '.rs': 'Rust', '.md': 'Markdown', '.json': 'JSON' } as Record<string, string>)[ext] ?? null;
@@ -1119,26 +1125,29 @@ async function newestJsonlUnder(dir: string, limit = 80): Promise<string[]> {
 
 async function discoverSessionFile(cwd: string, source: AgentType): Promise<string | null> {
   const home = homedir();
-  const candidates: string[] = [];
+  const candidates: Array<{ path: string; allowProjectScopedNoCwd?: boolean }> = [];
   if (source === 'claude_code') {
-    candidates.push(...await newestJsonlUnder(join(home, '.claude', 'projects', claudeProjectDirName(cwd)), 20));
-    candidates.push(...await newestJsonlUnder(join(home, '.claude', 'projects'), 80));
+    candidates.push(...(await newestJsonlUnder(join(home, '.claude', 'projects', claudeProjectDirName(cwd)), 20)).map((path) => ({ path, allowProjectScopedNoCwd: true })));
+    candidates.push(...(await newestJsonlUnder(join(home, '.claude', 'projects'), 80)).map((path) => ({ path })));
   } else if (source === 'codex') {
-    candidates.push(...await newestJsonlUnder(join(home, '.codex', 'sessions'), 120));
+    candidates.push(...(await newestJsonlUnder(join(home, '.codex', 'sessions'), 120)).map((path) => ({ path })));
   } else if (source === 'gemini_cli') {
     for (const tmpProject of await readdir(join(home, '.gemini', 'tmp'), { withFileTypes: true }).catch(() => [])) {
-      if (tmpProject.isDirectory()) candidates.push(...await newestJsonlUnder(join(home, '.gemini', 'tmp', tmpProject.name, 'chats'), 20));
+      if (tmpProject.isDirectory()) candidates.push(...(await newestJsonlUnder(join(home, '.gemini', 'tmp', tmpProject.name, 'chats'), 20)).map((path) => ({ path })));
     }
   } else {
     return null;
   }
-  for (const candidate of [...new Set(candidates)]) {
+  const seen = new Set<string>();
+  for (const candidate of candidates) {
+    if (seen.has(candidate.path)) continue;
+    seen.add(candidate.path);
     if (source === 'gemini_cli') {
-      const projectRoot = await readFile(join(dirname(dirname(candidate)), '.project_root'), 'utf8').catch(() => '');
-      if (resolve(projectRoot.trim()) === resolve(cwd)) return candidate;
+      const projectRoot = await readFile(join(dirname(dirname(candidate.path)), '.project_root'), 'utf8').catch(() => '');
+      if (resolve(projectRoot.trim()) === resolve(cwd)) return candidate.path;
       continue;
     }
-    if (await sessionFileBelongsToProject(candidate, cwd).catch(() => false)) return candidate;
+    if (await sessionFileCanBeAutoDiscovered(candidate.path, cwd, { allowProjectScopedNoCwd: candidate.allowProjectScopedNoCwd }).catch(() => false)) return candidate.path;
   }
   return null;
 }

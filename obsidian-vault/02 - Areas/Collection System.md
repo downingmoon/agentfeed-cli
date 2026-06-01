@@ -42,6 +42,21 @@ created: 2026-05-30
 | Cursor/generic metadata | low | 프로젝트 로컬 JSON/JSONL/log의 보수적 파싱 |
 | Git diff/status | unknown | agent evidence가 없을 때 최소 changed area 보강 |
 
+## 2026-06-01 Project-bound cwd-less session discovery
+
+> [!success]
+> Structured `cwd`가 없는 agent session도 자동 discovery와 explicit user attribution을 분리해 project-bound evidence 기준으로 처리합니다.
+
+계약:
+
+- Claude project-scoped transcript directory는 cwd-less legacy row의 자동 discovery 근거로 인정합니다.
+- Codex global sessions directory는 structured `cwd` 없는 transcript를 자동 attribution하지 않습니다.
+- Explicit `--session-file`은 user intent signal로 보존하되, structured `cwd`가 다른 프로젝트면 계속 거부합니다.
+- Gemini CLI는 기존 `.project_root` binding을 유지합니다.
+
+검증: [[Commercial Readiness Hardening - CLI Project Bound Session Discovery 2026-06-01#검증 증거]]
+
+
 ## 비용 수집 정책
 
 > [!warning] 추정 금지
@@ -107,6 +122,7 @@ created: 2026-05-30
 - [x] 실패한 Codex `apply_patch` custom tool input을 changed file evidence로 과대집계하지 않도록 보정
 - [x] 실패한 Codex `spawn_agent` function call을 spawned subagent로 과대집계하지 않도록 보정
 - [x] explicit collection window에서 timestamp 없는 agent evidence row를 제외하도록 보정
+- [x] structured `cwd` 없는 agent session 자동 discovery를 project-bound evidence 기준으로 제한
 - [x] Docker 기반 local E2E smoke success path 재검증
 
 ## 2026-05-30 Generic until-window timestamp-less evidence 보정

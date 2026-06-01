@@ -16,6 +16,20 @@ created: 2026-05-30
 > [!abstract] 목적
 > CLI, Backend, Frontend가 같은 API endpoint 계약을 바라보도록 runtime URL과 환경변수를 검증·정규화합니다.
 
+## 2026-06-01 Production database TLS enforcement
+
+> [!success]
+> Production-like Backend settings는 Postgres TLS 의도가 없는 `DATABASE_URL`을 startup 단계에서 거부합니다.
+
+계약:
+
+- `ENVIRONMENT=production|staging`에서는 `DATABASE_URL` query에 `ssl=require`, `ssl=verify-ca`, 또는 `ssl=verify-full`이 정확히 하나 있어야 합니다.
+- TLS 누락, `ssl=false`, `sslmode=*`는 production startup fail-fast 대상입니다.
+- SQLAlchemy asyncpg URL은 `sslmode=require`를 asyncpg DSN으로 전달하지 않으므로 `ssl=require` 형식만 허용합니다.
+- Rate-limit database store production fixture도 같은 TLS URL을 사용합니다.
+
+검증: [[Commercial Readiness Hardening - CLI Auth URL Minimization and Production DB TLS 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Production config private-host and CI-env gates
 
 > [!success]

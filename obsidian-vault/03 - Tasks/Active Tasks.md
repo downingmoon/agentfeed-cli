@@ -24,7 +24,9 @@ created: 2026-05-30
 ## P1 후보
 - [x] CLI `--version`/release smoke, malformed local metadata resilience, Backend client privacy scan publish-time rescan, Frontend feed filter backdrop semantics 보강
 - 관련 노트: [[Commercial Readiness Hardening - CLI Diagnostics Backend Privacy Rescan and Feed Backdrop 2026-06-01]]
-- [ ] Frontend CLI authorization pending/session retry loop 및 URL-visible `session_id` 축소 설계/구현
+- [x] Frontend CLI authorization pending/session retry loop 및 URL-visible `session_id` 축소 구현
+- [x] Backend production `DATABASE_URL` TLS fail-fast 및 OAuth `/cli/authorize` session query stripping 정렬
+- 관련 노트: [[Commercial Readiness Hardening - CLI Auth URL Minimization and Production DB TLS 2026-06-01]]
 - [x] Frontend API request timeout, Settings auth-error sign-in CTA, preview/demo public copy 제거
 - 관련 노트: [[Commercial Readiness Hardening - Frontend API Timeout and Auth Recovery 2026-06-01]]
 - [x] CLI release workflow immutable action pin / tarball allowlist 강화 및 Backend API security header 일괄 적용

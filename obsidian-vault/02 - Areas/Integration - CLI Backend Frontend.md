@@ -28,6 +28,21 @@ sequenceDiagram
     FE->>API: feed/profile/project 조회
 ```
 
+
+## 2026-06-01 CLI auth URL minimization and production DB TLS
+
+> [!success]
+> Frontend OAuth return flow, Backend OAuth state normalization, Backend production DB config가 같은 commercial readiness 경계로 정렬되었습니다.
+
+계약:
+
+- CLI가 연 Frontend authorize page만 raw `session_id`를 한 번 수신합니다.
+- 이후 Frontend OAuth `next`, Backend signed state, browser visible URL은 `/cli/authorize`만 사용합니다.
+- Backend production/staging runtime은 TLS 없는 Postgres URL로 기동되지 않습니다.
+- Frontend/Backend contract tests가 이 정책을 각각 고정합니다.
+
+검증: [[Commercial Readiness Hardening - CLI Auth URL Minimization and Production DB TLS 2026-06-01#검증 증거]]
+
 ## 계약 기준
 
 > [!important]

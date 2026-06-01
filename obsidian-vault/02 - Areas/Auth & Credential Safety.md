@@ -16,7 +16,20 @@ created: 2026-05-30
 > [!abstract] 목적
 > AgentFeed CLI가 브라우저 로그인과 token login을 제공하되, 사용자가 원할 때 로컬 credential 파일을 남기지 않는 안전한 경로를 보장합니다.
 
+## 2026-06-01 CLI auth URL minimization
 
+> [!success]
+> CLI browser approval session id는 최초 authorize URL에서만 캡처하고, OAuth roundtrip에는 `/cli/authorize` path만 넘기도록 정렬했습니다.
+
+계약:
+
+- Frontend는 `/cli/authorize?session_id=...` 진입 직후 `sessionStorage`에 저장하고 visible URL을 `/cli/authorize`로 replace합니다.
+- GitHub OAuth `next`는 raw `session_id` 없이 `/cli/authorize`만 사용합니다.
+- Backend OAuth next allowlist도 `/cli/authorize` query를 비워 직접 API 호출 경로의 session id 보존을 막습니다.
+- 승인/만료/소비 terminal state에서는 stored session id를 삭제합니다.
+- Pending 세션은 Backend `poll_interval_seconds`를 bounded delay로 사용해 자동 재확인합니다.
+
+검증: [[Commercial Readiness Hardening - CLI Auth URL Minimization and Production DB TLS 2026-06-01#검증 증거]]
 
 ## 2026-06-01 Auth cookie teardown security tuple parity
 
@@ -38,7 +51,7 @@ created: 2026-05-30
 
 계약:
 
-- `/cli/authorize?session_id=...`는 CLI browser-login을 위해 보존합니다.
+- `/cli/authorize` path는 CLI browser-login return path로 보존하지만 `session_id` query는 OAuth state에 넣기 전에 제거합니다.
 - Unknown route, protocol-relative path, backslash/encoded separator, dot segment, whitespace/control, scheme-like path는 `/dashboard`로 대체합니다.
 - OAuth-sensitive query/hash(`token`, `code`, `state`, `access_token` 등)는 제거합니다.
 - Frontend `authNextPath()`와 Backend `_safe_next_path()`는 같은 방향의 allowlist 정책을 유지해야 합니다.

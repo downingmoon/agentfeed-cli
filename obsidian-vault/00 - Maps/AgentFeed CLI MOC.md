@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - CLI Auth URL Minimization and Production DB TLS 2026-06-01]]
+
 - [[Commercial Readiness Hardening - CLI Diagnostics Backend Privacy Rescan and Feed Backdrop 2026-06-01]]
 
 - [[Commercial Readiness Hardening - Frontend API Timeout and Auth Recovery 2026-06-01]]

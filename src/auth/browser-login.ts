@@ -33,7 +33,9 @@ export async function waitForCliAuthExchange(options: {
       if (!isPendingError(error)) throw error;
       const remainingMs = deadline - Date.now();
       if (remainingMs <= 0) break;
-      await sleepFn(Math.min(intervalMs, remainingMs));
+      const sleepMs = Math.min(intervalMs, remainingMs);
+      await sleepFn(sleepMs);
+      if (sleepMs >= remainingMs) break;
     }
   }
 

@@ -905,28 +905,37 @@ describe('api client', () => {
     const exchange = vi.fn(async () => {
       throw new Error('pending');
     });
+    const nowValues = [1000, 1000, 1001, 1019, 1019, 1020];
+    let nowIndex = 0;
+    const dateNow = vi.spyOn(Date, 'now').mockImplementation(() => {
+      const value = nowValues[Math.min(nowIndex, nowValues.length - 1)];
+      nowIndex += 1;
+      return value;
+    });
 
-    await expect(waitForCliAuthExchange({
-      apiBaseUrl: 'https://api.agentfeed.dev/v1',
-      session: {
-        session_id: 'session-timeout',
-        authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-timeout',
-        expires_at: '2026-05-20T00:05:00Z',
-        poll_interval_seconds: 60
-      },
-      verifier: 'verifier-timeout',
-      waitMs: 20,
-      exchange,
-      sleep: async (ms) => {
-        sleeps.push(ms);
-        await new Promise((resolve) => setTimeout(resolve, ms));
-      },
-      isPendingError: (error) => error instanceof Error && error.message === 'pending'
-    })).rejects.toThrow(/timed out/i);
+    try {
+      await expect(waitForCliAuthExchange({
+        apiBaseUrl: 'https://api.agentfeed.dev/v1',
+        session: {
+          session_id: 'session-timeout',
+          authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-timeout',
+          expires_at: '2026-05-20T00:05:00Z',
+          poll_interval_seconds: 60
+        },
+        verifier: 'verifier-timeout',
+        waitMs: 20,
+        exchange,
+        sleep: async (ms) => {
+          sleeps.push(ms);
+        },
+        isPendingError: (error) => error instanceof Error && error.message === 'pending'
+      })).rejects.toThrow(/timed out/i);
+    } finally {
+      dateNow.mockRestore();
+    }
 
-    expect(sleeps).toHaveLength(1);
-    expect(sleeps[0]).toBeLessThanOrEqual(20);
-    expect(sleeps[0]).toBeGreaterThan(0);
+    expect(exchange).toHaveBeenCalledTimes(1);
+    expect(sleeps).toEqual([19]);
   });
 
   it.each([

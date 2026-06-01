@@ -53,6 +53,21 @@ sequenceDiagram
 
 
 
+## 2026-06-01 Frontend accessibility and CLI login timeout polling
+
+> [!success]
+> Feed/worklog discovery surface의 keyboard accessibility를 보강하고, CLI browser-login polling timeout 경계값을 deterministic regression으로 고정했습니다.
+
+계약:
+
+- Worklog cards are keyboard focusable and support `Enter`/`Space` open without stealing nested button keystrokes.
+- Feed trending worklogs use semantic Next.js `Link` navigation instead of anchor-without-href click handling.
+- Icon-only like/bookmark and filter/category controls expose accessible labels or selected state.
+- Global `:focus-visible` styling preserves visible keyboard focus after input outline resets.
+- CLI browser-login polling does not perform an extra exchange/sleep after sleeping through the remaining timeout window.
+
+검증: [[Commercial Readiness Hardening - Frontend Accessibility and CLI Login Timeout Polling 2026-06-01#검증 증거]]
+
 ## 2026-06-01 CLI upload timeout reconciliation
 
 > [!success]

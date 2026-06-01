@@ -1597,8 +1597,9 @@ Frontend:
 - [x] smoke 전용 ingestion token을 `/v1/ingest/status`로 upload 전 검증
 - [x] smoke에서 token-authenticated self-rotation 403과 browser-approved replacement/old-token invalidation 검증
 - [ ] 실제 GitHub OAuth / CLI browser login happy path 재확인
-- [ ] 실제 사용자 작업 repo에서 `agentfeed share --open-review` smoke
-  - 2026-06-01 자동화 보강 완료: [[Commercial Readiness Hardening - Live Share Handoff Smoke Gate 2026-06-01]]에서 dev live smoke가 `share --json --clipboard --open-review` browser/clipboard handoff를 deterministic helper로 검증
+- [x] 실제 사용자 작업 repo 형태의 임시 git fixture에서 `agentfeed share --open-review` smoke
+  - 2026-06-01 자동화 보강: [[Commercial Readiness Hardening - Live Share Handoff Smoke Gate 2026-06-01]]에서 dev live smoke가 `share --json --clipboard --open-review` browser/clipboard handoff를 deterministic helper로 검증
+  - 2026-06-02 재검증: [[Commercial Readiness Hardening - Live Share Hydrated Smoke Revalidation 2026-06-02]]에서 local Docker dev stack 기준 `./scripts/smoke-e2e.sh` 통과
 
 ## 2026-05-30 계약 감사 결과
 
@@ -1895,6 +1896,23 @@ Frontend 표시:
 - `agentfeed-frontend`: `npx tsc --noEmit --pretty false`
 - `agentfeed-frontend`: `npm run build`
 - `agentfeed-dev`: `./scripts/test-all.sh`
+
+## 2026-06-02 CLI authorize hydrated fallback smoke
+
+> [!success]
+> `/cli/authorize` missing-session UX는 client hydration 이후 문구가 확정되는 계약이므로 dev smoke를 hydrated DOM 기준으로 정렬했습니다.
+
+변경:
+
+- `agentfeed-dev/scripts/smoke-e2e.sh`가 `CLI_AUTH_MISSING_DOM_FILE`을 만들고 `browser-dom-dump.mjs`로 `AgentFeed CLI Login`, `CLI 인증 세션이 없습니다`를 확인합니다.
+- `agentfeed-dev/scripts/test-all.sh`가 해당 hydrated gate 유지 여부를 static contract로 확인합니다.
+
+검증:
+
+- `agentfeed-dev`: `bash -n scripts/smoke-e2e.sh`
+- `agentfeed-dev`: `./scripts/test-wait-ready.sh`
+- `agentfeed-dev`: `./scripts/smoke-e2e.sh`
+- 관련 노트: [[Commercial Readiness Hardening - Live Share Hydrated Smoke Revalidation 2026-06-02]]
 
 ## 2026-05-30 CLI login/token smoke 계약
 

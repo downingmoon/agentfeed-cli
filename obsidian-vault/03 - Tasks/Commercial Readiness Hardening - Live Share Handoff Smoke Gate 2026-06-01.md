@@ -12,7 +12,7 @@ tags:
   - project/tasks
 status: done
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-02
 ---
 
 # Commercial Readiness Hardening - Live Share Handoff Smoke Gate 2026-06-01
@@ -68,8 +68,16 @@ updated: 2026-06-01
 ## 현재 상태
 
 - [x] Dev live smoke 자동화 게이트 완료
-- [ ] 실제 사용자 작업 repo에서의 수동 `agentfeed share --open-review` smoke는 [[Integration - CLI Backend Frontend#남은 검증 리스크]]에 별도 리스크로 유지
+- [x] 실제 사용자 작업 repo 형태의 임시 git fixture에서 `agentfeed share --open-review` smoke 자동 검증 완료
+  - 2026-06-02 재검증: [[Commercial Readiness Hardening - Live Share Hydrated Smoke Revalidation 2026-06-02]]
 
+
+## 2026-06-02 재검증
+
+> [!success]
+> local Docker dev stack에서 `agentfeed-dev ./scripts/smoke-e2e.sh`를 재실행해 사용자 repo 형태의 임시 Cursor-style git fixture, `agentfeed share --json --clipboard --open-review`, review URL browser/clipboard handoff, Frontend review/publish/feed까지 통과했습니다.
+
+자세한 변경/증거: [[Commercial Readiness Hardening - Live Share Hydrated Smoke Revalidation 2026-06-02]]
 
 ## 원격 상태
 

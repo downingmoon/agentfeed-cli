@@ -25,6 +25,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - Live Share Hydrated Smoke Revalidation 2026-06-02]] — hydrated CLI authorize fallback and user-repo share open-review smoke evidence
+
 - [[Commercial Readiness Hardening - Public Interaction Response Models 2026-05-31]] — public feed/discovery/social/comment response model coverage
 
 

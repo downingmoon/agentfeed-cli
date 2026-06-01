@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Live Share Hydrated Smoke Revalidation 2026-06-02]]
+
 - [[Commercial Readiness Hardening - Backend OAuth Username and Model Privacy Scan 2026-06-01]]
 
 - [[Commercial Readiness Hardening - CLI Upload Cache and CI Login Guard 2026-06-01]]

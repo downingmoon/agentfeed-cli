@@ -45,6 +45,20 @@ sequenceDiagram
 - Linux review URL clipboard fallback 보강
 - `share --note`를 `summary` prefix가 아닌 `user_note` 별도 계약으로 승격
 
+## 2026-06-01 Frontend worklog detail social stats soft-fail
+
+> [!success]
+> Worklog detail payload에서 비핵심 `social` stats가 누락돼도 핵심 content를 유지하고 social count만 zero fallback으로 렌더링합니다.
+
+계약:
+
+- Detail 필수 필드는 object, `id`, `title`, author identity입니다.
+- Detail missing/null `social`은 likes/comments/bookmarks `0`으로 soft-fail합니다.
+- List card missing `social`은 기존처럼 row drop을 유지해 list 품질을 지킵니다.
+- Missing author/id/title은 author/profile/detail integrity 문제로 계속 reject합니다.
+
+검증: [[Commercial Readiness Hardening - Frontend Worklog Detail Social Stats Soft Fail 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Frontend external URL IPv6 safety
 
 > [!success]

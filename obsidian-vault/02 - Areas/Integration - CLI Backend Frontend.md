@@ -12,6 +12,21 @@ created: 2026-05-30
 
 # Integration - CLI Backend Frontend
 
+## 2026-06-02 public timeline/settings/project adapter alignment
+
+> [!success]
+> CLI/API/Frontend contract drift from public timeline, settings PATCH shape, and public project visibility is covered by tests and adapters.
+
+계약:
+
+- CLI scanner and Backend fallback scanner both cover newly found public leak classes before content becomes public.
+- Frontend Settings API matches Backend `UserSettingsResponse` shape while keeping section-local state.
+- Public profile/search/explore project surfaces use a public-only project adapter.
+- `agentfeed-dev ./scripts/test-all.sh` passes with the new contracts.
+
+검증: [[Commercial Readiness Hardening - Public Timeline Settings and URL Privacy 2026-06-02#검증 증거]]
+
+
 ## 2026-06-02 approval-code auth and fail-closed public surfaces
 
 > [!success]

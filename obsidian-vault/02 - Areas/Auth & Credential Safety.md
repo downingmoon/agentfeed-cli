@@ -13,6 +13,20 @@ created: 2026-05-30
 
 # Auth & Credential Safety
 
+## 2026-06-02 settings response section unwrap
+
+> [!success]
+> Frontend Settings PATCH now preserves flat privacy/notification section state when Backend returns the full settings object.
+
+계약:
+
+- `me.updatePrivacySettings()` unwraps `data.privacy`.
+- `me.updateNotificationSettings()` unwraps `data.notifications`.
+- Settings page partial save behavior remains independent per section.
+
+검증: [[Commercial Readiness Hardening - Public Timeline Settings and URL Privacy 2026-06-02#검증 증거]]
+
+
 ## 2026-06-02 CLI browser approval code
 
 > [!success]

@@ -12,6 +12,20 @@ created: 2026-05-30
 
 # Privacy Safety
 
+## 2026-06-02 public timeline and sensitive URL scan
+
+> [!success]
+> CLI scanner와 Backend publish fallback scan이 public field leak surface를 더 넓게 fail-closed로 검사합니다.
+
+계약:
+
+- CLI public draft scanner redacts `rediss://`, `mongodb+srv://`, loopback/unspecified/CGNAT/IPv4-mapped private URLs.
+- Backend publish fallback scanner includes public `timeline` title/description/status fields.
+- Timeline findings preserve concrete field paths such as `timeline.0.description`.
+
+검증: [[Commercial Readiness Hardening - Public Timeline Settings and URL Privacy 2026-06-02#검증 증거]]
+
+
 ## 2026-06-02 fallback privacy and public adapter hardening
 
 > [!success]

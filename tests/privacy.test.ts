@@ -22,6 +22,18 @@ describe('privacy scanner', () => {
     expect(result.scan.findings.some((f) => f.type === type)).toBe(true);
   });
 
+  it.each([
+    ['rediss URL', 'rediss://:password@cache.example.com:6380/0'],
+    ['mongodb+srv URL', 'mongodb+srv://user:password@cluster.example.com/app'],
+    ['mongodb+srv URL with query', 'mongodb+srv://user:password@cluster.example.com/app?retryWrites=true&w=majority']
+  ])('redacts high severity sensitive service URL classes: %s', (_label, url) => {
+    const result = scanAndRedactFields({ summary: `configured ${url}` });
+
+    expect(result.redacted.summary).toBe('configured [REDACTED_DATABASE_URL]');
+    expect(result.scan.status).toBe('danger');
+    expect(result.scan.findings.some((f) => f.type === 'database_url' && f.severity === 'high')).toBe(true);
+  });
+
   it('redacts absolute paths without adding leading whitespace', () => {
     const result = scanAndRedactFields({ summary: '/Users/downing/project/src/index.ts changed' });
 
@@ -144,9 +156,15 @@ describe('privacy scanner', () => {
 
   it.each([
     ['http://169.254.169.254/latest/meta-data/'],
+    ['http://127.1.2.3:3000/callback'],
+    ['http://0.0.0.0:3000/callback'],
+    ['http://100.64.1.2/internal'],
     ['http://[::1]:3000/callback'],
+    ['http://[::]/internal'],
     ['https://[fd00::1]/internal'],
-    ['https://[fe80::1]/metadata']
+    ['https://[fe80::1]/metadata'],
+    ['http://[::ffff:127.0.0.1]/private'],
+    ['http://[::ffff:7f00:1]/private']
   ])('redacts IPv6 and link-local private URLs: %s', (url) => {
     const result = scanAndRedactFields({ summary: `Fetched ${url}` });
 

@@ -5,13 +5,14 @@ aliases:
   - GitHub Actions CI Green Recovery
   - CLI Backend CI Recovery
   - CI Env Parity Gate
+  - CLI Clipboard EPIPE Recovery
 tags:
   - agentfeed/cli
   - agentfeed/backend
   - agentfeed/ci
   - agentfeed/commercial-readiness
   - project/tasks
-status: done
+status: in-progress
 created: 2026-06-01
 updated: 2026-06-01
 ---
@@ -30,6 +31,9 @@ GitHub Actions 기준 최신 CLI/Backend CI가 red였기 때문에, 로컬 green
 - CLI `downingmoon/agentfeed-cli` CI run `26738377108` failed.
   - 실패 지점: `npm test -- --run`.
   - 원인: GitHub Actions의 `GITHUB_ACTIONS=true`가 browser login CI guard를 켰고, mock browser-auth 테스트들이 명시 override 없이 `browserLogin()`을 호출했습니다.
+- CLI `downingmoon/agentfeed-cli` CI run `26738760222` failed.
+  - 실패 지점: `tests/cli-share.test.ts > prints visible warnings when publish review URL handoff fails in human output`.
+  - 원인: GitHub-hosted Linux runner에서 실패하는 fake clipboard command가 stdin을 읽기 전에 종료했고, CLI clipboard helper가 child `stdin`의 `EPIPE`를 구독하지 않아 subprocess가 unhandled error로 종료됐습니다.
 - Backend `downingmoon/agentfeed-backend` CI run `26738377182` failed.
   - 실패 지점: `uv run --locked --group dev pytest tests`.
   - 원인: workflow top-level `ALLOWED_ORIGINS=http://localhost:3000`가 `Settings(_env_file=None)` default contract test를 오염시켰습니다.
@@ -41,6 +45,8 @@ GitHub Actions 기준 최신 CLI/Backend CI가 red였기 때문에, 로컬 green
 - `tests/api-hook.test.ts`에서 browser-auth mock success/malformed-response 테스트는 `allowCiBrowser: true`를 명시합니다.
 - `tests/cli-status-doctor.test.ts`의 subprocess rotation happy path는 CI detector env를 `0`으로 고정해 실제 GitHub runner에서도 non-CI browser flow를 검증합니다.
 - 별도 CI fail-fast 테스트는 그대로 유지해, override 없는 CI browser login은 token/stdin remediation으로 실패해야 합니다.
+- `src/utils/clipboard.ts`는 clipboard subprocess의 child `stdin` `error` 이벤트와 sync write/end throw를 모두 실패값으로 흡수합니다.
+- `tests/clipboard.test.ts`는 `write EPIPE` 회귀와 Linux fallback path를 고정합니다.
 
 ### Backend
 
@@ -73,6 +79,7 @@ GitHub Actions 기준 최신 CLI/Backend CI가 red였기 때문에, 로컬 green
 - Backend workflow env는 `Settings` allowlist와 default local dev origins를 동시에 만족해야 합니다.
 - GitHub Actions 환경변수 때문에 로컬과 원격 테스트 의미가 달라지면, 해당 env를 테스트에서 명시적으로 고정합니다.
 - GitHub Actions workflow는 deprecated Node.js 20 action runtime major로 회귀하지 않아야 합니다.
+- CLI review URL handoff는 clipboard/browser helper 실패가 있어도 사용자에게 warning과 URL을 출력해야 하며, helper subprocess의 pipe 오류 때문에 publish/share 명령 자체가 crash하면 안 됩니다.
 
 > [!warning]
 > CI guard를 완화하지 않았습니다. 수정 범위는 테스트가 의도적으로 mock browser auth를 실행하는 경우에만 명시 override를 주는 것입니다.
@@ -93,13 +100,18 @@ GitHub Actions 기준 최신 CLI/Backend CI가 red였기 때문에, 로컬 green
 - Action runtime deprecation gate:
   - `npm test -- --run tests/release-preflight.test.ts && npm run release:preflight` → pass
   - `agentfeed-dev bash -n scripts/test-all.sh` + deprecated action grep gate → pass
+- CLI clipboard EPIPE regression gate:
+  - `npm test -- --run tests/clipboard.test.ts tests/cli-share.test.ts` → `20 passed`
+  - `GITHUB_ACTIONS=true CI=true npm test -- --run` → `274 passed`
+  - `npm run typecheck` → pass
+  - `npm run release:preflight` → pass
 - Cross-repo gate:
   - `agentfeed-dev ./scripts/test-all.sh` → CLI tests/typecheck/release preflight/audit, Frontend CI/build/audit, Backend ruff/pytest, Alembic offline migration chain 모두 pass
 
 ## 남은 리스크
 
 > [!note]
-> 원격 GitHub Actions는 이 commit push 후 다시 확인해야 합니다. 이번 note는 실패 원인과 로컬 CI-env 재현 검증을 기록합니다.
+> CLI clipboard EPIPE fix는 로컬 CI-equivalent gate까지 통과했습니다. 원격 GitHub Actions는 이 commit push 후 다시 확인해야 합니다.
 
 ## 관련 링크
 

@@ -22,7 +22,16 @@ async function tryCopyWithCommand(text: string, cmd: string, args: string[]): Pr
     };
     child.on('error', () => finish(false));
     child.on('close', (code) => finish(code === 0));
-    child.stdin.end(text);
+    if (!child.stdin) {
+      finish(false);
+      return;
+    }
+    child.stdin.on('error', () => finish(false));
+    try {
+      child.stdin.end(text);
+    } catch {
+      finish(false);
+    }
   });
 }
 

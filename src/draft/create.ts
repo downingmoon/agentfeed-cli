@@ -136,21 +136,30 @@ function addOptionalCounts(...values: Array<number | null | undefined>): number 
   return seen ? total : null;
 }
 
-async function enabledAutoAgentSources(cwd: string, config: AgentFeedProjectConfig): Promise<AgentType[]> {
+interface AutoAgentSources {
+  enabled: AgentType[];
+  attributable: AgentType[];
+}
+
+async function autoAgentSources(cwd: string, config: AgentFeedProjectConfig): Promise<AutoAgentSources> {
   const sources: AgentType[] = [];
   if (config.agents.claude_code.enabled) sources.push('claude_code');
   if (config.agents.codex.enabled) sources.push('codex');
   if (config.agents.cursor.enabled) sources.push('cursor');
   if (config.agents.gemini_cli.enabled) sources.push('gemini_cli');
   const signals = await detectAgentSignals({ cwd }).catch(() => null);
-  if (!signals) return sources;
-  const signalScore = (paths: string[]): number => {
-    if (!paths.length) return 0;
+  if (!signals) return { enabled: sources, attributable: [] };
+  const hasProjectLocalSignal = (paths: string[]): boolean => {
+    if (!paths.length) return false;
     const root = resolve(cwd);
     return paths.some((path) => {
       const rel = relative(root, resolve(path));
       return rel && !rel.startsWith('..') && !isAbsolute(rel);
-    }) ? 2 : 1;
+    });
+  };
+  const signalScore = (paths: string[]): number => {
+    if (!paths.length) return 0;
+    return hasProjectLocalSignal(paths) ? 2 : 1;
   };
   const scores: Record<AgentType, number> = {
     claude_code: Math.max(signalScore(signals.claude_code.paths), signalScore(signals.omc.paths)),
@@ -159,7 +168,18 @@ async function enabledAutoAgentSources(cwd: string, config: AgentFeedProjectConf
     gemini_cli: Math.max(signalScore(signals.gemini_cli.paths), signalScore(signals.superpowers.paths)),
     other: 0
   };
-  return [...sources].sort((a, b) => scores[b] - scores[a]);
+  const localScores: Record<AgentType, number> = {
+    claude_code: hasProjectLocalSignal([...signals.claude_code.paths, ...signals.omc.paths]) ? 2 : 0,
+    codex: hasProjectLocalSignal([...signals.codex.paths, ...signals.omx.paths]) ? 2 : 0,
+    cursor: hasProjectLocalSignal(signals.cursor.paths) ? 2 : 0,
+    gemini_cli: hasProjectLocalSignal([...signals.gemini_cli.paths, ...signals.superpowers.paths]) ? 2 : 0,
+    other: 0
+  };
+  const enabled = [...sources].sort((a, b) => scores[b] - scores[a]);
+  return {
+    enabled,
+    attributable: enabled.filter((source) => localScores[source] > 0)
+  };
 }
 
 function explicitSessionProbeSources(enabledSources: AgentType[], sessionFile: string | null): AgentType[] {
@@ -193,8 +213,9 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
   const sessionFile = options.sessionFile ? resolve(invocationCwd, options.sessionFile) : null;
   const root = await resolveProjectRoot(invocationCwd);
   const config = await loadProjectConfig(root);
-  const enabledSources = await enabledAutoAgentSources(root, config);
-  let source = options.source ?? enabledSources[0] ?? 'other';
+  const autoSources = await autoAgentSources(root, config);
+  const enabledSources = autoSources.enabled;
+  let source = options.source ?? autoSources.attributable[0] ?? 'other';
   const git = await collectGitMetrics(root);
   const window = collectionWindow(options);
   const inferIdleGap = options.inferIdleGap ?? (!options.force && !window?.since);

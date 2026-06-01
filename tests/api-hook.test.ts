@@ -976,17 +976,28 @@ describe('Claude Code hook installer', () => {
     await writeFile(fakeAgentFeed, [
       '#!/usr/bin/env sh',
       'echo "fake stdout: attempted $*"',
+      'test -z "$AGENTFEED_TOKEN" || echo "leaked token: $AGENTFEED_TOKEN"',
+      'test -z "$NPM_TOKEN" || echo "leaked npm: $NPM_TOKEN"',
+      'test -z "$session_token" || echo "leaked lowercase session: $session_token"',
       'echo "fake stderr: uninitialized project" >&2',
       'exit 42',
       ''
     ].join('\n'));
     await chmod(fakeAgentFeed, 0o755);
+    const previousLowercaseSession = process.env.session_token;
 
     try {
+      process.env.session_token = 'lower_hook_secret_should_not_leak';
       const command = buildClaudeCodeStopHookCommand();
       const result = await execFileAsync('sh', ['-c', command], {
         cwd: dir,
-        env: { ...process.env, PATH: `${binDir}:${process.env.PATH ?? ''}` }
+        env: {
+          ...process.env,
+          PATH: `${binDir}:${process.env.PATH ?? ''}`,
+          AGENTFEED_TOKEN: 'af_live_hook_secret_should_not_leak',
+          NPM_TOKEN: 'npm_hook_secret_should_not_leak',
+          session_token: 'lower_hook_secret_should_not_leak',
+        }
       });
 
       expect(result.stdout).toBe('');
@@ -996,7 +1007,12 @@ describe('Claude Code hook installer', () => {
       expect(log).toContain('fake stdout: attempted collect --source claude-code');
       expect(log).toContain('fake stderr: uninitialized project');
       expect(log).toContain('failed with exit 42');
+      expect(log).not.toContain('af_live_hook_secret_should_not_leak');
+      expect(log).not.toContain('npm_hook_secret_should_not_leak');
+      expect(log).not.toContain('lower_hook_secret_should_not_leak');
     } finally {
+      if (previousLowercaseSession === undefined) delete process.env.session_token;
+      else process.env.session_token = previousLowercaseSession;
       await rm(binDir, { recursive: true, force: true });
     }
   });

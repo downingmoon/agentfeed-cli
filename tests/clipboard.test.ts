@@ -35,6 +35,31 @@ describe('clipboard', () => {
     expect(child.stdin.end).toHaveBeenCalledWith('https://agentfeed.dev/review/1');
   });
 
+
+  it('scrubs sensitive environment variables from clipboard helper processes', async () => {
+    const oldToken = process.env.AGENTFEED_TOKEN;
+    const oldNpmToken = process.env.NPM_TOKEN;
+    process.env.AGENTFEED_TOKEN = 'af_live_secret_should_not_reach_clipboard';
+    process.env.NPM_TOKEN = 'npm_secret_should_not_reach_clipboard';
+    try {
+      const child = fakeChild();
+      spawnMock.mockReturnValue(child);
+
+      const copied = copyToClipboard('https://agentfeed.dev/review/1');
+      const options = spawnMock.mock.calls[0][2] as { env?: NodeJS.ProcessEnv };
+      expect(options.env?.AGENTFEED_TOKEN).toBeUndefined();
+      expect(options.env?.NPM_TOKEN).toBeUndefined();
+      expect(options.env?.PATH).toBe(process.env.PATH);
+      child.emit('close', 0);
+      await expect(copied).resolves.toBe(true);
+    } finally {
+      if (oldToken === undefined) delete process.env.AGENTFEED_TOKEN;
+      else process.env.AGENTFEED_TOKEN = oldToken;
+      if (oldNpmToken === undefined) delete process.env.NPM_TOKEN;
+      else process.env.NPM_TOKEN = oldNpmToken;
+    }
+  });
+
   it('fails gracefully when clipboard command is unavailable', async () => {
     const child = fakeChild();
     spawnMock.mockReturnValue(child);

@@ -159,6 +159,36 @@ describe('git collector and drafts', () => {
     expect(draft.worklog.metrics.collection_quality).toBeNull();
   });
 
+  it('does not attribute git-only auto collection to globally detected agent signals', async () => {
+    const previousHome = process.env.HOME;
+    const previousUserProfile = process.env.USERPROFILE;
+    const fakeHome = await mkdtemp(join(tmpdir(), 'agentfeed-home-'));
+    process.env.HOME = fakeHome;
+    process.env.USERPROFILE = fakeHome;
+
+    try {
+      await mkdir(join(fakeHome, '.cursor'), { recursive: true });
+      await mkdir(join(fakeHome, '.codex', 'sessions'), { recursive: true });
+      await initProject({ cwd: dir, noGitCheck: false });
+      execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });
+      execFileSync('git', ['commit', '-m', 'agentfeed config from global tools'], { cwd: dir, stdio: 'ignore' });
+      await writeFile(join(dir, 'src', 'api.ts'), 'one\ntwo changed by a human\nthree\n');
+
+      const draft = await collectDraft({ cwd: dir });
+
+      expect(draft.worklog.agent).toBe('other');
+      expect(draft.source.agent).toBe('other');
+      expect(draft.source.session_id).toBeNull();
+      expect(draft.worklog.metrics.collection_quality).toBeNull();
+    } finally {
+      if (previousHome === undefined) delete process.env.HOME;
+      else process.env.HOME = previousHome;
+      if (previousUserProfile === undefined) delete process.env.USERPROFILE;
+      else process.env.USERPROFILE = previousUserProfile;
+      await rm(fakeHome, { recursive: true, force: true });
+    }
+  });
+
   it('does not run configured project commands by default during collection', async () => {
     await initProject({ cwd: dir, noGitCheck: false });
     const configPath = join(dir, '.agentfeed', 'config.json');

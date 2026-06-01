@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import { platform, release } from 'node:os';
+import { createScrubbedCommandEnv } from './subprocess-env.js';
 
 function clipboardCommands(): Array<{ cmd: string; args: string[] }> {
   if (platform() === 'darwin') return [{ cmd: 'pbcopy', args: [] }];
@@ -14,7 +15,7 @@ function clipboardCommands(): Array<{ cmd: string; args: string[] }> {
 async function tryCopyWithCommand(text: string, cmd: string, args: string[]): Promise<boolean> {
   return await new Promise((resolve) => {
     let settled = false;
-    const child = spawn(cmd, args, { stdio: ['pipe', 'ignore', 'ignore'] });
+    const child = spawn(cmd, args, { stdio: ['pipe', 'ignore', 'ignore'], env: createScrubbedCommandEnv(process.env, { respectAllowlist: false }) });
     const finish = (value: boolean) => {
       if (settled) return;
       settled = true;

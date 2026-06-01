@@ -22,6 +22,12 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] Backend publish server fallback privacy scan 및 user-scoped rate-limit bucket 보강
+- [x] Frontend public metric redaction fail-closed adapter 보강
+- [x] CLI helper env scrub 및 global-only git attribution 방지
+- 관련 노트: [[Commercial Readiness Hardening - Parallel P1 Audit Hardening 2026-06-01]]
+- [x] Backend/Frontend/Dev `.env.*` secret 파일 git 노출 방지 및 dev static gate 보강
+- 관련 노트: [[Commercial Readiness Hardening - Environment File Ignore Safety 2026-06-01]]
 - [x] CLI `AGENTFEED_TOKEN`이 saved custom API base를 상속하지 않도록 token/API host trust boundary 보강
 - [x] Backend GitHub OAuth `blog` import가 public URL validator를 우회하지 않도록 보강
 - [x] Backend invalid Bearer/cookie token이 protected endpoint rate-limit bucket을 우회하지 않도록 보강

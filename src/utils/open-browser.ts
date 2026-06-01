@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import { platform, release } from 'node:os';
+import { createScrubbedCommandEnv } from './subprocess-env.js';
 
 export async function openBrowser(url: string, options: { timeoutMs?: number } = {}): Promise<boolean> {
   const currentPlatform = platform();
@@ -15,7 +16,7 @@ export async function openBrowser(url: string, options: { timeoutMs?: number } =
       resolve(opened);
     };
     const timer = setTimeout(() => finish(false), options.timeoutMs ?? 5000);
-    const child = spawn(cmd, args, { stdio: 'ignore' });
+    const child = spawn(cmd, args, { stdio: 'ignore', env: createScrubbedCommandEnv(process.env, { respectAllowlist: false }) });
     child.unref?.();
     child.on('error', () => finish(false));
     child.on('close', (code) => finish(code === 0));

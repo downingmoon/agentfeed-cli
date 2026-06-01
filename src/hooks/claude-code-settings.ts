@@ -2,9 +2,14 @@ import { cp, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { globalAgentFeedDir, homeDir } from '../config/credentials.js';
 import { ensureDir, pathExists } from '../utils/fs.js';
+import { sensitiveEnvironmentNames } from '../utils/subprocess-env.js';
 
 type JsonObj = Record<string, unknown>;
 const AGENTFEED_COMMAND = 'agentfeed collect --source claude-code';
+
+function shellUnsetSensitiveEnvironment(): string {
+  return sensitiveEnvironmentNames().map((name) => `unset ${name}; `).join('');
+}
 
 export function buildClaudeCodeStopHookCommand(): string {
   return [
@@ -14,7 +19,7 @@ export function buildClaudeCodeStopHookCommand(): string {
     "mkdir -p \"$LOG_DIR\" >/dev/null 2>&1; ",
     "{ ",
     "printf \"\\n[%s] agentfeed Claude Code Stop hook start\\n\" \"$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date)\"; ",
-    `${AGENTFEED_COMMAND}; `,
+    `${shellUnsetSensitiveEnvironment()}${AGENTFEED_COMMAND}; `,
     "status=$?; ",
     "if [ $status -eq 0 ]; then ",
     "printf \"[%s] agentfeed Claude Code Stop hook succeeded\\n\" \"$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date)\"; ",

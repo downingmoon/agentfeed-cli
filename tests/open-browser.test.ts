@@ -52,6 +52,31 @@ describe('openBrowser', () => {
     }
   });
 
+
+  it('scrubs sensitive environment variables from browser helper processes', async () => {
+    const oldToken = process.env.AGENTFEED_TOKEN;
+    const oldNpmToken = process.env.NPM_TOKEN;
+    process.env.AGENTFEED_TOKEN = 'af_live_secret_should_not_reach_browser';
+    process.env.NPM_TOKEN = 'npm_secret_should_not_reach_browser';
+    try {
+      const child = mockChild();
+
+      const opened = openBrowser('https://agentfeed.dev/worklogs/worklog_secret/review');
+
+      const options = spawnMock.mock.calls[0][2] as { env?: NodeJS.ProcessEnv };
+      expect(options.env?.AGENTFEED_TOKEN).toBeUndefined();
+      expect(options.env?.NPM_TOKEN).toBeUndefined();
+      expect(options.env?.PATH).toBe(process.env.PATH);
+      child.emit('close', 0);
+      await expect(opened).resolves.toBe(true);
+    } finally {
+      if (oldToken === undefined) delete process.env.AGENTFEED_TOKEN;
+      else process.env.AGENTFEED_TOKEN = oldToken;
+      if (oldNpmToken === undefined) delete process.env.NPM_TOKEN;
+      else process.env.NPM_TOKEN = oldNpmToken;
+    }
+  });
+
   it('uses native Windows shell opener instead of xdg-open on win32', async () => {
     osMock.platform.mockReturnValue('win32');
     const child = mockChild();
@@ -59,7 +84,7 @@ describe('openBrowser', () => {
 
     const opened = openBrowser(url);
 
-    expect(spawnMock).toHaveBeenCalledWith('cmd', ['/c', 'start', '', url], { stdio: 'ignore' });
+    expect(spawnMock).toHaveBeenCalledWith('cmd', ['/c', 'start', '', url], expect.objectContaining({ stdio: 'ignore' }));
     expect(child.unref).toHaveBeenCalled();
     child.emit('close', 0);
     await expect(opened).resolves.toBe(true);
@@ -73,7 +98,7 @@ describe('openBrowser', () => {
 
     const opened = openBrowser(url);
 
-    expect(spawnMock).toHaveBeenCalledWith('wslview', [url], { stdio: 'ignore' });
+    expect(spawnMock).toHaveBeenCalledWith('wslview', [url], expect.objectContaining({ stdio: 'ignore' }));
     expect(child.unref).toHaveBeenCalled();
     child.emit('close', 0);
     await expect(opened).resolves.toBe(true);

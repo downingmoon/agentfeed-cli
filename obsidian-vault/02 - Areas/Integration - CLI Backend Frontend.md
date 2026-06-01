@@ -2981,3 +2981,17 @@ Frontend 계약:
 - 의도적 예외는 OAuth redirect 2개와 deprecated 403-only ingestion token rotate endpoint뿐입니다.
 
 검증: [[Commercial Readiness Hardening - Full JSON API Response Contract 2026-05-31#검증 증거]]
+
+## 2026-06-01 Frontend static mock data removal
+
+> [!success]
+> API-backed 화면 전환 후에도 shared frontend module에 남아 있던 대량 static mock dataset과 랜덤 demo heatmap을 제거했습니다.
+
+계약:
+
+- `src/lib/data.ts`는 stable agent display metadata와 formatting helper만 보유합니다.
+- `USERS`, `WORKLOGS`, `PROJECTS`, `LEADERBOARDS` 같은 production-path mock dataset export는 금지합니다.
+- `Math.random()` 기반 top-level demo data 생성은 shared module에 둘 수 없습니다.
+- `page-source-contract.test.ts`가 위 회귀를 source-level로 차단합니다.
+
+검증: [[Commercial Readiness Hardening - Frontend Static Mock Data Removal 2026-06-01#검증 증거]]

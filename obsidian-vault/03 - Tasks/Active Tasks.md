@@ -164,6 +164,8 @@ created: 2026-05-30
 - [x] Frontend feed time filter가 Backend `time_range` API로 전달되도록 연결
 - [x] Explore popular tag 링크와 Feed `tag` filter 계약 연결
 - [x] Worklog card author static mock user fallback 제거
+- [x] Frontend shared production module에서 unused static mock users/worklogs/projects/leaderboards 제거
+- [[Commercial Readiness Hardening - Frontend Static Mock Data Removal 2026-06-01]]
 - [x] Landing hero preview static demo worklog 제거 및 API-backed 전환
 - [x] Feed/Search public discovery API failure retry UX 보강
 - [x] agentfeed-dev Compose Backend/Frontend healthcheck와 readiness wait gate 보강

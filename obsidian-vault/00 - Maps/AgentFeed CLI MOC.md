@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Frontend Static Mock Data Removal 2026-06-01]]
+
 - [[Commercial Readiness Hardening - CLI Codex Parallel Tool Collection 2026-06-01]]
 
 - [[Commercial Readiness Hardening - Remote CI Environment Recovery 2026-06-01]]

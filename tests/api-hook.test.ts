@@ -22,6 +22,37 @@ const oldCi = process.env.CI;
 const oldGithubActions = process.env.GITHUB_ACTIONS;
 const oldAgentFeedToken = process.env.AGENTFEED_TOKEN;
 
+function configureUploadRetryEnv(values: { timeoutMs?: string; attempts?: string; baseDelayMs?: string }): () => void {
+  const previous = {
+    timeoutMs: process.env.AGENTFEED_API_TIMEOUT_MS,
+    attempts: process.env.AGENTFEED_API_RETRY_ATTEMPTS,
+    baseDelayMs: process.env.AGENTFEED_API_RETRY_BASE_DELAY_MS
+  };
+  if (values.timeoutMs !== undefined) process.env.AGENTFEED_API_TIMEOUT_MS = values.timeoutMs;
+  if (values.attempts !== undefined) process.env.AGENTFEED_API_RETRY_ATTEMPTS = values.attempts;
+  if (values.baseDelayMs !== undefined) process.env.AGENTFEED_API_RETRY_BASE_DELAY_MS = values.baseDelayMs;
+  return () => {
+    if (previous.timeoutMs === undefined) delete process.env.AGENTFEED_API_TIMEOUT_MS;
+    else process.env.AGENTFEED_API_TIMEOUT_MS = previous.timeoutMs;
+    if (previous.attempts === undefined) delete process.env.AGENTFEED_API_RETRY_ATTEMPTS;
+    else process.env.AGENTFEED_API_RETRY_ATTEMPTS = previous.attempts;
+    if (previous.baseDelayMs === undefined) delete process.env.AGENTFEED_API_RETRY_BASE_DELAY_MS;
+    else process.env.AGENTFEED_API_RETRY_BASE_DELAY_MS = previous.baseDelayMs;
+  };
+}
+
+function responseAfterAbort(init?: RequestInit): Promise<Response> {
+  const signal = init?.signal;
+  if (!(signal instanceof AbortSignal)) return Promise.reject(new Error('missing abort signal'));
+  return new Promise<Response>((_resolve, reject) => {
+    signal.addEventListener('abort', () => {
+      const error = new Error('aborted');
+      error.name = 'AbortError';
+      reject(error);
+    });
+  });
+}
+
 beforeEach(async () => {
   dir = await mkdtemp(join(tmpdir(), 'agentfeed-api-'));
   home = await mkdtemp(join(tmpdir(), 'agentfeed-home-'));
@@ -495,29 +526,107 @@ describe('api client', () => {
   it('times out upload requests and keeps the draft pending', async () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
     await writeDraft(dir, draft);
-    const oldTimeout = process.env.AGENTFEED_API_TIMEOUT_MS;
-    process.env.AGENTFEED_API_TIMEOUT_MS = '10';
-    const fetchMock = vi.fn((_url: string, init?: RequestInit) => {
-      const signal = init?.signal;
-      if (!(signal instanceof AbortSignal)) return Promise.reject(new Error('missing abort signal'));
-      return new Promise<Response>((_resolve, reject) => {
-        signal.addEventListener('abort', () => {
-          const error = new Error('aborted');
-          error.name = 'AbortError';
-          reject(error);
-        });
-      });
-    });
+    const restoreRetryEnv = configureUploadRetryEnv({ timeoutMs: '10', attempts: '2', baseDelayMs: '0' });
+    const fetchMock = vi.fn((_url: string, init?: RequestInit) => responseAfterAbort(init));
     vi.stubGlobal('fetch', fetchMock);
 
     try {
       const pending = publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } });
-      await expect(pending).rejects.toMatchObject({ code: 'API_REQUEST_TIMEOUT' });
+      await expect(pending).rejects.toMatchObject({
+        code: 'API_REQUEST_TIMEOUT',
+        message: expect.stringContaining('reconcile any server-side duplicate')
+      });
     } finally {
-      if (oldTimeout === undefined) delete process.env.AGENTFEED_API_TIMEOUT_MS;
-      else process.env.AGENTFEED_API_TIMEOUT_MS = oldTimeout;
+      restoreRetryEnv();
     }
 
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+    expect(saved.upload.uploaded).toBe(false);
+  });
+
+  it('resolves an upload timeout after first attempt as duplicate ingest and marks draft uploaded', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    await writeDraft(dir, draft);
+    const restoreRetryEnv = configureUploadRetryEnv({ timeoutMs: '10', attempts: '3', baseDelayMs: '0' });
+    const requestBodies: Record<string, any>[] = [];
+    const fetchMock = vi.fn((_url: string, init?: RequestInit) => {
+      requestBodies.push(JSON.parse(String(init?.body ?? '{}')) as Record<string, any>);
+      if (requestBodies.length === 1) {
+        return responseAfterAbort(init);
+      }
+      return Promise.resolve(new Response(JSON.stringify({
+        error: {
+          code: 'DUPLICATE_INGESTION_SESSION',
+          message: 'Duplicate ingestion session.',
+          details: {
+            worklog_id: 'worklog_timeout_existing',
+            review_url: 'https://agentfeed.dev/worklogs/worklog_timeout_existing/review',
+            created_at: '2026-05-19T00:00:00Z'
+          }
+        }
+      }), { status: 409, headers: { 'content-type': 'application/json' } }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      const result = await publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } });
+
+      expect(result).toMatchObject({
+        id: 'worklog_timeout_existing',
+        status: 'already_uploaded',
+        reused_existing: true,
+        review_url: 'https://agentfeed.dev/worklogs/worklog_timeout_existing/review',
+        created_at: '2026-05-19T00:00:00Z'
+      });
+    } finally {
+      restoreRetryEnv();
+    }
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(requestBodies).toHaveLength(2);
+    expect(requestBodies[1].source.local_draft_id).toBe(requestBodies[0].source.local_draft_id);
+    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+    expect(saved.upload).toMatchObject({
+      uploaded: true,
+      worklog_id: 'worklog_timeout_existing',
+      review_url: 'https://agentfeed.dev/worklogs/worklog_timeout_existing/review',
+      uploaded_at: '2026-05-19T00:00:00Z'
+    });
+  });
+
+  it('keeps draft pending when timeout is followed by duplicate ingest with untrusted review URL', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    await writeDraft(dir, draft);
+    const restoreRetryEnv = configureUploadRetryEnv({ timeoutMs: '10', attempts: '3', baseDelayMs: '0' });
+    let callCount = 0;
+    const fetchMock = vi.fn((_url: string, init?: RequestInit) => {
+      callCount += 1;
+      if (callCount === 1) {
+        return responseAfterAbort(init);
+      }
+      return Promise.resolve(new Response(JSON.stringify({
+        error: {
+          code: 'DUPLICATE_INGESTION_SESSION',
+          message: 'Duplicate ingestion session.',
+          details: {
+            worklog_id: 'worklog_timeout_existing',
+            review_url: 'https://evil.example/worklogs/worklog_timeout_existing/review',
+            created_at: '2026-05-19T00:00:00Z'
+          }
+        }
+      }), { status: 409, headers: { 'content-type': 'application/json' } }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
+        .rejects.toMatchObject({ code: 'DUPLICATE_INGESTION_SESSION' });
+    } finally {
+      restoreRetryEnv();
+    }
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
     expect(saved.upload.uploaded).toBe(false);
   });

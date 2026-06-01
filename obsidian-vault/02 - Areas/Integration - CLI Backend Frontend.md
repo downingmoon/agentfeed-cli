@@ -52,6 +52,22 @@ sequenceDiagram
 
 
 
+
+## 2026-06-01 CLI upload timeout reconciliation
+
+> [!success]
+> CLI upload timeout이 서버-side 성공과 겹친 경우, 재시도 duplicate ingest 응답을 trusted review URL 검증 후 성공 재동기화로 처리하는 계약을 고정했습니다.
+
+계약:
+
+- upload timeout은 bounded retry 대상이며, 최종 timeout이면 draft는 pending 상태로 남습니다.
+- retry에서 `DUPLICATE_INGESTION_SESSION`이 오면 trusted `review_url` + worklog id가 있을 때만 `already_uploaded`로 persisted sync합니다.
+- duplicate `review_url`이 untrusted origin/path/query/hash를 포함하면 success로 신뢰하지 않습니다.
+- retry payload의 `source.local_draft_id`는 동일 draft 안에서 stable하게 유지됩니다.
+- timeout UX copy는 같은 publish/share command 재실행으로 duplicate reconciliation 가능성을 안내합니다.
+
+검증: [[Commercial Readiness Hardening - CLI Upload Timeout Reconciliation 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Frontend interaction pending guards
 
 > [!success]

@@ -164,7 +164,9 @@ async function fetchWithTimeout(url: string, init: RequestInit, options: { local
       throw new AgentFeedApiError(
         408,
         'API_REQUEST_TIMEOUT',
-        options.localDraftKept ? 'AgentFeed API request timed out. Local draft was kept.' : 'AgentFeed API request timed out.'
+        options.localDraftKept
+          ? 'AgentFeed API request timed out. Local draft was kept; rerun the same publish/share command to reconcile any server-side duplicate.'
+          : 'AgentFeed API request timed out.'
       );
     }
     throw new AgentFeedApiError(0, 'API_REQUEST_FAILED', networkErrorMessage(error, options));

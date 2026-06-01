@@ -14,7 +14,7 @@ export async function openBrowser(url: string, options: { timeoutMs?: number } =
       clearTimeout(timer);
       resolve(opened);
     };
-    const timer = setTimeout(() => finish(false), options.timeoutMs ?? 1500);
+    const timer = setTimeout(() => finish(false), options.timeoutMs ?? 5000);
     const child = spawn(cmd, args, { stdio: 'ignore' });
     child.unref?.();
     child.on('error', () => finish(false));

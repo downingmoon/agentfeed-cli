@@ -66,6 +66,7 @@ describe('CLI version metadata', () => {
     expect(packageJson.bugs?.url).toBe('https://github.com/downingmoon/agentfeed-cli/issues');
     expect(packageJson.packageManager).toBe('npm@11.6.0');
     expect(packageJson.publishConfig?.access).toBe('public');
+    expect(packageJson.publishConfig?.provenance).toBe(true);
     expect(packageJson.license).toBe('UNLICENSED');
   });
 
@@ -76,9 +77,12 @@ describe('CLI version metadata', () => {
     expect(releaseScript).toContain("fileSet.has('dist/cli/index.js')");
     expect(releaseScript).toContain("files.some(file => file === forbidden.replace");
     expect(releaseScript).toContain("pkg.publishConfig?.access === 'public'");
+    expect(releaseScript).toContain("pkg.publishConfig?.provenance === true");
+    expect(releaseScript).toContain('validateTrustedPublishingWorkflow');
     expect(releaseScript).toContain('validateCliSmokeOutput');
     expect(readme).toContain('npm run release:preflight');
-    expect(readme).toContain('npm publish --provenance --access public');
+    expect(readme).toContain('npm publish --access public');
+    expect(readme).toContain('Trusted publishing automatically generates provenance');
     expect(readme).toContain('https://docs.npmjs.com/generating-provenance-statements');
   });
 });

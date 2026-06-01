@@ -4,7 +4,8 @@ import {
   parsePackJson,
   validateCliSmokeOutput,
   validatePackageMetadata,
-  validatePackResult
+  validatePackResult,
+  validateTrustedPublishingWorkflow
 } from '../scripts/release-preflight.mjs';
 
 const validPackageJson = {
@@ -33,9 +34,38 @@ const validPackageJson = {
     url: 'https://github.com/downingmoon/agentfeed-cli/issues'
   },
   publishConfig: {
-    access: 'public'
+    access: 'public',
+    provenance: true
   }
 };
+
+const validTrustedPublishingWorkflow = `
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+          registry-url: https://registry.npmjs.org
+      - run: npm install -g npm@11.6.0
+      - run: npm run release:preflight
+      - run: npm publish --access public
+`;
 
 const validPackResult = [{
   name: 'agentfeed-cli',
@@ -85,14 +115,32 @@ describe('release preflight guardrails', () => {
     expect(() => validatePackageMetadata({
       ...validPackageJson,
       publishConfig: {
-        access: 'restricted'
+        access: 'restricted',
+        provenance: true
       }
     })).toThrow('publishConfig.access');
 
     expect(() => validatePackageMetadata({
       ...validPackageJson,
+      publishConfig: {
+        access: 'public',
+        provenance: false
+      }
+    })).toThrow('publishConfig.provenance');
+
+    expect(() => validatePackageMetadata({
+      ...validPackageJson,
       private: true
     })).toThrow('must not be marked private');
+  });
+
+  it('validates the trusted publishing workflow contract', () => {
+    expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow)).not.toThrow();
+    expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('id-token: write', 'id-token: read'))).toThrow('id-token');
+    expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('node-version: 22.14.0', 'node-version: 20'))).toThrow('Node.js 22.14.0');
+    expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('npm install -g npm@11.6.0', 'npm install -g npm@10'))).toThrow('npm 11.6.0');
+    expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('npm publish --access public', 'npm publish --provenance --access public'))).toThrow('must not pass --provenance');
+    expect(() => validateTrustedPublishingWorkflow(`${validTrustedPublishingWorkflow}\n      - run: echo "$NODE_AUTH_TOKEN"\n`)).toThrow('long-lived npm tokens');
   });
 
   it('validates the built CLI help smoke output', () => {

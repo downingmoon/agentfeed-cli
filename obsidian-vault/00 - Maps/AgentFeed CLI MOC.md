@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - CLI Trusted Publishing Enforcement 2026-06-01]]
+
 - [[Commercial Readiness Hardening - CLI Upload Timeout Reconciliation 2026-06-01]]
 
 - [[Commercial Readiness Hardening - Frontend Interaction Pending Guards 2026-06-01]]

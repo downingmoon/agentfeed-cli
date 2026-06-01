@@ -293,6 +293,23 @@ sequenceDiagram
 
 관련 작업 노트: [[Commercial Readiness Hardening - CLI Release Preflight and Provenance 2026-06-01]]
 
+
+## 2026-06-01 CLI trusted publishing enforcement
+
+> [!success]
+> CLI npm release path가 OIDC trusted publishing workflow, package provenance setting, release workflow preflight validation으로 고정되었습니다.
+
+계약:
+
+- `publishConfig.provenance: true`로 package-level provenance intent를 fail-closed로 둡니다.
+- Release workflow는 `id-token: write`, GitHub-hosted `ubuntu-latest`, Node.js `22.14.0`, npm `11.6.0`, `environment: npm-publish`를 사용합니다.
+- Workflow는 장기 npm token(`NODE_AUTH_TOKEN`, `NPM_TOKEN`) 없이 `npm publish --access public`을 실행합니다.
+- Trusted publishing에서는 npm이 provenance를 자동 생성하므로 `--provenance` flag를 금지합니다.
+- `release:preflight`가 release workflow contract까지 검증합니다.
+- Private repo에서는 provenance statement가 생성되지 않으므로 production release 전 public repo + npm trusted publisher 설정이 필요합니다.
+
+검증: [[Commercial Readiness Hardening - CLI Trusted Publishing Enforcement 2026-06-01#검증 증거]]
+
 ## 2026-05-31 Cross-repo OpenAPI contract gate
 
 > [!success]

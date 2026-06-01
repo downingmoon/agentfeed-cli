@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const scriptPath = fileURLToPath(import.meta.url);
 const packagePath = join(repoRoot, 'package.json');
+const releaseWorkflowPath = join(repoRoot, '.github', 'workflows', 'release.yml');
 
 function fail(message) {
   throw new Error(message);
@@ -26,6 +27,10 @@ function isSemver(version) {
 
 function normalizeTarballPath(path) {
   return path.replace(/^package\//, '');
+}
+
+function includesLine(text, pattern) {
+  return pattern.test(text);
 }
 
 export function parsePackJson(raw) {
@@ -61,7 +66,25 @@ export function validatePackageMetadata(pkg) {
   assert(pkg.homepage === 'https://agentfeed.dev', 'homepage must stay https://agentfeed.dev.');
   assert(pkg.bugs?.url === 'https://github.com/downingmoon/agentfeed-cli/issues', 'bugs URL must point at GitHub issues.');
   assert(pkg.publishConfig?.access === 'public', 'publishConfig.access must be public for the unscoped npm package.');
+  assert(pkg.publishConfig?.provenance === true, 'publishConfig.provenance must stay true so npm publish fails closed without provenance support.');
   assert(pkg.private !== true, 'package must not be marked private before npm release.');
+}
+
+export function validateTrustedPublishingWorkflow(workflowText) {
+  assert(includesLine(workflowText, /^\s*workflow_dispatch:\s*$/m), 'release workflow must support explicit workflow_dispatch releases.');
+  assert(includesLine(workflowText, /^\s*tags:\s*$/m) && workflowText.includes("'v*'"), 'release workflow must be limited to v* tag pushes when automatic.');
+  assert(includesLine(workflowText, /^\s*contents:\s*read\s*$/m), 'release workflow must grant contents: read.');
+  assert(includesLine(workflowText, /^\s*id-token:\s*write\s*$/m), 'release workflow must grant id-token: write for npm OIDC trusted publishing.');
+  assert(includesLine(workflowText, /^\s*runs-on:\s*ubuntu-latest\s*$/m), 'release workflow must use a GitHub-hosted ubuntu-latest runner for trusted publishing.');
+  assert(includesLine(workflowText, /^\s*environment:\s*npm-publish\s*$/m), 'release workflow must use the npm-publish environment for release approval/audit controls.');
+  assert(includesLine(workflowText, /^\s*node-version:\s*22\.14\.0\s*$/m), 'release workflow must use Node.js 22.14.0 or newer for npm trusted publishing.');
+  assert(includesLine(workflowText, /^\s*registry-url:\s*https:\/\/registry\.npmjs\.org\s*$/m), 'release workflow must publish to the npm registry.');
+  assert(workflowText.includes('npm install -g npm@11.6.0'), 'release workflow must install the pinned npm 11.6.0 CLI before publishing.');
+  assert(workflowText.includes('npm run release:preflight'), 'release workflow must run release:preflight before npm publish.');
+  assert(!workflowText.includes('--provenance'), 'trusted publishing workflow must not pass --provenance; npm generates provenance automatically through OIDC.');
+  assert(includesLine(workflowText, /^\s*-?\s*run:\s*npm publish --access public\s*$/m), 'release workflow must publish the public package with npm publish --access public.');
+  assert(!workflowText.includes('NODE_AUTH_TOKEN') && !workflowText.includes('NPM_TOKEN'), 'trusted publishing workflow must not depend on long-lived npm tokens.');
+  assert(!includesLine(workflowText, /^\s*cache:\s*npm\s*$/m), 'release workflow must not use dependency caching in release builds.');
 }
 
 export function validatePackResult(packResult, pkg) {
@@ -117,16 +140,18 @@ function runCliSmoke() {
 function main() {
   const pkg = readJson(packagePath);
   validatePackageMetadata(pkg);
+  validateTrustedPublishingWorkflow(readFileSync(releaseWorkflowPath, 'utf8'));
   const packResult = runPackDryRun();
   validatePackResult(packResult, pkg);
   runCliSmoke();
 
   console.log('AgentFeed CLI release preflight passed.');
   console.log(`- Package: ${pkg.name}@${pkg.version}`);
+  console.log('- Trusted publishing: release workflow OIDC/toolchain contract validated');
   console.log('- Tarball: npm pack --dry-run --json validated');
   console.log('- CLI smoke: built agentfeed --help validated');
   if (pkg.license === 'UNLICENSED') console.log('- License: UNLICENSED (proprietary/no open-source grant; change only after owner approval).');
-  console.log('- Next: publish from a public GitHub repository with npm provenance/trusted publishing, or document that manual local publish will not include provenance.');
+  console.log('- Next: configure npm trusted publishing for the Release workflow from a public GitHub repository before production publish.');
 }
 
 if (isDirectInvocation()) {

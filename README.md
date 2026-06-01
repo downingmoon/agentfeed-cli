@@ -26,10 +26,11 @@ state.
 ## Release and provenance
 
 The package is configured for public npm publishing (`publishConfig.access:
-public`) but keeps `"license": "UNLICENSED"` until the project owner chooses an
-open-source or commercial license. Treat that as all rights reserved / no usage
-grant for consumers; do not replace it with an SPDX license without an explicit
-owner decision.
+public`) with provenance enabled (`publishConfig.provenance: true`), but keeps
+`"license": "UNLICENSED"` until the project owner chooses an open-source or
+commercial license. Treat that as all rights reserved / no usage grant for
+consumers; do not replace it with an SPDX license without an explicit owner
+decision.
 
 Recommended release gate:
 
@@ -38,16 +39,22 @@ npm ci
 npm run release:preflight
 ```
 
-For provenance-backed npm releases, use npm trusted publishing or a GitHub
-Actions publish job with OIDC and `npm publish --provenance --access public`.
+For provenance-backed npm releases, use the checked-in GitHub Actions
+`Release` workflow after configuring npm trusted publishing for this repository
+and workflow. That workflow uses OIDC (`id-token: write`), Node.js 22.14.0, npm
+11.6.0, `npm run release:preflight`, and then `npm publish --access public`.
+Trusted publishing automatically generates provenance through OIDC; do not add
+`--provenance` to that trusted publishing command.
+
 npm's current provenance requirements include a public source repository whose
 `package.json.repository` matches the publishing repository. If this GitHub repo
-stays private, the package can still be manually published after preflight, but
-that publish will not carry npm provenance. See:
+stays private, provenance will not be generated. A temporary non-provenance
+manual publish is an explicit owner exception and must document that lower trust
+posture before overriding the package-level provenance setting. See:
 
 - https://docs.npmjs.com/generating-provenance-statements
 - https://docs.npmjs.com/trusted-publishers
-- https://docs.npmjs.com/cli/v10/commands/npm-publish/
+- https://docs.npmjs.com/cli/v11/commands/npm-publish/
 
 ```bash
 agentfeed init

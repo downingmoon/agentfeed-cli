@@ -60,3 +60,8 @@ aliases:
 - [[Integration - CLI Backend Frontend#2026-06-01 CLI release preflight and provenance]]
 - [[Active Tasks#P1 후보]]
 - [[Commercial Readiness Hardening - CLI NPM Package Metadata 2026-06-01]]
+
+
+## 후속 강화
+
+- [[Commercial Readiness Hardening - CLI Trusted Publishing Enforcement 2026-06-01]]에서 실제 trusted publishing workflow와 package-level provenance enforcement를 추가했습니다.

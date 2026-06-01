@@ -34,6 +34,21 @@ sequenceDiagram
 > 파라미터 충돌이 있으면 **Database column name → Backend → Frontend → CLI** 순서로 맞춥니다.
 
 
+
+## 2026-06-01 CLI review URL handoff failure surface
+
+> [!success]
+> Upload success와 review URL handoff success를 분리해, Backend ingest 성공 후 clipboard/browser 실패가 조용히 묻히지 않도록 했습니다.
+
+계약:
+
+- `share --json` / `publish --json` upload output은 top-level `handoff`를 포함합니다.
+- JSON stdout은 handoff warning이 있어도 machine-readable JSON만 출력합니다.
+- Human `share` / `publish`는 clipboard/browser handoff 실패를 `Warning:`으로 보여주고 review URL을 manual fallback으로 남깁니다.
+- Default JSON mode는 계속 clipboard/browser side effect를 실행하지 않습니다.
+
+검증: [[Commercial Readiness Hardening - CLI Review URL Handoff Failure Surface 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Settings review cookie and command wrapper safety
 
 > [!success]

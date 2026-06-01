@@ -140,11 +140,11 @@ agentfeed share --run-configured-commands
 
 `--note` is stored as a separate public-safe author note, not folded into the generated worklog summary.
 
-Use `--json` for automation. Dry-run output is shaped as `{ dry_run, reused_existing_draft, draft, privacy_policy }`; upload output is shaped as `{ dry_run, reused_existing_draft, draft_id, draft, upload, privacy_policy }` so scripts can verify the exact public-safe draft that was uploaded alongside the review URL. JSON mode has no clipboard side effects unless `--clipboard` is passed explicitly.
+Use `--json` for automation. Dry-run output is shaped as `{ dry_run, reused_existing_draft, draft, privacy_policy }`; upload output is shaped as `{ dry_run, reused_existing_draft, draft_id, draft, upload, privacy_policy, handoff }` so scripts can verify the exact public-safe draft that was uploaded alongside the review URL. JSON mode has no clipboard/browser side effects unless `--clipboard` or `--open-review` is passed explicitly; when either handoff is requested, `handoff.clipboard` / `handoff.browser` reports `{ requested, ok, warning? }` without adding non-JSON text to stdout.
 
 ## `collect --json` automation contract
 
-`agentfeed collect --json` prints the local draft object as the JSON root. Automation should read draft fields such as `id`, `source`, `worklog`, `privacy_policy`, and `upload` directly from the root object. When `--upload` is also passed, the same draft-root shape is preserved and `draft.upload` is updated with the upload result (`uploaded`, `worklog_id`, `review_url`, `uploaded_at`). Unlike `share --json`, `collect --json` is intentionally **not** wrapped in a `{ draft, upload }` envelope; this keeps existing scripts compatible.
+`agentfeed collect --json` prints the local draft object as the JSON root. Automation should read draft fields such as `id`, `source`, `worklog`, `privacy_policy`, and `upload` directly from the root object. When `--upload` is also passed, the same draft-root shape is preserved and `draft.upload` is updated with the upload result (`uploaded`, `worklog_id`, `review_url`, `uploaded_at`). If `--open-review` is requested, `draft.upload.handoff.browser` reports whether the browser handoff succeeded. Unlike `share --json`, `collect --json` is intentionally **not** wrapped in a `{ draft, upload }` envelope; this keeps existing scripts compatible.
 
 ## Scoped and incremental collection
 
@@ -171,7 +171,7 @@ Repo-local test/build commands are never executed by default, even when `.agentf
 
 Draft collection also records a stable fingerprint from `session_id + git head + collection_window`; repeated runs reuse the existing local draft unless `--force` or `--all` is used. If that draft was already uploaded, `share` / `publish` reuse the saved review URL instead of uploading a duplicate worklog.
 
-Successful `share` / `publish` copies the review URL to the clipboard when the platform supports it. Use `--no-clipboard` to opt out.
+Successful human-readable `share` / `publish` copies the review URL to the clipboard when the platform supports it. Use `--no-clipboard` to opt out. If clipboard or browser opening is requested but unavailable, the CLI prints a visible warning and leaves the review URL in the output for manual copy/open.
 
 Use `agentfeed open`, `agentfeed open --latest`, or `agentfeed open --id <draft_id>` to reopen a previously uploaded private review draft in your browser. Cached review URLs are opened only when they match the trusted AgentFeed host or the configured local/custom API base.
 

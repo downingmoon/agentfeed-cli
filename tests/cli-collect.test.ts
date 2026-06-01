@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { execFile, execFileSync } from 'node:child_process';
 import { createServer, type IncomingMessage } from 'node:http';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
@@ -42,6 +42,16 @@ async function readRequestBody(req: IncomingMessage): Promise<Record<string, unk
   const chunks: Buffer[] = [];
   for await (const chunk of req) chunks.push(Buffer.from(chunk));
   return JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>;
+}
+
+async function installFailingBrowserOpener(binDir: string): Promise<void> {
+  const script = '#!/usr/bin/env sh\nexit 1\n';
+  await mkdir(binDir, { recursive: true });
+  await Promise.all(['open', 'xdg-open', 'wslview'].map(async (name) => {
+    const path = join(binDir, name);
+    await writeFile(path, script);
+    await chmod(path, 0o755);
+  }));
 }
 
 describe('collect CLI command', () => {
@@ -221,6 +231,67 @@ describe('collect CLI command', () => {
         review_url: 'http://localhost:3001/worklogs/worklog_collect_json_upload/review'
       });
     } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('reports requested collect JSON open-review handoff failures in the draft upload payload', async () => {
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = "json-upload-open";\n');
+    const server = createServer(async (req, res) => {
+      if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
+        await readRequestBody(req);
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({
+          data: {
+            id: 'worklog_collect_json_handoff',
+            status: 'needs_review',
+            visibility: 'private',
+            review_url: 'http://localhost:3001/worklogs/worklog_collect_json_handoff/review',
+            created_at: '2026-06-01T00:00:00Z'
+          }
+        }));
+        return;
+      }
+      res.writeHead(404, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ error: { code: 'NOT_FOUND' } }));
+    });
+    await new Promise<void>((resolve, reject) => {
+      server.once('error', reject);
+      server.listen(0, '127.0.0.1', resolve);
+    });
+    const fakeBin = await mkdtemp(join(tmpdir(), 'agentfeed-collect-open-fail-bin-'));
+    await installFailingBrowserOpener(fakeBin);
+    try {
+      const address = server.address();
+      if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+      const { stdout, stderr } = await execFileAsync(process.execPath, [
+        cliPath,
+        'collect',
+        '--json',
+        '--upload',
+        '--open-review',
+        '--all',
+        '--no-save-cursor'
+      ], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          PATH: `${fakeBin}:${process.env.PATH ?? ''}`,
+          AGENTFEED_TOKEN: 'af_live_collect_json_upload',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+        }
+      });
+
+      const draft = JSON.parse(stdout);
+      expect(stderr).toBe('');
+      expect(draft.upload.review_url).toBe('http://localhost:3001/worklogs/worklog_collect_json_handoff/review');
+      expect(draft.upload.handoff.browser).toMatchObject({ requested: true, ok: false });
+      expect(draft.upload.handoff.browser.warning).toContain('could not be opened');
+      expect(draft.upload.handoff.clipboard).toMatchObject({ requested: false, ok: null });
+    } finally {
+      await rm(fakeBin, { recursive: true, force: true });
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
   });

@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - CLI Review URL Handoff Failure Surface 2026-06-01]]
+
 - [[Commercial Readiness Hardening - Settings Review Cookie and Command Wrapper Safety 2026-06-01]]
 
 - [[Commercial Readiness Hardening - Backend OAuth Next and Frontend Empty OK Responses 2026-06-01]]

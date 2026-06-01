@@ -43,6 +43,20 @@ created: 2026-05-30
 | Git diff/status | unknown | agent evidence가 없을 때 최소 changed area 보강 |
 
 
+
+## 2026-06-01 CLI review URL handoff failure surface
+
+> [!success]
+> `collect` / `share` / `publish`의 review URL handoff 결과가 수집/업로드 성공 여부와 독립적으로 관찰 가능해졌습니다.
+
+계약:
+
+- `collect --json --upload --open-review`는 draft-root shape를 유지하고 `upload.handoff.browser`에 browser open 결과를 기록합니다.
+- `share --json --clipboard --open-review`는 top-level `handoff`에 clipboard/browser 결과를 기록합니다.
+- Upload 실패 시에는 handoff를 실행하지 않아 실패한 draft가 clipboard/browser로 넘어가지 않습니다.
+
+검증: [[Commercial Readiness Hardening - CLI Review URL Handoff Failure Surface 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Configured command wrapper shell bypass
 
 > [!success]

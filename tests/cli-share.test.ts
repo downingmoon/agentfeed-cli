@@ -63,6 +63,16 @@ async function installFakeClipboard(binDir: string): Promise<string> {
   return logPath;
 }
 
+async function installFailingReviewUrlHandoff(binDir: string): Promise<void> {
+  const script = '#!/usr/bin/env sh\nexit 1\n';
+  await mkdir(binDir, { recursive: true });
+  await Promise.all(['open', 'xdg-open', 'wslview', 'pbcopy', 'xclip', 'wl-copy', 'xsel', 'clip.exe'].map(async (name) => {
+    const path = join(binDir, name);
+    await writeFile(path, script);
+    await chmod(path, 0o755);
+  }));
+}
+
 async function readRequestBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   const chunks: Buffer[] = [];
   for await (const chunk of req) chunks.push(Buffer.from(chunk));
@@ -368,6 +378,75 @@ describe('share CLI command', () => {
       expect(output.upload?.review_url).toBe('http://localhost:3001/worklogs/worklog_share_json_requested_side_effects/review');
       await expect(readFile(clipboardLog, 'utf8')).resolves.toBe('http://localhost:3001/worklogs/worklog_share_json_requested_side_effects/review');
       await expect(readFile(browserLog, 'utf8')).resolves.toBe('http://localhost:3001/worklogs/worklog_share_json_requested_side_effects/review\n');
+    } finally {
+      await rm(fakeBin, { recursive: true, force: true });
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('reports requested share JSON review URL handoff failures inside the JSON payload', async () => {
+    const server = createServer(async (req, res) => {
+      if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
+        res.writeHead(404).end();
+        return;
+      }
+      await readRequestBody(req);
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({
+        data: {
+          id: 'worklog_share_json_failed_handoff',
+          status: 'needs_review',
+          visibility: 'private',
+          review_url: 'http://localhost:3001/worklogs/worklog_share_json_failed_handoff/review',
+          created_at: '2026-06-01T00:00:00.000Z'
+        }
+      }));
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    const fakeBin = await mkdtemp(join(tmpdir(), 'agentfeed-json-failed-handoff-bin-'));
+    await installFailingReviewUrlHandoff(fakeBin);
+
+    try {
+      const sessionFile = await writeCodexShareSession('share-json-failed-handoff', 'gpt-share-json-handoff', 'jsonFailedHandoff');
+      const { stdout, stderr } = await execFileAsync(process.execPath, [
+        cliPath,
+        'share',
+        '--json',
+        '--source',
+        'codex',
+        '--session-file',
+        sessionFile,
+        '--all',
+        '--clipboard',
+        '--open-review'
+      ], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          PATH: `${fakeBin}:${process.env.PATH ?? ''}`,
+          AGENTFEED_TOKEN: 'af_live_test_token',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+        }
+      });
+
+      const output = JSON.parse(stdout) as {
+        upload?: { review_url?: string };
+        handoff?: {
+          clipboard?: { requested?: boolean; ok?: boolean; warning?: string };
+          browser?: { requested?: boolean; ok?: boolean; warning?: string };
+        };
+      };
+      expect(stderr).toBe('');
+      expect(output.upload?.review_url).toBe('http://localhost:3001/worklogs/worklog_share_json_failed_handoff/review');
+      expect(output.handoff?.clipboard).toMatchObject({ requested: true, ok: false });
+      expect(output.handoff?.clipboard?.warning).toContain('not copied');
+      expect(output.handoff?.browser).toMatchObject({ requested: true, ok: false });
+      expect(output.handoff?.browser?.warning).toContain('could not be opened');
     } finally {
       await rm(fakeBin, { recursive: true, force: true });
       await new Promise<void>((resolve) => server.close(() => resolve()));
@@ -746,6 +825,57 @@ describe('share CLI command', () => {
         review_required: false
       });
       await expect(readFile(clipboardLog, 'utf8')).resolves.toBe('http://localhost:3001/worklogs/worklog_publish_json/review');
+    } finally {
+      await rm(fakeBin, { recursive: true, force: true });
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('prints visible warnings when publish review URL handoff fails in human output', async () => {
+    const server = createServer(async (req, res) => {
+      if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
+        res.writeHead(404).end();
+        return;
+      }
+      await readRequestBody(req);
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({
+        data: {
+          id: 'worklog_publish_failed_handoff',
+          status: 'needs_review',
+          visibility: 'private',
+          review_url: 'http://localhost:3001/worklogs/worklog_publish_failed_handoff/review',
+          created_at: '2026-06-01T00:00:00.000Z'
+        }
+      }));
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    const fakeBin = await mkdtemp(join(tmpdir(), 'agentfeed-human-failed-handoff-bin-'));
+    await installFailingReviewUrlHandoff(fakeBin);
+    try {
+      const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+      draft.worklog.title = 'Publish handoff warning';
+      draft.worklog.summary = 'Warn when requested handoff fails';
+      await writeDraft(dir, draft);
+
+      const publish = await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id, '--open-review'], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          PATH: `${fakeBin}:${process.env.PATH ?? ''}`,
+          AGENTFEED_TOKEN: 'af_live_test_token',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+        }
+      });
+
+      expect(publish.stdout).toContain('Warning: Review URL was not copied to clipboard.');
+      expect(publish.stdout).toContain('Warning: Review URL could not be opened automatically.');
+      expect(publish.stdout).toContain('http://localhost:3001/worklogs/worklog_publish_failed_handoff/review');
     } finally {
       await rm(fakeBin, { recursive: true, force: true });
       await new Promise<void>((resolve) => server.close(() => resolve()));

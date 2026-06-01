@@ -13,7 +13,7 @@ import { checkApiReachability, checkIngestionToken, isTrustedReviewUrl, previewD
 import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
 import { applyRedactedPublicFields, publicScanFieldsFromDraft, scanAndRedactDraftPublicFields, type PublicScanFields } from '../privacy/draft-sanitizer.js';
-import type { LocalDraft } from '../types.js';
+import type { LocalDraft, ReviewUrlHandoff } from '../types.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { detectAgentSignals, formatAgentSignalLines } from '../collectors/agent-discovery.js';
 import { changedAreas } from '../summary/changed-areas.js';
@@ -74,6 +74,53 @@ function shouldCopyReviewUrl(options: { json?: boolean; noClipboard?: boolean; c
   if (options.noClipboard) return false;
   if (options.json) return options.clipboard === true;
   return true;
+}
+
+function emptyReviewUrlHandoff(): ReviewUrlHandoff {
+  return {
+    clipboard: { requested: false, ok: null },
+    browser: { requested: false, ok: null }
+  };
+}
+
+async function safeBooleanAction(action: () => Promise<boolean>): Promise<boolean> {
+  try {
+    return await action();
+  } catch {
+    return false;
+  }
+}
+
+async function handoffReviewUrl(reviewUrl: string, options: { copy: boolean; open: boolean }): Promise<ReviewUrlHandoff> {
+  const handoff = emptyReviewUrlHandoff();
+  const tasks: Promise<void>[] = [];
+  if (options.copy) {
+    handoff.clipboard.requested = true;
+    tasks.push(safeBooleanAction(() => copyToClipboard(reviewUrl)).then((ok) => {
+      handoff.clipboard.ok = ok;
+      if (!ok) handoff.clipboard.warning = 'Review URL was not copied to clipboard. Copy upload.review_url manually.';
+    }));
+  }
+  if (options.open) {
+    handoff.browser.requested = true;
+    tasks.push(safeBooleanAction(() => openBrowser(reviewUrl)).then((ok) => {
+      handoff.browser.ok = ok;
+      if (!ok) handoff.browser.warning = 'Review URL could not be opened automatically. Open upload.review_url manually.';
+    }));
+  }
+  await Promise.all(tasks);
+  return handoff;
+}
+
+function printReviewUrlHandoff(handoff: ReviewUrlHandoff, reviewUrl: string): void {
+  if (handoff.clipboard.requested) {
+    if (handoff.clipboard.ok) print('Review URL copied to clipboard.');
+    else print(`Warning: ${handoff.clipboard.warning ?? 'Review URL was not copied to clipboard. Copy it manually.'}`);
+  }
+  if (handoff.browser.requested && !handoff.browser.ok) {
+    print(`Warning: ${handoff.browser.warning ?? 'Review URL could not be opened automatically. Open it manually.'}`);
+    print(reviewUrl);
+  }
 }
 
 async function readStdinText(): Promise<string> {
@@ -343,7 +390,9 @@ async function cmdCollect(args: string[]) {
       if (!creds) throw new Error('AgentFeed token is missing. Run: agentfeed login');
       const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds });
       draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, uploaded_at: result.created_at };
-      if (flag(args, '--open-review')) await openBrowser(result.review_url);
+      if (flag(args, '--open-review')) {
+        draft.upload.handoff = await handoffReviewUrl(result.review_url, { copy: false, open: true });
+      }
     }
     if (!flag(args, '--no-save-cursor')) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
     print(JSON.stringify(draft, null, 2));
@@ -386,9 +435,11 @@ async function cmdShare(args: string[]) {
     const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds! });
     draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, uploaded_at: result.created_at };
     await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
-    print(JSON.stringify({ dry_run: false, reused_existing_draft: collection.reusedExisting, draft_id: draft.id, draft, upload: result, privacy_policy: privacyPolicySummary(draft) }, null, 2));
-    if (shouldCopyReviewUrl({ json: true, noClipboard: opts.noClipboard, clipboard: flag(args, '--clipboard') })) await copyToClipboard(result.review_url);
-    if (await shouldOpenReviewAfterUpload(opts.openReview, { respectConfig: false })) await openBrowser(result.review_url);
+    const handoff = await handoffReviewUrl(result.review_url, {
+      copy: shouldCopyReviewUrl({ json: true, noClipboard: opts.noClipboard, clipboard: flag(args, '--clipboard') }),
+      open: await shouldOpenReviewAfterUpload(opts.openReview, { respectConfig: false })
+    });
+    print(JSON.stringify({ dry_run: false, reused_existing_draft: collection.reusedExisting, draft_id: draft.id, draft, upload: result, privacy_policy: privacyPolicySummary(draft), handoff }, null, 2));
     return;
   }
 
@@ -409,11 +460,10 @@ async function cmdShare(args: string[]) {
   print(`Status: ${result.status}`);
   print(`Review URL:
 ${result.review_url}`);
-  if (shouldCopyReviewUrl({ noClipboard: opts.noClipboard }) && await copyToClipboard(result.review_url)) print('Review URL copied to clipboard.');
-  if (await shouldOpenReviewAfterUpload(opts.openReview)) {
-    const opened = await openBrowser(result.review_url);
-    if (!opened) print(result.review_url);
-  }
+  printReviewUrlHandoff(await handoffReviewUrl(result.review_url, {
+    copy: shouldCopyReviewUrl({ noClipboard: opts.noClipboard }),
+    open: await shouldOpenReviewAfterUpload(opts.openReview)
+  }), result.review_url);
 }
 
 async function cmdPreview(args: string[]) {
@@ -447,9 +497,11 @@ async function cmdPublish(args: string[]) {
   const result = await publishDraft({ cwd: process.cwd(), id, credentials: creds });
   const savedDraft = await readDraft(process.cwd(), id);
   if (flag(args, '--json')) {
-    print(JSON.stringify({ draft_id: id, upload: result, privacy_policy: privacyPolicySummary(savedDraft) }, null, 2));
-    if (shouldCopyReviewUrl({ json: true, noClipboard: flag(args, '--no-clipboard'), clipboard: flag(args, '--clipboard') })) await copyToClipboard(result.review_url);
-    if (await shouldOpenReviewAfterUpload(flag(args, '--open-review'), { respectConfig: false })) await openBrowser(result.review_url);
+    const handoff = await handoffReviewUrl(result.review_url, {
+      copy: shouldCopyReviewUrl({ json: true, noClipboard: flag(args, '--no-clipboard'), clipboard: flag(args, '--clipboard') }),
+      open: await shouldOpenReviewAfterUpload(flag(args, '--open-review'), { respectConfig: false })
+    });
+    print(JSON.stringify({ draft_id: id, upload: result, privacy_policy: privacyPolicySummary(savedDraft), handoff }, null, 2));
     return;
   }
   print(result.reused_existing ? 'Private review draft already uploaded; reusing existing review URL.\n' : 'Private review draft uploaded.\n');
@@ -458,11 +510,10 @@ async function cmdPublish(args: string[]) {
   if (privacyPolicyLines.length) print();
   print(`Status: ${result.status}`);
   print(`Review URL:\n${result.review_url}`);
-  if (shouldCopyReviewUrl({ noClipboard: flag(args, '--no-clipboard') }) && await copyToClipboard(result.review_url)) print('Review URL copied to clipboard.');
-  if (await shouldOpenReviewAfterUpload(flag(args, '--open-review'))) {
-    const opened = await openBrowser(result.review_url);
-    if (!opened) print(result.review_url);
-  }
+  printReviewUrlHandoff(await handoffReviewUrl(result.review_url, {
+    copy: shouldCopyReviewUrl({ noClipboard: flag(args, '--no-clipboard') }),
+    open: await shouldOpenReviewAfterUpload(flag(args, '--open-review'))
+  }), result.review_url);
 }
 
 async function cmdScan(args: string[]) {

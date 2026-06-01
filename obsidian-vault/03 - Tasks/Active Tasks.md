@@ -22,6 +22,10 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] CLI `share/publish --json` requested review URL clipboard/browser handoff 실패를 machine-readable status로 노출
+- [x] CLI `collect --json --upload --open-review` browser handoff 실패를 draft upload payload에 노출
+- [x] CLI human `share/publish` clipboard/browser 실패 warning과 manual fallback 보강
+- 관련 노트: [[Commercial Readiness Hardening - CLI Review URL Handoff Failure Surface 2026-06-01]]
 - [x] Frontend Settings privacy/notification save partial failure를 section-aware recovery로 보강
 - [x] Frontend Worklog review publish/resolve error와 pending state를 assistive tech에 노출
 - [x] Backend auth/logout cookie deletion이 set-cookie 보안 tuple과 일치하도록 보강

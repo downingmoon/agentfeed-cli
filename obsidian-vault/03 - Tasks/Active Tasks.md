@@ -22,6 +22,8 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] Dev live smoke가 CLI token replacement도 browser approve click/session consumed 상태로 검증
+- 관련 노트: [[Commercial Readiness Hardening - CLI Token Rotation Browser Approval Smoke 2026-06-01]]
 - [x] Dev live smoke가 CLI auth metadata UI 표시와 browser approve click/session consumed 상태를 검증
 - 관련 노트: [[Commercial Readiness Hardening - CLI Auth Browser Approval Smoke 2026-06-01]]
 - [x] CLI browser auth approval 화면 session metadata 검증/표시 및 fail-closed 처리

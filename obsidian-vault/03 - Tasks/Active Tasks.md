@@ -22,6 +22,9 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] Frontend project detail dynamic route 충돌로 인한 Next dev restart loop 제거
+- [x] Dev smoke가 owner-aware project detail hydrated route를 검증
+- 관련 노트: [[Commercial Readiness Hardening - Frontend Project Route Dev Runtime 2026-06-01]]
 - [x] CLI doctor/API reachability와 dev smoke를 Backend `/health/ready` readiness contract로 전환
 - [x] Dev smoke가 readiness JSON의 DB/migration 상태까지 검증
 - 관련 노트: [[Commercial Readiness Hardening - Readiness Probe Semantics 2026-06-01]]

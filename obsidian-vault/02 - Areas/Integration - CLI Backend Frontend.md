@@ -40,6 +40,21 @@ sequenceDiagram
 
 
 
+
+## 2026-06-01 Frontend project route dev runtime
+
+> [!success]
+> Next dev에서 `/projects/[slug]`와 `/projects/[owner]/[slug]`가 같은 depth의 dynamic segment name 충돌을 일으켜 Frontend container가 restart loop에 빠지던 문제를 단일 catch-all route로 해결했습니다.
+
+계약:
+
+- `/projects/:slug` legacy route는 계속 지원합니다.
+- `/projects/:owner/:slug` owner-aware canonical route는 계속 지원합니다.
+- Project detail App Router 파일은 `src/app/projects/[...projectPath]/page.tsx` 하나로 유지해 Next dev/prod route graph를 일치시킵니다.
+- Dev smoke는 owner-aware hydrated project detail route까지 검증합니다.
+
+검증: [[Commercial Readiness Hardening - Frontend Project Route Dev Runtime 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Readiness probe semantics
 
 > [!success]

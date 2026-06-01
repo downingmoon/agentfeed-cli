@@ -41,6 +41,20 @@ sequenceDiagram
 
 
 
+## 2026-06-01 Session logout revocation smoke
+
+> [!success]
+> Browser-cookie logout이 Backend session cutoff까지 연결되고, Frontend가 failed logout을 local signed-out 상태로 오인하지 않도록 계약을 보강했습니다.
+
+계약:
+
+- Frontend `signOut()`은 `auth.logout()` 성공 후에만 local user/social state를 지웁니다.
+- Logout API failure는 app-level alert로 표시하고 기존 signed-in state를 유지합니다.
+- Dev smoke는 `Origin: $FRONTEND_URL`과 `access_token` cookie로 `/v1/auth/logout`을 호출해 browser-cookie CSRF 계약을 그대로 검증합니다.
+- Logout 후 같은 JWT는 cookie와 bearer 양쪽 모두 `/v1/auth/me`에서 `401`이어야 합니다.
+
+검증: [[Commercial Readiness Hardening - Session Logout Revocation Smoke 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Authenticated frontend account smoke
 
 > [!success]

@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Session Logout Revocation Smoke 2026-06-01]]
+
 - [[Commercial Readiness Hardening - Authenticated Frontend Account Smoke 2026-06-01]]
 
 - [[Commercial Readiness Hardening - Frontend Project Route Dev Runtime 2026-06-01]]

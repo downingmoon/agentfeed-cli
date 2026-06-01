@@ -22,6 +22,9 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] Frontend logout 실패 시 local signed-out illusion 방지 및 session action alert 보강
+- [x] Dev live smoke가 browser logout 후 동일 cookie/bearer JWT 거부를 검증
+- 관련 노트: [[Commercial Readiness Hardening - Session Logout Revocation Smoke 2026-06-01]]
 - [x] Dev live smoke가 browser cookie-authenticated review/dashboard/settings/notifications DOM을 검증
 - [x] browser-dom-dump에 smoke 전용 cookie injection 지원 추가
 - 관련 노트: [[Commercial Readiness Hardening - Authenticated Frontend Account Smoke 2026-06-01]]

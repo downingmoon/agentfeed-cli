@@ -22,6 +22,10 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] Frontend App auth unavailable banner에 in-place retry action 추가
+- [x] Frontend Dashboard/Notifications auth/API bootstrap failure recovery branch 보강
+- [x] Frontend Notifications nested Link/Read button 구조 제거 및 pending/ARIA 상태 보강
+- 관련 노트: [[Commercial Readiness Hardening - Frontend Auth Recovery and Notification Actions 2026-06-01]]
 - [x] Frontend Feed Rising builders nested interactive row 제거 및 profile/follow sibling controls로 보강
 - [x] Frontend Feed filter dropdown ARIA expanded/listbox/selected semantics 보강
 - 관련 노트: [[Commercial Readiness Hardening - Frontend Feed Sidebar Accessibility 2026-06-01]]

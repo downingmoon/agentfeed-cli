@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Frontend Auth Recovery and Notification Actions 2026-06-01]]
+
 - [[Commercial Readiness Hardening - Frontend Feed Sidebar Accessibility 2026-06-01]]
 
 - [[Commercial Readiness Hardening - CLI Review URL Handoff Failure Surface 2026-06-01]]

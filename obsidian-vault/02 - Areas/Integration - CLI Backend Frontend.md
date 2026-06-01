@@ -36,6 +36,21 @@ sequenceDiagram
 
 
 
+
+## 2026-06-01 Frontend auth recovery and notification actions
+
+> [!success]
+> App shell auth bootstrap 장애를 in-place retry로 복구할 수 있게 하고, Notifications row의 navigation/action controls를 sibling 구조로 분리했습니다.
+
+계약:
+
+- Auth unavailable banner는 `auth.me()` retry action과 pending state를 노출합니다.
+- Dashboard/Notifications는 `authError`와 `apiConfigError` 모두 stuck redirect/loading 대신 recovery branch를 렌더링합니다.
+- Notification navigation Link는 `Read` button을 중첩하지 않고 sibling control로 배치됩니다.
+- Read/mark-all-read mutations는 duplicate click을 pending state와 `aria-busy`로 잠급니다.
+
+검증: [[Commercial Readiness Hardening - Frontend Auth Recovery and Notification Actions 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Frontend feed sidebar accessibility
 
 > [!success]

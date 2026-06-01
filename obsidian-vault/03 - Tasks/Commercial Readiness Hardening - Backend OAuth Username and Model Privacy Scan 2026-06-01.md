@@ -10,7 +10,7 @@ tags:
   - agentfeed/backend
   - agentfeed/auth
   - agentfeed/privacy
-status: in-progress
+status: done
 created: 2026-06-01
 repositories:
   - agentfeed-backend
@@ -64,7 +64,7 @@ repositories:
 
 ## 남은 검증
 
-- [ ] Remote GitHub CI
+- [x] Remote GitHub CI: `downingmoon/agentfeed-backend` CI run `26763474034` → success (`7f0934e`)
 
 ## 관련 링크
 

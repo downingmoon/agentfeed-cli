@@ -10,7 +10,7 @@ tags:
   - agentfeed/cli
   - agentfeed/release
   - supply-chain
-status: in-progress
+status: done
 created: 2026-06-01
 repositories:
   - AgentFeed-CLI
@@ -48,7 +48,7 @@ repositories:
 
 ## 남은 검증
 
-- [ ] Remote GitHub CI
+- [x] Remote GitHub CI: `downingmoon/agentfeed-cli` CI run `26763473746` → success (`b896fe2`)
 
 ## 관련 링크
 

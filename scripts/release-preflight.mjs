@@ -142,6 +142,25 @@ export function validateCliVersionOutput(output, pkg) {
   assert(output.trim() === pkg.version, 'built CLI --version output must match package.json version exactly.');
 }
 
+export function validateReleaseGitRef(pkg, env = process.env) {
+  if (env.GITHUB_ACTIONS !== 'true') return;
+  const workflowRef = env.GITHUB_WORKFLOW_REF ?? '';
+  const isReleaseWorkflow = env.GITHUB_WORKFLOW === 'Release'
+    || workflowRef.includes('/.github/workflows/release.yml@');
+  if (!isReleaseWorkflow) return;
+
+  const expectedTag = `v${pkg.version}`;
+  const ref = env.GITHUB_REF ?? '';
+  const inferredTagName = ref.startsWith('refs/tags/') ? ref.slice('refs/tags/'.length) : '';
+  const refType = env.GITHUB_REF_TYPE || (inferredTagName ? 'tag' : '');
+  const refName = env.GITHUB_REF_NAME || inferredTagName;
+
+  assert(
+    refType === 'tag' && refName === expectedTag,
+    `release workflow must publish only from the matching version tag ${expectedTag}; got ${refType || 'unknown'} ${refName || ref || 'unknown'}.`
+  );
+}
+
 function runPackDryRun() {
   const stdout = execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
     cwd: repoRoot,
@@ -179,6 +198,7 @@ function runCliSmoke(pkg) {
 function main() {
   const pkg = readJson(packagePath);
   validatePackageMetadata(pkg);
+  validateReleaseGitRef(pkg);
   validateTrustedPublishingWorkflow(readFileSync(releaseWorkflowPath, 'utf8'));
   const packResult = runPackDryRun();
   validatePackResult(packResult, pkg);

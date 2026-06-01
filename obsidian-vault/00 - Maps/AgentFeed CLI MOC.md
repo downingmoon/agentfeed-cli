@@ -33,6 +33,12 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Backend OAuth Username and Model Privacy Scan 2026-06-01]]
+
+- [[Commercial Readiness Hardening - CLI Upload Cache and CI Login Guard 2026-06-01]]
+
+- [[Commercial Readiness Hardening - CLI Release Tag Version Gate 2026-06-01]]
+
 - [[Commercial Readiness Hardening - CLI Auth URL Minimization and Production DB TLS 2026-06-01]]
 
 - [[Commercial Readiness Hardening - CLI Diagnostics Backend Privacy Rescan and Feed Backdrop 2026-06-01]]

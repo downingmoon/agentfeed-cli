@@ -470,5 +470,6 @@ created: 2026-05-30
 - `agentfeed --version` / `-v` must match `package.json` exactly.
 - `agentfeed status` reports malformed `.claude/settings.json` as a warning and keeps hook status `unknown`.
 - Release preflight must include built help/version smoke before npm publish.
+- Release publish job은 package version과 같은 `v*` tag에서만 preflight를 통과합니다.
 
 검증: [[Commercial Readiness Hardening - CLI Diagnostics Backend Privacy Rescan and Feed Backdrop 2026-06-01#검증 증거]]

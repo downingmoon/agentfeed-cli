@@ -135,6 +135,10 @@ export function draftToIngestRequest(draft: LocalDraft): IngestWorklogRequest {
   };
 }
 
+export function draftUploadPayloadHash(draft: LocalDraft): string {
+  return shortHash(JSON.stringify(draftToIngestRequest(draft)), 32);
+}
+
 function friendlyError(status: number, code: string, message: string, details?: Record<string, unknown>): string {
   if (status === 401 || code === 'INGESTION_TOKEN_INVALID') {
     return 'Login/token problem. Run: agentfeed rotate. If AGENTFEED_TOKEN is set, replace that environment variable or run: agentfeed rotate --browser.';
@@ -494,6 +498,23 @@ function parseCachedUploadResult(draft: LocalDraft, apiBaseUrl: string): Publish
   }, apiBaseUrl);
 }
 
+function staleCachedUploadError(draft: LocalDraft): AgentFeedApiError {
+  return new AgentFeedApiError(
+    409,
+    'DRAFT_UPLOAD_STALE',
+    'Saved private review no longer matches this local draft after privacy redaction. Keep reviewing the existing URL in the browser, or collect a fresh worklog before sharing again.',
+    {
+      worklog_id: draft.upload.worklog_id ?? null,
+      review_url: draft.upload.review_url ?? null
+    }
+  );
+}
+
+function assertCachedUploadPayloadCurrent(draft: LocalDraft, currentPayloadHash: string): void {
+  if (draft.upload.payload_hash === currentPayloadHash) return;
+  throw staleCachedUploadError(draft);
+}
+
 function detailString(details: Record<string, unknown> | undefined, key: string): string | null {
   const value = details?.[key];
   return typeof value === 'string' && value.length > 0 ? value : null;
@@ -535,6 +556,7 @@ function duplicateIngestResult(error: AgentFeedApiError, fallbackCreatedAt: stri
 export async function publishDraft(options: { cwd: string; id: string; credentials: AgentFeedCredentials }): Promise<PublishDraftResult> {
   const draft = await readDraft(options.cwd, options.id);
   scanAndRedactDraftPublicFields(draft);
+  const payloadHash = draftUploadPayloadHash(draft);
   if (draft.upload.uploaded && draft.upload.worklog_id && draft.upload.review_url) {
     let cached: PublishDraftResult;
     try {
@@ -543,6 +565,12 @@ export async function publishDraft(options: { cwd: string; id: string; credentia
       draft.upload = { uploaded: false };
       await writeDraft(options.cwd, draft);
       throw new AgentFeedApiError(502, 'DRAFT_UPLOAD_METADATA_INVALID', 'Saved draft upload metadata is invalid. Run agentfeed share again to upload a fresh private review draft.');
+    }
+    try {
+      assertCachedUploadPayloadCurrent(draft, payloadHash);
+    } catch (error) {
+      await writeDraft(options.cwd, draft);
+      throw error;
     }
     await writeDraft(options.cwd, draft);
     return cached;
@@ -559,7 +587,7 @@ export async function publishDraft(options: { cwd: string; id: string; credentia
       throw error;
     }
   }
-  draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, uploaded_at: result.created_at };
+  draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, uploaded_at: result.created_at, payload_hash: payloadHash };
   await writeDraft(options.cwd, draft);
   return result;
 }

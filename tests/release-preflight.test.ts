@@ -6,6 +6,7 @@ import {
   validateCliVersionOutput,
   validatePackageMetadata,
   validatePackResult,
+  validateReleaseGitRef,
   validateTrustedPublishingWorkflow
 } from '../scripts/release-preflight.mjs';
 
@@ -162,6 +163,40 @@ describe('release preflight guardrails', () => {
     ))).toThrow('48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e');
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('npm publish --access public', 'npm publish --provenance --access public'))).toThrow('must not pass --provenance');
     expect(() => validateTrustedPublishingWorkflow(`${validTrustedPublishingWorkflow}\n      - run: echo "$NODE_AUTH_TOKEN"\n`)).toThrow('long-lived npm tokens');
+  });
+
+  it('requires GitHub release runs to publish only from the matching version tag', () => {
+    expect(() => validateReleaseGitRef(validPackageJson, {})).not.toThrow();
+    expect(() => validateReleaseGitRef(validPackageJson, {
+      GITHUB_ACTIONS: 'true',
+      GITHUB_WORKFLOW: 'CI',
+      GITHUB_REF_TYPE: 'branch',
+      GITHUB_REF_NAME: 'main'
+    })).not.toThrow();
+    expect(() => validateReleaseGitRef(validPackageJson, {
+      GITHUB_ACTIONS: 'true',
+      GITHUB_WORKFLOW: 'Release',
+      GITHUB_REF_TYPE: 'tag',
+      GITHUB_REF_NAME: 'v0.2.0'
+    })).not.toThrow();
+
+    expect(() => validateReleaseGitRef(validPackageJson, {
+      GITHUB_ACTIONS: 'true',
+      GITHUB_WORKFLOW: 'Release',
+      GITHUB_REF_TYPE: 'branch',
+      GITHUB_REF_NAME: 'main'
+    })).toThrow('matching version tag');
+    expect(() => validateReleaseGitRef(validPackageJson, {
+      GITHUB_ACTIONS: 'true',
+      GITHUB_WORKFLOW: 'Release',
+      GITHUB_REF_TYPE: 'tag',
+      GITHUB_REF_NAME: 'v0.2.1'
+    })).toThrow('v0.2.0');
+    expect(() => validateReleaseGitRef(validPackageJson, {
+      GITHUB_ACTIONS: 'true',
+      GITHUB_WORKFLOW_REF: 'downingmoon/agentfeed-cli/.github/workflows/release.yml@refs/tags/v0.2.0',
+      GITHUB_REF: 'refs/tags/v0.2.0'
+    })).not.toThrow();
   });
 
   it('validates the built CLI help and version smoke output', () => {

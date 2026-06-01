@@ -22,6 +22,14 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] Backend 신규 GitHub OAuth user에 unique username을 부여해 public profile/author link 404 방지
+- [x] Backend publish fallback privacy scan이 공개 `model` 필드 secret을 차단
+- 관련 노트: [[Commercial Readiness Hardening - Backend OAuth Username and Model Privacy Scan 2026-06-01]]
+- [x] CLI uploaded draft cache가 redacted payload drift를 숨기지 않도록 fail-closed 처리
+- [x] CLI CI browser login guard가 `AGENTFEED_TOKEN` 존재 시에도 session 생성을 차단
+- 관련 노트: [[Commercial Readiness Hardening - CLI Upload Cache and CI Login Guard 2026-06-01]]
+- [x] CLI npm release가 package version과 같은 `v*` tag에서만 publish되도록 preflight 보강
+- 관련 노트: [[Commercial Readiness Hardening - CLI Release Tag Version Gate 2026-06-01]]
 - [x] CLI `--version`/release smoke, malformed local metadata resilience, Backend client privacy scan publish-time rescan, Frontend feed filter backdrop semantics 보강
 - 관련 노트: [[Commercial Readiness Hardening - CLI Diagnostics Backend Privacy Rescan and Feed Backdrop 2026-06-01]]
 - [x] Frontend CLI authorization pending/session retry loop 및 URL-visible `session_id` 축소 구현

@@ -29,6 +29,36 @@ sequenceDiagram
 ```
 
 
+
+
+## 2026-06-01 Backend OAuth username and model privacy scan
+
+> [!success]
+> Backend auth/profile contract와 publish privacy gate를 Frontend public link 및 CLI-ingested public fields와 정렬했습니다.
+
+계약:
+
+- 신규 GitHub OAuth user는 GitHub login 기반 unique username을 받아 Frontend `/profile/{username}` link가 onboarding 직후부터 유효합니다.
+- 충돌 username은 deterministic suffix로 해소되어 URL이 안정적으로 유지됩니다.
+- CLI가 전송하는 `worklog.model`은 public review/feed surface에 노출되므로 Backend publish fallback scan 대상에 포함됩니다.
+- Client scan 누락 시에도 Backend가 `model` secret을 publish 전에 차단합니다.
+
+검증: [[Commercial Readiness Hardening - Backend OAuth Username and Model Privacy Scan 2026-06-01#검증 증거]]
+
+## 2026-06-01 CLI upload cache and CI login guard
+
+> [!success]
+> CLI가 Backend private review URL을 재사용할 때 local redacted payload와 remote review cache의 일치성을 명시적으로 검증하도록 했습니다.
+
+계약:
+
+- CLI upload metadata의 `payload_hash`는 Backend ingest request 기준 sanitized payload를 대표합니다.
+- Cached review URL 재사용은 hash match에만 허용됩니다.
+- Drift/missing hash는 `DRAFT_UPLOAD_STALE`로 실패해 stale remote private review를 안전한 것으로 오인하지 않습니다.
+- CI 환경의 `agentfeed login`은 browser session을 만들지 않아 자동화가 예상 밖 auth session을 생성하지 않습니다.
+
+검증: [[Commercial Readiness Hardening - CLI Upload Cache and CI Login Guard 2026-06-01#검증 증거]]
+
 ## 2026-06-01 CLI auth URL minimization and production DB TLS
 
 > [!success]
@@ -276,7 +306,7 @@ sequenceDiagram
 계약:
 
 - Backend `/v1/auth/github?next=...`는 Frontend를 우회해 직접 호출되어도 in-app allowlist와 query-key allowlist를 통과한 path만 OAuth state에 보존합니다.
-- `/cli/authorize?session_id=...` browser-login deep link는 유지합니다.
+- `/cli/authorize?session_id=...` browser-login deep link는 최초 진입용으로만 유지하고, OAuth state에는 `/cli/authorize`만 보존합니다.
 - Unknown/unsafe path, dot segment, encoded separator, OAuth-sensitive query/hash는 `/dashboard` 또는 stripped query/hash로 수렴합니다.
 - Frontend `apiFetch()`는 기본적으로 empty successful response를 계속 `ApiError(502)`로 처리합니다.
 - Logout/delete/report/read-all/revoke처럼 client contract가 `{ ok: true }`인 call site만 explicit empty fallback을 가집니다.
@@ -700,6 +730,21 @@ sequenceDiagram
 
 관련 작업 노트: [[Commercial Readiness Hardening - CLI Release Preflight and Provenance 2026-06-01]]
 
+
+
+## 2026-06-01 CLI release tag version gate
+
+> [!success]
+> CLI npm release workflow는 package version과 같은 Git tag에서만 publish preflight를 통과합니다.
+
+계약:
+
+- GitHub Actions release 환경에서는 `GITHUB_REF_TYPE=tag`와 `GITHUB_REF_NAME=v${package.version}`가 일치해야 합니다.
+- `GITHUB_REF=refs/tags/v${package.version}`만 있는 환경도 지원합니다.
+- Branch `workflow_dispatch` 또는 version mismatch tag는 `npm publish` 전에 실패합니다.
+- Local repository-side preflight는 GitHub Actions ref가 없으면 기존처럼 package/tarball/workflow smoke를 검증합니다.
+
+검증: [[Commercial Readiness Hardening - CLI Release Tag Version Gate 2026-06-01#검증 증거]]
 
 ## 2026-06-01 CLI trusted publishing enforcement
 

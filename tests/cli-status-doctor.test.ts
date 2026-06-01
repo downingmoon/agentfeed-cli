@@ -286,6 +286,47 @@ describe('status and doctor provenance output', () => {
     }
   });
 
+  it('login fails fast in CI even when an environment token is already present', async () => {
+    let requestCount = 0;
+    const server = await import('node:http').then(({ createServer }) => createServer((_req, res) => {
+      requestCount += 1;
+      res.writeHead(500, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ error: { code: 'UNEXPECTED_BROWSER_SESSION_REQUEST' } }));
+    }));
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind');
+    const startedAt = Date.now();
+
+    try {
+      let failure: { stderr?: string; stdout?: string } | undefined;
+      try {
+        await execFileAsync(process.execPath, [cliPath, 'login', '--no-open', '--api-base-url', `http://127.0.0.1:${address.port}/v1`], {
+          cwd: dir,
+          encoding: 'utf8',
+          env: {
+            ...process.env,
+            HOME: home,
+            AGENTFEED_TOKEN: 'af_live_existing_ci_token',
+            AGENTFEED_CI: '1'
+          }
+        });
+      } catch (error) {
+        failure = error as { stderr?: string; stdout?: string };
+      }
+
+      expect(failure?.stderr).toContain('Browser login is disabled in CI.');
+      expect(failure?.stderr).toContain('AGENTFEED_TOKEN');
+      expect(failure?.stderr).toContain('--browser');
+      expect(failure?.stdout ?? '').toBe('');
+      expect(requestCount).toBe(0);
+      expect(Date.now() - startedAt).toBeLessThan(5000);
+      await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
   it('rotate replaces a saved token through browser-approved session rotation without printing secrets', async () => {
     await mkdir(join(home, '.agentfeed'), { recursive: true });
     await writeFile(join(home, '.agentfeed', 'credentials.json'), JSON.stringify({

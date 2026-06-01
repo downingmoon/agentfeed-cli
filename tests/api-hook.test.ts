@@ -7,7 +7,7 @@ import { promisify } from 'node:util';
 import { initProject } from '../src/config/project-config.js';
 import { writeDraft } from '../src/draft/write.js';
 import { createEmptyDraft } from '../src/draft/create.js';
-import { checkApiReachability, checkIngestionToken, createCliAuthSession, draftToIngestRequest, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
+import { checkApiReachability, checkIngestionToken, createCliAuthSession, draftToIngestRequest, draftUploadPayloadHash, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
 import { browserLogin, waitForCliAuthExchange } from '../src/auth/browser-login.js';
 import { buildClaudeCodeStopHookCommand, installClaudeCodeHook, uninstallClaudeCodeHook } from '../src/hooks/claude-code-settings.js';
 import { pathExists } from '../src/utils/fs.js';
@@ -148,7 +148,8 @@ describe('api client', () => {
       uploaded: true,
       worklog_id: 'worklog_existing',
       review_url: 'https://agentfeed.dev/worklogs/worklog_existing/review',
-      uploaded_at: '2026-05-19T00:00:00Z'
+      uploaded_at: '2026-05-19T00:00:00Z',
+      payload_hash: draftUploadPayloadHash(draft)
     };
     await writeDraft(dir, draft);
     const fetchMock = vi.fn(async () => { throw new Error('must not upload'); });
@@ -165,6 +166,41 @@ describe('api client', () => {
     const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
     expect(saved.worklog.summary).toBe('Already uploaded but still contains [REDACTED_SECRET]');
     expect(saved.privacy_scan.status).toBe('danger');
+  });
+
+  it('fails closed when an uploaded draft cache no longer matches the local redacted payload', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    draft.worklog.summary = 'Original private review payload';
+    const uploadedPayloadHash = draftUploadPayloadHash(draft);
+    draft.upload = {
+      uploaded: true,
+      worklog_id: 'worklog_existing',
+      review_url: 'https://agentfeed.dev/worklogs/worklog_existing/review',
+      uploaded_at: '2026-05-19T00:00:00Z',
+      payload_hash: uploadedPayloadHash
+    };
+    draft.worklog.summary = 'Edited locally with sk-abcdefghijklmnopqrstuvwxyz1234567890';
+    await writeDraft(dir, draft);
+    const fetchMock = vi.fn(async () => { throw new Error('must not upload a stale cached draft'); });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
+      .rejects.toMatchObject({
+        code: 'DRAFT_UPLOAD_STALE',
+        details: {
+          worklog_id: 'worklog_existing',
+          review_url: 'https://agentfeed.dev/worklogs/worklog_existing/review'
+        }
+      });
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+    expect(saved.worklog.summary).toBe('Edited locally with [REDACTED_SECRET]');
+    expect(saved.upload).toMatchObject({
+      uploaded: true,
+      worklog_id: 'worklog_existing',
+      payload_hash: uploadedPayloadHash
+    });
   });
 
   it.each([
@@ -721,6 +757,21 @@ describe('api client', () => {
 
     await expect(browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1', noOpen: true }))
       .rejects.toThrow(/AGENTFEED_TOKEN|agentfeed login --token|--browser/);
+
+    expect(Date.now() - startedAt).toBeLessThan(1000);
+    expect(fetchMock).not.toHaveBeenCalled();
+    await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
+  it.each(['AGENTFEED_CI', 'CI', 'GITHUB_ACTIONS'])('fails fast in %s instead of opening browser auth when an environment token already exists', async (envName) => {
+    process.env[envName] = '1';
+    process.env.AGENTFEED_TOKEN = 'af_live_existing_ci_token';
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ data: {} }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+    const startedAt = Date.now();
+
+    await expect(browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1', noOpen: true }))
+      .rejects.toThrow(/Browser login is disabled in CI|AGENTFEED_TOKEN|--browser/);
 
     expect(Date.now() - startedAt).toBeLessThan(1000);
     expect(fetchMock).not.toHaveBeenCalled();

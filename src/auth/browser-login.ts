@@ -62,13 +62,12 @@ function isTruthyEnvironmentValue(value: string | undefined): boolean {
 
 function ciBrowserLoginBlocked(options: { allowCiBrowser?: boolean }): boolean {
   return CI_ENVIRONMENT_VARIABLES.some((name) => isTruthyEnvironmentValue(process.env[name]))
-    && !process.env.AGENTFEED_TOKEN
     && options.allowCiBrowser !== true;
 }
 
 export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: boolean; waitMs?: number; save?: boolean; cwd?: string; storedApiBaseUrl?: string; allowCiBrowser?: boolean; replaceTokenId?: string } = {}) {
   if (ciBrowserLoginBlocked(options)) {
-    throw new Error('Browser login is disabled in CI. Set AGENTFEED_TOKEN or pipe a token with: printf %s "$TOKEN" | agentfeed login --token-stdin. To intentionally run browser auth anyway, pass --browser.');
+    throw new Error('Browser login is disabled in CI. If AGENTFEED_TOKEN is already set, use non-login AgentFeed commands directly. Otherwise set AGENTFEED_TOKEN or pipe a token with: printf %s "$TOKEN" | agentfeed login --token-stdin. To intentionally run browser auth anyway, pass --browser.');
   }
   const apiResolution = await resolveApiBaseUrlWithMetadata({
     cwd: options.cwd,

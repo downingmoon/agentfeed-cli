@@ -12,6 +12,20 @@ created: 2026-05-30
 
 # Privacy Safety
 
+## 2026-06-01 Backend model privacy fallback scan
+
+> [!success]
+> Backend publish-time fallback privacy scan이 public review/feed에 노출되는 `model` 필드까지 검사합니다.
+
+계약:
+
+- Client scan이 없거나 stale한 `privacy_scan_json=None` 상태에서도 Backend는 publish 직전 public text fields를 다시 검사합니다.
+- `model`에 secret/API key pattern이 있으면 public/unlisted publish는 `UnresolvedPrivacyFinding`으로 차단됩니다.
+- Finding field는 `model`로 남아 review UI와 운영 디버깅에서 원인을 식별할 수 있어야 합니다.
+
+검증: [[Commercial Readiness Hardening - Backend OAuth Username and Model Privacy Scan 2026-06-01#검증 증거]]
+
+
 > [!abstract] 목적
 > 공개 feed로 넘어갈 수 있는 draft 필드에서 secret, local path, private URL, email 등을 원문 노출 없이 검출·치환한다.
 

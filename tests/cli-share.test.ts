@@ -8,6 +8,7 @@ import { promisify } from 'node:util';
 import { initProject } from '../src/config/project-config.js';
 import { createEmptyDraft } from '../src/draft/create.js';
 import { writeDraft } from '../src/draft/write.js';
+import { draftUploadPayloadHash } from '../src/api/client.js';
 import { ensureCliBuilt } from './build-cli.js';
 
 const repoRoot = resolve('.');
@@ -718,7 +719,8 @@ describe('share CLI command', () => {
       uploaded: true,
       worklog_id: 'worklog_ci_no_open',
       review_url: 'https://agentfeed.dev/worklogs/worklog_ci_no_open/review',
-      uploaded_at: '2026-05-31T00:00:00.000Z'
+      uploaded_at: '2026-05-31T00:00:00.000Z',
+      payload_hash: draftUploadPayloadHash(draft)
     };
     await writeDraft(dir, draft);
     const fakeBin = join(dir, '.agentfeed', 'fake-ci-bin');
@@ -749,7 +751,8 @@ describe('share CLI command', () => {
       uploaded: true,
       worklog_id: 'worklog_privacy_policy',
       review_url: 'https://agentfeed.dev/worklogs/worklog_privacy_policy/review',
-      uploaded_at: '2026-05-31T00:00:00.000Z'
+      uploaded_at: '2026-05-31T00:00:00.000Z',
+      payload_hash: draftUploadPayloadHash(draft)
     };
     await writeDraft(dir, draft);
 

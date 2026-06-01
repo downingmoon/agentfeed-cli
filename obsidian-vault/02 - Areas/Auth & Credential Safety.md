@@ -16,6 +16,36 @@ created: 2026-05-30
 > [!abstract] 목적
 > AgentFeed CLI가 브라우저 로그인과 token login을 제공하되, 사용자가 원할 때 로컬 credential 파일을 남기지 않는 안전한 경로를 보장합니다.
 
+
+
+## 2026-06-01 Backend OAuth username bootstrap
+
+> [!success]
+> 신규 GitHub OAuth 사용자가 public profile/author link에서 즉시 접근 가능한 username을 갖도록 Backend 생성 경로를 보강했습니다.
+
+계약:
+
+- GitHub `login`은 app username 규칙으로 sanitize/normalize됩니다.
+- Collision은 `base`, `base-2`, `base-3` 순서로 deterministic하게 해소합니다.
+- Missing/invalid login은 기존처럼 `username=None`을 유지합니다.
+- Existing linked auth account는 username을 새로 덮어쓰지 않습니다.
+
+검증: [[Commercial Readiness Hardening - Backend OAuth Username and Model Privacy Scan 2026-06-01#검증 증거]]
+
+## 2026-06-01 CLI upload cache and CI login guard
+
+> [!success]
+> CLI private review 재사용과 CI login 경계를 fail-closed로 보강했습니다.
+
+계약:
+
+- 이미 업로드된 local draft는 saved `payload_hash`가 현재 redacted ingest payload와 같을 때만 review URL을 재사용합니다.
+- Local privacy redaction 이후 payload drift가 있으면 `DRAFT_UPLOAD_STALE`로 멈추고 network upload를 시도하지 않습니다.
+- CI browser login guard는 `AGENTFEED_TOKEN` 존재 여부와 무관하게 기본 차단됩니다.
+- CI에서는 existing token으로 non-login commands를 실행하거나 `login --token-stdin`을 사용합니다.
+
+검증: [[Commercial Readiness Hardening - CLI Upload Cache and CI Login Guard 2026-06-01#검증 증거]]
+
 ## 2026-06-01 CLI auth URL minimization
 
 > [!success]
@@ -361,7 +391,7 @@ created: 2026-05-30
 
 - Header Sign in / Get started는 현재 path와 query string을 `next`에 담습니다.
 - protocol-relative path는 `/`로 정규화해 open redirect 입력이 되지 않게 합니다.
-- CLI authorize page의 기존 next-preservation pattern과 동일한 흐름을 사용합니다.
+- CLI authorize page는 2026-06-01 이후 raw `session_id`를 OAuth `next`에 넣지 않고 `/cli/authorize` path만 보존합니다.
 
 관련 구현: [[Integration - CLI Backend Frontend#2026-05-30 Header OAuth next preservation]]
 
@@ -376,7 +406,7 @@ created: 2026-05-30
 - protocol-relative URL, absolute URL, `javascript:` 같은 scheme-like 값, encoded `//`, encoded/raw backslash, whitespace/control char, `.`/`..` segment는 거부합니다.
 - unsafe next는 query를 보존하지 않고 `/`로 fallback합니다.
 - `auth.githubUrl(next)` 직접 호출도 unsafe next를 OAuth query param에 싣지 않습니다.
-- CLI authorize return path(`/cli/authorize?session_id=...`)는 유지하되 session id는 encoded query로만 전달합니다.
+- CLI authorize return path는 `/cli/authorize`만 OAuth `next`에 보존하고, one-time `session_id`는 최초 진입 후 `sessionStorage`에만 둡니다.
 
 검증:
 
@@ -658,7 +688,7 @@ created: 2026-05-30
 
 계약:
 
-- `/v1/auth/cli/sessions` 응답의 `authorize_url`은 frontend `/cli/authorize?session_id=...`만 포함합니다.
+- `/v1/auth/cli/sessions` 응답의 `authorize_url`은 최초 browser deep link로만 `/cli/authorize?session_id=...`를 포함하며, OAuth `next` state에는 이 query를 보존하지 않습니다.
 - Browser 승인 API는 authenticated access token으로 session을 approved 상태로 전환합니다.
 - Exchange API는 verifier를 확인한 뒤 `af_live_...` ingestion token을 한 번만 반환합니다.
 - Smoke는 반환된 token으로 `/v1/ingest/status`와 CLI `share --json` upload를 실행합니다.

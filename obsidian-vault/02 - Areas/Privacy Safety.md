@@ -15,6 +15,19 @@ created: 2026-05-30
 > [!abstract] 목적
 > 공개 feed로 넘어갈 수 있는 draft 필드에서 secret, local path, private URL, email 등을 원문 노출 없이 검출·치환한다.
 
+## 2026-06-01 Frontend external URL IPv6 safety
+
+> [!success]
+> Frontend project/profile external link renderer가 IPv6 loopback/private/internal literal을 outbound link로 렌더링하지 않도록 `safeExternalUrl()`을 보강했습니다.
+
+계약:
+
+- Public bare domain은 기존처럼 `https://`로 정규화합니다.
+- URL userinfo, unsafe scheme, localhost/private IPv4는 계속 차단합니다.
+- IPv6 `::1`, `::`, `fc00::/7`, `fe80::/10`, `::ffff:*` mapped forms를 차단합니다.
+
+검증: [[Commercial Readiness Hardening - Frontend External URL IPv6 Safety 2026-06-01#검증 증거]]
+
 ## Scan 대상
 
 업로드 가능한 public field만 scan한다.

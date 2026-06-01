@@ -216,6 +216,7 @@ created: 2026-05-30
 
 ## 관련 링크
 
+- [[Commercial Readiness Hardening - Frontend External URL IPv6 Safety 2026-06-01]]
 - [[Commercial Readiness Hardening - Backend Rate Limit Store Fail Closed 2026-06-01]]
 - [[Commercial Readiness Hardening - Frontend Dynamic Auth Next Query Allowlist 2026-06-01]]
 - [[Commercial Readiness Hardening - Frontend Worklog Detail Retry Safety 2026-06-01]]

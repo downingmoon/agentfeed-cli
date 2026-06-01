@@ -45,6 +45,19 @@ sequenceDiagram
 - Linux review URL clipboard fallback 보강
 - `share --note`를 `summary` prefix가 아닌 `user_note` 별도 계약으로 승격
 
+## 2026-06-01 Frontend external URL IPv6 safety
+
+> [!success]
+> Backend-provided project/profile URL이 Frontend outbound link로 렌더링되는 마지막 경계에서 private/internal IPv6 host를 차단합니다.
+
+계약:
+
+- Backend URL validation과 별개로 Frontend `safeExternalUrl()`이 public http(s) + credential-free + non-private host만 허용합니다.
+- Project detail/settings/search 등 external link surface는 sanitizer를 통해 내부망/loopback 링크 클릭을 차단합니다.
+- 기존 public URL display contract는 유지합니다.
+
+검증: [[Commercial Readiness Hardening - Frontend External URL IPv6 Safety 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Backend rate-limit store fail-closed degraded mode
 
 > [!success]

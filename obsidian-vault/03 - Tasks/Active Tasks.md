@@ -22,6 +22,8 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] GitHub Actions Node.js 20 action runtime deprecation warning 제거 및 v6 action gate 추가
+- 관련 노트: [[Commercial Readiness Hardening - Remote CI Environment Recovery 2026-06-01]]
 - [x] GitHub Actions 원격 CLI/Backend CI red를 runner env parity 기준으로 복구
 - 관련 노트: [[Commercial Readiness Hardening - Remote CI Environment Recovery 2026-06-01]]
 - [x] Frontend production API URL private/internal host fail-closed 및 Backend CI env allowlist 정렬

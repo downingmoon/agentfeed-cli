@@ -76,6 +76,8 @@ export function validateTrustedPublishingWorkflow(workflowText) {
   assert(includesLine(workflowText, /^\s*contents:\s*read\s*$/m), 'release workflow must grant contents: read.');
   assert(includesLine(workflowText, /^\s*id-token:\s*write\s*$/m), 'release workflow must grant id-token: write for npm OIDC trusted publishing.');
   assert(includesLine(workflowText, /^\s*runs-on:\s*ubuntu-latest\s*$/m), 'release workflow must use a GitHub-hosted ubuntu-latest runner for trusted publishing.');
+  assert(workflowText.includes('actions/checkout@v6'), 'release workflow must use actions/checkout@v6 to avoid deprecated Node.js action runtimes.');
+  assert(workflowText.includes('actions/setup-node@v6'), 'release workflow must use actions/setup-node@v6 to avoid deprecated Node.js action runtimes.');
   assert(includesLine(workflowText, /^\s*environment:\s*npm-publish\s*$/m), 'release workflow must use the npm-publish environment for release approval/audit controls.');
   assert(includesLine(workflowText, /^\s*node-version:\s*22\.14\.0\s*$/m), 'release workflow must use Node.js 22.14.0 or newer for npm trusted publishing.');
   assert(includesLine(workflowText, /^\s*registry-url:\s*https:\/\/registry\.npmjs\.org\s*$/m), 'release workflow must publish to the npm registry.');

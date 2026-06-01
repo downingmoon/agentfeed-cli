@@ -49,12 +49,30 @@ GitHub Actions 기준 최신 CLI/Backend CI가 red였기 때문에, 로컬 green
   - `ALLOWED_ORIGINS=http://localhost:3001,http://localhost:3000`
 - `test_github_ci_environment_instantiates_backend_settings` 기대값을 workflow env와 맞췄습니다.
 
+## GitHub Actions runtime deprecation follow-up
+
+원격 CLI CI가 green으로 복구된 뒤에도 GitHub가 Node.js 20 action runtime deprecation annotation을 표시했습니다. 2026-06-16 이후 runner default가 Node.js 24로 전환되기 때문에, workflow action major도 최신 런타임 지원 버전으로 올렸습니다.
+
+- GitHub API 확인 기준 latest releases:
+  - [actions/checkout v6.0.2](https://github.com/actions/checkout/releases/tag/v6.0.2)
+  - [actions/setup-node v6.4.0](https://github.com/actions/setup-node/releases/tag/v6.4.0)
+  - [actions/setup-python v6.2.0](https://github.com/actions/setup-python/releases/tag/v6.2.0)
+- CLI CI/Release: `actions/checkout@v6`, `actions/setup-node@v6`.
+- Frontend CI: `actions/checkout@v6`, `actions/setup-node@v6`.
+- Backend CI: `actions/checkout@v6`, `actions/setup-python@v6`.
+- CLI `release:preflight`가 release workflow의 v6 action major를 검증합니다.
+- Dev `test-all.sh`가 3개 레포 workflow에서 deprecated `checkout@v4`, `setup-node@v4`, `setup-python@v5` 회귀를 차단합니다.
+
+> [!note]
+> Workflow에서는 major tag(`@v6`)를 사용해 patch 업데이트를 자동 수신하고, release preflight/dev gate는 deprecated major로 돌아가는 실수를 막습니다.
+
 ## 계약
 
 - CLI browser-auth happy path 테스트는 CI runner에서도 명시적인 test-only override로만 browser session mock을 실행합니다.
 - CLI production behavior는 그대로 유지됩니다. 실제 CLI에서 CI browser login을 강제로 수행하려면 `--browser`가 필요합니다.
 - Backend workflow env는 `Settings` allowlist와 default local dev origins를 동시에 만족해야 합니다.
 - GitHub Actions 환경변수 때문에 로컬과 원격 테스트 의미가 달라지면, 해당 env를 테스트에서 명시적으로 고정합니다.
+- GitHub Actions workflow는 deprecated Node.js 20 action runtime major로 회귀하지 않아야 합니다.
 
 > [!warning]
 > CI guard를 완화하지 않았습니다. 수정 범위는 테스트가 의도적으로 mock browser auth를 실행하는 경우에만 명시 override를 주는 것입니다.
@@ -72,6 +90,9 @@ GitHub Actions 기준 최신 CLI/Backend CI가 red였기 때문에, 로컬 green
 - Backend full CI-equivalent local gate:
   - `uv run --python 3.12 --locked --group dev ruff check .` → pass
   - `uv run --python 3.12 --locked --group dev pytest tests` with workflow env → `247 passed, 1 warning`
+- Action runtime deprecation gate:
+  - `npm test -- --run tests/release-preflight.test.ts && npm run release:preflight` → pass
+  - `agentfeed-dev bash -n scripts/test-all.sh` + deprecated action grep gate → pass
 - Cross-repo gate:
   - `agentfeed-dev ./scripts/test-all.sh` → CLI tests/typecheck/release preflight/audit, Frontend CI/build/audit, Backend ruff/pytest, Alembic offline migration chain 모두 pass
 

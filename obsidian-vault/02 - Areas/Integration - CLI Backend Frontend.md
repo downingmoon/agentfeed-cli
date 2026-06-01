@@ -44,6 +44,7 @@ sequenceDiagram
 - CLI 실제 CI browser-login guard는 유지하며, override 없는 CI login은 token/stdin remediation으로 fail-fast해야 합니다.
 - Backend workflow dev env는 default local origins와 `Settings` allowlist를 동시에 만족해야 합니다.
 - Cross-repo `test-all.sh`는 이번 수정 후에도 전체 release/readiness gate를 통과해야 합니다.
+- Workflow actions는 Node.js 20 runtime deprecated major로 회귀하지 않아야 합니다.
 
 검증: [[Commercial Readiness Hardening - Remote CI Environment Recovery 2026-06-01#검증 증거]]
 

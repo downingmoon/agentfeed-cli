@@ -45,6 +45,21 @@ sequenceDiagram
 - Linux review URL clipboard fallback 보강
 - `share --note`를 `summary` prefix가 아닌 `user_note` 별도 계약으로 승격
 
+## 2026-06-01 Frontend worklog detail retry safety
+
+> [!success]
+> Worklog detail primary payload가 malformed이거나 일시적으로 실패해도 crash/blank 대신 safe error state와 in-place retry를 제공합니다.
+
+계약:
+
+- `useWorklog(worklogId)`는 primary detail request와 retry trigger를 소유합니다.
+- `Malformed worklog payload`는 사용자에게 안전한 retryable message로 변환합니다.
+- Error state는 `Retry loading worklog`와 `Back to feed`를 함께 제공합니다.
+- Comments는 secondary data로 유지되어 section-level failure가 primary detail을 지우지 않습니다.
+
+검증: [[Commercial Readiness Hardening - Frontend Worklog Detail Retry Safety 2026-06-01#검증 증거]]
+
+
 ## 2026-06-01 Backend ENVIRONMENT fail-fast
 
 > [!success]

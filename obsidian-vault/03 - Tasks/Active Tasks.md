@@ -27,7 +27,7 @@ created: 2026-05-30
 - [ ] Frontend dynamic auth next route의 safe query allowlist 보존 계약 보강
 - [x] Frontend CSP `style-src` unsafe-inline 제거 또는 nonce/hash 기반 production-safe policy로 전환
 - [ ] Backend production DB rate-limit store failure fallback 정책을 fail-closed/observable degraded mode로 재검토
-- [ ] Backend production `ENVIRONMENT` missing/typo startup fail-fast 정책 확정 및 구현
+- [x] Backend production `ENVIRONMENT` missing/typo startup fail-fast 정책 확정 및 구현
 - [ ] CLI structured cwd 없는 agent session attribution을 stricter project-bound evidence로 제한
 - [x] CLI keychain unavailable 시 plaintext credential fallback을 explicit insecure opt-in으로 제한
 - [x] Frontend Settings ingestion token revoke destructive confirmation 및 CLI recovery copy 보강
@@ -215,6 +215,8 @@ created: 2026-05-30
 - [x] Frontend unpublish control을 실제 published status 기준으로 축소
 
 ## 관련 링크
+
+- [[Commercial Readiness Hardening - Backend Environment Fail Fast 2026-06-01]]
 
 - [[Commercial Readiness Hardening - Frontend Auth Expiry Social Cleanup 2026-06-01]]
 

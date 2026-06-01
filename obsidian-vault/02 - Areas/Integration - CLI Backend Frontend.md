@@ -45,6 +45,21 @@ sequenceDiagram
 - Linux review URL clipboard fallback 보강
 - `share --note`를 `summary` prefix가 아닌 `user_note` 별도 계약으로 승격
 
+## 2026-06-01 Backend ENVIRONMENT fail-fast
+
+> [!success]
+> Backend runtime 환경명은 allowlist를 먼저 통과해야 하며, 오타/누락은 startup 단계에서 명확한 config 오류로 실패합니다.
+
+계약:
+
+- 유효 환경명은 `development`, `dev`, `local`, `production`, `staging`입니다.
+- `prod`, 빈 문자열, `test` 같은 미지원 값은 `ENVIRONMENT must be one of: ...`로 fail-fast합니다.
+- `staging`은 production-safe 정책을 적용받고 `is_production=True`입니다.
+- 새 환경 alias를 추가할 때는 Backend allowlist와 contract test를 같이 변경합니다.
+
+검증: [[Commercial Readiness Hardening - Backend Environment Fail Fast 2026-06-01#검증 증거]]
+
+
 ## 2026-06-01 Frontend auth expiry social cleanup
 
 > [!success]

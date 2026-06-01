@@ -16,6 +16,21 @@ created: 2026-05-30
 > [!abstract] 목적
 > CLI, Backend, Frontend가 같은 API endpoint 계약을 바라보도록 runtime URL과 환경변수를 검증·정규화합니다.
 
+## 2026-06-01 Backend ENVIRONMENT fail-fast
+
+> [!success]
+> Backend `ENVIRONMENT` 값은 명시 allowlist로 검증하며, 미지원 값은 production safety 검사보다 먼저 실패합니다.
+
+계약:
+
+- Local 계열: `development`, `dev`, `local`.
+- Production-like 계열: `production`, `staging`.
+- `is_production`은 production-like 계열에만 `True`입니다.
+- 오타 환경명은 default secret, OAuth URL, allowed hosts 검증보다 먼저 `ENVIRONMENT must be one of: ...` 오류를 반환합니다.
+
+검증: [[Commercial Readiness Hardening - Backend Environment Fail Fast 2026-06-01#검증 증거]]
+
+
 ## 2026-05-30 Frontend API URL normalization
 
 > [!success]

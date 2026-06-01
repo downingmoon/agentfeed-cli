@@ -25,6 +25,10 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - OAuth Contract Smoke and Action Pinning 2026-06-02]] — automated OAuth callback/session exchange smoke and cross-repo Actions SHA pin gate
+
+- [[Commercial Readiness Hardening - Hosted OAuth Live Smoke Harness 2026-06-02]] — one-command manual GitHub hosted OAuth browser-login smoke
+
 - [[Commercial Readiness Hardening - Live Share Hydrated Smoke Revalidation 2026-06-02]] — hydrated CLI authorize fallback and user-repo share open-review smoke evidence
 
 - [[Commercial Readiness Hardening - Public Interaction Response Models 2026-05-31]] — public feed/discovery/social/comment response model coverage

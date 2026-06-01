@@ -77,6 +77,11 @@ created: 2026-05-30
 - 관련 노트: [[Commercial Readiness Hardening - Live Share Hydrated Smoke Revalidation 2026-06-02]]
 - [x] GitHub OAuth start redirect/state-cookie contract를 dev smoke에 추가
 - 관련 노트: [[Commercial Readiness Hardening - Live Share Hydrated Smoke Revalidation 2026-06-02]]
+- [x] GitHub hosted browser-login callback 수동 검증을 `make smoke-oauth-live` one-command harness로 고정
+- 관련 노트: [[Commercial Readiness Hardening - Hosted OAuth Live Smoke Harness 2026-06-02]]
+- [x] Credential-free OAuth callback/session exchange contract를 `make smoke-oauth-contract`와 `test-all`에 추가
+- [x] Backend/Frontend GitHub Actions `uses:` ref를 SHA pinning하고 dev positive gate 추가
+- 관련 노트: [[Commercial Readiness Hardening - OAuth Contract Smoke and Action Pinning 2026-06-02]]
 - [x] GitHub Actions Node.js 20 action runtime deprecation warning 제거 및 v6 action gate 추가
 - 관련 노트: [[Commercial Readiness Hardening - Remote CI Environment Recovery 2026-06-01]]
 - [x] GitHub Actions 원격 CLI/Backend CI red를 runner env parity 기준으로 복구

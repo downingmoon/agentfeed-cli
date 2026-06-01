@@ -1598,7 +1598,9 @@ Frontend:
 - [x] smoke에서 token-authenticated self-rotation 403과 browser-approved replacement/old-token invalidation 검증
 - [ ] 실제 GitHub OAuth / CLI browser login happy path 재확인
   - 2026-06-02 자동화 보강: [[Commercial Readiness Hardening - Live Share Hydrated Smoke Revalidation 2026-06-02]]에서 GitHub OAuth start redirect/state-cookie contract는 local credential 환경 기준으로 검증
-  - 남은 범위: GitHub hosted login/callback 뒤 `/cli/authorize` approval UI까지 이어지는 human browser round-trip
+  - 2026-06-02 자동화 보강: [[Commercial Readiness Hardening - OAuth Contract Smoke and Action Pinning 2026-06-02]]에서 mocked GitHub callback → browser approve → CLI exchange → `/v1/ingest/status` contract 검증
+  - 2026-06-02 harness 보강: [[Commercial Readiness Hardening - Hosted OAuth Live Smoke Harness 2026-06-02]]에서 `make smoke-oauth-live`로 human browser round-trip을 재현 가능하게 고정
+  - 남은 범위: GitHub hosted login/consent를 실제 사용자 브라우저에서 완료하고 `OAUTH_LIVE_SMOKE_PASSED` 확인
 - [x] 실제 사용자 작업 repo 형태의 임시 git fixture에서 `agentfeed share --open-review` smoke
   - 2026-06-01 자동화 보강: [[Commercial Readiness Hardening - Live Share Handoff Smoke Gate 2026-06-01]]에서 dev live smoke가 `share --json --clipboard --open-review` browser/clipboard handoff를 deterministic helper로 검증
   - 2026-06-02 재검증: [[Commercial Readiness Hardening - Live Share Hydrated Smoke Revalidation 2026-06-02]]에서 local Docker dev stack 기준 `./scripts/smoke-e2e.sh` 통과
@@ -1899,6 +1901,19 @@ Frontend 표시:
 - `agentfeed-frontend`: `npm run build`
 - `agentfeed-dev`: `./scripts/test-all.sh`
 
+## 2026-06-02 hosted OAuth live smoke harness
+
+> [!info]
+> GitHub hosted login/callback은 사용자의 GitHub browser session과 consent가 필요하므로 완전 자동화 대신 one-command manual harness로 관리합니다.
+
+계약:
+
+- `make smoke-oauth-live`는 dev stack readiness, OAuth credential/callback URI, temporary credential store, `agentfeed login --browser`, `agentfeed doctor` token validity를 순서대로 검증합니다.
+- 성공 sentinel은 `OAUTH_LIVE_SMOKE_PASSED`입니다.
+- 일반 user credentials는 수정하지 않고 temporary `HOME`에만 저장합니다.
+
+관련 노트: [[Commercial Readiness Hardening - Hosted OAuth Live Smoke Harness 2026-06-02]]
+
 ## 2026-06-02 CLI authorize hydrated fallback smoke
 
 > [!success]
@@ -1934,7 +1949,9 @@ Frontend 표시:
 남은 수동 확인:
 
 - [ ] 실제 GitHub OAuth app credential이 있는 환경에서 `/cli/authorize` approval UI까지 포함한 browser-login happy path
-  - 2026-06-02: OAuth start redirect/state-cookie는 dev smoke에 자동화. GitHub hosted login/callback은 사용자 GitHub session/consent가 필요해 credential-gated 수동 리스크로 유지.
+  - 2026-06-02: OAuth start redirect/state-cookie는 dev smoke에 자동화.
+  - 2026-06-02: Mocked callback → browser approve → CLI exchange → `/v1/ingest/status`는 [[Commercial Readiness Hardening - OAuth Contract Smoke and Action Pinning 2026-06-02]]에서 자동화.
+  - GitHub hosted login/callback은 사용자 GitHub session/consent가 필요해 [[Commercial Readiness Hardening - Hosted OAuth Live Smoke Harness 2026-06-02]]의 `make smoke-oauth-live`로 수동 검증합니다.
 
 검증:
 
@@ -3185,3 +3202,19 @@ Frontend 계약:
 - Contract runner가 review publish, feed keyboard, settings token secret clearing regression을 함께 실행합니다.
 
 검증: [[Commercial Readiness Hardening - Frontend Review Feed Token Safety 2026-06-02#검증 증거]]
+
+
+## 2026-06-02 OAuth contract smoke and Actions SHA pinning
+
+> [!success]
+> Credential-free OAuth callback/session exchange smoke와 cross-repo GitHub Actions SHA pinning gate가 `agentfeed-dev ./scripts/test-all.sh`에 포함되었습니다.
+
+계약:
+
+- OAuth start redirect는 GitHub authorize URL, configured `client_id`, configured `redirect_uri`, cookie-bound state를 가져야 하며 raw `session_id`를 redirect URL에 노출하지 않습니다.
+- Mocked GitHub callback은 browser `access_token` cookie를 설정하고 OAuth state cookie를 clear해야 합니다.
+- Browser cookie client의 `/cli/authorize` approve와 별도 CLI client의 session exchange가 `af_live_...` ingestion token을 발급해야 합니다.
+- 발급 token은 `/v1/ingest/status`에서 유효해야 합니다.
+- Backend/Frontend/CLI GitHub Actions remote `uses:` refs는 40-character commit SHA로 pinning되어야 합니다.
+
+검증: [[Commercial Readiness Hardening - OAuth Contract Smoke and Action Pinning 2026-06-02#검증 증거]]

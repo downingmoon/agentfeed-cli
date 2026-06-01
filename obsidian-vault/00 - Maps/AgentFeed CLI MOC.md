@@ -33,6 +33,10 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - OAuth Contract Smoke and Action Pinning 2026-06-02]] — automated OAuth callback/session exchange smoke and cross-repo Actions SHA pin gate
+
+- [[Commercial Readiness Hardening - Hosted OAuth Live Smoke Harness 2026-06-02]]
+
 - [[Commercial Readiness Hardening - Live Share Hydrated Smoke Revalidation 2026-06-02]]
 
 - [[Commercial Readiness Hardening - Backend OAuth Username and Model Privacy Scan 2026-06-01]]

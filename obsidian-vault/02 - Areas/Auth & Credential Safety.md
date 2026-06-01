@@ -735,3 +735,16 @@ created: 2026-05-30
 - `AGENTFEED_CREDENTIAL_STORE=keychain` → 기존처럼 keychain unavailable/write failure에서 실패.
 
 검증: [[Commercial Readiness Hardening - CLI Credential Fallback Fail Closed 2026-06-01#검증 증거]]
+
+## 2026-06-01 GitHub OAuth outbound timeout
+
+> [!success]
+> GitHub OAuth provider 호출이 bounded timeout을 갖고 timeout 실패를 controlled 503으로 변환합니다.
+
+계약:
+
+- token exchange와 GitHub user fetch는 같은 `GITHUB_OAUTH_TIMEOUT`을 사용합니다.
+- connect/read timeout은 `GITHUB_OAUTH_UNAVAILABLE` 503으로 응답됩니다.
+- OAuth callback/login worker가 provider network stall에 무기한 묶이지 않아야 합니다.
+
+검증: [[Commercial Readiness Hardening - Test Metrics Activity Range OAuth Timeout and Notification Feedback 2026-06-01#검증 증거]]

@@ -2995,3 +2995,18 @@ Frontend 계약:
 - `page-source-contract.test.ts`가 위 회귀를 source-level로 차단합니다.
 
 검증: [[Commercial Readiness Hardening - Frontend Static Mock Data Removal 2026-06-01#검증 증거]]
+
+## 2026-06-01 Activity range and notification mutation feedback
+
+> [!success]
+> Public profile activity chart와 notification mutation UX가 API/UI 사용자 기대에 맞게 보정됐습니다.
+
+계약:
+
+- `/v1/users/{username}/activity` date-only `to`는 요청한 calendar day를 포함합니다.
+- timezone-aware datetime bound는 UTC instant로 정규화합니다.
+- response `data.to`는 date-only 요청에서 사용자-facing 날짜를 유지합니다.
+- Frontend notification read/mark-all-read 실패는 optimistic state 이후에도 사용자-visible live region으로 노출합니다.
+- Public external GitHub links는 `rel="noopener noreferrer"`를 사용합니다.
+
+검증: [[Commercial Readiness Hardening - Test Metrics Activity Range OAuth Timeout and Notification Feedback 2026-06-01#검증 증거]]

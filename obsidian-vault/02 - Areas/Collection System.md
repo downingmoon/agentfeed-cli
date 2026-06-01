@@ -778,3 +778,16 @@ created: 2026-05-30
 - Nested subagent call은 wrapper call id에 묶어 output 실패 시 spawned count로 확정하지 않습니다.
 
 검증: [[Commercial Readiness Hardening - CLI Codex Parallel Tool Collection 2026-06-01#검증 증거]]
+
+## 2026-06-01 Configured test command suite counts
+
+> [!success]
+> `--run-configured-commands` test metric이 command 1건이 아니라 runner summary의 실제 suite count를 우선 사용합니다.
+
+계약:
+
+- Pytest/generic summary, Vitest summary, Node TAP, Cargo `test result:` summary를 파싱합니다.
+- 파싱 불가 output은 테스트 수를 추정하지 않고 `tests_run` / `tests_passed`를 `null`로 둡니다.
+- `commands_run`과 `failed_commands`는 계속 command 실행 결과를 보존합니다.
+
+검증: [[Commercial Readiness Hardening - Test Metrics Activity Range OAuth Timeout and Notification Feedback 2026-06-01#검증 증거]]

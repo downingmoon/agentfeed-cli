@@ -215,12 +215,12 @@ describe('git collector and drafts', () => {
     config.collection.run_tests_on_collect = true;
     config.commands.test = 'node .agentfeed/test-pass.mjs';
     await writeFile(configPath, JSON.stringify(config, null, 2));
-    await writeFile(join(dir, '.agentfeed', 'test-pass.mjs'), 'process.exit(0);\n');
+    await writeFile(join(dir, '.agentfeed', 'test-pass.mjs'), 'console.log("3 passed"); process.exit(0);\n');
 
     const draft = await collectDraft({ cwd: dir, source: 'claude_code', runConfiguredCommands: true });
 
-    expect(draft.worklog.metrics.tests_run).toBe(1);
-    expect(draft.worklog.metrics.tests_passed).toBe(1);
+    expect(draft.worklog.metrics.tests_run).toBe(3);
+    expect(draft.worklog.metrics.tests_passed).toBe(3);
     expect(draft.worklog.metrics.commands_run).toBe(1);
     expect(draft.worklog.metrics.failed_commands).toBeNull();
   });
@@ -274,6 +274,7 @@ describe('git collector and drafts', () => {
       '  writeFileSync(".agentfeed/leaked-token", process.env.AGENTFEED_TOKEN);',
       '  process.exit(7);',
       '}',
+      'console.log("1 passed");',
       'process.exit(0);',
       ''
     ].join('\n'));
@@ -303,13 +304,13 @@ describe('git collector and drafts', () => {
     config.collection.run_tests_on_collect = true;
     config.commands.test = 'node .agentfeed/test-fail.mjs';
     await writeFile(configPath, JSON.stringify(config, null, 2));
-    await writeFile(join(dir, '.agentfeed', 'test-fail.mjs'), 'console.error("SECRET_RAW_TEST_OUTPUT"); process.exit(1);\n');
+    await writeFile(join(dir, '.agentfeed', 'test-fail.mjs'), 'console.error("SECRET_RAW_TEST_OUTPUT"); console.error("2 failed, 4 passed"); process.exit(1);\n');
 
     const draft = await collectDraft({ cwd: dir, source: 'claude_code', runConfiguredCommands: true });
     const payloadText = JSON.stringify(draftToIngestRequest(draft));
 
-    expect(draft.worklog.metrics.tests_run).toBe(1);
-    expect(draft.worklog.metrics.tests_passed).toBe(0);
+    expect(draft.worklog.metrics.tests_run).toBe(6);
+    expect(draft.worklog.metrics.tests_passed).toBe(4);
     expect(draft.worklog.metrics.commands_run).toBe(1);
     expect(draft.worklog.metrics.failed_commands).toBe(1);
     expect(payloadText).not.toContain('SECRET_RAW_TEST_OUTPUT');
@@ -323,12 +324,12 @@ describe('git collector and drafts', () => {
     config.commands.test = 'auto';
     await writeFile(configPath, JSON.stringify(config, null, 2));
     await writeFile(join(dir, 'package.json'), JSON.stringify({ scripts: { test: 'node .agentfeed/test-auto.mjs' } }, null, 2));
-    await writeFile(join(dir, '.agentfeed', 'test-auto.mjs'), 'process.exit(0);\n');
+    await writeFile(join(dir, '.agentfeed', 'test-auto.mjs'), 'console.log("5 passed"); process.exit(0);\n');
 
     const draft = await collectDraft({ cwd: dir, source: 'claude_code', runConfiguredCommands: true });
 
-    expect(draft.worklog.metrics.tests_run).toBe(1);
-    expect(draft.worklog.metrics.tests_passed).toBe(1);
+    expect(draft.worklog.metrics.tests_run).toBe(5);
+    expect(draft.worklog.metrics.tests_passed).toBe(5);
     expect(draft.worklog.metrics.commands_run).toBe(1);
   });
 
@@ -340,7 +341,7 @@ describe('git collector and drafts', () => {
     config.commands.test = 'node .agentfeed/test-pass.mjs';
     config.commands.build = 'node .agentfeed/build-fail.mjs';
     await writeFile(configPath, JSON.stringify(config, null, 2));
-    await writeFile(join(dir, '.agentfeed', 'test-pass.mjs'), 'process.exit(0);\n');
+    await writeFile(join(dir, '.agentfeed', 'test-pass.mjs'), 'console.log("1 passed"); process.exit(0);\n');
     await writeFile(join(dir, '.agentfeed', 'build-fail.mjs'), 'console.error("SECRET_RAW_BUILD_OUTPUT"); process.exit(1);\n');
 
     const draft = await collectDraft({ cwd: dir, source: 'claude_code', runConfiguredCommands: true });

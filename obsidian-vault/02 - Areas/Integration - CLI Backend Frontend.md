@@ -41,6 +41,20 @@ sequenceDiagram
 
 
 
+## 2026-06-01 Frontend Sign out click smoke
+
+> [!success]
+> Dev smoke가 실제 Frontend Header `Sign out` button click에서 시작해 Backend logout과 old JWT invalidation까지 검증하도록 확장되었습니다.
+
+계약:
+
+- Header sign-out control은 `aria-label="Sign out"`으로 stable accessible target을 제공합니다.
+- Browser DOM smoke는 hydration 이후 `--click-selector`/`--after-click-expect`로 실제 UI action을 수행할 수 있습니다.
+- `/feed` authenticated header에서 `Sign out`을 클릭하면 signed-out header(`Sign in`, `Get started`)로 전환되어야 합니다.
+- UI-triggered logout 이후 같은 browser JWT는 cookie와 bearer 양쪽 `/v1/auth/me`에서 `401`이어야 합니다.
+
+검증: [[Commercial Readiness Hardening - Frontend Signout Click Smoke 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Session logout revocation smoke
 
 > [!success]

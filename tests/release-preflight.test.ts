@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import {
   isDirectInvocation,
   parsePackJson,
@@ -65,6 +66,7 @@ jobs:
           node-version: 22.14.0
           registry-url: https://registry.npmjs.org
       - run: npm install -g npm@11.6.0
+      - run: npm audit --audit-level=high
       - run: npm run build
       - run: npm run release:preflight
       - run: npm publish --access public
@@ -154,6 +156,7 @@ describe('release preflight guardrails', () => {
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('id-token: write', 'id-token: read'))).toThrow('id-token');
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('node-version: 22.14.0', 'node-version: 20'))).toThrow('Node.js 22.14.0');
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('npm install -g npm@11.6.0', 'npm install -g npm@10'))).toThrow('npm 11.6.0');
+    expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('      - run: npm audit --audit-level=high\n', ''))).toThrow('audit');
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('      - run: npm run build\n', ''))).toThrow('build the package before release:preflight');
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace(
       '      - run: npm run build\n      - run: npm run release:preflight',
@@ -169,6 +172,18 @@ describe('release preflight guardrails', () => {
     ))).toThrow('48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e');
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('npm publish --access public', 'npm publish --provenance --access public'))).toThrow('must not pass --provenance');
     expect(() => validateTrustedPublishingWorkflow(`${validTrustedPublishingWorkflow}\n      - run: echo "$NODE_AUTH_TOKEN"\n`)).toThrow('long-lived npm tokens');
+  });
+
+  it('keeps the CI workflow from relying on test side effects or production-only audit scope', () => {
+    const ciWorkflow = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+    const buildIndex = ciWorkflow.indexOf('npm run build');
+    const preflightIndex = ciWorkflow.indexOf('npm run release:preflight');
+
+    expect(buildIndex).toBeGreaterThan(-1);
+    expect(preflightIndex).toBeGreaterThan(-1);
+    expect(buildIndex).toBeLessThan(preflightIndex);
+    expect(ciWorkflow).toContain('npm audit --audit-level=high');
+    expect(ciWorkflow).not.toContain('npm audit --omit=dev');
   });
 
   it('requires GitHub release runs to publish only from the matching version tag', () => {

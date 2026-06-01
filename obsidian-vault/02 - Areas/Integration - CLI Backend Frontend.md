@@ -12,6 +12,21 @@ created: 2026-05-30
 
 # Integration - CLI Backend Frontend
 
+## 2026-06-02 audit trail CI fail-closed supply-chain alignment
+
+> [!success]
+> CLI/API/Frontend commercial gate가 auditability, production config, dependency supply-chain 범위를 같이 검증합니다.
+
+계약:
+
+- Backend sensitive token/auth/publish lifecycle events are written to `audit_events` without raw secrets.
+- Frontend CI requires explicit `NEXT_PUBLIC_API_URL` for production builds.
+- CLI CI/release builds before preflight and audits the full dependency graph.
+- `agentfeed-dev ./scripts/test-all.sh` passes with all three contracts.
+
+검증: [[Commercial Readiness Hardening - Audit Trail CI Fail Closed and Supply Chain Gate 2026-06-02#검증 증거]]
+
+
 ## 2026-06-02 public timeline/settings/project adapter alignment
 
 > [!success]

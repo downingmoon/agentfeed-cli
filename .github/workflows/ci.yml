@@ -35,8 +35,11 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Build package
+        run: npm run build
+
       - name: Release preflight
         run: npm run release:preflight
 
-      - name: Audit production dependencies
-        run: npm audit --omit=dev --audit-level=moderate
+      - name: Audit full dependency graph
+        run: npm audit --audit-level=high

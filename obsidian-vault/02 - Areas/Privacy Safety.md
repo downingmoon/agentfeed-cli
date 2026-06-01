@@ -12,6 +12,20 @@ created: 2026-05-30
 
 # Privacy Safety
 
+## 2026-06-02 audit metadata secret redaction
+
+> [!success]
+> Durable audit events are useful for operations while still avoiding raw token or provider-secret persistence.
+
+계약:
+
+- Audit metadata sensitive keys are stored as `[redacted]`.
+- Token-like values such as `af_live_*`, `sk_live_*`, GitHub token prefixes are redacted even in nested lists.
+- Route tests assert issued one-time tokens never appear in audit metadata.
+
+검증: [[Commercial Readiness Hardening - Audit Trail CI Fail Closed and Supply Chain Gate 2026-06-02#검증 증거]]
+
+
 ## 2026-06-02 public timeline and sensitive URL scan
 
 > [!success]

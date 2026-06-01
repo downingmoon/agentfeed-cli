@@ -13,6 +13,20 @@ created: 2026-05-30
 
 # Runtime Configuration
 
+## 2026-06-02 frontend CI production API URL fail-closed
+
+> [!success]
+> Frontend CI no longer hides missing production API configuration behind a script default.
+
+계약:
+
+- `scripts/run-ci.mjs` fails when `NEXT_PUBLIC_API_URL` is missing.
+- Hosted default API URL requires explicit `AGENTFEED_CI_ALLOW_DEFAULT_API=1` opt-in.
+- GitHub CI sets `NEXT_PUBLIC_API_URL=https://api.agentfeed.dev` explicitly.
+
+검증: [[Commercial Readiness Hardening - Audit Trail CI Fail Closed and Supply Chain Gate 2026-06-02#검증 증거]]
+
+
 > [!abstract] 목적
 > CLI, Backend, Frontend가 같은 API endpoint 계약을 바라보도록 runtime URL과 환경변수를 검증·정규화합니다.
 

@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Audit Trail CI Fail Closed and Supply Chain Gate 2026-06-02]] — Backend audit events, Frontend CI API config fail-closed, CLI full supply-chain/release gate
+
 - [[Commercial Readiness Hardening - Public Timeline Settings and URL Privacy 2026-06-02]] — CLI sensitive URL scan, backend public timeline scan, frontend settings/public project adapter
 
 - [[Commercial Readiness Hardening - CLI Approval Code Privacy Fallback and Public Adapter 2026-06-02]] — CLI approval code, backend fallback re-scan, frontend public adapter, release/env/privacy guardrails

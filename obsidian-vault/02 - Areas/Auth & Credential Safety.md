@@ -13,6 +13,20 @@ created: 2026-05-30
 
 # Auth & Credential Safety
 
+## 2026-06-02 durable sensitive-action audit trail
+
+> [!success]
+> Token/auth lifecycle actions now leave durable audit rows without persisting raw tokens or approval secrets.
+
+계약:
+
+- CLI auth approve/exchange, ingestion token create/rotate/revoke, logout are audited.
+- Audit metadata redacts token/verifier/approval-code/hash/secret keys and token-like values.
+- Audit rows are added in the same request transaction as the sensitive mutation.
+
+검증: [[Commercial Readiness Hardening - Audit Trail CI Fail Closed and Supply Chain Gate 2026-06-02#검증 증거]]
+
+
 ## 2026-06-02 settings response section unwrap
 
 > [!success]

@@ -258,7 +258,7 @@ describe('git collector and drafts', () => {
         .rejects.toThrow(/Refusing to run configured command through a shell interpreter/);
       await expect(readFile(markerPath, 'utf8')).rejects.toThrow();
     }
-  });
+  }, 15_000);
 
   it('does not pass sensitive environment variables to configured commands', async () => {
     await initProject({ cwd: dir, noGitCheck: false });

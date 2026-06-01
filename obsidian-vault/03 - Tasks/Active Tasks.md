@@ -22,6 +22,8 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] Backend durable audit trail, Frontend CI production API URL fail-closed, CLI release/build/full dependency audit gate 보강
+- 관련 노트: [[Commercial Readiness Hardening - Audit Trail CI Fail Closed and Supply Chain Gate 2026-06-02]]
 - [x] CLI sensitive URL privacy scanner, Backend public timeline fallback scan, Frontend settings PATCH unwrap/public project adapter 보강
 - 관련 노트: [[Commercial Readiness Hardening - Public Timeline Settings and URL Privacy 2026-06-02]]
 - [x] CLI browser auth human approval code, Backend publish fallback re-scan, Frontend public adapter fail-closed, CLI release/env/privacy guardrail 보강

@@ -45,6 +45,20 @@ sequenceDiagram
 - Linux review URL clipboard fallback 보강
 - `share --note`를 `summary` prefix가 아닌 `user_note` 별도 계약으로 승격
 
+## 2026-06-01 Frontend CSP style inline hardening
+
+> [!success]
+> Frontend CSP에서 broad `style-src 'unsafe-inline'`을 제거하고 style element와 style attribute policy를 분리했습니다.
+
+계약:
+
+- `style-src`는 `'self'`와 Google Fonts stylesheet source만 허용합니다.
+- `style-src-elem`은 nonce 경로를 포함해 future inline style element가 nonce 없이는 추가되지 않도록 합니다.
+- 현재 React inline `style` attribute 호환성은 `style-src-attr 'unsafe-inline'`에만 남깁니다.
+
+검증: [[Commercial Readiness Hardening - Frontend CSP Style Inline Hardening 2026-06-01#검증 증거]]
+
+
 ## 2026-06-01 Settings token revoke confirmation
 
 > [!success]

@@ -25,7 +25,7 @@ created: 2026-05-30
 - [ ] Frontend 401 auth error handling 시 pending/social optimistic state 정리
 - [ ] Frontend worklog detail malformed payload를 controlled retry/partial-safe failure로 처리
 - [ ] Frontend dynamic auth next route의 safe query allowlist 보존 계약 보강
-- [ ] Frontend CSP `style-src` unsafe-inline 제거 또는 nonce/hash 기반 production-safe policy로 전환
+- [x] Frontend CSP `style-src` unsafe-inline 제거 또는 nonce/hash 기반 production-safe policy로 전환
 - [ ] Backend production DB rate-limit store failure fallback 정책을 fail-closed/observable degraded mode로 재검토
 - [ ] Backend production `ENVIRONMENT` missing/typo startup fail-fast 정책 확정 및 구현
 - [ ] CLI structured cwd 없는 agent session attribution을 stricter project-bound evidence로 제한
@@ -215,6 +215,8 @@ created: 2026-05-30
 - [x] Frontend unpublish control을 실제 published status 기준으로 축소
 
 ## 관련 링크
+
+- [[Commercial Readiness Hardening - Frontend CSP Style Inline Hardening 2026-06-01]]
 
 - [[Commercial Readiness Hardening - CLI Credential Fallback Fail Closed 2026-06-01]]
 

@@ -432,3 +432,16 @@ created: 2026-05-30
 - Backend production responses include `Strict-Transport-Security` and API-only CSP through `apply_security_headers()`.
 
 검증: [[Commercial Readiness Hardening - Release Supply Chain and API Security Headers 2026-06-01#검증 증거]]
+
+## 2026-06-01 Frontend API timeout and auth recovery
+
+> [!success]
+> Browser API runtime now fails boundedly instead of allowing request hangs to keep account/settings surfaces indefinitely pending.
+
+운영 규칙:
+
+- Frontend API requests use `API_REQUEST_TIMEOUT_MS = 15_000`.
+- Timeout failures are represented as safe 504 `ApiError` values.
+- Auth recovery buttons that appear in `authError` branches must not call helpers that explicitly no-op while `authError` is set.
+
+검증: [[Commercial Readiness Hardening - Frontend API Timeout and Auth Recovery 2026-06-01#검증 증거]]

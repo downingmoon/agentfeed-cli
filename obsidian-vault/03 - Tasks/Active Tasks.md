@@ -22,6 +22,8 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] Frontend API request timeout, Settings auth-error sign-in CTA, preview/demo public copy 제거
+- 관련 노트: [[Commercial Readiness Hardening - Frontend API Timeout and Auth Recovery 2026-06-01]]
 - [x] CLI release workflow immutable action pin / tarball allowlist 강화 및 Backend API security header 일괄 적용
 - 관련 노트: [[Commercial Readiness Hardening - Release Supply Chain and API Security Headers 2026-06-01]]
 - [x] Backend public URL schema가 legacy/private IP 표현과 private DNS resolution을 차단

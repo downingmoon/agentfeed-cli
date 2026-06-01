@@ -3050,3 +3050,17 @@ Frontend 계약:
 - Backend API responses carry common security headers, with HSTS/API CSP added in production mode.
 
 검증: [[Commercial Readiness Hardening - Release Supply Chain and API Security Headers 2026-06-01#검증 증거]]
+
+## 2026-06-01 Frontend API timeout and auth recovery
+
+> [!success]
+> Frontend API calls now have a bounded timeout and Settings auth-error recovery no longer points at a no-op sign-in handler.
+
+계약:
+
+- Shared `apiFetch()` attaches an `AbortSignal` timeout to every request.
+- Timeout aborts become safe `ApiError(504)` failures instead of indefinite pending UI.
+- Settings auth-error `GitHub 로그인으로 이동` builds a direct OAuth URL with `authNextPath()` and preserves the current route.
+- Public Landing/Footer copy must not advertise preview-only version strings or demo tool-stack badges.
+
+검증: [[Commercial Readiness Hardening - Frontend API Timeout and Auth Recovery 2026-06-01#검증 증거]]

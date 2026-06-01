@@ -22,6 +22,9 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] Frontend Profile project cards fake role-link 제거 및 owner-aware native Link로 전환
+- [x] Frontend Worklog detail author row fake role-link 제거 및 profile native Link로 전환
+- 관련 노트: [[Commercial Readiness Hardening - Frontend Native Profile Navigation Links 2026-06-01]]
 - [x] Frontend WorklogCardA/B/C article fake-link wrapper 제거 및 stretched native link로 전환
 - [x] Frontend Worklog card like/bookmark/comment/share controls를 navigation link와 sibling native button 구조로 보존
 - 관련 노트: [[Commercial Readiness Hardening - Frontend Worklog Card Semantic Controls 2026-06-01]]

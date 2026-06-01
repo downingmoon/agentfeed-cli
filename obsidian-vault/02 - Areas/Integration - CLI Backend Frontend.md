@@ -38,6 +38,21 @@ sequenceDiagram
 
 
 
+
+## 2026-06-01 Frontend native profile navigation links
+
+> [!success]
+> Profile project cards와 Worklog detail author row를 fake role-link container가 아닌 native Next `Link`로 전환했습니다.
+
+계약:
+
+- Profile project card는 `projectHref(username, p.slug)`를 `href`로 노출합니다.
+- Worklog detail author row는 `/profile/{username}` link를 `pathSegment(u.username)`으로 생성합니다.
+- 두 link 모두 accessible name을 유지합니다.
+- Custom keydown handler는 제거하고 browser-native link activation/modified-click semantics에 맡깁니다.
+
+검증: [[Commercial Readiness Hardening - Frontend Native Profile Navigation Links 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Frontend worklog card semantic controls
 
 > [!success]

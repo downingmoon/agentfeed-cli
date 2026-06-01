@@ -135,6 +135,8 @@ created: 2026-05-30
 - [x] `share --note`를 Backend 별도 필드로 승격할지 API 계약 결정
 - [x] review URL clipboard Linux fallback(`wl-copy`, `xsel`) 보강
 - [x] 실제 Codex session schema 기반 tool call / subagent / agent turn 과소집계 보강
+- [x] Codex `multi_tool_use.parallel` wrapper 내부 nested tool/command/test metric 과소집계 방지
+- [[Commercial Readiness Hardening - CLI Codex Parallel Tool Collection 2026-06-01]]
 - [x] 실제 Claude/Gemini session schema 기반 turn / skill / Task subagent 과소집계 보강
 - [x] `.obsidian` / `.DS_Store` 로컬 런타임 파일 수집 노이즈 제거
 - [x] explicit `--session-file`이 다른 project 로그일 때 metrics 혼입 방지

@@ -680,6 +680,27 @@ function codexTokenTotal(info: Record<string, unknown>): number {
   return numeric(total.input_tokens) + numeric(total.cached_input_tokens) + numeric(total.cache_read_input_tokens) + numeric(total.cache_creation_input_tokens) + numeric(total.output_tokens);
 }
 
+function codexCallArguments(call: Record<string, unknown>): Record<string, unknown> | null {
+  const direct = asRecord(call.arguments);
+  if (direct) return direct;
+  const argsText = asString(call.arguments);
+  return argsText ? asRecord(safeJsonParse(argsText)) : null;
+}
+
+function codexNestedToolName(value: unknown): string | null {
+  const name = asString(value);
+  if (!name) return null;
+  const parts = name.split('.');
+  return parts[parts.length - 1] || name;
+}
+
+function codexNestedToolParameters(toolUse: Record<string, unknown>): Record<string, unknown> {
+  const direct = asRecord(toolUse.parameters) ?? asRecord(toolUse.args) ?? asRecord(toolUse.arguments);
+  if (direct) return direct;
+  const argsText = asString(toolUse.arguments);
+  return argsText ? asRecord(safeJsonParse(argsText)) ?? {} : {};
+}
+
 async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null, inferIdleGap = true): Promise<AgentSessionMetrics | null> {
   const rows = await readSessionJsonlRecords(sessionFile);
   if (!rows) return null;
@@ -697,7 +718,7 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
   let toolCalls = 0;
   const skills = new Set<string>();
   const agentModes = new Set<string>();
-  const pendingSubagentCalls = new Map<string, { failed: boolean }>();
+  const pendingSubagentCalls = new Map<string, { failed: boolean; count: number }>();
   let subagentsSpawned = 0;
   let subagentsCompleted = 0;
   let agentTurns = 0;
@@ -708,6 +729,27 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
   const failedToolOutputCallIds = new Set<string>();
   const patchTextFallbacks: { callId: string | null; patchText: string; failed: boolean }[] = [];
   const sinceMillis = parseBoundaryMillis(effectiveWindow?.since);
+  const registerCommand = (callId: string | null, command: string) => {
+    if (!command) return;
+    commandsRun += 1;
+    const test = isTestCommand(command);
+    if (test) testsRun += 1;
+    if (!callId) return;
+    const existing = commands.get(callId);
+    commands.set(callId, {
+      command: existing?.command ? `${existing.command}\n${command}` : command,
+      test: Boolean(existing?.test || test)
+    });
+  };
+  const trackSubagentCall = (callId: string | null) => {
+    if (!callId) {
+      subagentsSpawned += 1;
+      return;
+    }
+    const existing = pendingSubagentCalls.get(callId);
+    if (existing) existing.count += 1;
+    else pendingSubagentCalls.set(callId, { failed: false, count: 1 });
+  };
 
   for (const row of rows) {
     const payload = asRecord(row.payload);
@@ -739,22 +781,36 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
       }
     }
     if (payload.type === 'function_call') {
-      toolCalls += 1;
+      const name = asString(payload.name);
       const callId = asString(payload.call_id);
-      if (payload.name === 'spawn_agent') {
-        if (callId) pendingSubagentCalls.set(callId, { failed: false });
-        else subagentsSpawned += 1;
-      }
-      if (payload.name === 'exec_command') {
-        const argsText = asString(payload.arguments);
-        const args = argsText ? asRecord(safeJsonParse(argsText)) : null;
-        const command = asString(args?.cmd) ?? '';
-        if (callId && command) {
-          commandsRun += 1;
-          const test = isTestCommand(command);
-          if (test) testsRun += 1;
-          commands.set(callId, { command, test });
+      if (name === 'multi_tool_use.parallel') {
+        const args = codexCallArguments(payload);
+        const toolUses = Array.isArray(args?.tool_uses) ? args.tool_uses : [];
+        if (!toolUses.length) {
+          toolCalls += 1;
+          continue;
         }
+        toolCalls += toolUses.length;
+        for (const toolUseRaw of toolUses) {
+          const toolUse = asRecord(toolUseRaw);
+          if (!toolUse) continue;
+          const nestedName = codexNestedToolName(toolUse.recipient_name ?? toolUse.name);
+          const parameters = codexNestedToolParameters(toolUse);
+          if (nestedName === 'spawn_agent') {
+            trackSubagentCall(callId);
+          } else if (nestedName === 'exec_command') {
+            registerCommand(callId, asString(parameters.cmd) ?? asString(parameters.command) ?? '');
+          }
+        }
+        continue;
+      }
+      toolCalls += 1;
+      if (name === 'spawn_agent') {
+        trackSubagentCall(callId);
+      }
+      if (name === 'exec_command') {
+        const args = codexCallArguments(payload);
+        registerCommand(callId, asString(args?.cmd) ?? asString(args?.command) ?? '');
       }
     }
     if (payload.type === 'custom_tool_call') toolCalls += 1;
@@ -804,7 +860,7 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
     }
   }
   for (const subagent of pendingSubagentCalls.values()) {
-    if (!subagent.failed) subagentsSpawned += 1;
+    if (!subagent.failed) subagentsSpawned += subagent.count;
   }
   if (hasCollectionWindowBoundary(effectiveWindow) && !matchedWindowRow) return null;
   if (patchTextFallbacks.length) {

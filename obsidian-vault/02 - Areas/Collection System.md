@@ -760,3 +760,21 @@ created: 2026-05-30
 - `{ draft, upload }` envelope는 `share --json` 계약이며 `collect --json`에는 적용하지 않습니다.
 
 검증: [[Commercial Readiness Hardening - User Dashboard Worklog Contracts and Collect JSON Stability 2026-05-31#검증 증거]]
+
+## 2026-06-01 Codex parallel tool wrapper 수집 보강
+
+> [!success]
+> Codex `multi_tool_use.parallel` wrapper 내부의 nested `tool_uses[]`를 실제 tool/command/test metric으로 확장하도록 보강했습니다.
+
+문제:
+
+- Parallel execution transcript가 wrapper `function_call` 1건으로 저장되면 기존 parser는 `tool_calls=1`만 기록했습니다.
+- 내부 `functions.exec_command`가 `commands_run`/`tests_run`에 반영되지 않아 실제 작업량과 검증량이 과소집계될 수 있었습니다.
+
+계약:
+
+- `multi_tool_use.parallel.arguments.tool_uses[]`가 있으면 wrapper 1건 대신 nested tool 수를 `tool_calls`로 사용합니다.
+- Nested `functions.exec_command`의 `cmd`/`command`는 direct Codex shell call과 같은 test-command classifier를 통과합니다.
+- Nested subagent call은 wrapper call id에 묶어 output 실패 시 spawned count로 확정하지 않습니다.
+
+검증: [[Commercial Readiness Hardening - CLI Codex Parallel Tool Collection 2026-06-01#검증 증거]]

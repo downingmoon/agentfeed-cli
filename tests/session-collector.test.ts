@@ -376,6 +376,30 @@ describe('agent session collector', () => {
     expect(metrics?.failed_commands).toBeNull();
   });
 
+  it('expands Codex parallel tool wrappers into nested command and tool metrics', async () => {
+    const sessionFile = join(dir, 'codex-parallel-tool-wrapper.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-parallel-tool-wrapper', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'function_call', name: 'multi_tool_use.parallel', arguments: JSON.stringify({
+        tool_uses: [
+          { recipient_name: 'functions.exec_command', parameters: { cmd: 'npm test', workdir: dir } },
+          { recipient_name: 'functions.exec_command', parameters: { cmd: 'npm run build', workdir: dir } },
+          { recipient_name: 'functions.write_stdin', parameters: { session_id: 123, chars: '' } },
+          { recipient_name: 'functions.update_plan', parameters: { plan: [] } }
+        ]
+      }), call_id: 'parallel-1' } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'parallel-1', output: 'Process exited with code 0\nPASS tests/api.test.ts' } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(4);
+    expect(metrics?.commands_run).toBe(2);
+    expect(metrics?.tests_run).toBe(1);
+    expect(metrics?.tests_passed).toBe(1);
+    expect(metrics?.failed_commands).toBeNull();
+  });
+
   it('counts Codex non-shell tool calls, spawned subagents, and agent turns', async () => {
     const sessionFile = join(dir, 'codex-tooling-session.jsonl');
     await writeJsonl(sessionFile, [

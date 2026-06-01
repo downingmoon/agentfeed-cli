@@ -37,6 +37,22 @@ sequenceDiagram
 
 
 
+
+## 2026-06-01 Frontend worklog card semantic controls
+
+> [!success]
+> WorklogCardA/B/C의 `<article role="link">` wrapper를 제거하고, canonical detail URL을 가진 stretched anchor와 sibling action buttons로 분리했습니다.
+
+계약:
+
+- Card article은 landmark/container이며 interactive role을 갖지 않습니다.
+- Card open target은 `href=/worklogs/{id}`와 accessible name을 가진 `.cardOpenLink`입니다.
+- Normal primary clicks still call the existing client router callback; modified clicks preserve browser-native behavior.
+- Like/bookmark/comment/share buttons are not nested inside the navigation link.
+- Source contract tests reject the old fake-link wrapper and require the new navigation helper/CSS focus outline.
+
+검증: [[Commercial Readiness Hardening - Frontend Worklog Card Semantic Controls 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Frontend auth recovery and notification actions
 
 > [!success]

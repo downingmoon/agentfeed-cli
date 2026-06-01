@@ -22,6 +22,10 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] Backend blocking privacy finding `ignored` publish bypass, server fallback taxonomy gap, ingest identity stale reuse, settings default visibility drift 보강
+- 관련 노트: [[Commercial Readiness Hardening - Backend Publish Privacy Identity Defaults 2026-06-02]]
+- [x] Frontend stale review publish preflight, feed filter keyboard access, one-time token copy 후 memory clearing 보강
+- 관련 노트: [[Commercial Readiness Hardening - Frontend Review Feed Token Safety 2026-06-02]]
 - [x] Verifier가 발견한 CLI redacted draft cached reuse false stale 회귀 보정
 - [x] Verifier가 발견한 Backend GitHub username unique flush race 보정
 - [x] Backend 신규 GitHub OAuth user에 unique username을 부여해 public profile/author link 404 방지

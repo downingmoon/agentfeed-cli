@@ -3137,3 +3137,29 @@ Frontend 계약:
 - Frontend feed filter backdrop is a named button, not a click-only div.
 
 검증: [[Commercial Readiness Hardening - CLI Diagnostics Backend Privacy Rescan and Feed Backdrop 2026-06-01#검증 증거]]
+
+## 2026-06-02 Backend ingest source identity and settings defaults
+
+> [!success]
+> CLI ingest idempotency와 Backend user settings default visibility가 API-visible behavior와 일치하도록 정렬했습니다.
+
+계약:
+
+- `collection_fingerprint`가 있는 ingest는 fingerprint를 primary source identity로 사용합니다.
+- Secondary `local_draft_id`만 일치하고 fingerprint가 다른 payload는 stale reuse 대신 `INGEST_SOURCE_IDENTITY_CONFLICT`입니다.
+- Project/worklog create에서 `visibility` 생략 시 `UserSettings` default visibility가 적용됩니다.
+
+검증: [[Commercial Readiness Hardening - Backend Publish Privacy Identity Defaults 2026-06-02#검증 증거]]
+
+## 2026-06-02 Frontend review preflight and feed keyboard contract
+
+> [!success]
+> Frontend review publish action과 feed filter interaction이 Backend state 및 keyboard user flow와 더 안전하게 맞물립니다.
+
+계약:
+
+- Review publish는 Backend review state를 최신으로 당겨온 뒤 publish mutation을 보냅니다.
+- Feed filter listbox는 keyboard open/navigation/select/escape flow를 지원합니다.
+- Contract runner가 review publish, feed keyboard, settings token secret clearing regression을 함께 실행합니다.
+
+검증: [[Commercial Readiness Hardening - Frontend Review Feed Token Safety 2026-06-02#검증 증거]]

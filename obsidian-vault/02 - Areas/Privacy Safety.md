@@ -446,3 +446,29 @@ Redacted preview:
 - A client `safe` scan with no findings still receives server fallback scanning before public/unlisted publish.
 
 검증: [[Commercial Readiness Hardening - CLI Diagnostics Backend Privacy Rescan and Feed Backdrop 2026-06-01#검증 증거]]
+
+## 2026-06-02 Backend publish privacy ignore and fallback taxonomy
+
+> [!success]
+> Blocking privacy finding은 더 이상 `ignored` resolution으로 public/unlisted publish를 통과할 수 없습니다.
+
+계약:
+
+- `high` / `critical` / unknown severity는 `redacted` 또는 `removed`일 때만 publish-resolved입니다.
+- 기존 데이터에 `resolved=true`, `resolution=ignored`가 남아 있어도 publish gate는 차단합니다.
+- Server fallback scanner는 email, env/config file reference, sensitive local path를 public fields 전반에서 차단합니다.
+
+검증: [[Commercial Readiness Hardening - Backend Publish Privacy Identity Defaults 2026-06-02#검증 증거]]
+
+## 2026-06-02 Frontend stale review and one-time token safety
+
+> [!success]
+> Review publish 직전 최신 privacy review를 재조회하고, one-time token copy 성공 즉시 secret state를 제거합니다.
+
+계약:
+
+- Review page는 stale in-memory finding 상태만 믿고 publish하지 않습니다.
+- Fresh review가 unsafe이면 publish mutation을 보내지 않습니다.
+- Settings one-time token은 clipboard 성공 후 UI/state에서 즉시 사라집니다.
+
+검증: [[Commercial Readiness Hardening - Frontend Review Feed Token Safety 2026-06-02#검증 증거]]

@@ -208,6 +208,28 @@ describe('git collector and drafts', () => {
     await expect(readFile(markerPath, 'utf8')).rejects.toThrow();
   });
 
+  it('refuses shell-interpreter configured commands hidden behind command wrappers', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const markerPath = join(dir, '.agentfeed', 'unsafe-wrapper-command-ran');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.collection.run_tests_on_collect = true;
+    const unsafeCommands = [
+      'env bash -c "echo unsafe > .agentfeed/unsafe-wrapper-command-ran"',
+      'env -u PATH bash -c "echo unsafe > .agentfeed/unsafe-wrapper-command-ran"',
+      'env -S "bash -c echo unsafe > .agentfeed/unsafe-wrapper-command-ran"',
+      'command sh -c "echo unsafe > .agentfeed/unsafe-wrapper-command-ran"'
+    ];
+
+    for (const command of unsafeCommands) {
+      config.commands.test = command;
+      await writeFile(configPath, JSON.stringify(config, null, 2));
+      await expect(collectDraft({ cwd: dir, source: 'claude_code', runConfiguredCommands: true }))
+        .rejects.toThrow(/Refusing to run configured command through a shell interpreter/);
+      await expect(readFile(markerPath, 'utf8')).rejects.toThrow();
+    }
+  });
+
   it('does not pass AgentFeed token environment variables to configured commands', async () => {
     await initProject({ cwd: dir, noGitCheck: false });
     const configPath = join(dir, '.agentfeed', 'config.json');

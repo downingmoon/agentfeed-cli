@@ -26,10 +26,77 @@ const SHELL_INTERPRETER_COMMANDS = new Set([
   'zsh'
 ]);
 
-function assertSafeConfiguredCommand(command: string): void {
-  const name = basename(command).toLowerCase();
-  if (SHELL_INTERPRETER_COMMANDS.has(name)) {
-    throw new Error(`Refusing to run configured command through a shell interpreter (${command}). Configure a direct test/build command instead.`);
+const COMMAND_WRAPPER_COMMANDS = new Set([
+  'command',
+  'command.exe',
+  'env',
+  'env.exe'
+]);
+
+const ENV_OPTIONS_WITH_VALUE = new Set([
+  '-u',
+  '--unset',
+  '-C',
+  '--chdir'
+]);
+
+function commandName(command: string): string {
+  return basename(command).toLowerCase();
+}
+
+function assertSafeConfiguredCommand(command: string, args: string[] = []): void {
+  const tokens = [command, ...args];
+  let index = 0;
+  while (index < tokens.length) {
+    const token = tokens[index];
+    const name = commandName(token);
+    if (SHELL_INTERPRETER_COMMANDS.has(name)) {
+      throw new Error(`Refusing to run configured command through a shell interpreter (${token}). Configure a direct test/build command instead.`);
+    }
+    if (!COMMAND_WRAPPER_COMMANDS.has(name)) return;
+    if (name === 'env' || name === 'env.exe') {
+      index += 1;
+      while (index < tokens.length) {
+        const envToken = tokens[index];
+        if (envToken === '--') {
+          index += 1;
+          break;
+        }
+        if (envToken === '-S' || envToken.startsWith('-S=')) {
+          throw new Error('Refusing to run configured command through a shell interpreter (env -S). Configure a direct test/build command instead.');
+        }
+        if (ENV_OPTIONS_WITH_VALUE.has(envToken)) {
+          index += 2;
+          continue;
+        }
+        if (envToken.startsWith('--unset=') || envToken.startsWith('--chdir=')) {
+          index += 1;
+          continue;
+        }
+        if (envToken.startsWith('-')) {
+          index += 1;
+          continue;
+        }
+        if (/^[A-Za-z_][A-Za-z0-9_]*=/.test(envToken)) {
+          index += 1;
+          continue;
+        }
+        break;
+      }
+      if (index >= tokens.length) {
+        throw new Error(`Configured command wrapper (${token}) did not include a direct command to run.`);
+      }
+      continue;
+    }
+    if (name === 'command' || name === 'command.exe') {
+      index += 1;
+      while (index < tokens.length && tokens[index].startsWith('-')) index += 1;
+      if (index >= tokens.length) {
+        throw new Error(`Configured command wrapper (${token}) did not include a direct command to run.`);
+      }
+      continue;
+    }
+    return;
   }
 }
 
@@ -76,7 +143,7 @@ async function resolveConfiguredCommand(cwd: string, configured: 'auto' | string
   if (configured === 'auto') return infer(cwd);
   const [command, ...args] = splitCommandLine(configured);
   if (!command) return null;
-  assertSafeConfiguredCommand(command);
+  assertSafeConfiguredCommand(command, args);
   return { command, args };
 }
 

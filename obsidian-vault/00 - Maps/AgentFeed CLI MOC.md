@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Frontend Auth Expiry Social Cleanup 2026-06-01]]
+
 - [[Commercial Readiness Hardening - Frontend CSP Style Inline Hardening 2026-06-01]]
 
 - [[Commercial Readiness Hardening - CLI Credential Fallback Fail Closed 2026-06-01]]

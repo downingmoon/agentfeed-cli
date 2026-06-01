@@ -45,6 +45,20 @@ sequenceDiagram
 - Linux review URL clipboard fallback 보강
 - `share --note`를 `summary` prefix가 아닌 `user_note` 별도 계약으로 승격
 
+## 2026-06-01 Frontend auth expiry social cleanup
+
+> [!success]
+> 401/auth-expiry event와 sign-out이 같은 auth-scoped social cleanup path를 사용하도록 정렬했습니다.
+
+계약:
+
+- `AUTH_ERROR_EVENT_NAME` handler는 like/bookmark optimistic state, pending refs/state, social action error를 정리합니다.
+- `signOut()`은 동일 helper를 재사용해 새 세션으로 stale state가 넘어가지 않게 합니다.
+- unusable `auth.me()` payload와 auth-category API error도 signed-out state와 social state를 함께 정리합니다.
+
+검증: [[Commercial Readiness Hardening - Frontend Auth Expiry Social Cleanup 2026-06-01#검증 증거]]
+
+
 ## 2026-06-01 Frontend CSP style inline hardening
 
 > [!success]

@@ -22,7 +22,7 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
-- [ ] Frontend 401 auth error handling 시 pending/social optimistic state 정리
+- [x] Frontend 401 auth error handling 시 pending/social optimistic state 정리
 - [ ] Frontend worklog detail malformed payload를 controlled retry/partial-safe failure로 처리
 - [ ] Frontend dynamic auth next route의 safe query allowlist 보존 계약 보강
 - [x] Frontend CSP `style-src` unsafe-inline 제거 또는 nonce/hash 기반 production-safe policy로 전환
@@ -215,6 +215,8 @@ created: 2026-05-30
 - [x] Frontend unpublish control을 실제 published status 기준으로 축소
 
 ## 관련 링크
+
+- [[Commercial Readiness Hardening - Frontend Auth Expiry Social Cleanup 2026-06-01]]
 
 - [[Commercial Readiness Hardening - Frontend CSP Style Inline Hardening 2026-06-01]]
 

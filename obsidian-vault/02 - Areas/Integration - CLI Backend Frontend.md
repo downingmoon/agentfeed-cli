@@ -3010,3 +3010,16 @@ Frontend 계약:
 - Public external GitHub links는 `rel="noopener noreferrer"`를 사용합니다.
 
 검증: [[Commercial Readiness Hardening - Test Metrics Activity Range OAuth Timeout and Notification Feedback 2026-06-01#검증 증거]]
+
+## 2026-06-01 Dev smoke package entrypoint gate
+
+> [!success]
+> Dev E2E smoke가 package `bin.agentfeed` entrypoint를 통해 CLI를 실행합니다.
+
+계약:
+
+- `smoke-e2e.sh`는 local CLI를 build한 뒤 `npm --prefix "$CLI_DIR" exec -- agentfeed`로 실행합니다.
+- `node "$CLI_DIR/dist/cli/index.js"` 직접 실행은 smoke path에서 금지합니다.
+- `test-all.sh`가 이 source-level release smoke 계약을 검증합니다.
+
+검증: [[Commercial Readiness Hardening - Dev Smoke Package Entrypoint 2026-06-01#검증 증거]]

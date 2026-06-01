@@ -22,6 +22,8 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] agentfeed-dev smoke가 package `bin.agentfeed` entrypoint를 통해 CLI를 실행하도록 보강
+- 관련 노트: [[Commercial Readiness Hardening - Dev Smoke Package Entrypoint 2026-06-01]]
 - [x] CLI configured test command가 실제 suite count를 파싱하고, Backend activity 날짜 범위/OAuth timeout, Frontend notification 실패 피드백을 보강
 - 관련 노트: [[Commercial Readiness Hardening - Test Metrics Activity Range OAuth Timeout and Notification Feedback 2026-06-01]]
 - [x] Dev OpenAPI gate가 Frontend-critical response field schema drift를 검증

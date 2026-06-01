@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Dev Smoke Package Entrypoint 2026-06-01]]
+
 - [[Commercial Readiness Hardening - Test Metrics Activity Range OAuth Timeout and Notification Feedback 2026-06-01]]
 
 - [[Commercial Readiness Hardening - Frontend Static Mock Data Removal 2026-06-01]]

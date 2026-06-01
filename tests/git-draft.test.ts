@@ -260,27 +260,39 @@ describe('git collector and drafts', () => {
     }
   });
 
-  it('does not pass AgentFeed token environment variables to configured commands', async () => {
+  it('does not pass sensitive environment variables to configured commands', async () => {
     await initProject({ cwd: dir, noGitCheck: false });
     const configPath = join(dir, '.agentfeed', 'config.json');
-    const markerPath = join(dir, '.agentfeed', 'leaked-token');
+    const markerPath = join(dir, '.agentfeed', 'leaked-env');
     const config = JSON.parse(await readFile(configPath, 'utf8'));
     config.collection.run_tests_on_collect = true;
     config.commands.test = 'node .agentfeed/check-env.mjs';
     await writeFile(configPath, JSON.stringify(config, null, 2));
     await writeFile(join(dir, '.agentfeed', 'check-env.mjs'), [
       'import { writeFileSync } from "node:fs";',
-      'if (process.env.AGENTFEED_TOKEN) {',
-      '  writeFileSync(".agentfeed/leaked-token", process.env.AGENTFEED_TOKEN);',
+      'const sensitiveNames = ["AGENTFEED_TOKEN", "PGPASSWORD", "DATABASE_URL", "REDIS_URL", "APP_DATABASE_URL"];',
+      'const leaked = sensitiveNames.filter((name) => process.env[name]);',
+      'if (leaked.length) {',
+      '  writeFileSync(".agentfeed/leaked-env", leaked.join(","));',
       '  process.exit(7);',
       '}',
       'console.log("1 passed");',
       'process.exit(0);',
       ''
     ].join('\n'));
-    const previousToken = process.env.AGENTFEED_TOKEN;
+    const previousEnv = {
+      AGENTFEED_TOKEN: process.env.AGENTFEED_TOKEN,
+      PGPASSWORD: process.env.PGPASSWORD,
+      DATABASE_URL: process.env.DATABASE_URL,
+      REDIS_URL: process.env.REDIS_URL,
+      APP_DATABASE_URL: process.env.APP_DATABASE_URL
+    };
     const previousAllowlist = process.env.AGENTFEED_CONFIGURED_COMMAND_ENV_ALLOWLIST;
     process.env.AGENTFEED_TOKEN = 'af_live_should_not_leak_to_configured_commands';
+    process.env.PGPASSWORD = 'postgres-password-should-not-leak';
+    process.env.DATABASE_URL = 'postgres://user:pass@localhost/db';
+    process.env.REDIS_URL = 'redis://:pass@localhost:6379/0';
+    process.env.APP_DATABASE_URL = 'postgres://app:pass@localhost/app';
     delete process.env.AGENTFEED_CONFIGURED_COMMAND_ENV_ALLOWLIST;
     try {
       const draft = await collectDraft({ cwd: dir, source: 'claude_code', runConfiguredCommands: true });
@@ -290,8 +302,10 @@ describe('git collector and drafts', () => {
       expect(draft.worklog.metrics.commands_run).toBe(1);
       await expect(readFile(markerPath, 'utf8')).rejects.toThrow();
     } finally {
-      if (previousToken === undefined) delete process.env.AGENTFEED_TOKEN;
-      else process.env.AGENTFEED_TOKEN = previousToken;
+      for (const [name, value] of Object.entries(previousEnv)) {
+        if (value === undefined) delete process.env[name];
+        else process.env[name] = value;
+      }
       if (previousAllowlist === undefined) delete process.env.AGENTFEED_CONFIGURED_COMMAND_ENV_ALLOWLIST;
       else process.env.AGENTFEED_CONFIGURED_COMMAND_ENV_ALLOWLIST = previousAllowlist;
     }

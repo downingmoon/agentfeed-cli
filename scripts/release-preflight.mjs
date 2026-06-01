@@ -101,7 +101,13 @@ export function validateTrustedPublishingWorkflow(workflowText) {
   assert(includesLine(workflowText, /^\s*node-version:\s*22\.14\.0\s*$/m), 'release workflow must use Node.js 22.14.0 or newer for npm trusted publishing.');
   assert(includesLine(workflowText, /^\s*registry-url:\s*https:\/\/registry\.npmjs\.org\s*$/m), 'release workflow must publish to the npm registry.');
   assert(workflowText.includes('npm install -g npm@11.6.0'), 'release workflow must install the pinned npm 11.6.0 CLI before publishing.');
-  assert(workflowText.includes('npm run release:preflight'), 'release workflow must run release:preflight before npm publish.');
+  const buildIndex = workflowText.indexOf('npm run build');
+  const preflightIndex = workflowText.indexOf('npm run release:preflight');
+  const publishIndex = workflowText.indexOf('npm publish --access public');
+  assert(buildIndex !== -1, 'release workflow must build the package before release:preflight so clean checkout release runs have dist/ available for CLI smoke checks.');
+  assert(preflightIndex !== -1, 'release workflow must run release:preflight before npm publish.');
+  assert(buildIndex < preflightIndex, 'release workflow must build the package before release:preflight so clean checkout release runs have dist/ available for CLI smoke checks.');
+  assert(publishIndex === -1 || preflightIndex < publishIndex, 'release workflow must run release:preflight before npm publish.');
   assert(!workflowText.includes('--provenance'), 'trusted publishing workflow must not pass --provenance; npm generates provenance automatically through OIDC.');
   assert(includesLine(workflowText, /^\s*-?\s*run:\s*npm publish --access public\s*$/m), 'release workflow must publish the public package with npm publish --access public.');
   assert(!workflowText.includes('NODE_AUTH_TOKEN') && !workflowText.includes('NPM_TOKEN'), 'trusted publishing workflow must not depend on long-lived npm tokens.');

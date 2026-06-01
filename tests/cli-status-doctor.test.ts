@@ -83,6 +83,7 @@ describe('status and doctor provenance output', () => {
           data: {
             session_id: 'session-cli-ux',
             authorize_url: 'http://127.0.0.1:3001/cli/authorize?session_id=session-cli-ux',
+            user_code: '123-456',
             expires_at: '2026-05-20T00:05:00Z',
             poll_interval_seconds: 1
           }
@@ -131,6 +132,8 @@ describe('status and doctor provenance output', () => {
       expect(stdout).toContain(`Using AgentFeed API: http://127.0.0.1:${address.port}/v1`);
       expect(stdout).toContain('Open this URL to authorize AgentFeed CLI:');
       expect(stdout).toContain('http://127.0.0.1:3001/cli/authorize?session_id=session-cli-ux');
+      expect(stdout).toContain('Approval code: 123-456');
+      expect(stdout).toContain('Enter this code in the browser before approving the CLI session.');
       expect(stdout).toContain('Waiting for browser approval. This terminal will finish automatically after approval.');
       expect(stdout).toContain('AgentFeed browser login complete (not saved).');
       expect(stdout).toContain('No credentials file was written. Future commands need AGENTFEED_TOKEN or a saved login.');
@@ -371,6 +374,7 @@ describe('status and doctor provenance output', () => {
             data: {
               session_id: 'session-rotate',
               authorize_url: 'http://localhost:3001/cli/authorize?session_id=session-rotate',
+              user_code: '123-456',
               expires_at: '2026-05-30T00:05:00Z',
               poll_interval_seconds: 1
             }

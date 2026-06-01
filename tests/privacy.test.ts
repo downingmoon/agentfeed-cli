@@ -7,6 +7,10 @@ describe('privacy scanner', () => {
     ['Anthropic key', 'sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890', 'api_key_pattern'],
     ['AgentFeed token', 'af_live_abcdefghijklmnopqrstuvwxyz1234567890', 'api_key_pattern'],
     ['GitHub token', 'ghp_abcdefghijklmnopqrstuvwxyz1234567890', 'api_key_pattern'],
+    ['GitHub fine-grained token', 'github_pat_11ABCDEFG0abcdefghijklmnopqrstuvwxyz1234567890', 'api_key_pattern'],
+    ['GitLab token', 'glpat-abcdefghijklmnopqrstuvwxyz1234567890', 'api_key_pattern'],
+    ['Hugging Face token', 'hf_abcdefghijklmnopqrstuvwxyz1234567890', 'api_key_pattern'],
+    ['Stripe live secret key', 'sk_live_abcdefghijklmnopqrstuvwxyz1234567890', 'api_key_pattern'],
     ['npm token', 'npm_abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJ', 'api_key_pattern'],
     ['Slack token', 'xoxb-123456789012-123456789012-abcdefghijklmnopqrstuvwxyz', 'api_key_pattern'],
     ['Discord bot token', 'MTAwMDAwMDAwMDAwMDAwMDAw.XyZ_12.abcdefghijklmnopqrstuvwxyz1', 'api_key_pattern'],
@@ -111,7 +115,8 @@ describe('privacy scanner', () => {
   it.each([
     ['Authorization: Bearer abcdef1234567890abcdef1234567890', 'Authorization: Bearer [REDACTED_SECRET]'],
     ['authorization: Basic dXNlcjpwYXNzd29yZA==', 'authorization: Basic [REDACTED_SECRET]'],
-    ['Authorization: Token ghp_abcdefghijklmnopqrstuvwxyz1234567890', 'Authorization: Token [REDACTED_SECRET]']
+    ['Authorization: Token ghp_abcdefghijklmnopqrstuvwxyz1234567890', 'Authorization: Token [REDACTED_SECRET]'],
+    ['"Authorization":"Bearer abcdef1234567890abcdef1234567890"', '"Authorization":"Bearer [REDACTED_SECRET]"']
   ])('redacts secret-bearing authorization headers: %s', (input, expected) => {
     const result = scanAndRedactFields({ summary: input });
 

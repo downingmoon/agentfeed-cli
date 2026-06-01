@@ -363,6 +363,7 @@ describe('api client', () => {
           data: {
             session_id: 'session-bad-exchange',
             authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-bad-exchange',
+            user_code: '123-456',
             expires_at: '2026-05-20T00:05:00Z',
             poll_interval_seconds: 1
           }
@@ -527,6 +528,7 @@ describe('api client', () => {
           data: {
             session_id: 'session-1',
             authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-1',
+            user_code: '123-456',
             expires_at: '2026-05-20T00:05:00Z',
             poll_interval_seconds: 2
           }
@@ -549,6 +551,7 @@ describe('api client', () => {
     const exchange = await exchangeCliAuthSession('https://api.agentfeed.dev/v1', session.session_id, 'verifier-1');
 
     expect(session.authorize_url).toContain('/cli/authorize');
+    expect(session.user_code).toBe('123-456');
     expect(exchange.token).toBe('af_live_test');
     expect(exchange.token_id).toBe('token-new');
     expect(exchange.token_expires_at).toBe('2026-06-15T00:00:00Z');
@@ -563,6 +566,21 @@ describe('api client', () => {
       data: {
         session_id: 'session-evil',
         authorize_url: 'https://evil.example/cli/authorize?session_id=session-evil',
+        user_code: '123-456',
+        expires_at: '2026-05-20T00:05:00Z',
+        poll_interval_seconds: 2
+      }
+    }), { status: 200, headers: { 'content-type': 'application/json' } })));
+
+    await expect(createCliAuthSession('https://api.agentfeed.dev/v1', { verifier: 'verifier-1', deviceName: 'devbox' }))
+      .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
+  });
+
+  it('rejects browser login sessions without a human approval code', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      data: {
+        session_id: 'session-without-code',
+        authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-without-code',
         expires_at: '2026-05-20T00:05:00Z',
         poll_interval_seconds: 2
       }
@@ -577,6 +595,7 @@ describe('api client', () => {
       data: {
         session_id: 'session-local',
         authorize_url: 'http://localhost:3001/cli/authorize?session_id=session-local',
+        user_code: '123-456',
         expires_at: '2026-05-20T00:05:00Z',
         poll_interval_seconds: 1
       }
@@ -584,6 +603,21 @@ describe('api client', () => {
 
     await expect(createCliAuthSession('http://localhost:8001/v1', { verifier: 'verifier-local' }))
       .resolves.toMatchObject({ session_id: 'session-local' });
+  });
+
+  it('rejects fake 127-prefixed authorize hostnames for local API bases', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      data: {
+        session_id: 'session-fake-local',
+        authorize_url: 'http://127.evil.com:3001/cli/authorize?session_id=session-fake-local',
+        user_code: '123-456',
+        expires_at: '2026-05-20T00:05:00Z',
+        poll_interval_seconds: 1
+      }
+    }), { status: 200, headers: { 'content-type': 'application/json' } })));
+
+    await expect(createCliAuthSession('http://localhost:8001/v1', { verifier: 'verifier-local' }))
+      .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
   });
 
   it('times out upload requests and keeps the draft pending', async () => {
@@ -817,6 +851,7 @@ describe('api client', () => {
           data: {
             session_id: 'session-no-open',
             authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-no-open',
+            user_code: '123-456',
             expires_at: '2026-05-20T00:05:00Z',
             poll_interval_seconds: 1
           }
@@ -865,6 +900,7 @@ describe('api client', () => {
           data: {
             session_id: 'session-ephemeral',
             authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-ephemeral',
+            user_code: '123-456',
             expires_at: '2026-05-20T00:05:00Z',
             poll_interval_seconds: 1
           }
@@ -905,6 +941,7 @@ describe('api client', () => {
           data: {
             session_id: 'session-default-api',
             authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-default-api',
+            user_code: '123-456',
             expires_at: '2026-05-20T00:05:00Z',
             poll_interval_seconds: 1
           }
@@ -932,6 +969,7 @@ describe('api client', () => {
           data: {
             session_id: 'session-trusted-api',
             authorize_url: 'http://localhost:3001/cli/authorize?session_id=session-trusted-api',
+            user_code: '123-456',
             expires_at: '2026-05-20T00:05:00Z',
             poll_interval_seconds: 1
           }
@@ -965,6 +1003,7 @@ describe('api client', () => {
       session: {
         session_id: 'session-1',
         authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-1',
+        user_code: '123-456',
         expires_at: '2026-05-20T00:05:00Z',
         poll_interval_seconds: 1
       },
@@ -997,6 +1036,7 @@ describe('api client', () => {
         session: {
           session_id: 'session-timeout',
           authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-timeout',
+          user_code: '123-456',
           expires_at: '2026-05-20T00:05:00Z',
           poll_interval_seconds: 60
         },

@@ -12,6 +12,21 @@ created: 2026-05-30
 
 # Privacy Safety
 
+## 2026-06-02 fallback privacy and public adapter hardening
+
+> [!success]
+> Publish-time fallback privacy scans and public rendering adapters now fail closed when scanner data or Backend visibility filtering regresses.
+
+계약:
+
+- Backend publish fallback rescans public fields even after UI finding resolution for `server_publish_fallback` source.
+- CLI and Backend token taxonomy both detect direct provider tokens including GitHub, GitLab, HuggingFace, and Stripe patterns.
+- Frontend review publish treats missing/malformed privacy findings as blocking.
+- Frontend public surfaces drop any worklog that is not both `status=public` and `visibility=public`.
+
+검증: [[Commercial Readiness Hardening - CLI Approval Code Privacy Fallback and Public Adapter 2026-06-02#검증 증거]]
+
+
 ## 2026-06-01 Backend model privacy fallback scan
 
 > [!success]

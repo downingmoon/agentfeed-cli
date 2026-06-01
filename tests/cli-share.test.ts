@@ -189,6 +189,39 @@ describe('share CLI command', () => {
     }
   });
 
+  it('rejects fake 127-prefixed local review hostnames before invoking the browser opener', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.upload = {
+      uploaded: true,
+      worklog_id: 'worklog_fake_local_open',
+      review_url: 'http://127.evil.com:3001/worklogs/worklog_fake_local_open/review',
+      uploaded_at: '2026-05-31T00:00:00.000Z'
+    };
+    await writeDraft(dir, draft);
+    const binDir = await mkdtemp(join(tmpdir(), 'agentfeed-browser-bin-'));
+    const browserLog = await installFakeBrowserOpener(binDir);
+
+    try {
+      const open = execFileAsync(process.execPath, [cliPath, 'open', '--id', draft.id], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          PATH: `${binDir}:${process.env.PATH ?? ''}`,
+          AGENTFEED_TEST_BROWSER_LOG: browserLog,
+          AGENTFEED_TOKEN: 'af_live_test_token',
+          AGENTFEED_API_BASE_URL: 'http://localhost:3001/v1'
+        }
+      });
+
+      await expect(open).rejects.toMatchObject({ code: 1 });
+      await expect(readFile(browserLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+    } finally {
+      await rm(binDir, { recursive: true, force: true });
+    }
+  });
+
   it('includes the collected draft in uploaded JSON output for smoke verification', async () => {
     let ingestPayload: Record<string, unknown> | null = null;
     const server = createServer(async (req, res) => {

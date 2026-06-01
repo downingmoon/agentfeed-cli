@@ -85,7 +85,9 @@ export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: bool
     replaceTokenId: options.replaceTokenId,
   });
 
-  output.write(`\nOpen this URL to authorize AgentFeed CLI:\n${session.authorize_url}\n\n`);
+  output.write(`\nOpen this URL to authorize AgentFeed CLI:\n${session.authorize_url}\n`);
+  output.write(`Approval code: ${session.user_code}\n`);
+  output.write('Enter this code in the browser before approving the CLI session.\n\n');
   if (!options.noOpen) {
     const opened = await openBrowser(session.authorize_url);
     if (!opened) {

@@ -12,6 +12,21 @@ created: 2026-05-30
 
 # Integration - CLI Backend Frontend
 
+## 2026-06-02 approval-code auth and fail-closed public surfaces
+
+> [!success]
+> CLI, Backend, Frontend이 terminal approval code와 public visibility fail-closed contract를 공유합니다.
+
+계약:
+
+- CLI session creation returns terminal `user_code`; CLI displays it, Frontend submits it, Backend verifies its hash.
+- Publish privacy fallback no longer trusts resolved state without checking the actual content that will become public.
+- Frontend public list adapters defensively enforce public/public rows even if Backend accidentally returns private rows.
+- Dev cross-repo gate passes after all three repo changes.
+
+검증: [[Commercial Readiness Hardening - CLI Approval Code Privacy Fallback and Public Adapter 2026-06-02#검증 증거]]
+
+
 ## End-to-end 흐름
 
 ```mermaid

@@ -13,6 +13,21 @@ created: 2026-05-30
 
 # Auth & Credential Safety
 
+## 2026-06-02 CLI browser approval code
+
+> [!success]
+> Browser-approved CLI token issuance now requires a terminal-visible human approval code, not just possession of a browser session link.
+
+계약:
+
+- Backend returns a `user_code` for each CLI auth session and stores only `approval_code_hash`.
+- Frontend `/cli/authorize` requires the terminal code before approval.
+- CLI `agentfeed login` prints the approval code and rejects auth session responses that omit it.
+- Wrong/missing codes fail with `CLI_AUTH_USER_CODE_INVALID` and do not issue ingestion tokens.
+
+검증: [[Commercial Readiness Hardening - CLI Approval Code Privacy Fallback and Public Adapter 2026-06-02#검증 증거]]
+
+
 > [!abstract] 목적
 > AgentFeed CLI가 브라우저 로그인과 token login을 제공하되, 사용자가 원할 때 로컬 credential 파일을 남기지 않는 안전한 경로를 보장합니다.
 

@@ -14,12 +14,12 @@ interface PatternRule {
 
 const patterns: PatternRule[] = [
   { type: 'database_url', severity: 'high', regex: /\b(?:postgres|postgresql|mysql|mongodb|redis):\/\/[^\s'"<>]+/gi, replacement: '[REDACTED_DATABASE_URL]', message: 'Possible database URL detected.' },
-  { type: 'api_key_pattern', severity: 'high', regex: /\b(Authorization\s*:\s*(?:Bearer|Basic|Token)\s+)[A-Za-z0-9._~+/=-]{8,}/gi, replacement: '$1[REDACTED_SECRET]', sampleRedacted: '[REDACTED_SECRET]', message: 'Possible Authorization header secret detected.' },
+  { type: 'api_key_pattern', severity: 'high', regex: /\b(["']?Authorization["']?\s*:\s*["']?(?:Bearer|Basic|Token)\s+)[A-Za-z0-9._~+/=-]{8,}(["']?)/gi, replacement: '$1[REDACTED_SECRET]$2', sampleRedacted: '[REDACTED_SECRET]', message: 'Possible Authorization header secret detected.' },
   { type: 'private_url', severity: 'high', regex: /\bhttps?:\/\/(?:[^:\s'"<>/@]+(?::[^@\s'"<>/]*)?|[^@\s'"<>/]+)@[^\s'"<>]+/gi, replacement: '[REDACTED_URL]', message: 'Credentialed URL detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\bsk-ant-[A-Za-z0-9_-]{20,}\b/gi, replacement: '[REDACTED_SECRET]', message: 'Possible Anthropic API key detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\bsk-[A-Za-z0-9_-]{20,}\b/gi, replacement: '[REDACTED_SECRET]', message: 'Possible API key detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\baf_(?:live|test|dev)_[A-Za-z0-9_-]{8,}\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible AgentFeed token detected.' },
-  { type: 'api_key_pattern', severity: 'high', regex: /\b(?:ghp_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{20,})\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible token detected.' },
+  { type: 'api_key_pattern', severity: 'high', regex: /\b(?:(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|glpat-[A-Za-z0-9_-]{20,}|hf_[A-Za-z0-9]{20,}|(?:sk|rk)_(?:live|test)_[A-Za-z0-9]{16,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{20,})\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible token detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\bnpm_[A-Za-z0-9]{36,}\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible npm token detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\bxox[baprs]-[A-Za-z0-9-]{20,}\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible Slack token detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\b[MN][A-Za-z0-9_-]{23}\.[A-Za-z0-9_-]{6}\.[A-Za-z0-9_-]{27,}\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible Discord bot token detected.' },

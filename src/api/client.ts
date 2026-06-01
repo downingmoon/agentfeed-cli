@@ -1,4 +1,5 @@
 import type { AgentFeedCredentials, CliAuthExchangeResult, CliAuthSession, IngestWorklogRequest, LocalDraft, Visibility, WorklogStatus } from '../types.js';
+import { isIP } from 'node:net';
 import { readDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 import { sanitizedDraftForUpload, scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
@@ -264,7 +265,7 @@ function parseOptionalUser(value: unknown): AgentFeedCredentials['user'] | null 
 
 function isLocalHostname(hostname: string): boolean {
   const host = hostname.toLowerCase().replace(/^\[(.*)\]$/, '$1');
-  return host === 'localhost' || host.endsWith('.localhost') || host === '::1' || host === '0.0.0.0' || host.startsWith('127.');
+  return host === 'localhost' || host.endsWith('.localhost') || host === '::1' || host === '0.0.0.0' || (isIP(host) === 4 && host.startsWith('127.'));
 }
 
 function isAgentFeedHostname(hostname: string): boolean {
@@ -331,11 +332,14 @@ function parseCliAuthSession(value: unknown, apiBaseUrl: string): CliAuthSession
   if (!isRecord(value)) throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid CLI auth session.');
   const sessionId = stringField(value.session_id);
   const authorizeUrl = stringField(value.authorize_url);
+  const userCode = stringField(value.user_code);
   const expiresAt = stringField(value.expires_at);
   const pollIntervalSeconds = Number(value.poll_interval_seconds);
   if (
     !sessionId
     || !authorizeUrl
+    || !userCode
+    || !/^\d{3}-\d{3}$/.test(userCode)
     || !expiresAt
     || !Number.isFinite(Date.parse(expiresAt))
     || !Number.isFinite(pollIntervalSeconds)
@@ -348,6 +352,7 @@ function parseCliAuthSession(value: unknown, apiBaseUrl: string): CliAuthSession
   return {
     session_id: sessionId,
     authorize_url: authorizeUrl,
+    user_code: userCode,
     expires_at: expiresAt,
     poll_interval_seconds: pollIntervalSeconds
   };

@@ -65,6 +65,7 @@ jobs:
           node-version: 22.14.0
           registry-url: https://registry.npmjs.org
       - run: npm install -g npm@11.6.0
+      - run: npm run build
       - run: npm run release:preflight
       - run: npm publish --access public
 `;
@@ -153,6 +154,11 @@ describe('release preflight guardrails', () => {
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('id-token: write', 'id-token: read'))).toThrow('id-token');
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('node-version: 22.14.0', 'node-version: 20'))).toThrow('Node.js 22.14.0');
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('npm install -g npm@11.6.0', 'npm install -g npm@10'))).toThrow('npm 11.6.0');
+    expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('      - run: npm run build\n', ''))).toThrow('build the package before release:preflight');
+    expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace(
+      '      - run: npm run build\n      - run: npm run release:preflight',
+      '      - run: npm run release:preflight\n      - run: npm run build'
+    ))).toThrow('build the package before release:preflight');
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace(
       'actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6',
       'actions/checkout@v6'

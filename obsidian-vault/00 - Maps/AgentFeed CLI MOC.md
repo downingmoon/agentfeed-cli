@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - CLI Approval Code Privacy Fallback and Public Adapter 2026-06-02]] — CLI approval code, backend fallback re-scan, frontend public adapter, release/env/privacy guardrails
+
 - [[Commercial Readiness Hardening - OAuth Contract Smoke and Action Pinning 2026-06-02]] — automated OAuth callback/session exchange smoke and cross-repo Actions SHA pin gate
 
 - [[Commercial Readiness Hardening - Hosted OAuth Live Smoke Harness 2026-06-02]]

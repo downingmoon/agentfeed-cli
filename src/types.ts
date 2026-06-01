@@ -63,6 +63,7 @@ export interface AgentFeedCredentials {
 export interface CliAuthSession {
   session_id: string;
   authorize_url: string;
+  user_code: string;
   expires_at: string;
   poll_interval_seconds: number;
 }

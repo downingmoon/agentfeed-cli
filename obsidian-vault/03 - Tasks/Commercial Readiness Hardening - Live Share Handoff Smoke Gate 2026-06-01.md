@@ -69,3 +69,9 @@ updated: 2026-06-01
 
 - [x] Dev live smoke 자동화 게이트 완료
 - [ ] 실제 사용자 작업 repo에서의 수동 `agentfeed share --open-review` smoke는 [[Integration - CLI Backend Frontend#남은 검증 리스크]]에 별도 리스크로 유지
+
+
+## 원격 상태
+
+- `downingmoon/agentfeed-dev`는 현재 GitHub Actions run이 없어 local `agentfeed-dev ./scripts/test-all.sh`를 authoritative smoke/integration gate로 기록합니다.
+- 관련 CLI/Backend/Frontend code path는 [[Commercial Readiness Hardening - Sidecar P1 Trust Boundaries 2026-06-01#Remote CI]]에서 원격 CI green을 확인했습니다.

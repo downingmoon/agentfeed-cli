@@ -121,6 +121,13 @@ updated: 2026-06-01
   - Frontend: typecheck, contract tests, production build, `npm audit` 0 vulnerabilities
   - Backend: `ruff check`, 250 pytest tests passed, Alembic offline migration chain 449 lines captured
 
+### Remote CI
+
+- CLI `downingmoon/agentfeed-cli` CI run `26739807487` for `356ff94` → success
+- Backend `downingmoon/agentfeed-backend` CI run `26739807614` for `e383a0d` → success
+- Frontend `downingmoon/agentfeed-frontend` CI run `26739807479` for `e10820c` → success
+- Dev `downingmoon/agentfeed-dev`는 현재 GitHub Actions run이 없어 local `agentfeed-dev ./scripts/test-all.sh`를 authoritative integration gate로 기록합니다.
+
 ## 완료 체크
 
 - [x] CLI environment token은 explicit `AGENTFEED_API_BASE_URL` 없이는 saved custom API base를 상속하지 않음

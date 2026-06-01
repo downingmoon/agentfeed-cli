@@ -12,7 +12,7 @@ tags:
   - agentfeed/ci
   - agentfeed/commercial-readiness
   - project/tasks
-status: in-progress
+status: done
 created: 2026-06-01
 updated: 2026-06-01
 ---
@@ -105,13 +105,15 @@ GitHub Actions 기준 최신 CLI/Backend CI가 red였기 때문에, 로컬 green
   - `GITHUB_ACTIONS=true CI=true npm test -- --run` → `274 passed`
   - `npm run typecheck` → pass
   - `npm run release:preflight` → pass
+- Remote CLI CI:
+  - `downingmoon/agentfeed-cli` CI run `26738957139` for commit `fdb045c` → pass
 - Cross-repo gate:
   - `agentfeed-dev ./scripts/test-all.sh` → CLI tests/typecheck/release preflight/audit, Frontend CI/build/audit, Backend ruff/pytest, Alembic offline migration chain 모두 pass
 
 ## 남은 리스크
 
-> [!note]
-> CLI clipboard EPIPE fix는 로컬 CI-equivalent gate까지 통과했습니다. 원격 GitHub Actions는 이 commit push 후 다시 확인해야 합니다.
+> [!success]
+> CLI/Frontend/Backend 최신 원격 CI와 로컬 cross-repo gate가 모두 green입니다.
 
 ## 관련 링크
 

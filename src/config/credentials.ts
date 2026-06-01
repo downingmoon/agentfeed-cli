@@ -279,6 +279,16 @@ function protectRepoDiscoveredApiBase(
   };
 }
 
+function savedApiBaseUrlForTokenSource(base: StoredCredentialRecord | null, tokenSource: CredentialTokenSource): string | undefined {
+  if (tokenSource === 'environment') return undefined;
+  return base?.api_base_url;
+}
+
+function savedApiBaseWarnings(base: StoredCredentialRecord | null, tokenSource: CredentialTokenSource): string[] {
+  if (tokenSource !== 'environment' || !base?.api_base_url || process.env.AGENTFEED_API_BASE_URL) return [];
+  return ['ignored saved AgentFeed API base while using AGENTFEED_TOKEN; set AGENTFEED_API_BASE_URL to intentionally choose a non-default API host.'];
+}
+
 export async function credentialsFromToken(token: string, options: { apiBaseUrl?: string; user?: AgentFeedCredentials['user']; tokenExpiresAt?: string | null; cwd?: string; trustRepoDiscoveredApiBase?: boolean } = {}): Promise<AgentFeedCredentials> {
   return {
     api_base_url: await resolveApiBaseUrl({ explicitApiBaseUrl: options.apiBaseUrl, cwd: options.cwd, trustRepoDiscoveredApiBase: options.trustRepoDiscoveredApiBase }),
@@ -335,8 +345,9 @@ export async function loadCredentials(): Promise<AgentFeedCredentials | null> {
 export async function resolveCredentials(base: AgentFeedCredentials | null): Promise<AgentFeedCredentials> {
   const token = process.env.AGENTFEED_TOKEN || base?.ingestion_token;
   if (!token) throw new Error('AgentFeed token is missing. Run: agentfeed login, or pipe a token with: printf %s "$TOKEN" | agentfeed login --token-stdin');
+  const tokenSource: CredentialTokenSource = process.env.AGENTFEED_TOKEN ? 'environment' : 'credentials_file';
   const api = protectRepoDiscoveredApiBase(
-    await resolveApiBaseUrlWithMetadata({ storedApiBaseUrl: base?.api_base_url }),
+    await resolveApiBaseUrlWithMetadata({ storedApiBaseUrl: savedApiBaseUrlForTokenSource(base, tokenSource) }),
     Boolean(token),
   );
   const apiBaseUrl = api.value;
@@ -386,7 +397,7 @@ export async function loadCredentialsWithMetadata(options: { cwd?: string } & Cr
       : 'missing';
 
   const api = protectRepoDiscoveredApiBase(
-    await resolveApiBaseUrlWithMetadata({ cwd: options.cwd, storedApiBaseUrl: base?.api_base_url }),
+    await resolveApiBaseUrlWithMetadata({ cwd: options.cwd, storedApiBaseUrl: savedApiBaseUrlForTokenSource(base, tokenSource) }),
     Boolean(token),
   );
   const persistedStoreWarning = typeof base?.credential_store_warning === 'string' && base.credential_store_warning.trim()
@@ -396,6 +407,7 @@ export async function loadCredentialsWithMetadata(options: { cwd?: string } & Cr
     ...fileResult.warnings,
     ...stored.warnings,
     ...(persistedStoreWarning && tokenSource === 'credentials_file' ? [persistedStoreWarning] : []),
+    ...savedApiBaseWarnings(base, tokenSource),
     ...api.warnings
   ];
   const tokenExpiresAt = process.env.AGENTFEED_TOKEN ? null : base?.token_expires_at ?? null;

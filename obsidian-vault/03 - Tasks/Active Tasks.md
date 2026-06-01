@@ -22,6 +22,14 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] CLI `AGENTFEED_TOKEN`이 saved custom API base를 상속하지 않도록 token/API host trust boundary 보강
+- [x] Backend GitHub OAuth `blog` import가 public URL validator를 우회하지 않도록 보강
+- [x] Backend invalid Bearer/cookie token이 protected endpoint rate-limit bucket을 우회하지 않도록 보강
+- [x] Backend draft worklog nullable public fields clear PATCH semantics 보강
+- [x] Frontend CLI auth approve contract file을 실제 contract runner에서 실행
+- 관련 노트: [[Commercial Readiness Hardening - Sidecar P1 Trust Boundaries 2026-06-01]]
+- [x] Dev live smoke가 `agentfeed share --json --clipboard --open-review` review URL handoff를 deterministic browser/clipboard helper로 검증
+- 관련 노트: [[Commercial Readiness Hardening - Live Share Handoff Smoke Gate 2026-06-01]]
 - [x] GitHub Actions Node.js 20 action runtime deprecation warning 제거 및 v6 action gate 추가
 - 관련 노트: [[Commercial Readiness Hardening - Remote CI Environment Recovery 2026-06-01]]
 - [x] GitHub Actions 원격 CLI/Backend CI red를 runner env parity 기준으로 복구

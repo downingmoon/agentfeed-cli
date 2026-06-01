@@ -33,6 +33,34 @@ sequenceDiagram
 > [!important]
 > 파라미터 충돌이 있으면 **Database column name → Backend → Frontend → CLI** 순서로 맞춥니다.
 
+## 2026-06-01 sidecar P1 trust-boundary hardening
+
+> [!success]
+> CLI/backend/frontend sidecar audit에서 발견한 P1 trust-boundary gap을 닫고 `agentfeed-dev ./scripts/test-all.sh`로 전체 통합 게이트를 재검증했습니다.
+
+계약:
+
+- `AGENTFEED_TOKEN`은 saved custom API base를 자동 상속하지 않고, non-default host는 `AGENTFEED_API_BASE_URL` 명시가 필요합니다.
+- GitHub OAuth profile `blog` import는 Backend public URL validator를 통과한 값만 저장합니다.
+- Protected endpoint rate-limit identity는 invalid Bearer/cookie token을 token bucket으로 인정하지 않고 IP bucket으로 fallback합니다.
+- Draft worklog PATCH는 명시 `null` clear와 omitted field를 구분합니다.
+- Frontend CLI auth approve contract는 contract runner에서 실제 compile/run됩니다.
+
+검증: [[Commercial Readiness Hardening - Sidecar P1 Trust Boundaries 2026-06-01#검증 증거]]
+
+## 2026-06-01 live share review URL handoff smoke
+
+> [!success]
+> Dev live smoke가 `agentfeed share --json --clipboard --open-review` upload 뒤 review URL browser/clipboard handoff를 deterministic helper로 검증합니다.
+
+계약:
+
+- JSON stdout은 upload payload를 유지하고 handoff 상태를 `handoff.clipboard/browser`로 노출합니다.
+- Smoke는 실제 OS 브라우저/클립보드 대신 fake helper log로 review URL 일치를 확인합니다.
+- Dev gate는 해당 helper/log 검증이 제거되면 static gate에서 실패합니다.
+
+검증: [[Commercial Readiness Hardening - Live Share Handoff Smoke Gate 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Remote CI environment recovery
 
 > [!success]
@@ -1510,6 +1538,7 @@ Frontend:
 - [x] smoke에서 token-authenticated self-rotation 403과 browser-approved replacement/old-token invalidation 검증
 - [ ] 실제 GitHub OAuth / CLI browser login happy path 재확인
 - [ ] 실제 사용자 작업 repo에서 `agentfeed share --open-review` smoke
+  - 2026-06-01 자동화 보강 완료: [[Commercial Readiness Hardening - Live Share Handoff Smoke Gate 2026-06-01]]에서 dev live smoke가 `share --json --clipboard --open-review` browser/clipboard handoff를 deterministic helper로 검증
 
 ## 2026-05-30 계약 감사 결과
 

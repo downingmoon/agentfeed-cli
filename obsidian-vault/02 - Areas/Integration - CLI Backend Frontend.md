@@ -33,6 +33,21 @@ sequenceDiagram
 > [!important]
 > 파라미터 충돌이 있으면 **Database column name → Backend → Frontend → CLI** 순서로 맞춥니다.
 
+
+## 2026-06-01 Settings review cookie and command wrapper safety
+
+> [!success]
+> Settings 저장, Worklog review publish/resolve, Backend auth cookie teardown, CLI configured command trust boundary를 한 slice로 정렬했습니다.
+
+계약:
+
+- Frontend Settings는 privacy와 notification mutation을 `Promise.allSettled`로 독립 저장하고, 부분 실패 시 성공한 section 결과를 유지합니다.
+- Worklog review publish/resolve 실패는 `role="alert"`로 announce하고, action 중 버튼은 `aria-busy`를 노출합니다.
+- Backend browser auth cookie set/delete는 같은 security tuple을 공유합니다.
+- CLI configured command는 `env`/`command` wrapper 뒤 shell interpreter를 숨겨도 거부합니다.
+
+검증: [[Commercial Readiness Hardening - Settings Review Cookie and Command Wrapper Safety 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Backend OAuth next and Frontend empty OK responses
 
 > [!success]

@@ -17,6 +17,20 @@ created: 2026-05-30
 > AgentFeed CLI가 브라우저 로그인과 token login을 제공하되, 사용자가 원할 때 로컬 credential 파일을 남기지 않는 안전한 경로를 보장합니다.
 
 
+
+## 2026-06-01 Auth cookie teardown security tuple parity
+
+> [!success]
+> GitHub OAuth state cookie와 browser session cookie 삭제가 발급 시 보안 속성과 같은 tuple을 사용하도록 정렬했습니다.
+
+계약:
+
+- Browser auth cookie option은 `_browser_auth_cookie_options()`로 공유합니다.
+- Production에서는 set/delete 모두 `HttpOnly`, `Secure`, `SameSite=lax`, `path=/`를 유지합니다.
+- Logout과 OAuth callback cleanup은 path-only deletion으로 회귀하지 않습니다.
+
+검증: [[Commercial Readiness Hardening - Settings Review Cookie and Command Wrapper Safety 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Backend OAuth next allowlist
 
 > [!success]

@@ -42,6 +42,20 @@ created: 2026-05-30
 | Cursor/generic metadata | low | 프로젝트 로컬 JSON/JSONL/log의 보수적 파싱 |
 | Git diff/status | unknown | agent evidence가 없을 때 최소 changed area 보강 |
 
+
+## 2026-06-01 Configured command wrapper shell bypass
+
+> [!success]
+> Configured command trust boundary가 첫 token만 검사하던 상태에서 `env`/`command` wrapper 뒤 실제 executable까지 검사하는 방식으로 강화됐습니다.
+
+계약:
+
+- `env bash -c ...`, `env -u PATH bash -c ...`, `command sh -c ...`는 configured command로 실행하지 않습니다.
+- `env -S ...`는 split semantics가 shell-like 우회가 될 수 있어 configured command에서 거부합니다.
+- 새 wrapper 허용은 command trust boundary 변경으로 취급하고 회귀 테스트를 먼저 추가합니다.
+
+검증: [[Commercial Readiness Hardening - Settings Review Cookie and Command Wrapper Safety 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Project-bound cwd-less session discovery
 
 > [!success]

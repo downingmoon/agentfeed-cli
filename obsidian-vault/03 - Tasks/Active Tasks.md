@@ -22,6 +22,11 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] Frontend Settings privacy/notification save partial failure를 section-aware recovery로 보강
+- [x] Frontend Worklog review publish/resolve error와 pending state를 assistive tech에 노출
+- [x] Backend auth/logout cookie deletion이 set-cookie 보안 tuple과 일치하도록 보강
+- [x] CLI configured command가 env/command wrapper 뒤 shell interpreter를 숨기는 bypass 차단
+- 관련 노트: [[Commercial Readiness Hardening - Settings Review Cookie and Command Wrapper Safety 2026-06-01]]
 - [x] Backend OAuth next redirect를 in-app allowlist/query-key/hash 정책으로 서명 전 정규화
 - [x] Frontend `{ ok: true }` mutation만 204/empty success fallback을 명시 허용
 - [x] Frontend 401 auth error handling 시 pending/social optimistic state 정리

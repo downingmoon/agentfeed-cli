@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - CLI Credential Fallback Fail Closed 2026-06-01]]
+
 - [[Commercial Readiness Hardening - Settings Token Revoke Confirmation 2026-06-01]]
 
 - [[Commercial Readiness Hardening - Frontend Detail Profile Leaderboard Accessibility 2026-06-01]]

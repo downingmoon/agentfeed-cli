@@ -29,7 +29,7 @@ created: 2026-05-30
 - [ ] Backend production DB rate-limit store failure fallback 정책을 fail-closed/observable degraded mode로 재검토
 - [ ] Backend production `ENVIRONMENT` missing/typo startup fail-fast 정책 확정 및 구현
 - [ ] CLI structured cwd 없는 agent session attribution을 stricter project-bound evidence로 제한
-- [ ] CLI keychain unavailable 시 plaintext credential fallback을 explicit insecure opt-in으로 제한
+- [x] CLI keychain unavailable 시 plaintext credential fallback을 explicit insecure opt-in으로 제한
 - [x] Frontend Settings ingestion token revoke destructive confirmation 및 CLI recovery copy 보강
 - [x] Frontend detail/profile/project/leaderboard/header 남은 접근성 state/name/keyboard contract 보강
 - [x] Frontend feed/worklog discovery keyboard navigation, accessible labels, visible focus 보강
@@ -215,6 +215,8 @@ created: 2026-05-30
 - [x] Frontend unpublish control을 실제 published status 기준으로 축소
 
 ## 관련 링크
+
+- [[Commercial Readiness Hardening - CLI Credential Fallback Fail Closed 2026-06-01]]
 
 - [[Commercial Readiness Hardening - Settings Token Revoke Confirmation 2026-06-01]]
 

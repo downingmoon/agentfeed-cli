@@ -15,6 +15,7 @@ const oldAgentFeedHome = process.env.AGENTFEED_HOME;
 const oldBase = process.env.AGENTFEED_API_BASE_URL;
 const oldToken = process.env.AGENTFEED_TOKEN;
 const oldAllowInsecure = process.env.AGENTFEED_ALLOW_INSECURE_API;
+const oldAllowInsecureCredentialStore = process.env.AGENTFEED_ALLOW_INSECURE_CREDENTIAL_STORE;
 const oldTrustRepoApiBase = process.env.AGENTFEED_TRUST_REPO_API_BASE;
 const oldCredentialStore = process.env.AGENTFEED_CREDENTIAL_STORE;
 
@@ -25,6 +26,7 @@ beforeEach(async () => {
   delete process.env.AGENTFEED_HOME;
   delete process.env.AGENTFEED_API_BASE_URL;
   delete process.env.AGENTFEED_ALLOW_INSECURE_API;
+  delete process.env.AGENTFEED_ALLOW_INSECURE_CREDENTIAL_STORE;
   delete process.env.AGENTFEED_TRUST_REPO_API_BASE;
   delete process.env.AGENTFEED_CREDENTIAL_STORE;
 });
@@ -39,6 +41,8 @@ afterEach(async () => {
   else process.env.AGENTFEED_TOKEN = oldToken;
   if (oldAllowInsecure === undefined) delete process.env.AGENTFEED_ALLOW_INSECURE_API;
   else process.env.AGENTFEED_ALLOW_INSECURE_API = oldAllowInsecure;
+  if (oldAllowInsecureCredentialStore === undefined) delete process.env.AGENTFEED_ALLOW_INSECURE_CREDENTIAL_STORE;
+  else process.env.AGENTFEED_ALLOW_INSECURE_CREDENTIAL_STORE = oldAllowInsecureCredentialStore;
   if (oldTrustRepoApiBase === undefined) delete process.env.AGENTFEED_TRUST_REPO_API_BASE;
   else process.env.AGENTFEED_TRUST_REPO_API_BASE = oldTrustRepoApiBase;
   if (oldCredentialStore === undefined) delete process.env.AGENTFEED_CREDENTIAL_STORE;
@@ -154,7 +158,7 @@ describe('project config', () => {
     });
   });
 
-  it('falls back to private file credentials when auto keychain storage is unavailable', async () => {
+  it('refuses silent file fallback when auto keychain storage is unavailable', async () => {
     const unavailableKeychain: SecretStore = {
       service: 'AgentFeed CLI Test',
       account: 'unavailable',
@@ -162,6 +166,26 @@ describe('project config', () => {
       async read() { return null; },
       async write() { throw new Error('unavailable'); },
     };
+
+    await expect(saveCredentials('af_live_file_fallback', {
+      apiBaseUrl: 'http://localhost:8001/v1',
+      credentialStore: 'auto',
+      secretStore: unavailableKeychain,
+    })).rejects.toThrow(/AGENTFEED_ALLOW_INSECURE_CREDENTIAL_STORE=1/i);
+
+    await expect(pathExists(credentialsPath())).resolves.toBe(false);
+  });
+
+  it('falls back to private file credentials only when auto fallback is explicitly allowed', async () => {
+    const unavailableKeychain: SecretStore = {
+      service: 'AgentFeed CLI Test',
+      account: 'unavailable',
+      async isAvailable() { return false; },
+      async read() { return null; },
+      async write() { throw new Error('unavailable'); },
+    };
+
+    process.env.AGENTFEED_ALLOW_INSECURE_CREDENTIAL_STORE = '1';
 
     await saveCredentials('af_live_file_fallback', {
       apiBaseUrl: 'http://localhost:8001/v1',
@@ -178,6 +202,24 @@ describe('project config', () => {
     expect(resolved.token_source).toBe('credentials_file');
     expect(resolved.credential_store).toBe('file');
     expect(resolved.warnings.join('\n')).toMatch(/keychain credential storage is not available/i);
+  });
+
+  it('refuses auto file fallback when keychain writes fail without explicit opt-in', async () => {
+    const failingKeychain: SecretStore = {
+      service: 'AgentFeed CLI Test',
+      account: 'failing',
+      async isAvailable() { return true; },
+      async read() { return null; },
+      async write() { throw new Error('locked keychain'); },
+    };
+
+    await expect(saveCredentials('af_live_failed_keychain_fallback', {
+      apiBaseUrl: 'http://localhost:8001/v1',
+      credentialStore: 'auto',
+      secretStore: failingKeychain,
+    })).rejects.toThrow(/OS keychain credential storage failed.*AGENTFEED_ALLOW_INSECURE_CREDENTIAL_STORE=1/is);
+
+    await expect(pathExists(credentialsPath())).resolves.toBe(false);
   });
 
   it('requires explicit fallback when keychain-only storage is unavailable', async () => {

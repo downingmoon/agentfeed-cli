@@ -677,3 +677,18 @@ created: 2026-05-30
 - CLI authorization page도 `auth.me()`가 `null`을 반환하면 GitHub sign-in flow로 유도합니다.
 
 검증: [[Commercial Readiness Hardening - Auth Identity Response Models and JSON Side Effects 2026-05-31#검증 증거]]
+
+
+## 2026-06-01 Keychain auto fallback fail-closed
+
+> [!success]
+> `AGENTFEED_CREDENTIAL_STORE=auto`는 keychain unavailable/write failure에서 명시적 break-glass opt-in 없이 file token storage로 fallback하지 않습니다.
+
+계약:
+
+- `auto` + keychain unavailable/write failure + no `AGENTFEED_ALLOW_INSECURE_CREDENTIAL_STORE=1` → credentials file 미생성, 명확한 error.
+- `AGENTFEED_ALLOW_INSECURE_CREDENTIAL_STORE=1` → fallback 허용 + `credential_store_warning` 저장.
+- `AGENTFEED_CREDENTIAL_STORE=file` → 의도적 local file storage로 계속 지원.
+- `AGENTFEED_CREDENTIAL_STORE=keychain` → 기존처럼 keychain unavailable/write failure에서 실패.
+
+검증: [[Commercial Readiness Hardening - CLI Credential Fallback Fail Closed 2026-06-01#검증 증거]]

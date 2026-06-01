@@ -12,6 +12,7 @@ import { normalizeApiBaseUrl, resolveApiBaseUrl, resolveApiBaseUrlWithMetadata, 
 const execFileAsync = promisify(execFile);
 const KEYCHAIN_SERVICE = 'AgentFeed CLI';
 const KEYCHAIN_TIMEOUT_MS = 5_000;
+const INSECURE_CREDENTIAL_STORE_FALLBACK_ENV = 'AGENTFEED_ALLOW_INSECURE_CREDENTIAL_STORE';
 
 export type CredentialTokenSource = 'environment' | 'credentials_file' | 'keychain' | 'missing';
 export type CredentialStorePreference = 'auto' | 'file' | 'keychain';
@@ -127,6 +128,20 @@ function credentialStorePreference(explicit?: CredentialStorePreference): Creden
   }
   if (process.env.NODE_ENV === 'test' || process.env.VITEST) return 'file';
   return 'auto';
+}
+
+function allowInsecureCredentialStoreFallback(): boolean {
+  return process.env[INSECURE_CREDENTIAL_STORE_FALLBACK_ENV] === '1';
+}
+
+function credentialStoreFallbackRefusal(reason: 'unavailable' | 'failed', detail = ''): Error {
+  const reasonText = reason === 'unavailable'
+    ? 'OS keychain credential storage is not available'
+    : 'OS keychain credential storage failed';
+  return new Error(
+    `${reasonText}; refusing to save the token in the local credentials file without explicit opt-in. ` +
+    `Set AGENTFEED_CREDENTIAL_STORE=file to intentionally use file storage, or set ${INSECURE_CREDENTIAL_STORE_FALLBACK_ENV}=1 to allow auto fallback for this login.${detail}`
+  );
 }
 
 function keychainAccount(): string {
@@ -294,12 +309,18 @@ export async function saveCredentials(token: string, options: { apiBaseUrl?: str
           throw new Error(`Unable to save AgentFeed credentials to the OS keychain.${detail}`);
         }
         const detail = error instanceof Error && error.message ? ` ${error.message}` : '';
-        fileFallbackWarning = `OS keychain credential storage failed; saved token in the private credentials file instead.${detail}`;
+        if (!allowInsecureCredentialStoreFallback()) {
+          throw credentialStoreFallbackRefusal('failed', detail);
+        }
+        fileFallbackWarning = `OS keychain credential storage failed; saved token in the private credentials file because ${INSECURE_CREDENTIAL_STORE_FALLBACK_ENV}=1.${detail}`;
       }
     } else if (preference === 'keychain') {
-      throw new Error('OS keychain credential storage is not available. Use AGENTFEED_CREDENTIAL_STORE=file to save an encrypted-at-rest alternative externally, or AGENTFEED_TOKEN for environment-managed secrets.');
+      throw new Error('OS keychain credential storage is not available. Use AGENTFEED_CREDENTIAL_STORE=file to intentionally save the token in the local credentials file, or AGENTFEED_TOKEN for environment-managed secrets.');
     } else {
-      fileFallbackWarning = 'OS keychain credential storage is not available; saved token in the private credentials file instead. Set AGENTFEED_CREDENTIAL_STORE=keychain to require keychain storage or AGENTFEED_CREDENTIAL_STORE=file to make file storage explicit.';
+      if (!allowInsecureCredentialStoreFallback()) {
+        throw credentialStoreFallbackRefusal('unavailable');
+      }
+      fileFallbackWarning = `OS keychain credential storage is not available; saved token in the private credentials file because ${INSECURE_CREDENTIAL_STORE_FALLBACK_ENV}=1. Set AGENTFEED_CREDENTIAL_STORE=file to make file storage explicit without auto fallback.`;
     }
   }
 

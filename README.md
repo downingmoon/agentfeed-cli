@@ -111,6 +111,16 @@ agentfeed token rotate
 
 Use `agentfeed doctor` to check server-side token validity and expiry.
 
+### Credential storage policy
+
+Saved browser-login or stdin-login tokens prefer the OS keychain when available (`security` on macOS, `secret-tool` on Linux). To intentionally store the token in the private local credentials file, set:
+
+```bash
+AGENTFEED_CREDENTIAL_STORE=file agentfeed login
+```
+
+`AGENTFEED_CREDENTIAL_STORE=auto` does **not** silently downgrade to file storage when the keychain is unavailable or locked. If you need a break-glass fallback for one login, make it explicit with `AGENTFEED_ALLOW_INSECURE_CREDENTIAL_STORE=1`; otherwise choose `AGENTFEED_CREDENTIAL_STORE=file` or use `AGENTFEED_TOKEN` from your secret manager.
+
 
 ## One-command sharing
 

@@ -41,6 +41,20 @@ sequenceDiagram
 
 
 
+## 2026-06-01 Authenticated frontend account smoke
+
+> [!success]
+> Dev E2E smoke가 browser cookie-authenticated review/dashboard/settings/notifications DOM을 검증하도록 확장되어, Backend JWT cookie와 Frontend AppContext/account surface 연결을 실제 hydration 경로로 증명합니다.
+
+계약:
+
+- Browser DOM smoke는 Authorization header 대신 Backend origin `access_token` cookie를 주입합니다.
+- `browser-dom-dump.mjs`는 `--cookie name=value`와 `--cookie-url URL`로 smoke 전용 cookie setup을 지원합니다.
+- Review, Dashboard, Settings, Notifications는 signed-out fallback 없이 authenticated DOM을 렌더링해야 합니다.
+- Dev `test-all.sh`는 authenticated account DOM smoke gate가 제거되지 않았는지 static contract로 확인합니다.
+
+검증: [[Commercial Readiness Hardening - Authenticated Frontend Account Smoke 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Frontend project route dev runtime
 
 > [!success]

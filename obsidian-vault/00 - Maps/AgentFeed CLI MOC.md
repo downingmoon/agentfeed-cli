@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Remote CI Environment Recovery 2026-06-01]]
+
 - [[Commercial Readiness Hardening - Production Config Private Host and CI Env Gates 2026-06-01]]
 
 - [[Commercial Readiness Hardening - Frontend Signout Click Smoke 2026-06-01]]

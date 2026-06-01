@@ -333,7 +333,18 @@ describe('status and doctor provenance output', () => {
           ...process.env,
           HOME: home,
           AGENTFEED_TOKEN: '',
-          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`,
+          AGENTFEED_CI: '0',
+          CI: '0',
+          GITHUB_ACTIONS: '0',
+          GITLAB_CI: '0',
+          BUILDKITE: '0',
+          CIRCLECI: '0',
+          JENKINS_URL: '0',
+          TF_BUILD: '0',
+          TEAMCITY_VERSION: '0',
+          VERCEL: '0',
+          NETLIFY: '0'
         }
       });
 

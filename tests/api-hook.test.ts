@@ -309,7 +309,7 @@ describe('api client', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1', noOpen: true, waitMs: 50 }))
+    await expect(browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1', noOpen: true, waitMs: 50, allowCiBrowser: true }))
       .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -762,7 +762,7 @@ describe('api client', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const creds = await browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1', noOpen: true, waitMs: 50 });
+    const creds = await browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1', noOpen: true, waitMs: 50, allowCiBrowser: true });
 
     expect(creds).toMatchObject({
       api_base_url: 'https://api.agentfeed.dev/v1',
@@ -807,7 +807,7 @@ describe('api client', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const creds = await browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1/', noOpen: true, waitMs: 50, save: false });
+    const creds = await browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1/', noOpen: true, waitMs: 50, save: false, allowCiBrowser: true });
 
     expect(creds).toMatchObject({
       api_base_url: 'https://api.agentfeed.dev/v1',
@@ -839,7 +839,7 @@ describe('api client', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const creds = await browserLogin({ cwd: dir, noOpen: true, waitMs: 50, save: false });
+    const creds = await browserLogin({ cwd: dir, noOpen: true, waitMs: 50, save: false, allowCiBrowser: true });
 
     expect(creds.api_base_url).toBe('https://api.agentfeed.dev/v1');
     expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.agentfeed.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
@@ -866,7 +866,7 @@ describe('api client', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const creds = await browserLogin({ cwd: dir, noOpen: true, waitMs: 50, save: false });
+    const creds = await browserLogin({ cwd: dir, noOpen: true, waitMs: 50, save: false, allowCiBrowser: true });
 
     expect(creds.api_base_url).toBe('http://localhost:8124/v1');
     expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://localhost:8124/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));

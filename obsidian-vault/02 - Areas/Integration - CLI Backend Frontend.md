@@ -33,6 +33,21 @@ sequenceDiagram
 > [!important]
 > 파라미터 충돌이 있으면 **Database column name → Backend → Frontend → CLI** 순서로 맞춥니다.
 
+## 2026-06-01 Remote CI environment recovery
+
+> [!success]
+> GitHub-hosted runner의 기본 env와 workflow top-level env 때문에 로컬 green과 원격 CI red가 갈라진 문제를 재현하고 복구했습니다.
+
+계약:
+
+- CLI mock browser-auth 테스트는 `GITHUB_ACTIONS=true`에서도 명시 override(`allowCiBrowser`)가 있을 때만 browser flow를 실행합니다.
+- CLI 실제 CI browser-login guard는 유지하며, override 없는 CI login은 token/stdin remediation으로 fail-fast해야 합니다.
+- Backend workflow dev env는 default local origins와 `Settings` allowlist를 동시에 만족해야 합니다.
+- Cross-repo `test-all.sh`는 이번 수정 후에도 전체 release/readiness gate를 통과해야 합니다.
+
+검증: [[Commercial Readiness Hardening - Remote CI Environment Recovery 2026-06-01#검증 증거]]
+
+
 ## 2026-06-01 Production config private-host and CI-env gates
 
 > [!success]

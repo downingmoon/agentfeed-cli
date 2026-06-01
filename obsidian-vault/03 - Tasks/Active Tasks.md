@@ -75,6 +75,8 @@ created: 2026-05-30
 - 관련 노트: [[Commercial Readiness Hardening - Live Share Handoff Smoke Gate 2026-06-01]]
 - [x] `/cli/authorize` missing-session UX를 hydrated DOM smoke로 정렬하고 사용자 repo 형태 `share --open-review` smoke를 2026-06-02 local dev stack에서 재검증
 - 관련 노트: [[Commercial Readiness Hardening - Live Share Hydrated Smoke Revalidation 2026-06-02]]
+- [x] GitHub OAuth start redirect/state-cookie contract를 dev smoke에 추가
+- 관련 노트: [[Commercial Readiness Hardening - Live Share Hydrated Smoke Revalidation 2026-06-02]]
 - [x] GitHub Actions Node.js 20 action runtime deprecation warning 제거 및 v6 action gate 추가
 - 관련 노트: [[Commercial Readiness Hardening - Remote CI Environment Recovery 2026-06-01]]
 - [x] GitHub Actions 원격 CLI/Backend CI red를 runner env parity 기준으로 복구

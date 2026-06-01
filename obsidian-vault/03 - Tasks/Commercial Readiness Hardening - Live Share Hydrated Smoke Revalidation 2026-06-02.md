@@ -32,6 +32,9 @@ updated: 2026-06-02
   - `CLI_AUTH_MISSING_DOM_FILE` artifact를 남기고 `AgentFeed CLI Login`, `CLI 인증 세션이 없습니다` 텍스트를 hydrated DOM에서 확인합니다.
 - `agentfeed-dev/scripts/test-all.sh`
   - smoke가 hydrated missing-session DOM gate를 유지하는지 static contract를 추가했습니다.
+- `agentfeed-dev/scripts/smoke-e2e.sh`
+  - 실제 `.env`에 GitHub OAuth credential이 있을 때 `/v1/auth/github?next=/cli/authorize` start redirect contract를 검증합니다.
+  - GitHub redirect target, configured `client_id`/`redirect_uri`, raw `session_id` 미노출, `agentfeed_oauth_state` cookie/state 일치를 확인합니다.
 
 ## 검증 증거
 
@@ -43,6 +46,7 @@ updated: 2026-06-02
   - CLI browser-login session exchange
   - CLI authorize metadata UI/browser approval
   - browser-approved token replacement/old-token invalidation
+  - GitHub OAuth start redirect/state-cookie contract
   - 임시 Cursor-style git repo에서 `agentfeed share --json --source cursor --session-file .agentfeed/cursor-smoke.jsonl --note "Smoke author note" --all --clipboard --open-review`
   - JSON `handoff.clipboard/browser == { requested: true, ok: true }`
   - deterministic browser/clipboard helper log가 upload `review_url`과 동일
@@ -58,7 +62,7 @@ updated: 2026-06-02
 > [!success]
 > `agentfeed share --open-review` 사용자 작업 repo smoke 리스크는 dev live smoke의 임시 git fixture와 deterministic handoff helper로 자동화 검증 완료 상태로 전환합니다.
 
-남은 수동 리스크는 실제 GitHub OAuth app credential이 필요한 browser-login happy path뿐입니다. 해당 항목은 [[Integration - CLI Backend Frontend#남은 검증 리스크]]에 credential-gated 리스크로 유지합니다.
+남은 수동 리스크는 실제 GitHub OAuth app credential과 사용자 GitHub browser session이 필요한 callback/approval happy path뿐입니다. 자동화 가능한 OAuth start redirect/state-cookie 계약은 이번 smoke에 포함했고, full browser-login happy path는 [[Integration - CLI Backend Frontend#남은 검증 리스크]]에 credential-gated 리스크로 유지합니다.
 
 ## 관련 링크
 

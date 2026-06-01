@@ -1597,6 +1597,8 @@ Frontend:
 - [x] smoke 전용 ingestion token을 `/v1/ingest/status`로 upload 전 검증
 - [x] smoke에서 token-authenticated self-rotation 403과 browser-approved replacement/old-token invalidation 검증
 - [ ] 실제 GitHub OAuth / CLI browser login happy path 재확인
+  - 2026-06-02 자동화 보강: [[Commercial Readiness Hardening - Live Share Hydrated Smoke Revalidation 2026-06-02]]에서 GitHub OAuth start redirect/state-cookie contract는 local credential 환경 기준으로 검증
+  - 남은 범위: GitHub hosted login/callback 뒤 `/cli/authorize` approval UI까지 이어지는 human browser round-trip
 - [x] 실제 사용자 작업 repo 형태의 임시 git fixture에서 `agentfeed share --open-review` smoke
   - 2026-06-01 자동화 보강: [[Commercial Readiness Hardening - Live Share Handoff Smoke Gate 2026-06-01]]에서 dev live smoke가 `share --json --clipboard --open-review` browser/clipboard handoff를 deterministic helper로 검증
   - 2026-06-02 재검증: [[Commercial Readiness Hardening - Live Share Hydrated Smoke Revalidation 2026-06-02]]에서 local Docker dev stack 기준 `./scripts/smoke-e2e.sh` 통과
@@ -1905,7 +1907,8 @@ Frontend 표시:
 변경:
 
 - `agentfeed-dev/scripts/smoke-e2e.sh`가 `CLI_AUTH_MISSING_DOM_FILE`을 만들고 `browser-dom-dump.mjs`로 `AgentFeed CLI Login`, `CLI 인증 세션이 없습니다`를 확인합니다.
-- `agentfeed-dev/scripts/test-all.sh`가 해당 hydrated gate 유지 여부를 static contract로 확인합니다.
+- `agentfeed-dev/scripts/smoke-e2e.sh`가 local `.env` GitHub OAuth credential이 있을 때 `/v1/auth/github?next=/cli/authorize` redirect/state-cookie contract를 검증합니다.
+- `agentfeed-dev/scripts/test-all.sh`가 해당 hydrated/OAuth-start gate 유지 여부를 static contract로 확인합니다.
 
 검증:
 
@@ -1931,6 +1934,7 @@ Frontend 표시:
 남은 수동 확인:
 
 - [ ] 실제 GitHub OAuth app credential이 있는 환경에서 `/cli/authorize` approval UI까지 포함한 browser-login happy path
+  - 2026-06-02: OAuth start redirect/state-cookie는 dev smoke에 자동화. GitHub hosted login/callback은 사용자 GitHub session/consent가 필요해 credential-gated 수동 리스크로 유지.
 
 검증:
 

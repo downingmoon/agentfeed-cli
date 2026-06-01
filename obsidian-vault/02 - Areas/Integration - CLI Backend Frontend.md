@@ -53,6 +53,22 @@ sequenceDiagram
 
 
 
+## 2026-06-01 Frontend detail/profile/leaderboard accessibility
+
+> [!success]
+> Public detail/profile/project/leaderboard/header surfaces now expose keyboard activation, selected state, busy state, and descriptive names for the major remaining interaction controls.
+
+계약:
+
+- Worklog detail author navigation and Profile project cards support keyboard activation.
+- Profile/Project tab controls use tablist/tab state plus `aria-selected` and `aria-pressed`.
+- Leaderboard filters expose selected state and leaderboard profile links have descriptive names.
+- Header theme icon button exposes an accessible name and current dark-mode state.
+- Worklog detail like/bookmark/comment/copy prompt controls expose accessible names/state/live feedback.
+- Profile activity bars expose chart values without relying only on tooltip `title`.
+
+검증: [[Commercial Readiness Hardening - Frontend Detail Profile Leaderboard Accessibility 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Frontend accessibility and CLI login timeout polling
 
 > [!success]

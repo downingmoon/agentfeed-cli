@@ -22,6 +22,7 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] Frontend detail/profile/project/leaderboard/header 남은 접근성 state/name/keyboard contract 보강
 - [x] Frontend feed/worklog discovery keyboard navigation, accessible labels, visible focus 보강
 - [x] CLI browser-login polling final timeout sleep 경계값 deterministic regression으로 보강
 - [x] CLI npm trusted publishing workflow/OIDC/provenance fail-closed release gate 보강
@@ -205,6 +206,8 @@ created: 2026-05-30
 - [x] Frontend unpublish control을 실제 published status 기준으로 축소
 
 ## 관련 링크
+
+- [[Commercial Readiness Hardening - Frontend Detail Profile Leaderboard Accessibility 2026-06-01]]
 
 - [[Commercial Readiness Hardening - Frontend Accessibility and CLI Login Timeout Polling 2026-06-01]]
 

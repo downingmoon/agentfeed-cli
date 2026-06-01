@@ -3023,3 +3023,16 @@ Frontend 계약:
 - `test-all.sh`가 이 source-level release smoke 계약을 검증합니다.
 
 검증: [[Commercial Readiness Hardening - Dev Smoke Package Entrypoint 2026-06-01#검증 증거]]
+
+## 2026-06-01 Backend public URL resolution safety
+
+> [!success]
+> CLI ingest `project.repository_url`, Frontend profile/project settings URL, Backend GitHub blog import가 같은 public URL safety boundary를 공유합니다.
+
+계약:
+
+- IngestRequest, Create/UpdateProjectRequest, UpdateProfileRequest는 같은 `validate_public_http_url()` policy를 사용합니다.
+- Backend가 public feed/profile/project payload로 내보낼 URL은 schema write boundary에서 private/internal host가 차단되어야 합니다.
+- 새 URL-bearing request field는 이 shared validator를 재사용해야 합니다.
+
+검증: [[Commercial Readiness Hardening - Backend Public URL Resolution Safety 2026-06-01#검증 증거]]

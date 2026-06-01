@@ -404,3 +404,18 @@ Redacted preview:
 - Public/unlisted publish는 review route에서 resolution 처리된 뒤에만 blocking finding을 통과시킵니다.
 
 검증: [[Commercial Readiness Hardening - Rate Limit and Privacy Finding Ownership 2026-05-31#검증 증거]]
+
+## 2026-06-01 Backend public URL resolution safety
+
+> [!success]
+> Public URL field가 private/internal host를 legacy IP literal, embedded IPv6, DNS private resolution으로 우회 저장하지 못하도록 보강했습니다.
+
+계약:
+
+- `localhost`, `.localhost`, `.local`, non-global IP literal은 계속 reject합니다.
+- `2130706433`, `0x7f000001`, `017700000001`, `127.1` 같은 legacy IPv4 literal은 reject합니다.
+- IPv4-mapped IPv6, 6to4, Teredo, NAT64 embedded IPv4가 non-public이면 reject합니다.
+- hostname DNS가 private/link-local/non-global address를 반환하면 reject합니다.
+- DNS lookup 실패는 storage-time availability를 위해 기존 hostname validation으로 fallback합니다.
+
+검증: [[Commercial Readiness Hardening - Backend Public URL Resolution Safety 2026-06-01#검증 증거]]

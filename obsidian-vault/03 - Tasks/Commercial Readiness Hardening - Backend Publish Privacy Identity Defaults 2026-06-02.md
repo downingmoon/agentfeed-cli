@@ -71,7 +71,7 @@ repositories:
 ## 남은 검증
 
 - [x] Cross-repo `agentfeed-dev/scripts/test-all.sh` → CLI 296 passed, Frontend CI/build passed, Backend 275 passed, Alembic offline chain passed
-- [ ] Remote GitHub CI after push
+- [x] Remote GitHub CI after push → `downingmoon/agentfeed-backend` run `26764801089` success (`8c2b07e`)
 
 ## 관련 링크
 

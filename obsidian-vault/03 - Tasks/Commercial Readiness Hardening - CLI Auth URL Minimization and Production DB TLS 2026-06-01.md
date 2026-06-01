@@ -77,9 +77,14 @@ repositories:
 > - Backend static check: `uv run --locked --group dev ruff check ...` → `All checks passed!`.
 > - Cross-repo gate: `agentfeed-dev ./scripts/test-all.sh` 통과, CLI `289 passed`, Frontend CI/build green, Backend `264 passed`, Alembic offline migration chain green.
 
-## 남은 검증
+## 원격 CI
 
-- [ ] Remote GitHub CI 확인
+> [!success]
+> 2026-06-01 push 후 3개 repo GitHub Actions가 모두 성공했습니다.
+
+- Frontend CI: `26761933584` success (`69655ce`)
+- Backend CI: `26761932679` success (`7d58773`)
+- CLI CI: `26761932446` success (`f0b9fa7`)
 
 ## 관련 링크
 

@@ -22,6 +22,8 @@ created: 2026-05-30
 - [x] Live smoke가 production-safe backend config와 충돌하지 않도록 Compose dev env/readiness/hash-session 계약 보강
 
 ## P1 후보
+- [x] Backend OAuth next redirect를 in-app allowlist/query-key/hash 정책으로 서명 전 정규화
+- [x] Frontend `{ ok: true }` mutation만 204/empty success fallback을 명시 허용
 - [x] Frontend 401 auth error handling 시 pending/social optimistic state 정리
 - [x] Frontend worklog detail malformed payload를 controlled retry/partial-safe failure로 처리
 - [x] Frontend dynamic auth next route의 safe query allowlist 보존 계약 보강
@@ -608,3 +610,4 @@ created: 2026-05-30
 - [[Commercial Readiness Hardening - Public Interaction Response Models 2026-05-31]]
 - [[Commercial Readiness Hardening - User Dashboard Worklog Contracts and Collect JSON Stability 2026-05-31]]
 - [[Commercial Readiness Hardening - Full JSON API Response Contract 2026-05-31]]
+- [[Commercial Readiness Hardening - Backend OAuth Next and Frontend Empty OK Responses 2026-06-01]]

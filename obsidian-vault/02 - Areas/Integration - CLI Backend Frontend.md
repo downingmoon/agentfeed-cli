@@ -33,6 +33,21 @@ sequenceDiagram
 > [!important]
 > 파라미터 충돌이 있으면 **Database column name → Backend → Frontend → CLI** 순서로 맞춥니다.
 
+## 2026-06-01 Backend OAuth next and Frontend empty OK responses
+
+> [!success]
+> Backend OAuth state 생성 전 return path allowlist를 적용하고, Frontend는 명시적 `{ ok: true }` mutation에 한해서만 204/empty success fallback을 허용합니다.
+
+계약:
+
+- Backend `/v1/auth/github?next=...`는 Frontend를 우회해 직접 호출되어도 in-app allowlist와 query-key allowlist를 통과한 path만 OAuth state에 보존합니다.
+- `/cli/authorize?session_id=...` browser-login deep link는 유지합니다.
+- Unknown/unsafe path, dot segment, encoded separator, OAuth-sensitive query/hash는 `/dashboard` 또는 stripped query/hash로 수렴합니다.
+- Frontend `apiFetch()`는 기본적으로 empty successful response를 계속 `ApiError(502)`로 처리합니다.
+- Logout/delete/report/read-all/revoke처럼 client contract가 `{ ok: true }`인 call site만 explicit empty fallback을 가집니다.
+
+검증: [[Commercial Readiness Hardening - Backend OAuth Next and Frontend Empty OK Responses 2026-06-01#검증 증거]]
+
 ## 완료된 큰 축
 
 - review URL route 정합성

@@ -17,6 +17,21 @@ created: 2026-05-30
 > AgentFeed CLI가 브라우저 로그인과 token login을 제공하되, 사용자가 원할 때 로컬 credential 파일을 남기지 않는 안전한 경로를 보장합니다.
 
 
+## 2026-06-01 Backend OAuth next allowlist
+
+> [!success]
+> GitHub OAuth `next` 값은 Backend 직접 호출 경로에서도 signed state에 들어가기 전에 in-app allowlist, query-key allowlist, safe hash policy를 통과해야 합니다.
+
+계약:
+
+- `/cli/authorize?session_id=...`는 CLI browser-login을 위해 보존합니다.
+- Unknown route, protocol-relative path, backslash/encoded separator, dot segment, whitespace/control, scheme-like path는 `/dashboard`로 대체합니다.
+- OAuth-sensitive query/hash(`token`, `code`, `state`, `access_token` 등)는 제거합니다.
+- Frontend `authNextPath()`와 Backend `_safe_next_path()`는 같은 방향의 allowlist 정책을 유지해야 합니다.
+
+검증: [[Commercial Readiness Hardening - Backend OAuth Next and Frontend Empty OK Responses 2026-06-01#검증 증거]]
+
+
 ## 2026-06-01 Backend rate-limit store fail-closed degraded mode
 
 > [!success]

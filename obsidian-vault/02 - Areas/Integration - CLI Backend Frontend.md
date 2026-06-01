@@ -35,6 +35,20 @@ sequenceDiagram
 
 
 
+
+## 2026-06-01 Frontend feed sidebar accessibility
+
+> [!success]
+> Feed sidebar의 profile navigation과 follow action을 중첩 interactive control이 아닌 sibling controls로 분리하고, filter dropdown ARIA 상태를 보강했습니다.
+
+계약:
+
+- Rising builders row는 `role="button"` container가 아니며, profile 이동은 `.builder-profile-button`이 담당합니다.
+- Follow button은 profile button과 sibling이므로 nested button/role-button 문제가 없습니다.
+- Filter trigger/dropdown/options는 expanded/listbox/selected semantics를 노출합니다.
+
+검증: [[Commercial Readiness Hardening - Frontend Feed Sidebar Accessibility 2026-06-01#검증 증거]]
+
 ## 2026-06-01 CLI review URL handoff failure surface
 
 > [!success]

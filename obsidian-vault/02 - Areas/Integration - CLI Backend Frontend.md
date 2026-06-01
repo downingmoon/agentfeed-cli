@@ -45,6 +45,20 @@ sequenceDiagram
 - Linux review URL clipboard fallback 보강
 - `share --note`를 `summary` prefix가 아닌 `user_note` 별도 계약으로 승격
 
+## 2026-06-01 Settings token revoke confirmation
+
+> [!success]
+> Settings token management에서 revoke가 rotate와 동일하게 destructive confirmation을 거친 뒤 Backend mutation을 호출하도록 고정했습니다.
+
+계약:
+
+- `revokeToken()`은 `window.confirm` 취소 시 `me.revokeIngestionToken(...)`을 호출하지 않습니다.
+- revoke 성공 copy는 영향을 받는 CLI가 `agentfeed login` 또는 `agentfeed rotate`로 복구해야 함을 안내합니다.
+- source contract가 confirmation과 recovery copy 재발을 차단합니다.
+
+검증: [[Commercial Readiness Hardening - Settings Token Revoke Confirmation 2026-06-01#검증 증거]]
+
+
 
 
 

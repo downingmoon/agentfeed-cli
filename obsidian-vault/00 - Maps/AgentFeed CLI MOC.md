@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Readiness Probe Semantics 2026-06-01]]
+
 - [[Commercial Readiness Hardening - Frontend Native Profile Navigation Links 2026-06-01]]
 
 - [[Commercial Readiness Hardening - Frontend Worklog Card Semantic Controls 2026-06-01]]

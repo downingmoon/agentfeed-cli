@@ -584,7 +584,7 @@ async function cmdDoctor() {
       credentialResolution.api_base_url_source_detail ?? apiResolution?.source_detail
     )
   ]);
-  checks.push(['API reachable', apiReachability.ok ? `yes (${apiReachability.status})` : `no (${apiReachability.status ?? apiReachability.error ?? 'unreachable'})`]);
+  checks.push(['API ready', apiReachability.ok ? `yes (${apiReachability.status})` : `no (${apiReachability.status ?? apiReachability.error ?? 'unreachable'})`]);
   const tokenWarnings: string[] = [];
   if (creds?.ingestion_token) {
     const tokenCheck = await checkIngestionToken(creds);

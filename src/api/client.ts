@@ -45,7 +45,7 @@ function apiUrl(apiBaseUrl: string, path: string): string {
 
 function healthUrl(apiBaseUrl: string): string {
   const url = new URL(apiBaseUrl);
-  url.pathname = '/health';
+  url.pathname = '/health/ready';
   url.search = '';
   url.hash = '';
   return url.toString();

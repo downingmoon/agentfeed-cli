@@ -393,15 +393,17 @@ describe('status and doctor provenance output', () => {
     expect(stdout).toContain('credential source: environment (AGENTFEED_TOKEN)');
     expect(stdout).toContain('API base URL configured: http://127.0.0.1:9/v1');
     expect(stdout).toContain('API base URL source: environment (AGENTFEED_API_BASE_URL)');
-    expect(stdout).toContain('API reachable: no');
+    expect(stdout).toContain('API ready: no');
   });
 
   it('doctor reports remote token expiry and warns when it is near expiry', async () => {
     const soon = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const requestedUrls: string[] = [];
     const server = await import('node:http').then(({ createServer }) => createServer((req, res) => {
-      if (req.url === '/health') {
+      if (req.url) requestedUrls.push(req.url);
+      if (req.url === '/health/ready') {
         res.writeHead(200, { 'content-type': 'application/json' });
-        res.end(JSON.stringify({ status: 'ok' }));
+        res.end(JSON.stringify({ status: 'ready', database: { connected: true }, migration: { up_to_date: true } }));
         return;
       }
       if (req.url === '/v1/ingest/status') {
@@ -438,6 +440,9 @@ describe('status and doctor provenance output', () => {
         }
       });
 
+      expect(stdout).toContain('API ready: yes (200)');
+      expect(requestedUrls).toContain('/health/ready');
+      expect(requestedUrls).not.toContain('/health');
       expect(stdout).toContain('ingestion token valid: yes (200)');
       expect(stdout).toContain(`ingestion token expires at: ${soon}`);
       expect(stdout).toContain('Warning: ingestion token expires soon');

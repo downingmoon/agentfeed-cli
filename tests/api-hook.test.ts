@@ -409,14 +409,14 @@ describe('api client', () => {
     expect(payload.worklog.user_note).toBe('Human review context.');
   });
 
-  it('checks API reachability against the backend health endpoint', async () => {
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ status: 'ok' }), { status: 200, headers: { 'content-type': 'application/json' } }));
+  it('checks API reachability against the backend readiness endpoint', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ status: 'ready', database: { connected: true }, migration: { up_to_date: true } }), { status: 200, headers: { 'content-type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchMock);
 
     const result = await checkApiReachability('http://localhost:8001/v1');
 
-    expect(result).toMatchObject({ ok: true, status: 200, url: 'http://localhost:8001/health' });
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/health', expect.objectContaining({ method: 'GET' }));
+    expect(result).toMatchObject({ ok: true, status: 200, url: 'http://localhost:8001/health/ready' });
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/health/ready', expect.objectContaining({ method: 'GET' }));
   });
 
   it('checks ingestion token validity without uploading a draft and parses lifecycle metadata', async () => {

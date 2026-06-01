@@ -39,6 +39,21 @@ sequenceDiagram
 
 
 
+
+## 2026-06-01 Readiness probe semantics
+
+> [!success]
+> CLI doctor와 dev smoke를 Backend `/health/ready` readiness contract에 맞춰, DB 연결과 migration 상태가 ready일 때만 operational success로 판단하도록 정렬했습니다.
+
+계약:
+
+- `/health`는 Backend-only liveness probe입니다.
+- CLI `doctor`와 API reachability check는 root-level `/health/ready`를 호출합니다.
+- Dev `smoke-e2e.sh`는 `/health/ready` HTTP success뿐 아니라 readiness JSON의 `status`, `database.connected`, `migration.up_to_date`를 검증합니다.
+- OpenAPI contract gate는 `/health/ready`를 CLI client contract로 추적하고 `/health`를 backend-only endpoint로 분류합니다.
+
+검증: [[Commercial Readiness Hardening - Readiness Probe Semantics 2026-06-01#검증 증거]]
+
 ## 2026-06-01 Frontend native profile navigation links
 
 > [!success]

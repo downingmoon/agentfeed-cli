@@ -23,6 +23,9 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Backend rate-limit store 장애 시 `GET /v1/metadata`만 degraded fallback 허용, non-metadata route fail-closed 유지
+- 관련 노트: [[Commercial Readiness Hardening - Metadata Rate Limit Degraded Fallback 2026-06-02]]
+
 - [x] Frontend manual CI workflow dispatch accepts explicit root-login smoke URL and production API compatibility opt-in
 - 관련 노트: [[Commercial Readiness Hardening - Frontend Manual Release Smoke Workflow Inputs 2026-06-02]]
 

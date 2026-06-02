@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Metadata Rate Limit Degraded Fallback 2026-06-02]] — Backend /v1/metadata survives rate-limit store outages through a narrow degraded fallback while all non-metadata routes remain fail-closed
+
 - [[Commercial Readiness Hardening - Frontend Manual Release Smoke Workflow Inputs 2026-06-02]] — Frontend manual CI release smoke inputs for root-login and live API compatibility checks
 
 - [[Commercial Readiness Hardening - Upload Confirmation Startup Preflight and Explicit Root Smoke 2026-06-02]] — CLI interactive upload confirmation, Backend production startup DB/migration preflight, and Frontend explicit root-login smoke CI opt-in

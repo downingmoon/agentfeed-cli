@@ -834,3 +834,18 @@ created: 2026-05-30
 - OAuth callback/login worker가 provider network stall에 무기한 묶이지 않아야 합니다.
 
 검증: [[Commercial Readiness Hardening - Test Metrics Activity Range OAuth Timeout and Notification Feedback 2026-06-01#검증 증거]]
+
+
+## 2026-06-02 Backend mixed cookie bearer auth fallback
+
+> [!success]
+> Public/optional auth endpoints now evaluate a valid non-ingestion Bearer token when a stale/corrupt browser `access_token` cookie is also present.
+
+계약:
+
+- Valid active browser cookie remains the first auth candidate.
+- Invalid, malformed, deleted-user, or logout-revoked cookie tokens do not block a valid API Bearer session token.
+- `Bearer af_live_*` ingestion tokens are still excluded from browser session optional auth.
+- Direct dependency tests treat FastAPI default `Header(None)`/`Cookie(None)` sentinels as non-token values.
+
+검증: [[Commercial Readiness Hardening - Backend Mixed Auth and Proxy Identity 2026-06-02#검증 증거]]

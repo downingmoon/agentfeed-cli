@@ -338,6 +338,10 @@ created: 2026-05-30
 
 ## P2 후보
 
+- [x] Backend stale/corrupt browser cookie가 valid Bearer client 인증을 막지 않도록 mixed auth fallback 보강
+- [x] Backend trusted proxy `X-Forwarded-For` malformed hop이 rate-limit identity를 shared proxy IP로 붕괴시키지 않도록 보강
+- 관련 노트: [[Commercial Readiness Hardening - Backend Mixed Auth and Proxy Identity 2026-06-02]]
+
 - [x] Backend/CLI token-authenticated ingestion token self-rotation 차단 및 browser-approved replacement 전환
 - [x] CLI stale self-rotation helper/test 제거 및 Backend OpenAPI deprecated 403 계약화
 - [x] Frontend leaderboard malformed row isolation으로 public ranking crash 방지

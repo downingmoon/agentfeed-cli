@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Backend Mixed Auth and Proxy Identity 2026-06-02]] — Backend mixed cookie/Bearer auth fallback and malformed forwarded-chain identity hardening
+
 - [[Commercial Readiness Hardening - CLI Split Review Host Allowlist 2026-06-02]] — CLI safely supports split API/review frontend hosts through AGENTFEED_REVIEW_BASE_URL
 
 - [[Commercial Readiness Hardening - Settings Notifications and API Base Parity 2026-06-02]] — Settings exposes all notification controls and dev gate blocks Frontend/CLI API split-brain

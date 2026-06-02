@@ -501,3 +501,18 @@ created: 2026-05-30
 - Release publish job은 package version과 같은 `v*` tag에서만 preflight를 통과합니다.
 
 검증: [[Commercial Readiness Hardening - CLI Diagnostics Backend Privacy Rescan and Feed Backdrop 2026-06-01#검증 증거]]
+
+
+## 2026-06-02 Trusted proxy malformed XFF identity hardening
+
+> [!success]
+> Trusted proxy deployments now skip malformed `X-Forwarded-For` hops instead of dropping the entire forwarded chain to a shared proxy IP bucket.
+
+운영 규칙:
+
+- `TRUSTED_PROXY_IPS` still gates whether forwarded headers are considered at all.
+- Malformed forwarded entries are not trusted and are ignored.
+- The rightmost valid untrusted hop remains the client IP identity.
+- If no valid forwarded hop exists, rate-limit identity falls back to the direct client/proxy IP.
+
+검증: [[Commercial Readiness Hardening - Backend Mixed Auth and Proxy Identity 2026-06-02#검증 증거]]

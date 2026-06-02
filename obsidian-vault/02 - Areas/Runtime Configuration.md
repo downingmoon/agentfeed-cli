@@ -13,6 +13,13 @@ created: 2026-05-30
 
 # Runtime Configuration
 
+## 2026-06-02 Hosted evidence and Frontend production API gate
+
+> [!success]
+> Hosted compatibility smoke now writes durable evidence artifacts, commercial readiness manifests retain per-step logs/results, and Frontend CI can opt into checking the exact production API URL before building.
+
+검증: [[Commercial Readiness Hardening - Hosted Evidence and Frontend Prod API Gate 2026-06-02#Verification evidence]]
+
 ## 2026-06-02 Backend production deploy contract
 
 > [!success]

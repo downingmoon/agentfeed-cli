@@ -308,6 +308,15 @@ export function draftUploadPayloadHash(draft: LocalDraft): string {
   return shortHash(JSON.stringify(draftToIngestRequest(draft)), 32);
 }
 
+export function draftUploadCredentialBindingHash(credentials: AgentFeedCredentials): string {
+  return shortHash(JSON.stringify({
+    api_base_url: credentials.api_base_url,
+    token_id: credentials.token_id ?? null,
+    user_id: credentials.user?.id ?? null,
+    token_fingerprint: shortHash(credentials.ingestion_token, 16)
+  }), 32);
+}
+
 function friendlyError(status: number, code: string, message: string, details?: Record<string, unknown>): string {
   if (status === 401 || code === 'INGESTION_TOKEN_INVALID') {
     return 'Login/token problem. Run: agentfeed rotate. If AGENTFEED_TOKEN is set, replace that environment variable or run: agentfeed rotate --browser.';
@@ -710,6 +719,19 @@ function assertCachedUploadPayloadCurrent(draft: LocalDraft, currentPayloadHash:
   throw staleCachedUploadError(draft);
 }
 
+function cachedUploadCredentialBindingMatches(draft: LocalDraft, credentials: AgentFeedCredentials): boolean {
+  return draft.upload.credential_binding_hash === draftUploadCredentialBindingHash(credentials);
+}
+
+function uploadMetadataForCredentials(credentials: AgentFeedCredentials): Pick<LocalDraft['upload'], 'api_base_url' | 'credential_binding_hash' | 'token_id' | 'user_id'> {
+  return {
+    api_base_url: credentials.api_base_url,
+    credential_binding_hash: draftUploadCredentialBindingHash(credentials),
+    token_id: credentials.token_id ?? null,
+    user_id: credentials.user?.id ?? null
+  };
+}
+
 function detailString(details: Record<string, unknown> | undefined, key: string): string | null {
   const value = details?.[key];
   return typeof value === 'string' && value.length > 0 ? value : null;
@@ -843,8 +865,10 @@ async function publishDraftWithLock(options: { cwd: string; id: string; credenti
       await writeDraft(options.cwd, draft);
       throw error;
     }
-    await writeDraft(options.cwd, draft);
-    return cached;
+    if (cachedUploadCredentialBindingMatches(draft, options.credentials)) {
+      await writeDraft(options.cwd, draft);
+      return cached;
+    }
   }
   let result: PublishDraftResult;
   try {
@@ -858,7 +882,7 @@ async function publishDraftWithLock(options: { cwd: string; id: string; credenti
       throw error;
     }
   }
-  draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, uploaded_at: result.created_at, payload_hash: payloadHash };
+  draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, uploaded_at: result.created_at, payload_hash: payloadHash, ...uploadMetadataForCredentials(options.credentials) };
   await writeDraft(options.cwd, draft);
   return result;
 }

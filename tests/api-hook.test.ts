@@ -7,7 +7,7 @@ import { promisify } from 'node:util';
 import { initProject } from '../src/config/project-config.js';
 import { writeDraft } from '../src/draft/write.js';
 import { createEmptyDraft } from '../src/draft/create.js';
-import { apiMetadataCompatible, checkApiCompatibility, checkApiReachability, checkIngestionToken, createCliAuthSession, draftToIngestRequest, draftUploadPayloadHash, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
+import { apiMetadataCompatible, checkApiCompatibility, checkApiReachability, checkIngestionToken, createCliAuthSession, draftToIngestRequest, draftUploadCredentialBindingHash, draftUploadPayloadHash, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
 import { browserLogin, waitForCliAuthExchange } from '../src/auth/browser-login.js';
 import { buildClaudeCodeStopHookCommand, installClaudeCodeHook, uninstallClaudeCodeHook } from '../src/hooks/claude-code-settings.js';
 import { pathExists } from '../src/utils/fs.js';
@@ -23,6 +23,17 @@ const oldGithubActions = process.env.GITHUB_ACTIONS;
 const oldAgentFeedToken = process.env.AGENTFEED_TOKEN;
 const oldAgentFeedReviewBaseUrl = process.env.AGENTFEED_REVIEW_BASE_URL;
 const oldAgentFeedDraftUploadLockTimeoutMs = process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_TIMEOUT_MS;
+
+const defaultPublishCredentials = { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' };
+
+function uploadBinding(credentials: typeof defaultPublishCredentials & { token_id?: string | null; user?: { id?: string } } = defaultPublishCredentials) {
+  return {
+    api_base_url: credentials.api_base_url,
+    credential_binding_hash: draftUploadCredentialBindingHash(credentials),
+    token_id: credentials.token_id ?? null,
+    user_id: credentials.user?.id ?? null,
+  };
+}
 
 function configureUploadRetryEnv(values: { timeoutMs?: string; attempts?: string; baseDelayMs?: string }): () => void {
   const previous = {
@@ -240,13 +251,14 @@ describe('api client', () => {
       worklog_id: 'worklog_existing',
       review_url: 'https://agentfeed.dev/worklogs/worklog_existing/review',
       uploaded_at: '2026-05-19T00:00:00Z',
-      payload_hash: draftUploadPayloadHash(draft)
+      payload_hash: draftUploadPayloadHash(draft),
+      ...uploadBinding()
     };
     await writeDraft(dir, draft);
     const fetchMock = vi.fn(async () => { throw new Error('must not upload'); });
     vi.stubGlobal('fetch', fetchMock);
 
-    const result = await publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } });
+    const result = await publishDraft({ cwd: dir, id: draft.id, credentials: defaultPublishCredentials });
 
     expect(result).toMatchObject({
       id: 'worklog_existing',
@@ -257,6 +269,49 @@ describe('api client', () => {
     const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
     expect(saved.worklog.summary).toBe('Already uploaded but still contains [REDACTED_SECRET]');
     expect(saved.privacy_scan.status).toBe('danger');
+  });
+
+  it('does not reuse an uploaded draft cache from a different credential binding', async () => {
+    const oldCredentials = { ingestion_token: 'old-token', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'old', token_id: 'token-old', user: { id: 'user-old' } };
+    const newCredentials = { ingestion_token: 'new-token', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'new', token_id: 'token-new', user: { id: 'user-new' } };
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    draft.worklog.summary = 'Already uploaded under another credential binding';
+    draft.upload = {
+      uploaded: true,
+      worklog_id: 'worklog_old_account',
+      review_url: 'https://agentfeed.dev/worklogs/worklog_old_account/review',
+      uploaded_at: '2026-05-19T00:00:00Z',
+      payload_hash: draftUploadPayloadHash(draft),
+      ...uploadBinding(oldCredentials)
+    };
+    await writeDraft(dir, draft);
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      data: {
+        id: 'worklog_new_account',
+        status: 'needs_review',
+        visibility: 'private',
+        review_url: 'https://agentfeed.dev/worklogs/worklog_new_account/review',
+        created_at: '2026-05-20T00:00:00Z'
+      }
+    }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await publishDraft({ cwd: dir, id: draft.id, credentials: newCredentials });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({
+      id: 'worklog_new_account',
+      review_url: 'https://agentfeed.dev/worklogs/worklog_new_account/review',
+      reused_existing: undefined
+    });
+    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+    expect(saved.upload).toMatchObject({
+      uploaded: true,
+      worklog_id: 'worklog_new_account',
+      credential_binding_hash: draftUploadCredentialBindingHash(newCredentials),
+      token_id: 'token-new',
+      user_id: 'user-new'
+    });
   });
 
   it('reuses an unchanged uploaded draft after the first upload redacts public fields', async () => {

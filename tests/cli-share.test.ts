@@ -8,7 +8,7 @@ import { promisify } from 'node:util';
 import { initProject } from '../src/config/project-config.js';
 import { createEmptyDraft } from '../src/draft/create.js';
 import { writeDraft } from '../src/draft/write.js';
-import { draftUploadPayloadHash } from '../src/api/client.js';
+import { draftUploadCredentialBindingHash, draftUploadPayloadHash } from '../src/api/client.js';
 import { ensureCliBuilt } from './build-cli.js';
 
 const repoRoot = resolve('.');
@@ -17,6 +17,20 @@ const execFileAsync = promisify(execFile);
 
 let dir: string;
 let home: string;
+
+function cachedUploadBindingForEnv(options: { token?: string; apiBaseUrl?: string } = {}) {
+  const credentials = {
+    ingestion_token: options.token ?? 'af_live_test_token',
+    api_base_url: options.apiBaseUrl ?? 'https://api.agentfeed.dev/v1',
+    created_at: 'now',
+  };
+  return {
+    api_base_url: credentials.api_base_url,
+    credential_binding_hash: draftUploadCredentialBindingHash(credentials),
+    token_id: null,
+    user_id: null,
+  };
+}
 
 beforeAll(() => {
   ensureCliBuilt(repoRoot);
@@ -1109,7 +1123,8 @@ describe('share CLI command', () => {
       worklog_id: 'worklog_ci_no_open',
       review_url: 'https://agentfeed.dev/worklogs/worklog_ci_no_open/review',
       uploaded_at: '2026-05-31T00:00:00.000Z',
-      payload_hash: draftUploadPayloadHash(draft)
+      payload_hash: draftUploadPayloadHash(draft),
+      ...cachedUploadBindingForEnv()
     };
     await writeDraft(dir, draft);
     const fakeBin = join(dir, '.agentfeed', 'fake-ci-bin');
@@ -1141,7 +1156,8 @@ describe('share CLI command', () => {
       worklog_id: 'worklog_privacy_policy',
       review_url: 'https://agentfeed.dev/worklogs/worklog_privacy_policy/review',
       uploaded_at: '2026-05-31T00:00:00.000Z',
-      payload_hash: draftUploadPayloadHash(draft)
+      payload_hash: draftUploadPayloadHash(draft),
+      ...cachedUploadBindingForEnv()
     };
     await writeDraft(dir, draft);
 

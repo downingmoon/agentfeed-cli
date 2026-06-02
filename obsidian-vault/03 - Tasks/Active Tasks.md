@@ -115,6 +115,14 @@ created: 2026-05-30
 - [x] Local dev OAuth contract smoke 및 hosted compatibility smoke harness local override 검증
 - 관련 노트: [[Commercial Readiness Hardening - Auth Bootstrap Fail Closed and Hosted Smoke Evidence 2026-06-02]]
 
+- [x] CLI oversized/long AI session JSONL 수집을 tail/newest-record 기준으로 보강
+- [x] CLI uploaded draft cache를 API host/token/user credential binding에 묶어 stale cross-account reuse 차단
+- [x] CLI release preflight가 `prepack` 후 tarball/install smoke를 실행하도록 stale `dist` 차단
+- [x] Backend request-time public URL DNS lookup 제거, search/activity query bounds, CLI approval lockout 보강
+- [x] Frontend anonymous `auth.me()` 401 banner suppression, public project adapter, production API compatibility default-on gate 보강
+- [x] Dev local `test-all`은 hosted DNS-less 환경에서 explicit production API compatibility opt-out으로 deterministic gate 유지
+- 관련 노트: [[Commercial Readiness Hardening - Session Tail Cache Binding Auth Lockout and Prod API Gate 2026-06-02]]
+
 ## External release blockers
 
 - [ ] Default commercial readiness gate: `https://agentfeed.dev/` stale `/login` redirect 해소 + `api.agentfeed.dev` DNS/deployment 준비 후 `make commercial-readiness`가 `COMMERCIAL_READINESS_PASSED` 출력 필요

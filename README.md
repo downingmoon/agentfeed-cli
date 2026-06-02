@@ -19,11 +19,12 @@ npm ci
 npm run release:preflight
 ```
 
-`release:preflight` runs the normal `prepack` build/typecheck/test gate through
-`npm pack --dry-run --json`, verifies that the publish tarball contains the
-built CLI and excludes source, tests, local drafts, env files, and agent runtime
-state, then installs that tarball into a temporary project and executes the
-installed `agentfeed --help` / `agentfeed --version` binary path.
+`release:preflight` first runs the normal `prepack` clean/build/typecheck/test
+gate, then verifies `npm pack --dry-run --json` output so stale `dist/` cannot
+pass a local release check. It also verifies that the publish tarball contains
+the built CLI and excludes source, tests, local drafts, env files, and agent
+runtime state, then installs that tarball into a temporary project and executes
+the installed `agentfeed --help` / `agentfeed --version` binary path.
 
 ## Release and provenance
 

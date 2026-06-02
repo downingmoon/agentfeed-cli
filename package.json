@@ -32,7 +32,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "release:preflight": "node scripts/release-preflight.mjs"
+    "release:preflight": "npm run prepack && node scripts/release-preflight.mjs"
   },
   "engines": {
     "node": ">=20"

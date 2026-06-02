@@ -162,6 +162,7 @@ function normalizeStoredCredentials(value: unknown, file: string): { credentials
   const credentials: StoredCredentialRecord = {};
   const apiBaseUrl = optionalStoredString(value, 'api_base_url', file, warnings);
   const ingestionToken = optionalStoredString(value, 'ingestion_token', file, warnings);
+  const tokenId = optionalStoredStringOrNull(value, 'token_id', file, warnings);
   const tokenExpiresAt = optionalStoredStringOrNull(value, 'token_expires_at', file, warnings);
   const createdAt = optionalStoredString(value, 'created_at', file, warnings);
   const credentialStoreWarning = optionalStoredString(value, 'credential_store_warning', file, warnings);
@@ -171,6 +172,7 @@ function normalizeStoredCredentials(value: unknown, file: string): { credentials
 
   if (apiBaseUrl !== undefined) credentials.api_base_url = apiBaseUrl;
   if (ingestionToken !== undefined) credentials.ingestion_token = ingestionToken;
+  if (tokenId !== undefined) credentials.token_id = tokenId;
   if (tokenExpiresAt !== undefined) credentials.token_expires_at = tokenExpiresAt;
   if (createdAt !== undefined) credentials.created_at = createdAt;
   if (user !== undefined) credentials.user = user;
@@ -381,17 +383,18 @@ function savedApiBaseWarnings(base: StoredCredentialRecord | null, tokenSource: 
   return ['ignored saved AgentFeed API base while using AGENTFEED_TOKEN; set AGENTFEED_API_BASE_URL to intentionally choose a non-default API host.'];
 }
 
-export async function credentialsFromToken(token: string, options: { apiBaseUrl?: string; user?: AgentFeedCredentials['user']; tokenExpiresAt?: string | null; cwd?: string; trustRepoDiscoveredApiBase?: boolean } = {}): Promise<AgentFeedCredentials> {
+export async function credentialsFromToken(token: string, options: { apiBaseUrl?: string; tokenId?: string | null; user?: AgentFeedCredentials['user']; tokenExpiresAt?: string | null; cwd?: string; trustRepoDiscoveredApiBase?: boolean } = {}): Promise<AgentFeedCredentials> {
   return {
     api_base_url: await resolveApiBaseUrl({ explicitApiBaseUrl: options.apiBaseUrl, cwd: options.cwd, trustRepoDiscoveredApiBase: options.trustRepoDiscoveredApiBase }),
     ingestion_token: token,
+    token_id: options.tokenId ?? null,
     token_expires_at: options.tokenExpiresAt ?? null,
     user: options.user,
     created_at: new Date().toISOString()
   };
 }
 
-export async function saveCredentials(token: string, options: { apiBaseUrl?: string; user?: AgentFeedCredentials['user']; tokenExpiresAt?: string | null; cwd?: string; trustRepoDiscoveredApiBase?: boolean } & CredentialStoreOptions = {}): Promise<AgentFeedCredentials> {
+export async function saveCredentials(token: string, options: { apiBaseUrl?: string; tokenId?: string | null; user?: AgentFeedCredentials['user']; tokenExpiresAt?: string | null; cwd?: string; trustRepoDiscoveredApiBase?: boolean } & CredentialStoreOptions = {}): Promise<AgentFeedCredentials> {
   const credentials = await credentialsFromToken(token, options);
   await ensurePrivateAgentFeedDir();
   const preference = credentialStorePreference(options.credentialStore);
@@ -486,6 +489,7 @@ export async function resolveCredentials(base: AgentFeedCredentials | null): Pro
   return {
     api_base_url: apiBaseUrl,
     ingestion_token: token,
+    token_id: process.env.AGENTFEED_TOKEN ? null : base?.token_id ?? null,
     token_expires_at: tokenExpiresAt,
     user: base?.user,
     created_at: base?.created_at || new Date().toISOString()
@@ -570,6 +574,7 @@ export async function loadCredentialsWithMetadata(options: { cwd?: string } & Cr
     credentials: {
       api_base_url: api.value,
       ingestion_token: token,
+      token_id: process.env.AGENTFEED_TOKEN ? null : base?.token_id ?? null,
       token_expires_at: tokenExpiresAt,
       user: base?.user,
       created_at: base?.created_at || new Date().toISOString()

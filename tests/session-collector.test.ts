@@ -879,6 +879,64 @@ describe('agent session collector', () => {
     ]);
   });
 
+  it('keeps the newest JSONL rows when a long Codex session exceeds the row cap', async () => {
+    process.env.AGENTFEED_SESSION_JSONL_MAX_ROWS = '2';
+    const sessionFile = join(dir, 'codex-long-row-capped.jsonl');
+    const recentPath = join(dir, 'src', 'recent-row-cap.ts');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-long-row-capped', cwd: dir, model: 'gpt-old' } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'event_msg', payload: { type: 'token_count', info: { total_tokens: 10 } } },
+      { timestamp: '2026-05-20T00:05:00Z', type: 'event_msg', payload: { type: 'agent_message', phase: 'final' } },
+      {
+        timestamp: '2026-05-20T00:05:01Z',
+        type: 'event_msg',
+        payload: {
+          type: 'patch_apply_end',
+          changes: {
+            [recentPath]: {
+              type: 'add',
+              unified_diff: '--- /dev/null\n+++ b/src/recent-row-cap.ts\n@@\n+export const recent = true;\n'
+            }
+          }
+        }
+      }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.changed_files.map((file) => file.path)).toContain('src/recent-row-cap.ts');
+    expect(metrics?.collection_sources).toContainEqual({ type: 'agent_session', name: 'codex', quality: 'high' });
+  });
+
+  it('reads the tail of oversized Codex session files instead of silently dropping agent evidence', async () => {
+    process.env.AGENTFEED_SESSION_FILE_MAX_BYTES = '2048';
+    const sessionFile = join(dir, 'codex-oversized-tail.jsonl');
+    const recentPath = join(dir, 'src', 'recent-tail.ts');
+    const oversizedPrefix = `${'x'.repeat(4096)}\n`;
+    const tailRows = [
+      JSON.stringify({ timestamp: '2026-05-20T00:05:00Z', type: 'event_msg', payload: { type: 'agent_message', phase: 'final' } }),
+      JSON.stringify({
+        timestamp: '2026-05-20T00:05:01Z',
+        type: 'event_msg',
+        payload: {
+          type: 'patch_apply_end',
+          changes: {
+            [recentPath]: {
+              type: 'add',
+              unified_diff: '--- /dev/null\n+++ b/src/recent-tail.ts\n@@\n+export const recentTail = true;\n'
+            }
+          }
+        }
+      }),
+    ].join('\n');
+    await writeFile(sessionFile, `${oversizedPrefix}${tailRows}\n`);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.changed_files.map((file) => file.path)).toContain('src/recent-tail.ts');
+    expect(metrics?.collection_quality).toBe('high');
+  });
+
   it('merges OMX Codex subagent tracking and turn metrics', async () => {
     await mkdir(join(dir, '.omx', 'state'), { recursive: true });
     await writeFile(join(dir, '.omx', 'metrics.json'), JSON.stringify({ session_turns: 4, session_total_tokens: 1234, cost_usd: 0.055 }));

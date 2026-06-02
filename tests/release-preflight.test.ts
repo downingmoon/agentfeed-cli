@@ -27,7 +27,7 @@ const validPackageJson = {
   files: ['dist', 'README.md'],
   scripts: {
     prepack: 'npm run clean && npm run build && npm run typecheck && npm test -- --run',
-    'release:preflight': 'node scripts/release-preflight.mjs'
+    'release:preflight': 'npm run prepack && node scripts/release-preflight.mjs'
   },
   repository: {
     type: 'git',

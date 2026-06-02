@@ -1,7 +1,7 @@
 import { homedir } from 'node:os';
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path';
 import { realpathSync } from 'node:fs';
-import { readdir, readFile, stat } from 'node:fs/promises';
+import { open, readdir, readFile, stat } from 'node:fs/promises';
 import type { AgentType, ChangedFileSummary, CollectionQuality, CollectionSource, CollectionWindow, CollectionWindowReason, WorklogMetrics } from '../types.js';
 import { shouldIgnoreEvidencePath } from './path-filter.js';
 
@@ -130,8 +130,10 @@ function parseJsonlRecords(text: string): Record<string, unknown>[] {
     if (!line.trim()) continue;
     if (line.length > maxLineChars) continue;
     const row = asRecord(safeJsonParse(line));
-    if (row) rows.push(row);
-    if (rows.length >= maxRows) break;
+    if (row) {
+      rows.push(row);
+      if (rows.length > maxRows) rows.shift();
+    }
   }
   return rows;
 }
@@ -139,7 +141,24 @@ function parseJsonlRecords(text: string): Record<string, unknown>[] {
 async function readBoundedSessionText(sessionFile: string): Promise<string | null> {
   try {
     const info = await stat(sessionFile);
-    if (!info.isFile() || info.size > sessionFileMaxBytes()) return null;
+    if (!info.isFile()) return null;
+    const maxBytes = sessionFileMaxBytes();
+    if (info.size > maxBytes) {
+      const handle = await open(sessionFile, 'r');
+      try {
+        const start = Math.max(0, info.size - maxBytes);
+        const buffer = Buffer.alloc(Math.min(maxBytes, info.size));
+        const { bytesRead } = await handle.read(buffer, 0, buffer.length, start);
+        let text = buffer.subarray(0, bytesRead).toString('utf8');
+        if (start > 0) {
+          const firstNewline = text.indexOf('\n');
+          text = firstNewline >= 0 ? text.slice(firstNewline + 1) : '';
+        }
+        return text;
+      } finally {
+        await handle.close();
+      }
+    }
     return await readFile(sessionFile, 'utf8');
   } catch {
     return null;

@@ -44,7 +44,7 @@ describe('CLI version metadata', () => {
     expect(packageJson.files).toEqual(['dist', 'README.md']);
     expect(packageJson.scripts?.postbuild).toBe('node scripts/ensure-bin-executable.mjs');
     expect(packageJson.scripts?.prepack).toBe('npm run clean && npm run build && npm run typecheck && npm test -- --run');
-    expect(packageJson.scripts?.['release:preflight']).toBe('node scripts/release-preflight.mjs');
+    expect(packageJson.scripts?.['release:preflight']).toBe('npm run prepack && node scripts/release-preflight.mjs');
   });
 
   it('declares npm launch metadata for discovery, support, and reproducibility', () => {

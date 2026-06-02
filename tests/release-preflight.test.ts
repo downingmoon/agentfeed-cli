@@ -5,6 +5,7 @@ import {
   parsePackJson,
   validateCliSmokeOutput,
   validateCliVersionOutput,
+  validateInstalledPackageSmokeResult,
   validatePackageMetadata,
   validatePackResult,
   validateReleaseGitRef,
@@ -227,6 +228,27 @@ describe('release preflight guardrails', () => {
     expect(() => validateCliSmokeOutput('Usage: agentfeed <init|collect>\nVersion: 0.2.0')).toThrow('collection guidance');
     expect(() => validateCliVersionOutput('0.2.0\n', validPackageJson)).not.toThrow();
     expect(() => validateCliVersionOutput('0.2.1\n', validPackageJson)).toThrow('package.json version');
+  });
+
+
+  it('validates installed tarball CLI smoke output', () => {
+    expect(() => validateInstalledPackageSmokeResult({
+      command: 'agentfeed',
+      helpOutput: 'Usage: agentfeed <init|collect>\nVersion: 0.2.0\nagentfeed collect\n',
+      versionOutput: '0.2.0\n'
+    }, validPackageJson)).not.toThrow();
+
+    expect(() => validateInstalledPackageSmokeResult({
+      command: 'node dist/cli/index.js',
+      helpOutput: 'Usage: agentfeed <init|collect>\nVersion: 0.2.0\nagentfeed collect\n',
+      versionOutput: '0.2.0\n'
+    }, validPackageJson)).toThrow('installed agentfeed binary');
+
+    expect(() => validateInstalledPackageSmokeResult({
+      command: 'agentfeed',
+      helpOutput: 'Usage: agentfeed <init|collect>\nVersion: 0.2.0\nagentfeed collect\n',
+      versionOutput: '0.2.1\n'
+    }, validPackageJson)).toThrow('package.json version');
   });
 
   it('runs only when invoked as this script, including Windows-style paths', () => {

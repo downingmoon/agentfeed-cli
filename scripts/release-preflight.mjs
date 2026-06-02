@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -153,6 +154,12 @@ export function validateCliVersionOutput(output, pkg) {
   assert(output.trim() === pkg.version, 'built CLI --version output must match package.json version exactly.');
 }
 
+export function validateInstalledPackageSmokeResult(result, pkg) {
+  assert(result?.command === 'agentfeed', 'release preflight must execute the installed agentfeed binary, not only node dist/cli/index.js.');
+  validateCliSmokeOutput(result.helpOutput ?? '');
+  validateCliVersionOutput(result.versionOutput ?? '', pkg);
+}
+
 export function validateReleaseGitRef(pkg, env = process.env) {
   if (env.GITHUB_ACTIONS !== 'true') return;
   const workflowRef = env.GITHUB_WORKFLOW_REF ?? '';
@@ -181,6 +188,22 @@ function runPackDryRun() {
   return parsePackJson(stdout);
 }
 
+function runPackTarball(destination) {
+  const stdout = execFileSync('npm', ['pack', '--json', '--ignore-scripts', '--pack-destination', destination], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'inherit'],
+  });
+  const packResult = parsePackJson(stdout);
+  assert(Array.isArray(packResult) && packResult.length === 1, 'npm pack must return exactly one package tarball for install smoke.');
+  const filename = packResult[0]?.filename;
+  assert(typeof filename === 'string' && filename.endsWith('.tgz'), 'npm pack must report the generated .tgz filename for install smoke.');
+  return {
+    packResult,
+    tarballPath: join(destination, filename),
+  };
+}
+
 function comparablePath(path) {
   return resolve(path).replace(/\\/g, '/');
 }
@@ -206,6 +229,46 @@ function runCliSmoke(pkg) {
   validateCliVersionOutput(versionOutput, pkg);
 }
 
+function installedBinPath(installRoot) {
+  return process.platform === 'win32'
+    ? join(installRoot, 'node_modules', '.bin', 'agentfeed.cmd')
+    : join(installRoot, 'node_modules', '.bin', 'agentfeed');
+}
+
+function runInstalledPackageSmoke(pkg) {
+  const tmpRoot = mkdtempSync(join(tmpdir(), 'agentfeed-release-preflight-'));
+  try {
+    const { packResult, tarballPath } = runPackTarball(tmpRoot);
+    validatePackResult(packResult, pkg);
+    assert(existsSync(tarballPath), 'npm pack must create a tarball before installed CLI smoke.');
+
+    const installRoot = join(tmpRoot, 'install');
+    mkdirSync(installRoot, { recursive: true });
+    execFileSync('npm', ['install', '--prefix', installRoot, tarballPath, '--ignore-scripts', '--no-audit', '--no-fund'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'inherit'],
+    });
+
+    const commandPath = installedBinPath(installRoot);
+    assert(existsSync(commandPath), 'npm install must expose the agentfeed bin in node_modules/.bin.');
+
+    const helpOutput = execFileSync(commandPath, ['--help'], {
+      cwd: installRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    const versionOutput = execFileSync(commandPath, ['--version'], {
+      cwd: installRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    validateInstalledPackageSmokeResult({ command: 'agentfeed', helpOutput, versionOutput }, pkg);
+  } finally {
+    rmSync(tmpRoot, { recursive: true, force: true });
+  }
+}
+
 function main() {
   const pkg = readJson(packagePath);
   validatePackageMetadata(pkg);
@@ -214,12 +277,14 @@ function main() {
   const packResult = runPackDryRun();
   validatePackResult(packResult, pkg);
   runCliSmoke(pkg);
+  runInstalledPackageSmoke(pkg);
 
   console.log('AgentFeed CLI release preflight passed.');
   console.log(`- Package: ${pkg.name}@${pkg.version}`);
   console.log('- Trusted publishing: release workflow OIDC/toolchain contract validated');
   console.log('- Tarball: npm pack --dry-run --json --ignore-scripts validated');
   console.log('- CLI smoke: built agentfeed --help and --version validated');
+  console.log('- Installed package smoke: npm tarball installs and exposes agentfeed --help/--version');
   if (pkg.license === 'UNLICENSED') console.log('- License: UNLICENSED (proprietary/no open-source grant; change only after owner approval).');
   console.log('- Next: configure npm trusted publishing for the Release workflow from a public GitHub repository before production publish.');
 }

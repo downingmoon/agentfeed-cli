@@ -81,7 +81,10 @@ describe('CLI version metadata', () => {
     expect(releaseScript).toContain("pkg.publishConfig?.provenance === true");
     expect(releaseScript).toContain('validateTrustedPublishingWorkflow');
     expect(releaseScript).toContain('validateCliSmokeOutput');
+    expect(releaseScript).toContain('validateInstalledPackageSmokeResult');
+    expect(releaseScript).toContain("'npm', ['install', '--prefix'");
     expect(readme).toContain('npm run release:preflight');
+    expect(readme).toContain('installs that tarball into a temporary project');
     expect(readme).toContain('npm publish --access public');
     expect(readme).toContain('Trusted publishing automatically generates provenance');
     expect(readme).toContain('https://docs.npmjs.com/generating-provenance-statements');

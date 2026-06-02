@@ -3413,3 +3413,15 @@ Frontend 계약:
 - OAuth callback/session exchange still verifies sanitized next path, approval, exchange, and ingestion token status.
 
 검증: [[Commercial Readiness Hardening - CLI Two Process Publish and OAuth Approval Contract 2026-06-02#검증 증거]]
+
+## 2026-06-02 installed CLI tarball smoke and manual cross-repo CI
+
+> [!success]
+> CLI release preflight now validates the installed package path, and `agentfeed-dev` has a manual private cross-repo integration workflow contract.
+
+- CLI `scripts/release-preflight.mjs` now packs the built package into a real `.tgz`, installs it into a temporary project, and executes installed `agentfeed --help` / `agentfeed --version`.
+- `agentfeed-dev/.github/workflows/cross-repo-integration.yml` runs the sibling-layout `scripts/test-all.sh` remotely when `AGENTFEED_CI_REPO_READ_TOKEN` is configured.
+- The workflow remains `workflow_dispatch` only because the sibling product repos are private and the required read token is not configured yet.
+- Verification: CLI full gate passed with 325 tests and installed tarball preflight; `agentfeed-dev ./scripts/ci-prepare.sh && ./scripts/test-all.sh` passed across CLI, Frontend, Backend, OpenAPI, action pins, and Alembic offline migration chain.
+
+Linked task: [[Commercial Readiness Hardening - Installed CLI Tarball Smoke and Manual Cross Repo CI 2026-06-02]]

@@ -759,3 +759,10 @@ created: 2026-05-30
 - [[Commercial Readiness Hardening - User Dashboard Worklog Contracts and Collect JSON Stability 2026-05-31]]
 - [[Commercial Readiness Hardening - Full JSON API Response Contract 2026-05-31]]
 - [[Commercial Readiness Hardening - Backend OAuth Next and Frontend Empty OK Responses 2026-06-01]]
+
+## 2026-06-02 installed tarball and manual cross-repo CI continuation
+
+- [x] CLI release preflight가 실제 npm tarball을 임시 프로젝트에 설치하고 installed `agentfeed` bin `--help`/`--version`을 검증
+- [x] `agentfeed-dev` manual `Cross-repo integration` workflow 추가: private sibling repo checkout은 `AGENTFEED_CI_REPO_READ_TOKEN` 필요
+- [x] `agentfeed-dev` action pin gate에 자체 workflow directory 포함
+- [[Commercial Readiness Hardening - Installed CLI Tarball Smoke and Manual Cross Repo CI 2026-06-02]]

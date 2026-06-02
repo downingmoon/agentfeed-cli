@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Installed CLI Tarball Smoke and Manual Cross Repo CI 2026-06-02]] — Installed npm tarball bin smoke and manual private cross-repo integration workflow
+
 - [[Commercial Readiness Hardening - CLI Two Process Publish and OAuth Approval Contract 2026-06-02]] — Cross-process publish smoke and approval-code OAuth contract recovery
 
 - [[Commercial Readiness Hardening - Frontend Settings Profile Partial Save 2026-06-02]] — Settings preserves saved profile fields when username mutation fails

@@ -25,6 +25,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - Installed CLI Tarball Smoke and Manual Cross Repo CI 2026-06-02]] — installed CLI tarball smoke and manual private cross-repo integration workflow
+
 - [[Commercial Readiness Hardening - OAuth Contract Smoke and Action Pinning 2026-06-02]] — automated OAuth callback/session exchange smoke and cross-repo Actions SHA pin gate
 
 - [[Commercial Readiness Hardening - Hosted OAuth Live Smoke Harness 2026-06-02]] — one-command manual GitHub hosted OAuth browser-login smoke

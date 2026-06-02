@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Smoke E2E OAuth Fail Closed 2026-06-02]] — smoke-e2e OAuth prerequisite fail-closed gate
+
 - [[Commercial Readiness Hardening - OpenAPI Request Body and Schema Contract Gate 2026-06-02]] — OpenAPI request body/schema type-required-nullability drift gate
 
 - [[Commercial Readiness Hardening - Audit Trail CI Fail Closed and Supply Chain Gate 2026-06-02]] — Backend audit events, Frontend CI API config fail-closed, CLI full supply-chain/release gate

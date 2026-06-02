@@ -12,6 +12,21 @@ created: 2026-05-30
 
 # Integration - CLI Backend Frontend
 
+## 2026-06-02 smoke-e2e OAuth fail-closed readiness
+
+> [!success]
+> Full local E2E smoke가 OAuth 설정 누락을 skip하지 않고, core browser-login readiness false-green을 차단합니다.
+
+계약:
+
+- `make smoke-e2e`는 `GITHUB_CLIENT_ID`와 `GITHUB_REDIRECT_URI`가 없으면 즉시 실패합니다.
+- OAuth start redirect contract는 strict E2E smoke에서 항상 실행됩니다.
+- Credential-free 검증은 `make smoke-oauth-contract`로 분리합니다.
+- `agentfeed-dev ./scripts/test-all.sh`가 fail-closed marker와 전체 repo gate를 같이 검증합니다.
+
+검증: [[Commercial Readiness Hardening - Smoke E2E OAuth Fail Closed 2026-06-02#검증 증거]]
+
+
 ## 2026-06-02 OpenAPI request-body and schema contract gate
 
 > [!success]

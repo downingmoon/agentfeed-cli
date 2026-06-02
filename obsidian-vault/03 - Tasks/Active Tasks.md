@@ -23,6 +23,9 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] `make smoke-e2e`가 GitHub OAuth 설정 누락 시 false-green 없이 fail-closed 처리
+- 관련 노트: [[Commercial Readiness Hardening - Smoke E2E OAuth Fail Closed 2026-06-02]]
+
 - [x] Dev OpenAPI gate가 request body와 response schema의 type/required/nullability drift를 검증
 - 관련 노트: [[Commercial Readiness Hardening - OpenAPI Request Body and Schema Contract Gate 2026-06-02]]
 - [x] Backend durable audit trail, Frontend CI production API URL fail-closed, CLI release/build/full dependency audit gate 보강

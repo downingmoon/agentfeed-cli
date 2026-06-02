@@ -433,3 +433,5 @@ graph LR
 - [[Commercial Readiness Hardening - CLI Draft Identity Guard 2026-06-03]]
 
 - [[Commercial Readiness Hardening - Backend Session Window Identity 2026-06-03]]
+
+- [[Commercial Readiness Hardening - CLI Publish JSON Handoff Contract 2026-06-03]]

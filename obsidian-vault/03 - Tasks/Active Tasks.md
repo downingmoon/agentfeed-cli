@@ -971,3 +971,9 @@ created: 2026-05-30
 - [x] Backend ingest source identity에서 bare `session_id` dedupe hash를 제거
 - [x] `session_id + collection_window` fallback으로 retry idempotency는 유지하고 동일 세션 내 다른 worklog 충돌 방지
 - [[Commercial Readiness Hardening - Backend Session Window Identity 2026-06-03]]
+
+## 2026-06-03 CLI publish JSON handoff continuation
+
+- [x] `agentfeed publish --json` 기본 경로가 clipboard/browser side effect를 실행하지 않는 계약 고정
+- [x] 요청된 `--clipboard --open-review` 실패가 JSON `handoff`에 machine-readable하게 남는 계약 고정
+- [[Commercial Readiness Hardening - CLI Publish JSON Handoff Contract 2026-06-03]]

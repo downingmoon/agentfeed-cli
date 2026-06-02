@@ -338,6 +338,9 @@ created: 2026-05-30
 
 ## P2 후보
 
+- [x] CLI same-draft publish를 실제 two-process smoke로 보강하고 OAuth contract smoke의 approval-code drift 복구
+- 관련 노트: [[Commercial Readiness Hardening - CLI Two Process Publish and OAuth Approval Contract 2026-06-02]]
+
 - [x] Frontend Settings profile 저장 성공 후 username 변경 실패 시 partial-success 복구와 local state rollback 보장
 - 관련 노트: [[Commercial Readiness Hardening - Frontend Settings Profile Partial Save 2026-06-02]]
 

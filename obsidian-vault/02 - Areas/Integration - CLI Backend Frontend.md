@@ -3398,3 +3398,18 @@ Frontend 계약:
 - UI copy reports both saved profile details and username failure recovery.
 
 검증: [[Commercial Readiness Hardening - Frontend Settings Profile Partial Save 2026-06-02#검증 증거]]
+
+
+## 2026-06-02 CLI two-process publish and OAuth approval contract
+
+> [!success]
+> The CLI publish upload lock is now proven through actual child-process concurrency, and credential-free OAuth contract smoke sends the required approval code.
+
+통합 계약:
+
+- Two `agentfeed publish --json` processes targeting the same draft produce one ingest POST and one shared review artifact.
+- Cached review reuse is visible in one process output as `reused_existing: true`.
+- OAuth contract smoke treats `user_code` as required approval proof.
+- OAuth callback/session exchange still verifies sanitized next path, approval, exchange, and ingestion token status.
+
+검증: [[Commercial Readiness Hardening - CLI Two Process Publish and OAuth Approval Contract 2026-06-02#검증 증거]]

@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { execFile, execFileSync } from 'node:child_process';
+import { execFile, execFileSync, spawn } from 'node:child_process';
 import { createServer, type IncomingMessage } from 'node:http';
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -78,6 +78,27 @@ async function readRequestBody(req: IncomingMessage): Promise<Record<string, unk
   const chunks: Buffer[] = [];
   for await (const chunk of req) chunks.push(Buffer.from(chunk));
   return JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>;
+}
+
+function spawnAgentFeedJson(args: string[], env: NodeJS.ProcessEnv): Promise<{ stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [cliPath, ...args], {
+      cwd: dir,
+      env,
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', chunk => { stdout += chunk; });
+    child.stderr.on('data', chunk => { stderr += chunk; });
+    child.on('error', reject);
+    child.on('close', code => {
+      if (code === 0) resolve({ stdout, stderr });
+      else reject(Object.assign(new Error(`agentfeed ${args.join(' ')} failed with code ${code}`), { code, stdout, stderr }));
+    });
+  });
 }
 
 async function writeCodexShareSession(sessionId: string, model: string, exportName: string): Promise<string> {
@@ -970,6 +991,70 @@ describe('share CLI command', () => {
       await expect(readFile(clipboardLog, 'utf8')).resolves.toBe('http://localhost:3001/worklogs/worklog_publish_json/review');
     } finally {
       await rm(fakeBin, { recursive: true, force: true });
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('serializes two publish processes for the same draft and issues one ingest request', async () => {
+    const ingestPayloads: Record<string, unknown>[] = [];
+    const server = createServer(async (req, res) => {
+      if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
+        res.writeHead(404).end();
+        return;
+      }
+      ingestPayloads.push(await readRequestBody(req));
+      await new Promise(resolve => setTimeout(resolve, 250));
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({
+        data: {
+          id: 'worklog_two_process',
+          status: 'needs_review',
+          visibility: 'private',
+          review_url: 'http://localhost:3001/worklogs/worklog_two_process/review',
+          created_at: '2026-06-02T00:00:00.000Z'
+        }
+      }));
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    try {
+      const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+      draft.worklog.title = 'Two process publish';
+      draft.worklog.summary = 'Only one process should upload this draft.';
+      await writeDraft(dir, draft);
+
+      const env = {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: 'af_live_test_token',
+        AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`,
+        CI: '1',
+        AGENTFEED_CI: '1'
+      };
+      const runs = await Promise.all([
+        spawnAgentFeedJson(['publish', '--id', draft.id, '--json', '--no-clipboard'], env),
+        spawnAgentFeedJson(['publish', '--id', draft.id, '--json', '--no-clipboard'], env)
+      ]);
+
+      const outputs = runs.map(run => JSON.parse(run.stdout) as {
+        draft_id?: string;
+        upload?: { id?: string; review_url?: string; reused_existing?: boolean };
+      });
+      expect(ingestPayloads).toHaveLength(1);
+      expect(outputs).toEqual([
+        expect.objectContaining({ draft_id: draft.id, upload: expect.objectContaining({ id: 'worklog_two_process' }) }),
+        expect.objectContaining({ draft_id: draft.id, upload: expect.objectContaining({ id: 'worklog_two_process' }) })
+      ]);
+      expect(outputs.some(output => output.upload?.reused_existing === true)).toBe(true);
+      const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8')) as { upload?: { worklog_id?: string; review_url?: string } };
+      expect(saved.upload).toMatchObject({
+        worklog_id: 'worklog_two_process',
+        review_url: 'http://localhost:3001/worklogs/worklog_two_process/review'
+      });
+      await expect(readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json.upload.lock`), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+    } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
   });

@@ -23,6 +23,9 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Dashboard가 `/me/bookmarks` saved worklogs를 실제 사용자 화면에서 소비하고 followed-author badge를 표시
+- 관련 노트: [[Commercial Readiness Hardening - Dashboard Saved Bookmarks Surface 2026-06-02]]
+
 - [x] `/me/bookmarks` worklog card가 `viewer_state.following_author`를 실제 follow 상태로 반환
 - 관련 노트: [[Commercial Readiness Hardening - Bookmark Follow State Contract 2026-06-02]]
 

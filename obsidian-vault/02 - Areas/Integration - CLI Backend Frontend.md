@@ -12,6 +12,21 @@ created: 2026-05-30
 
 # Integration - CLI Backend Frontend
 
+## 2026-06-02 dashboard saved/bookmarks surface
+
+> [!success]
+> Frontend Dashboard now consumes `/v1/me/bookmarks` and renders saved worklog cards with followed-author viewer-state visibility.
+
+계약:
+
+- Dashboard bootstrap keeps summary, recent worklogs, and saved worklogs isolated with `Promise.allSettled`.
+- `/me/bookmarks` rows are normalized through the shared worklog card adapter and rendered through `WorklogCard`.
+- `viewer_state.following_author` is surfaced as a `Following author` badge on saved cards.
+- Saved fetch failures render section-local `savedError` copy without blanking primary dashboard content.
+
+검증: [[Commercial Readiness Hardening - Dashboard Saved Bookmarks Surface 2026-06-02#검증 증거]]
+
+
 ## 2026-06-02 bookmark follow-state viewer contract
 
 > [!success]

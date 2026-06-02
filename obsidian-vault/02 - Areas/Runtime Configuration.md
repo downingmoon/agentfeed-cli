@@ -13,6 +13,13 @@ created: 2026-05-30
 
 # Runtime Configuration
 
+## 2026-06-02 Backend production deploy contract
+
+> [!success]
+> Backend hosted deployment now has source-controlled production env, migration release phase, platform-port startup script, production-mode import smoke, and JWT runtime validation.
+
+검증: [[Commercial Readiness Hardening - Backend Production Deploy Contract 2026-06-02#Verification evidence]]
+
 ## 2026-06-02 CLI split review host allowlist
 
 > [!success]

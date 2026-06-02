@@ -23,6 +23,10 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Backend production deploy env/Procfile/start script contract 추가
+- [x] Backend JWT algorithm/access-token expiry fail-closed validation 추가
+- 관련 노트: [[Commercial Readiness Hardening - Backend Production Deploy Contract 2026-06-02]]
+
 - [x] Frontend Worklog Review page가 `apiConfigError`를 auth recovery와 동일하게 fail-closed 처리
 - [x] Review page API config bootstrap failure source contract 추가
 - 관련 노트: [[Commercial Readiness Hardening - Frontend Review API Config Recovery 2026-06-02]]

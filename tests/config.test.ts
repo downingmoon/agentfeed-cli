@@ -69,6 +69,28 @@ describe('project config', () => {
     await rm(other, { recursive: true, force: true });
   });
 
+  it('rejects malformed project config shapes with clear field-specific errors', async () => {
+    await initProject({ cwd: dir, projectName: 'Shape Guard', noGitCheck: true });
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const validConfig = JSON.parse(await readFile(configPath, 'utf8')) as Record<string, unknown>;
+
+    const malformedCases: Array<{ name: string; mutate: (config: Record<string, unknown>) => unknown; expected: RegExp }> = [
+      { name: 'non-object root', mutate: () => null, expected: /AgentFeed config is invalid.*root must be an object/i },
+      { name: 'missing project object', mutate: (config) => ({ ...config, project: undefined }), expected: /project must be an object/i },
+      { name: 'non-array tags', mutate: (config) => ({ ...config, project: { ...(config.project as Record<string, unknown>), tags: 'cli' } }), expected: /project\.tags must be an array of strings/i },
+      { name: 'non-object collection settings', mutate: (config) => ({ ...config, collection: true }), expected: /collection must be an object/i },
+      { name: 'non-boolean collection flag', mutate: (config) => ({ ...config, collection: { ...(config.collection as Record<string, unknown>), include_test_results: 'yes' } }), expected: /collection\.include_test_results must be a boolean/i },
+      { name: 'malformed commands', mutate: (config) => ({ ...config, commands: { ...(config.commands as Record<string, unknown>), test: ['npm', 'test'] } }), expected: /commands\.test must be a string or null/i },
+      { name: 'malformed agent block', mutate: (config) => ({ ...config, agents: { ...(config.agents as Record<string, unknown>), codex: true } }), expected: /agents\.codex must be an object/i },
+      { name: 'malformed claude hook scope', mutate: (config) => ({ ...config, agents: { ...(config.agents as Record<string, unknown>), claude_code: { enabled: true, hook_scope: 'workspace' } } }), expected: /agents\.claude_code\.hook_scope must be "project" or "global"/i },
+    ];
+
+    for (const testCase of malformedCases) {
+      await writeFile(configPath, JSON.stringify(testCase.mutate(validConfig), null, 2));
+      await expect(loadProjectConfig(dir), testCase.name).rejects.toThrow(testCase.expected);
+    }
+  });
+
   it('env vars override configured credentials', async () => {
     process.env.AGENTFEED_API_BASE_URL = 'http://localhost:8000/v1';
     const creds = await resolveCredentials({ ingestion_token: 'stored', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' });

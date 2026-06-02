@@ -23,6 +23,11 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] CLI `.agentfeed/config.json` runtime schema validation/fail-fast 보강
+- [x] Backend 주요 mutation audit event에 request id correlation 및 누락 mutation coverage 보강
+- [ ] Frontend session-expiry recovery state/CTA 명시화
+- 관련 노트: [[Commercial Readiness Hardening - Config Schema Audit Coverage and Session Recovery Candidate 2026-06-02]]
+
 - [x] CLI native keychain helper subprocess env scrub 보강
 - [x] Backend unmatched/unknown path default shared rate-limit bucket 적용
 - [x] Frontend Settings API-config recovery GitHub redirect crash guard 및 local `npm run ci` production dependency audit 통합

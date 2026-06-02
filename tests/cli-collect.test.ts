@@ -146,6 +146,30 @@ describe('collect CLI command', () => {
     expect(failure?.stdout ?? '').toBe('');
   });
 
+  it('fails malformed project config shape before creating a draft', async () => {
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.project.tags = 'not-an-array';
+    await writeFile(configPath, JSON.stringify(config, null, 2));
+
+    let failure: { stderr?: string; stdout?: string } | undefined;
+    try {
+      await execFileAsync(process.execPath, [cliPath, 'collect', '--json'], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: { ...process.env, HOME: home }
+      });
+    } catch (error) {
+      failure = error as { stderr?: string; stdout?: string };
+    }
+
+    expect(failure?.stderr).toContain('AgentFeed config is invalid');
+    expect(failure?.stderr).toContain('project.tags must be an array of strings');
+    expect(failure?.stderr).toContain('Re-run agentfeed init or restore the file from backup');
+    expect(failure?.stderr).not.toContain('TypeError');
+    expect(failure?.stdout ?? '').toBe('');
+  });
+
   it('persists collection cursor when rendering JSON output', async () => {
     await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = false;\n');
 

@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Config Schema Audit Coverage and Session Recovery Candidate 2026-06-02]] — CLI config schema fail-fast, Backend mutation audit request-id coverage, and Frontend session-expiry recovery P1 candidate
+
 - [[Commercial Readiness Hardening - Keychain Unmatched Settings CI 2026-06-02]] — CLI native keychain helper env scrub, Backend unmatched-path rate-limit bucket, and Frontend Settings/API-config recovery plus local CI audit unification
 
 - [[Commercial Readiness Hardening - Cursor Duplicate Start and CSRF Intent 2026-06-02]] — CLI cursor diagnostics/stale duplicate guard, Backend production start fail-fast, and Frontend unsafe-request CSRF intent header

@@ -23,6 +23,10 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Dev hosted compatibility smoke가 실제 hosted Frontend root deployment freshness를 검증
+- [x] stale `/login` redirect Frontend deployment를 fail-closed 처리
+- 관련 노트: [[Commercial Readiness Hardening - Hosted Frontend Deployment Smoke 2026-06-02]]
+
 - [x] Dev `make commercial-readiness` unified fail-closed release-readiness gate 추가
 - [x] OAuth live smoke machine-readable evidence artifact 지원
 - 관련 노트: [[Commercial Readiness Hardening - Unified Readiness Gate 2026-06-02]]
@@ -33,7 +37,7 @@ created: 2026-05-30
 
 ## External release blockers
 
-- [ ] Default commercial readiness gate: `api.agentfeed.dev` DNS/deployment 준비 후 `make commercial-readiness`가 `COMMERCIAL_READINESS_PASSED` 출력 필요
+- [ ] Default commercial readiness gate: `https://agentfeed.dev/` stale `/login` redirect 해소 + `api.agentfeed.dev` DNS/deployment 준비 후 `make commercial-readiness`가 `COMMERCIAL_READINESS_PASSED` 출력 필요
 
 - [x] Frontend API response body size cap 및 Feed/Search request AbortSignal propagation 보강
 - 관련 노트: [[Commercial Readiness Hardening - Frontend API Body Limit and Abortable Requests 2026-06-02]]

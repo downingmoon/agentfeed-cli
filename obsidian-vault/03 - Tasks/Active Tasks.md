@@ -23,6 +23,12 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] CLI Claude Code hook detection/removal을 generated hook shape 기준으로 제한
+- [x] CLI release preflight가 workflow 내 모든 checkout/setup-node action ref pinning을 검증
+- [x] Frontend production API host policy에 `.intranet` private DNS suffix를 Backend와 정렬
+- [x] Backend notifications가 soft-deleted actor public payload를 노출하지 않도록 보강
+- 관련 노트: [[Commercial Readiness Hardening - Hook Release Notification and Intranet Policy 2026-06-02]]
+
 - [x] CLI upload/share/publish review URL handoff가 clipboard/browser side-effect 직전에 trust policy를 재검증
 - [x] Backend production public URL/Host 설정에서 `.internal`/`.local` 등 private DNS host fail-closed
 - 관련 노트: [[Commercial Readiness Hardening - CLI Handoff Policy and Backend Private DNS Guard 2026-06-02]]

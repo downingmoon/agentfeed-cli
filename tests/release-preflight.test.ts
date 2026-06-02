@@ -171,6 +171,8 @@ describe('release preflight guardrails', () => {
       'actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6',
       'actions/setup-node@0000000000000000000000000000000000000000 # v6'
     ))).toThrow('48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e');
+    expect(() => validateTrustedPublishingWorkflow(`${validTrustedPublishingWorkflow}\n      - uses: actions/checkout@v6\n`)).toThrow('commit SHA');
+    expect(() => validateTrustedPublishingWorkflow(`${validTrustedPublishingWorkflow}\n      - uses: actions/setup-node@v6\n`)).toThrow('commit SHA');
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('npm publish --access public', 'npm publish --provenance --access public'))).toThrow('must not pass --provenance');
     expect(() => validateTrustedPublishingWorkflow(`${validTrustedPublishingWorkflow}\n      - run: echo "$NODE_AUTH_TOKEN"\n`)).toThrow('long-lived npm tokens');
   });

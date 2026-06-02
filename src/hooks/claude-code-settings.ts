@@ -63,10 +63,29 @@ function stopEntries(settings: JsonObj): unknown[] {
   return root.Stop as unknown[];
 }
 
+function isJsonObject(value: unknown): value is JsonObj {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function isAgentFeedCommandHook(value: unknown): boolean {
+  if (!isJsonObject(value)) return false;
+  return value.type === 'command'
+    && typeof value.command === 'string'
+    && value.command.includes(AGENTFEED_COMMAND)
+    && value.command.includes('agentfeed Claude Code Stop hook');
+}
+
+function containsAgentFeedCommandHook(value: unknown): boolean {
+  if (isAgentFeedCommandHook(value)) return true;
+  if (Array.isArray(value)) return value.some(containsAgentFeedCommandHook);
+  if (!isJsonObject(value)) return false;
+  return Object.values(value).some(containsAgentFeedCommandHook);
+}
+
 export function hasAgentFeedHook(settings: JsonObj): boolean {
   const hooks = (settings.hooks as JsonObj | undefined)?.Stop;
   if (!Array.isArray(hooks)) return false;
-  return JSON.stringify(hooks).includes('agentfeed collect');
+  return containsAgentFeedCommandHook(hooks);
 }
 
 export async function installClaudeCodeHook(options: { projectRoot: string; scope?: 'project' | 'global'; settingsPath?: string; dryRun?: boolean }) {
@@ -86,12 +105,12 @@ function removeAgentFeedFromHookList(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value
       .map((item) => {
-        if (item && typeof item === 'object') return removeAgentFeedFromHookList(item as JsonObj);
+        if (isJsonObject(item) || Array.isArray(item)) return removeAgentFeedFromHookList(item);
         return item;
       })
-      .filter((item) => !(item && typeof item === 'object' && JSON.stringify(item).includes('agentfeed collect')));
+      .filter((item) => !isAgentFeedCommandHook(item));
   }
-  if (value && typeof value === 'object') {
+  if (isJsonObject(value)) {
     const copy: JsonObj = { ...(value as JsonObj) };
     for (const [key, child] of Object.entries(copy)) copy[key] = removeAgentFeedFromHookList(child);
     return copy;

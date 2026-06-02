@@ -1272,4 +1272,27 @@ describe('Claude Code hook installer', () => {
     expect(JSON.stringify(json)).not.toContain('agentfeed collect');
     expect(JSON.stringify(json)).toContain('echo keep');
   });
+
+  it('does not treat unrelated hook text mentioning agentfeed collect as the AgentFeed hook', async () => {
+    const settings = join(dir, '.claude', 'settings.json');
+    const unrelatedCommand = 'echo "documentation says agentfeed collect can be run manually"';
+    await mkdir(join(dir, '.claude'), { recursive: true });
+    await writeFile(settings, JSON.stringify({
+      hooks: {
+        Stop: [{ matcher: '*', hooks: [{ type: 'command', command: unrelatedCommand }] }]
+      }
+    }, null, 2));
+
+    await installClaudeCodeHook({ projectRoot: dir, settingsPath: settings });
+    let json = JSON.parse(await readFile(settings, 'utf8'));
+    let commands = json.hooks.Stop.flatMap((entry: any) => entry.hooks.map((hook: any) => hook.command));
+    expect(commands).toContain(unrelatedCommand);
+    expect(commands).toContain(buildClaudeCodeStopHookCommand());
+
+    await uninstallClaudeCodeHook({ projectRoot: dir, settingsPath: settings });
+    json = JSON.parse(await readFile(settings, 'utf8'));
+    commands = json.hooks.Stop.flatMap((entry: any) => entry.hooks.map((hook: any) => hook.command));
+    expect(commands).toContain(unrelatedCommand);
+    expect(commands).not.toContain(buildClaudeCodeStopHookCommand());
+  });
 });

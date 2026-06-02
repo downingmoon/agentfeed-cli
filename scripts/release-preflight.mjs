@@ -43,10 +43,14 @@ function escapeRegex(value) {
 }
 
 function assertPinnedWorkflowAction(workflowText, actionName, expectedSha) {
-  const pattern = new RegExp(`uses:\\s*${escapeRegex(actionName)}@([0-9a-f]{40})\\b`);
-  const match = workflowText.match(pattern);
-  assert(match, `release workflow must pin ${actionName} to a 40-character commit SHA.`);
-  assert(match[1] === expectedSha, `release workflow must pin ${actionName}@${expectedSha}; update this preflight after intentionally refreshing the upstream action pin.`);
+  const pattern = new RegExp(`uses:\\s*${escapeRegex(actionName)}@([^\\s#]+)`, 'g');
+  const matches = Array.from(workflowText.matchAll(pattern));
+  assert(matches.length > 0, `release workflow must pin ${actionName} to a 40-character commit SHA.`);
+  for (const match of matches) {
+    const ref = match[1];
+    assert(/^[0-9a-f]{40}$/.test(ref), `release workflow must pin every ${actionName} use to a 40-character commit SHA.`);
+    assert(ref === expectedSha, `release workflow must pin ${actionName}@${expectedSha}; update this preflight after intentionally refreshing the upstream action pin.`);
+  }
 }
 
 export function parsePackJson(raw) {

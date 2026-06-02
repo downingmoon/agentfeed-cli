@@ -10,7 +10,11 @@ export async function readDraft(cwd: string, id: string): Promise<LocalDraft> {
   const root = await resolveProjectRoot(cwd);
   const { jsonPath } = draftPaths(root, id);
   if (!(await pathExists(jsonPath))) throw new Error(`Draft not found: ${id}`);
-  return validateLocalDraft(await readJson<unknown>(jsonPath), jsonPath);
+  const draft = validateLocalDraft(await readJson<unknown>(jsonPath), jsonPath);
+  if (draft.id !== id) {
+    throw new Error(`AgentFeed draft is invalid at ${jsonPath}: id must match requested draft id ${id}. Run agentfeed collect to create a fresh draft.`);
+  }
+  return draft;
 }
 
 export async function listDrafts(cwd: string): Promise<Array<{ id: string; path: string; mtimeMs: number }>> {

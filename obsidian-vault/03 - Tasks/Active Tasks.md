@@ -959,3 +959,9 @@ created: 2026-05-30
 - [x] CLI `agentfeed open`이 draft upload 당시 `api_base_url` provenance를 신뢰 기준에 포함
 - [x] Backend ingest source identity를 필수화하고 `session_id` fallback dedupe hash를 추가
 - [[Commercial Readiness Hardening - Runtime Contract and Ingest Identity 2026-06-03]]
+
+## 2026-06-03 CLI draft identity guard continuation
+
+- [x] CLI `readDraft(cwd, id)`가 요청된 draft filename/id와 JSON 내부 `draft.id` 불일치를 거부
+- [x] 손상된 draft가 다른 draft 경로로 upload metadata를 쓰는 local-state integrity 리스크 차단
+- [[Commercial Readiness Hardening - CLI Draft Identity Guard 2026-06-03]]

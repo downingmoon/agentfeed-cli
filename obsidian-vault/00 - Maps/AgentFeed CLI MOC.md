@@ -429,3 +429,5 @@ graph LR
 - [[Commercial Readiness Hardening - Token Rotation Quota and Notification Legacy Routing 2026-06-03]]
 
 - [[Commercial Readiness Hardening - Runtime Contract and Ingest Identity 2026-06-03]]
+
+- [[Commercial Readiness Hardening - CLI Draft Identity Guard 2026-06-03]]

@@ -136,3 +136,5 @@ created: 2026-05-30
 - [[Commercial Readiness Hardening - Token Rotation Quota and Notification Legacy Routing 2026-06-03]]
 
 - [[Commercial Readiness Hardening - Runtime Contract and Ingest Identity 2026-06-03]] — Frontend runtime API contract gate, CLI stored review URL provenance, Backend ingest identity idempotency
+
+- [[Commercial Readiness Hardening - CLI Draft Identity Guard 2026-06-03]] — CLI draft filename과 embedded id mismatch fail-closed guard

@@ -23,6 +23,9 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Frontend API response body size cap 및 Feed/Search request AbortSignal propagation 보강
+- 관련 노트: [[Commercial Readiness Hardening - Frontend API Body Limit and Abortable Requests 2026-06-02]]
+
 - [x] CLI Claude Code hook detection/removal을 generated hook shape 기준으로 제한
 - [x] CLI release preflight가 workflow 내 모든 checkout/setup-node action ref pinning을 검증
 - [x] Frontend production API host policy에 `.intranet` private DNS suffix를 Backend와 정렬

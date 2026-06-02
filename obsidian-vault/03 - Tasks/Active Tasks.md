@@ -23,6 +23,11 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Frontend CI/deploy build에서 hosted default API fallback 제거
+- [x] Backend `/v1/health` 및 `/v1/health/ready` probe alias 추가
+- [x] Hosted smoke transport diagnostics 및 workflow curl tunable inputs 보강
+- 관련 노트: [[Commercial Readiness Hardening - Hosted Deployment Probe and CI API Explicitness 2026-06-02]]
+
 - [x] CLI CI Node.js/npm toolchain을 Release trusted publishing contract와 일치
 - [x] CLI Release workflow가 publish 전 `npm run prepack`으로 build/typecheck/test gate 직접 실행
 - 관련 노트: [[Commercial Readiness Hardening - CLI Release Workflow Parity 2026-06-02]]

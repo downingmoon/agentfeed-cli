@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Hosted Deployment Probe and CI API Explicitness 2026-06-02]] — Frontend explicit API CI, Backend /v1 health probes, and hosted smoke transport diagnostics
+
 - [[Commercial Readiness Hardening - CLI Release Workflow Parity 2026-06-02]] — CLI CI/Release trusted publishing toolchain parity and release prepack gate
 
 - [[Commercial Readiness Hardening - Hosted Failure Evidence 2026-06-02]] — hosted compatibility smoke writes structured failure evidence

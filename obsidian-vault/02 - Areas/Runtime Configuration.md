@@ -13,6 +13,13 @@ created: 2026-05-30
 
 # Runtime Configuration
 
+## 2026-06-02 Frontend/CLI API base parity
+
+> [!success]
+> Dev release-readiness now fails if `NEXT_PUBLIC_API_URL` and `AGENTFEED_API_BASE_URL` describe different Backend roots.
+
+검증: [[Commercial Readiness Hardening - Settings Notifications and API Base Parity 2026-06-02#검증 증거]]
+
 ## 2026-06-02 frontend CI production API URL fail-closed
 
 > [!success]

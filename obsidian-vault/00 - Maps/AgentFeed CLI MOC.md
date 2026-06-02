@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Settings Notifications and API Base Parity 2026-06-02]] — Settings exposes all notification controls and dev gate blocks Frontend/CLI API split-brain
+
 - [[Commercial Readiness Hardening - Dashboard Saved DOM Smoke 2026-06-02]] — authenticated dashboard smoke verifies saved worklogs and followed-author DOM
 
 - [[Commercial Readiness Hardening - Dashboard Saved Bookmarks Surface 2026-06-02]] — dashboard consumes saved/bookmarked worklogs and followed-author viewer state

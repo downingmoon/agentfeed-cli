@@ -12,6 +12,21 @@ created: 2026-05-30
 
 # Integration - CLI Backend Frontend
 
+## 2026-06-02 settings notification controls and API base parity
+
+> [!success]
+> Frontend Settings now exposes every Backend notification preference, and the dev gate prevents Frontend/CLI from pointing at different Backend roots.
+
+계약:
+
+- Settings UI renders `worklog_like`, `worklog_comment`, `prompt_bookmark`, `new_worklog_from_following`, `new_follower`, and `weekly_digest` notification controls.
+- Notification save continues through `me.updateNotificationSettings(notifications)`, so all toggles share the Backend schema payload.
+- `NEXT_PUBLIC_API_URL` is the Backend root and `AGENTFEED_API_BASE_URL` must be that root with `/v1` appended.
+- `agentfeed-dev ./scripts/test-all.sh` runs `scripts/test-api-base-parity.sh` and fails on split-brain ports/hosts.
+
+검증: [[Commercial Readiness Hardening - Settings Notifications and API Base Parity 2026-06-02#검증 증거]]
+
+
 ## 2026-06-02 dashboard saved DOM smoke
 
 > [!success]

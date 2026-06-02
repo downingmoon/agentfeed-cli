@@ -145,6 +145,10 @@ created: 2026-05-30
 - [x] Frontend push CI hosted readiness preflight가 `api.agentfeed.dev` DNS 실패와 `agentfeed.dev/` stale `/login` redirect를 한 번에 진단
 - 관련 노트: [[Commercial Readiness Hardening - Frontend Hosted Readiness Preflight 2026-06-03]]
 
+
+- [x] Backend Review API `safe_public_preview`와 publish fallback privacy scan 계약 정렬
+- 관련 노트: [[Commercial Readiness Hardening - Backend Review Privacy Preview Contract 2026-06-03]]
+
 - [ ] Default commercial readiness gate: `https://agentfeed.dev/` stale `/login` redirect 해소 + `api.agentfeed.dev` DNS/deployment 준비 후 `make commercial-readiness`가 `COMMERCIAL_READINESS_PASSED` 출력 필요
 
 - [x] Frontend API response body size cap 및 Feed/Search request AbortSignal propagation 보강

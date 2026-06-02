@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Backend Review Privacy Preview Contract 2026-06-03]] — Backend review API safe_public_preview aligned with publish privacy gate
+
 - [[Commercial Readiness Hardening - Frontend Hosted Readiness Preflight 2026-06-03]] — Frontend hosted readiness preflight for API DNS plus root `/login` redirect
 
 - [[Commercial Readiness Hardening - Windows DPAPI and Ingestion Quota 2026-06-03]] — CLI Windows DPAPI credential store, Backend durable ingestion quota, hosted root code/deploy distinction

@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Auth Bootstrap Fail Closed and Hosted Smoke Evidence 2026-06-02]] — auth bootstrap fail-closed cleanup and hosted/OAuth smoke evidence
+
 - [[Commercial Readiness Hardening - Frontend API Body Limit and Abortable Requests 2026-06-02]] — oversized API body fail-closed guard and abortable Feed/Search requests
 
 - [[Commercial Readiness Hardening - Hosted Compatibility Smoke 2026-06-02]] — read-only hosted Backend metadata/readiness, CLI doctor, and Frontend diagnostic compatibility smoke

@@ -25,6 +25,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - Frontend Hosted Readiness Preflight 2026-06-03]] — Frontend push CI hosted preflight가 API DNS와 root `/login` redirect를 함께 fail-closed 진단
+
 - [[Commercial Readiness Hardening - Windows DPAPI and Ingestion Quota 2026-06-03]] — CLI Windows DPAPI credential store, Backend durable ingestion quota, hosted root code/deploy distinction
 
 - [[Commercial Readiness Hardening - Login Provider Token and Interactive Evidence Gates 2026-06-03]] — CLI login/rotate API compatibility gate, Backend GitHub provider token non-retention, Dev interactive OAuth evidence fail-fast

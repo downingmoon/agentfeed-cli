@@ -425,3 +425,4 @@ graph LR
 - [[Active Tasks#P1 후보|P1 후보]]
 - [[Commercial Readiness Hardening - Moderation Report Lifecycle 2026-06-03]]
 - [[Commercial Readiness Hardening - Moderator Allowlist Production Gate 2026-06-03]]
+- [[Commercial Readiness Hardening - Mixed Auth Rate Limit and Notification Link Contract 2026-06-03]]

@@ -942,3 +942,8 @@ created: 2026-05-30
 - [x] Backend production-like 환경에서 `MODERATOR_USER_IDS` 누락 시 fail-fast
 - [x] Frontend `/moderation/reports` 403 권한 오류를 운영자 allowlist 설정 문제로 명확화
 - [[Commercial Readiness Hardening - Moderator Allowlist Production Gate 2026-06-03]]
+## 2026-06-03 mixed-auth rate-limit and notification contract continuation
+
+- [x] Backend mixed cookie/Bearer 요청의 실행 user와 rate-limit user bucket precedence 정렬
+- [x] Frontend worklog comment notification deep-link가 comment id가 아니라 parent worklog id를 사용하도록 계약 고정
+- [[Commercial Readiness Hardening - Mixed Auth Rate Limit and Notification Link Contract 2026-06-03]]

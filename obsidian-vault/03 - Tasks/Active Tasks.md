@@ -23,6 +23,10 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] `agentfeed-dev` `make dev-native`가 `.env`의 포트/API URL 설정을 실제 Backend/Frontend native boot에 반영
+- [x] Frontend Worklog detail public prompt copy feedback을 dedicated status live region으로 전환
+- 관련 노트: [[Commercial Readiness Hardening - Native Dev Config and Copy Status A11y 2026-06-02]]
+
 - [x] Frontend Dashboard/Notifications/Settings/Review auth recovery retry를 hard reload 대신 AppContext `retryAuthCheck`로 전환
 - 관련 노트: [[Commercial Readiness Hardening - Frontend Auth Recovery In Place Retry 2026-06-02]]
 

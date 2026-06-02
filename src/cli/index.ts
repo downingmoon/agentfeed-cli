@@ -91,8 +91,26 @@ async function safeBooleanAction(action: () => Promise<boolean>): Promise<boolea
   }
 }
 
-async function handoffReviewUrl(reviewUrl: string, options: { copy: boolean; open: boolean }): Promise<ReviewUrlHandoff> {
+function rejectReviewUrlHandoff(handoff: ReviewUrlHandoff, options: { copy: boolean; open: boolean }): ReviewUrlHandoff {
+  const warning = 'Review URL was rejected by trust policy. Run agentfeed share again to upload a fresh private review draft.';
+  if (options.copy) {
+    handoff.clipboard.requested = true;
+    handoff.clipboard.ok = false;
+    handoff.clipboard.warning = warning;
+  }
+  if (options.open) {
+    handoff.browser.requested = true;
+    handoff.browser.ok = false;
+    handoff.browser.warning = warning;
+  }
+  return handoff;
+}
+
+async function handoffReviewUrl(reviewUrl: string, options: { copy: boolean; open: boolean; apiBaseUrl: string }): Promise<ReviewUrlHandoff> {
   const handoff = emptyReviewUrlHandoff();
+  if ((options.copy || options.open) && !isTrustedReviewUrl(reviewUrl, options.apiBaseUrl)) {
+    return rejectReviewUrlHandoff(handoff, options);
+  }
   const tasks: Promise<void>[] = [];
   if (options.copy) {
     handoff.clipboard.requested = true;
@@ -399,7 +417,7 @@ async function cmdCollect(args: string[]) {
       const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds });
       draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, uploaded_at: result.created_at };
       if (flag(args, '--open-review')) {
-        draft.upload.handoff = await handoffReviewUrl(result.review_url, { copy: false, open: true });
+        draft.upload.handoff = await handoffReviewUrl(result.review_url, { copy: false, open: true, apiBaseUrl: creds.api_base_url });
       }
     }
     if (!flag(args, '--no-save-cursor')) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
@@ -445,7 +463,8 @@ async function cmdShare(args: string[]) {
     await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
     const handoff = await handoffReviewUrl(result.review_url, {
       copy: shouldCopyReviewUrl({ json: true, noClipboard: opts.noClipboard, clipboard: flag(args, '--clipboard') }),
-      open: await shouldOpenReviewAfterUpload(opts.openReview, { respectConfig: false })
+      open: await shouldOpenReviewAfterUpload(opts.openReview, { respectConfig: false }),
+      apiBaseUrl: creds!.api_base_url
     });
     print(JSON.stringify({ dry_run: false, reused_existing_draft: collection.reusedExisting, draft_id: draft.id, draft, upload: result, privacy_policy: privacyPolicySummary(draft), handoff }, null, 2));
     return;
@@ -470,7 +489,8 @@ async function cmdShare(args: string[]) {
 ${result.review_url}`);
   printReviewUrlHandoff(await handoffReviewUrl(result.review_url, {
     copy: shouldCopyReviewUrl({ noClipboard: opts.noClipboard }),
-    open: await shouldOpenReviewAfterUpload(opts.openReview)
+    open: await shouldOpenReviewAfterUpload(opts.openReview),
+    apiBaseUrl: creds!.api_base_url
   }), result.review_url);
 }
 
@@ -507,7 +527,8 @@ async function cmdPublish(args: string[]) {
   if (flag(args, '--json')) {
     const handoff = await handoffReviewUrl(result.review_url, {
       copy: shouldCopyReviewUrl({ json: true, noClipboard: flag(args, '--no-clipboard'), clipboard: flag(args, '--clipboard') }),
-      open: await shouldOpenReviewAfterUpload(flag(args, '--open-review'), { respectConfig: false })
+      open: await shouldOpenReviewAfterUpload(flag(args, '--open-review'), { respectConfig: false }),
+      apiBaseUrl: creds.api_base_url
     });
     print(JSON.stringify({ draft_id: id, upload: result, privacy_policy: privacyPolicySummary(savedDraft), handoff }, null, 2));
     return;
@@ -520,7 +541,8 @@ async function cmdPublish(args: string[]) {
   print(`Review URL:\n${result.review_url}`);
   printReviewUrlHandoff(await handoffReviewUrl(result.review_url, {
     copy: shouldCopyReviewUrl({ noClipboard: flag(args, '--no-clipboard') }),
-    open: await shouldOpenReviewAfterUpload(flag(args, '--open-review'))
+    open: await shouldOpenReviewAfterUpload(flag(args, '--open-review')),
+    apiBaseUrl: creds.api_base_url
   }), result.review_url);
 }
 

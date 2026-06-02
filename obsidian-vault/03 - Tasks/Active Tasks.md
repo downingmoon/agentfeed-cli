@@ -23,6 +23,10 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] CLI upload/share/publish review URL handoff가 clipboard/browser side-effect 직전에 trust policy를 재검증
+- [x] Backend production public URL/Host 설정에서 `.internal`/`.local` 등 private DNS host fail-closed
+- 관련 노트: [[Commercial Readiness Hardening - CLI Handoff Policy and Backend Private DNS Guard 2026-06-02]]
+
 - [x] `agentfeed-dev` `make dev-native`가 `.env`의 포트/API URL 설정을 실제 Backend/Frontend native boot에 반영
 - [x] Frontend Worklog detail public prompt copy feedback을 dedicated status live region으로 전환
 - 관련 노트: [[Commercial Readiness Hardening - Native Dev Config and Copy Status A11y 2026-06-02]]

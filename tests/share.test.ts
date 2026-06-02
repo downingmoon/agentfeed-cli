@@ -46,8 +46,10 @@ describe('share command helpers', () => {
       until: '2026-05-20T02:00:00Z',
       note: 'Refined login flow',
       noClipboard: true,
-      runConfiguredCommands: true
+      runConfiguredCommands: true,
+      yes: false
     });
+    expect(parseShareArgs(['--yes']).yes).toBe(true);
   });
 
   it('rejects missing option values before treating flags as values', () => {

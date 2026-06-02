@@ -194,6 +194,148 @@ describe('share CLI command', () => {
     }
   });
 
+  it('requires explicit confirmation before interactive share uploads', async () => {
+    let ingestRequestCount = 0;
+    const server = createServer(async (req, res) => {
+      if (handleCompatibleMetadata(req, res)) return;
+      if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
+        ingestRequestCount += 1;
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ data: {} }));
+        return;
+      }
+      res.writeHead(404).end();
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    try {
+      const sessionFile = await writeCodexShareSession('share-confirmation-required', 'gpt-confirm-share', 'confirmShare');
+      const share = await execFileAsync(process.execPath, [
+        cliPath,
+        'share',
+        '--source',
+        'codex',
+        '--session-file',
+        sessionFile,
+        '--all',
+        '--no-clipboard'
+      ], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: 'af_live_confirmation_required',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`,
+          AGENTFEED_FORCE_UPLOAD_CONFIRMATION: '1'
+        }
+      });
+
+      expect(share.stdout).toContain('Upload confirmation required.');
+      expect(share.stdout).toContain('No data was uploaded to AgentFeed.');
+      expect(share.stdout).toContain('agentfeed publish --id');
+      expect(share.stdout).toContain('--yes');
+      expect(ingestRequestCount).toBe(0);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('requires explicit confirmation before direct interactive publish uploads', async () => {
+    let ingestRequestCount = 0;
+    const server = createServer(async (req, res) => {
+      if (handleCompatibleMetadata(req, res)) return;
+      if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
+        ingestRequestCount += 1;
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ data: {} }));
+        return;
+      }
+      res.writeHead(404).end();
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    try {
+      const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+      draft.worklog.title = 'Confirmation gated publish';
+      await writeDraft(dir, draft);
+
+      const publish = await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: 'af_live_confirmation_required',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`,
+          AGENTFEED_FORCE_UPLOAD_CONFIRMATION: '1'
+        }
+      });
+
+      expect(publish.stdout).toContain('Upload confirmation required.');
+      expect(publish.stdout).toContain('No data was uploaded to AgentFeed.');
+      expect(publish.stdout).toContain(`agentfeed publish --id ${draft.id} --yes`);
+      expect(ingestRequestCount).toBe(0);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('allows --yes to bypass the interactive publish confirmation gate', async () => {
+    let ingestRequestCount = 0;
+    const server = createServer(async (req, res) => {
+      if (handleCompatibleMetadata(req, res)) return;
+      if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
+        res.writeHead(404).end();
+        return;
+      }
+      ingestRequestCount += 1;
+      await readRequestBody(req);
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({
+        data: {
+          id: 'worklog_publish_confirmed',
+          status: 'needs_review',
+          visibility: 'private',
+          review_url: 'http://localhost:3001/worklogs/worklog_publish_confirmed/review',
+          created_at: '2026-06-02T00:00:00.000Z'
+        }
+      }));
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    try {
+      const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+      draft.worklog.title = 'Confirmed publish';
+      await writeDraft(dir, draft);
+
+      const publish = await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id, '--yes', '--no-clipboard'], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: 'af_live_confirmation_confirmed',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`,
+          AGENTFEED_FORCE_UPLOAD_CONFIRMATION: '1',
+          CI: '0'
+        }
+      });
+
+      expect(publish.stdout).toContain('Private review draft uploaded.');
+      expect(publish.stdout).toContain('http://localhost:3001/worklogs/worklog_publish_confirmed/review');
+      expect(ingestRequestCount).toBe(1);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
   it('refuses unsafe cached review URLs before invoking the browser opener', async () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
     draft.upload = {

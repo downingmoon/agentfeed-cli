@@ -23,6 +23,11 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] CLI interactive `share`/`publish` uploads require `--yes` before server transmission
+- [x] Backend production/staging startup fails fast on DB unavailable or Alembic head mismatch
+- [x] Frontend root-login smoke requires explicit target URL and runs in CI only when opted in
+- 관련 노트: [[Commercial Readiness Hardening - Upload Confirmation Startup Preflight and Explicit Root Smoke 2026-06-02]]
+
 - [x] CLI `logout` local credential removal 및 environment token residual warning 추가
 - [x] CLI credentials/config/state/draft writes atomic rename 경로로 보강
 - [x] Backend GitHub browser OAuth login 성공 `auth.login` audit event 기록

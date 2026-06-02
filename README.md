@@ -69,7 +69,7 @@ agentfeed collect --source codex
 agentfeed collect --source gemini-cli
 agentfeed collect --source claude-code --session-file "$CLAUDE_SESSION_FILE"
 agentfeed collect --run-configured-commands
-agentfeed share
+agentfeed share --yes
 agentfeed share --dry
 agentfeed share --open-review
 agentfeed share --run-configured-commands
@@ -77,7 +77,7 @@ agentfeed collect --since 2026-05-20T01:00:00Z
 agentfeed collect --all
 agentfeed preview
 agentfeed scan --id <draft_id> --dry-run
-agentfeed publish --latest --open-review
+agentfeed publish --latest --yes --open-review
 agentfeed open --latest
 ```
 
@@ -126,10 +126,11 @@ AGENTFEED_CREDENTIAL_STORE=file agentfeed login
 
 ## One-command sharing
 
-`agentfeed share` is the recommended daily command. It creates a local draft, prints the public-safe preview that will be uploaded, then uploads it as a private AgentFeed review draft.
+`agentfeed share` is the recommended daily command. It creates a local draft, prints the public-safe preview that will be uploaded, and requires `--yes` from interactive terminals before uploading it as a private AgentFeed review draft. JSON automation and CI keep the existing non-interactive upload behavior.
 
 ```bash
-agentfeed share              # collect -> preview -> upload private review draft
+agentfeed share              # collect -> preview, then print the exact --yes command for interactive upload
+agentfeed share --yes        # collect -> preview -> upload private review draft
 agentfeed share --dry        # collect + preview only, keep the local draft
 agentfeed share --open-review
 agentfeed share --note "Fixed auth flow"

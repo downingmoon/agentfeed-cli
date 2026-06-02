@@ -185,6 +185,32 @@ function isCiEnvironment(): boolean {
   return CI_ENVIRONMENT_VARIABLES.some((name) => isTruthyEnvironmentValue(process.env[name]));
 }
 
+function isInteractiveTerminalUpload(): boolean {
+  return process.stdin.isTTY === true && process.stdout.isTTY === true;
+}
+
+function shouldRequireUploadConfirmation(options: { json?: boolean; yes?: boolean }): boolean {
+  if (options.json || options.yes) return false;
+  if (process.env.AGENTFEED_FORCE_UPLOAD_CONFIRMATION === '1') return true;
+  if (isCiEnvironment()) return false;
+  return isInteractiveTerminalUpload();
+}
+
+function printUploadConfirmationRequired(draft: LocalDraft, command: string, extraCommand?: string): void {
+  print('Upload confirmation required.');
+  print('No data was uploaded to AgentFeed.');
+  print();
+  print(`Draft: ${draft.id}`);
+  print(`Project: ${draft.project.name}`);
+  print(`Title: ${draft.worklog.title}`);
+  print(`Privacy: ${draft.privacy_scan.status} · findings ${draft.privacy_scan.findings.length}`);
+  print();
+  print(`Upload after reviewing this draft:
+  ${command}`);
+  if (extraCommand) print(`Or collect and upload in one command:
+  ${extraCommand}`);
+}
+
 function tokenExpiryWarning(expiresAt?: string | null, expiringSoon?: boolean): string | null {
   if (!expiresAt) return null;
   const expires = Date.parse(expiresAt);
@@ -468,9 +494,9 @@ async function cmdCollect(args: string[]) {
   if (flag(args, '--explain')) print(`\n${formatCollectionExplain(draft)}`);
   print();
   print(`Preview:\n  agentfeed preview --id ${draft.id}\n`);
-  print(`Upload:\n  agentfeed publish --id ${draft.id}`);
+  print(`Upload:\n  agentfeed publish --id ${draft.id} --yes`);
   if (flag(args, '--upload')) {
-    await cmdPublish(['--id', draft.id, ...(flag(args, '--open-review') ? ['--open-review'] : [])]);
+    await cmdPublish(['--id', draft.id, '--yes', ...(flag(args, '--open-review') ? ['--open-review'] : [])]);
   } else {
     const config = await loadProjectConfig(process.cwd());
     if (!flag(args, '--no-upload') && config.collection.auto_upload) {
@@ -514,7 +540,12 @@ async function cmdShare(args: string[]) {
   if (opts.dryRun) {
     print(`Dry run complete. Local draft kept: ${draft.id}`);
     print(`Publish later:
-  agentfeed publish --id ${draft.id}`);
+  agentfeed publish --id ${draft.id} --yes`);
+    return;
+  }
+
+  if (shouldRequireUploadConfirmation({ yes: opts.yes })) {
+    printUploadConfirmationRequired(draft, `agentfeed publish --id ${draft.id} --yes`, 'agentfeed share --yes');
     return;
   }
 
@@ -554,7 +585,7 @@ async function cmdPreview(args: string[]) {
   print('│');
   print(`│ Privacy: ${draft.privacy_scan.status}`);
   print('└─────────────────────────────────────────────┘\n');
-  print(`Actions:\n  agentfeed publish --id ${draft.id}\n  agentfeed scan --id ${draft.id}`);
+  print(`Actions:\n  agentfeed publish --id ${draft.id} --yes\n  agentfeed scan --id ${draft.id}`);
 }
 
 async function cmdPublish(args: string[]) {
@@ -563,6 +594,10 @@ async function cmdPublish(args: string[]) {
   const id = await resolveDraftId(process.cwd(), args);
   const existingDraft = await readDraft(process.cwd(), id);
   const hasCachedUpload = existingDraft.upload.uploaded && existingDraft.upload.worklog_id && existingDraft.upload.review_url;
+  if (!hasCachedUpload && shouldRequireUploadConfirmation({ json: flag(args, '--json'), yes: flag(args, '--yes') || flag(args, '-y') })) {
+    printUploadConfirmationRequired(existingDraft, `agentfeed publish --id ${id} --yes`);
+    return;
+  }
   if (!hasCachedUpload) await requireApiCompatibilityBeforeUpload(creds.api_base_url);
   const result = await publishDraft({ cwd: process.cwd(), id, credentials: creds });
   const savedDraft = await readDraft(process.cwd(), id);
@@ -745,8 +780,8 @@ async function main() {
       print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --no-save\n  agentfeed login --browser\n  printf %s "$TOKEN" | agentfeed login --token-stdin\n  printf %s "$TOKEN" | agentfeed login --token - --no-save\n  agentfeed rotate\n  agentfeed rotate --browser\n  unset AGENTFEED_TOKEN && agentfeed rotate --browser\n  agentfeed token rotate');
       print('\nLogout:\n  agentfeed logout\n  agentfeed logout --json');
       print('\nCollect:\n  agentfeed collect\n  agentfeed collect --explain\n  agentfeed collect --source codex\n  agentfeed collect --source gemini-cli\n  agentfeed collect --source claude-code --session-file <path>\n  agentfeed collect --since 2026-05-20T01:00:00Z\n  agentfeed collect --all\n  agentfeed collect --run-configured-commands');
-      print('\nShare:\n  agentfeed share\n  agentfeed share --dry\n  agentfeed share --open-review\n  agentfeed share --since 2026-05-20T01:00:00Z\n  agentfeed share --all\n  agentfeed share --note "Fixed auth flow"\n  agentfeed share --no-clipboard\n  agentfeed share --json --clipboard\n  agentfeed share --run-configured-commands');
-      print('\nPublish:\n  agentfeed publish --latest\n  agentfeed publish --id <draft_id>\n  agentfeed publish --json\n  agentfeed publish --json --clipboard\n  agentfeed publish --no-clipboard\n  agentfeed publish --open-review');
+      print('\nShare:\n  agentfeed share\n  agentfeed share --yes\n  agentfeed share --dry\n  agentfeed share --open-review\n  agentfeed share --since 2026-05-20T01:00:00Z\n  agentfeed share --all\n  agentfeed share --note "Fixed auth flow"\n  agentfeed share --no-clipboard\n  agentfeed share --json --clipboard\n  agentfeed share --run-configured-commands');
+      print('\nPublish:\n  agentfeed publish --latest --yes\n  agentfeed publish --id <draft_id> --yes\n  agentfeed publish --json\n  agentfeed publish --json --clipboard\n  agentfeed publish --no-clipboard\n  agentfeed publish --open-review');
       print('\nOpen:\n  agentfeed open\n  agentfeed open --latest\n  agentfeed open --id <draft_id>');
       print('\nScan:\n  agentfeed scan --id <draft_id>\n  agentfeed scan --id <draft_id> --dry-run\n  agentfeed scan --path . --json');
       return;

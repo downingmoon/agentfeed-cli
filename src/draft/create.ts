@@ -89,14 +89,34 @@ function normalizedChangedFilesForFingerprint(files: ChangedFileSummary[]): Arra
     .sort((a, b) => a.path.localeCompare(b.path));
 }
 
-function collectionFingerprint(input: { source: AgentType; sessionId?: string | null; headCommit?: string | null; window?: CollectionWindow | null; changedFiles?: ChangedFileSummary[] }): string | null {
+function redactedUserNoteForFingerprint(note?: string | null): string | null {
+  const normalized = normalizeUserNote(note);
+  if (!normalized) return null;
+  const { redacted } = scanAndRedactFields({ user_note: normalized });
+  const value = redacted.user_note;
+  return typeof value === 'string' && value ? value : null;
+}
+
+function collectionFingerprint(input: {
+  source: AgentType;
+  sessionId?: string | null;
+  headCommit?: string | null;
+  window?: CollectionWindow | null;
+  changedFiles?: ChangedFileSummary[];
+  userNote?: string | null;
+  configuredCommandIntent?: boolean;
+}): string | null {
   if (!input.headCommit) return null;
   const changedFiles = normalizedChangedFilesForFingerprint(input.changedFiles ?? []);
+  const uploadAffectingInputs = {
+    user_note: input.userNote ?? null,
+    configured_command_intent: input.configuredCommandIntent === true
+  };
   if (input.sessionId) {
-    return shortHash(JSON.stringify({ source: input.source, session_id: input.sessionId, head_commit: input.headCommit, window: input.window ?? null, changed_files: changedFiles }), 16);
+    return shortHash(JSON.stringify({ source: input.source, session_id: input.sessionId, head_commit: input.headCommit, window: input.window ?? null, changed_files: changedFiles, upload_affecting_inputs: uploadAffectingInputs }), 16);
   }
   if (!changedFiles.length) return null;
-  return shortHash(JSON.stringify({ source: input.source, head_commit: input.headCommit, window: input.window ?? null, changed_files: changedFiles }), 16);
+  return shortHash(JSON.stringify({ source: input.source, head_commit: input.headCommit, window: input.window ?? null, changed_files: changedFiles, upload_affecting_inputs: uploadAffectingInputs }), 16);
 }
 
 function mergeChangedFiles(gitFiles: ChangedFileSummary[], sessionFiles: ChangedFileSummary[]): ChangedFileSummary[] {
@@ -249,12 +269,22 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
   const mergedGit = { ...git, changed_files: changedFiles, files_changed: filesChanged, lines_added: linesAdded, lines_removed: linesRemoved };
   const areas = changedAreas(changedFiles);
   const safeAreas = areas.length ? areas : ['Application code'];
-  const fingerprint = collectionFingerprint({ source, sessionId: session?.session_id, headCommit: git.head_commit, window: actualWindow, changedFiles });
-  if (fingerprint && !options.force) {
+  const configuredCommandIntent = options.runConfiguredCommands === true && options.skipConfiguredCommands !== true;
+  const normalizedNote = normalizeUserNote(options.note);
+  const fingerprint = collectionFingerprint({
+    source,
+    sessionId: session?.session_id,
+    headCommit: git.head_commit,
+    window: actualWindow,
+    changedFiles,
+    userNote: redactedUserNoteForFingerprint(normalizedNote),
+    configuredCommandIntent
+  });
+  if (fingerprint && !options.force && !configuredCommandIntent) {
     const existing = await findDraftByFingerprint(root, fingerprint);
     if (existing) return { draft: existing, reusedExisting: true };
   }
-  const configuredCommandMetrics = options.runConfiguredCommands && !options.skipConfiguredCommands
+  const configuredCommandMetrics = configuredCommandIntent
     ? await collectConfiguredCommandMetrics(root, config)
     : null;
   const includeFileStats = config.collection.include_file_stats;
@@ -284,7 +314,7 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
   const publicFields = {
     title,
     summary,
-    user_note: normalizeUserNote(options.note),
+    user_note: normalizedNote,
     public_prompt: null,
     outcome: generateOutcome(safeAreas),
     timeline: generateTimeline(),

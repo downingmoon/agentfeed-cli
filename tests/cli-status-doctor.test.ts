@@ -75,6 +75,31 @@ describe('status and doctor provenance output', () => {
     expect(stdout).not.toContain('af_live_saved_secret');
   });
 
+  it('status reports the collection cursor and warns when pending drafts may make the next collect look empty', async () => {
+    execFileSync(process.execPath, [cliPath, 'init', '--no-git-check', '--project-name', 'cursor-status'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+    await writeFile(join(dir, '.agentfeed', 'state.json'), JSON.stringify({ last_collected_at: '2026-05-20T02:00:00.000Z' }));
+    await mkdir(join(dir, '.agentfeed', 'drafts'), { recursive: true });
+    await writeFile(join(dir, '.agentfeed', 'drafts', 'draft_pending.json'), JSON.stringify({
+      id: 'draft_pending',
+      upload: { uploaded: false }
+    }));
+
+    const stdout = execFileSync(process.execPath, [cliPath, 'status'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home, AGENTFEED_TOKEN: '' }
+    });
+
+    expect(stdout).toContain('Last collection cursor: 2026-05-20T02:00:00.000Z');
+    expect(stdout).toContain('Next default collection since: 2026-05-20T02:00:00.000Z');
+    expect(stdout).toContain('Warning: pending local drafts exist while a collection cursor is set');
+    expect(stdout).toContain('--all/--since');
+  });
+
   it('login no-open no-save prints safe browser-login status text without credentials', async () => {
     const server = await import('node:http').then(({ createServer }) => createServer((req, res) => {
       if (req.url === '/v1/auth/cli/sessions' && req.method === 'POST') {
@@ -514,6 +539,20 @@ describe('status and doctor provenance output', () => {
   });
 
   it('doctor reports credential and API source provenance before network checks', () => {
+    execFileSync(process.execPath, [cliPath, 'init', '--no-git-check', '--project-name', 'doctor-cursor'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+    execFileSync(process.execPath, [
+      '-e',
+      'require("node:fs").writeFileSync(".agentfeed/state.json", JSON.stringify({ last_collected_at: "2026-05-20T02:00:00.000Z" }))'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
     const stdout = execFileSync(process.execPath, [cliPath, 'doctor'], {
       cwd: dir,
       encoding: 'utf8',
@@ -530,6 +569,8 @@ describe('status and doctor provenance output', () => {
     expect(stdout).toContain('API base URL configured: http://127.0.0.1:9/v1');
     expect(stdout).toContain('API base URL source: environment (AGENTFEED_API_BASE_URL)');
     expect(stdout).toContain('API ready: no');
+    expect(stdout).toContain('last collection cursor: 2026-05-20T02:00:00.000Z');
+    expect(stdout).toContain('next default collection since: 2026-05-20T02:00:00.000Z');
   });
 
   it('doctor classifies API DNS failures with host and API base remediation', () => {

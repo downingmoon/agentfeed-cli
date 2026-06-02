@@ -4,7 +4,7 @@ import { initProject, loadProjectConfig, resolveProjectRoot } from '../config/pr
 import { credentialsFromToken, deleteSavedCredentials, loadCredentials, loadCredentialsWithMetadata, saveCredentials, type CredentialTokenSource } from '../config/credentials.js';
 import { resolveApiBaseUrl, resolveApiBaseUrlWithMetadata, type ApiBaseUrlSource } from '../config/api-base.js';
 import { DEFAULT_API_BASE_URL } from '../config/defaults.js';
-import { markCollectionComplete, resolveCollectionWindow } from '../config/collection-state.js';
+import { markCollectionComplete, readCollectionState, resolveCollectionWindow } from '../config/collection-state.js';
 import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
@@ -68,6 +68,17 @@ function formatTokenExpiry(expiresAt: string): string {
   const hours = Math.floor((absMs % 86_400_000) / 3_600_000);
   const relative = deltaMs < 0 ? `expired ${days}d ${hours}h ago` : `in ${days}d ${hours}h`;
   return `${new Date(expires).toISOString()} (${relative})`;
+}
+
+function formatCollectionCursor(value?: string | null): string {
+  if (!value) return 'none';
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) return `invalid (${value})`;
+  return new Date(parsed).toISOString();
+}
+
+function nextDefaultCollectionSince(value?: string | null): string {
+  return value ? formatCollectionCursor(value) : 'beginning';
 }
 
 function shouldCopyReviewUrl(options: { json?: boolean; noClipboard?: boolean; clipboard?: boolean }): boolean {
@@ -407,6 +418,7 @@ async function cmdStatus() {
   try { root = await resolveProjectRoot(process.cwd()); config = await loadProjectConfig(root); } catch { /* not initialized */ }
   const drafts = config ? await listDrafts(root) : [];
   const pending = await Promise.all(drafts.map((d) => readDraft(root, d.id))).then((rows) => rows.filter((d) => !d.upload.uploaded).length).catch(() => 0);
+  const collectionState = config ? await readCollectionState(root) : {};
   const settingsPath = config ? resolveClaudeSettingsPath({ projectRoot: root, scope: config.agents.claude_code.hook_scope }) : '';
   let hook = 'unknown';
   const statusWarnings: string[] = [];
@@ -438,6 +450,11 @@ async function cmdStatus() {
   print(`Claude Code hook: ${hook}`);
   print(`Local drafts count: ${drafts.length}`);
   print(`Pending upload count: ${pending}`);
+  print(`Last collection cursor: ${formatCollectionCursor(collectionState.last_collected_at)}`);
+  print(`Next default collection since: ${nextDefaultCollectionSince(collectionState.last_collected_at)}`);
+  if (pending > 0 && collectionState.last_collected_at) {
+    print('Warning: pending local drafts exist while a collection cursor is set; publish/discard them or use --all/--since if the next collect looks empty.');
+  }
 }
 
 async function cmdLogout(args: string[]) {
@@ -711,7 +728,19 @@ async function cmdDoctor() {
     checks.push(['ingestion token valid', 'skipped']);
     checks.push(['ingestion token expires at', 'unknown']);
   }
-  try { await loadProjectConfig(process.cwd()); checks.push(['project config valid', 'yes']); } catch { checks.push(['project config valid', 'no']); }
+  let collectionStateLabel = 'unavailable (project not initialized)';
+  let nextCollectionSinceLabel = 'unavailable (project not initialized)';
+  try {
+    await loadProjectConfig(process.cwd());
+    checks.push(['project config valid', 'yes']);
+    const collectionState = await readCollectionState(process.cwd());
+    collectionStateLabel = formatCollectionCursor(collectionState.last_collected_at);
+    nextCollectionSinceLabel = nextDefaultCollectionSince(collectionState.last_collected_at);
+  } catch {
+    checks.push(['project config valid', 'no']);
+  }
+  checks.push(['last collection cursor', collectionStateLabel]);
+  checks.push(['next default collection since', nextCollectionSinceLabel]);
   const git = await collectGitMetrics(process.cwd());
   checks.push(['current directory is git repository', git.branch || git.head_commit ? 'yes' : 'no']);
   for (const [name, value] of checks) print(`${name}: ${value}`);

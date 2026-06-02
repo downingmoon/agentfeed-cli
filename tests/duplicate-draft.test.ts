@@ -68,6 +68,92 @@ describe('duplicate draft guard and draft note', () => {
     expect(second.draft.id).toBe(first.draft.id);
   });
 
+  it('does not reuse a matching draft when the share note changes uploadable output', async () => {
+    const sessionFile = join(dir, 'codex-note-reuse.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T01:00:00Z', type: 'session_meta', payload: { id: 'dup-note-session', cwd: dir } }
+    ]);
+
+    const first = await collectDraftWithStatus({
+      cwd: dir,
+      source: 'codex',
+      sessionFile,
+      since: '2026-05-20T01:00:00Z',
+      until: '2026-05-20T02:00:00Z',
+      note: 'first public note'
+    });
+    const second = await collectDraftWithStatus({
+      cwd: dir,
+      source: 'codex',
+      sessionFile,
+      since: '2026-05-20T01:00:00Z',
+      until: '2026-05-20T02:00:00Z',
+      note: 'second public note'
+    });
+
+    expect(first.reusedExisting).toBe(false);
+    expect(second.reusedExisting).toBe(false);
+    expect(second.draft.id).not.toBe(first.draft.id);
+    expect(first.draft.worklog.user_note).toBe('first public note');
+    expect(second.draft.worklog.user_note).toBe('second public note');
+    expect(first.draft.source.collection_fingerprint).not.toBe(second.draft.source.collection_fingerprint);
+    expect(await listDrafts(dir)).toHaveLength(2);
+  });
+
+  it('does not reuse a matching draft when configured command evidence is explicitly requested', async () => {
+    const sessionFile = join(dir, 'codex-command-reuse.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T01:00:00Z', type: 'session_meta', payload: { id: 'dup-command-session', cwd: dir } }
+    ]);
+    const commandPath = join(dir, '.agentfeed', 'test-command.mjs');
+    await writeFile(commandPath, 'console.log("2 passed");\n');
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const { config } = await initProject({ cwd: dir, noGitCheck: false });
+    config.agents.claude_code.enabled = false;
+    config.agents.codex.enabled = false;
+    config.agents.cursor.enabled = false;
+    config.agents.gemini_cli.enabled = false;
+    config.collection.run_tests_on_collect = true;
+    config.commands.test = 'node .agentfeed/test-command.mjs';
+    config.commands.build = null;
+    await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`);
+
+    const first = await collectDraftWithStatus({
+      cwd: dir,
+      source: 'codex',
+      sessionFile,
+      since: '2026-05-20T01:00:00Z',
+      until: '2026-05-20T02:00:00Z'
+    });
+    const second = await collectDraftWithStatus({
+      cwd: dir,
+      source: 'codex',
+      sessionFile,
+      since: '2026-05-20T01:00:00Z',
+      until: '2026-05-20T02:00:00Z',
+      runConfiguredCommands: true
+    });
+    const third = await collectDraftWithStatus({
+      cwd: dir,
+      source: 'codex',
+      sessionFile,
+      since: '2026-05-20T01:00:00Z',
+      until: '2026-05-20T02:00:00Z',
+      runConfiguredCommands: true
+    });
+
+    expect(first.reusedExisting).toBe(false);
+    expect(first.draft.worklog.metrics.commands_run).toBeNull();
+    expect(second.reusedExisting).toBe(false);
+    expect(second.draft.id).not.toBe(first.draft.id);
+    expect(second.draft.worklog.metrics.commands_run).toBe(1);
+    expect(second.draft.worklog.metrics.tests_run).toBe(2);
+    expect(third.reusedExisting).toBe(false);
+    expect(third.draft.id).not.toBe(second.draft.id);
+    expect(third.draft.worklog.metrics.commands_run).toBe(1);
+    expect(await listDrafts(dir)).toHaveLength(3);
+  });
+
   it('reuses git-only drafts when no agent session evidence is available', async () => {
     await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = false;\nexport const changed = true;\n');
 

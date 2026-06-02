@@ -23,6 +23,9 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] CLI collection cursor visibility, duplicate draft stale reuse guard, Backend production start ENV fail-fast, Frontend unsafe request CSRF intent header 보강
+- 관련 노트: [[Commercial Readiness Hardening - Cursor Duplicate Start and CSRF Intent 2026-06-02]]
+
 - [x] Backend rate-limit store 장애 시 `GET /v1/metadata`만 degraded fallback 허용, non-metadata route fail-closed 유지
 - 관련 노트: [[Commercial Readiness Hardening - Metadata Rate Limit Degraded Fallback 2026-06-02]]
 

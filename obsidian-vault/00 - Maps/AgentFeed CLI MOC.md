@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Cursor Duplicate Start and CSRF Intent 2026-06-02]] — CLI cursor diagnostics/stale duplicate guard, Backend production start fail-fast, and Frontend unsafe-request CSRF intent header
+
 - [[Commercial Readiness Hardening - Metadata Rate Limit Degraded Fallback 2026-06-02]] — Backend /v1/metadata survives rate-limit store outages through a narrow degraded fallback while all non-metadata routes remain fail-closed
 
 - [[Commercial Readiness Hardening - Frontend Manual Release Smoke Workflow Inputs 2026-06-02]] — Frontend manual CI release smoke inputs for root-login and live API compatibility checks

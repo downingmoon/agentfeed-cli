@@ -952,3 +952,10 @@ created: 2026-05-30
 - [x] Backend token rotation이 active token quota full 상태에서도 기존 토큰 교체를 허용하는 회귀 테스트 추가
 - [x] Frontend legacy comment notification이 parent worklog id를 제공하면 comment id가 아닌 worklog route로 이동하도록 보강
 - [[Commercial Readiness Hardening - Token Rotation Quota and Notification Legacy Routing 2026-06-03]]
+
+## 2026-06-03 runtime contract and ingest identity continuation
+
+- [x] Frontend runtime auth bootstrap이 `system.metadata()`/`isBackendCompatible()` 통과 전 `auth.me()`를 실행하지 않도록 fail-closed
+- [x] CLI `agentfeed open`이 draft upload 당시 `api_base_url` provenance를 신뢰 기준에 포함
+- [x] Backend ingest source identity를 필수화하고 `session_id` fallback dedupe hash를 추가
+- [[Commercial Readiness Hardening - Runtime Contract and Ingest Identity 2026-06-03]]

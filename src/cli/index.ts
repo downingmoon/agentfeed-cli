@@ -795,6 +795,7 @@ async function cmdOpen(args: string[]) {
   if (!draft.upload.review_url) throw new Error('Draft has not been uploaded yet.');
   const credentials = await loadCredentialsWithMetadata({ cwd: process.cwd() });
   const trustedApiBases = new Set([DEFAULT_API_BASE_URL]);
+  if (draft.upload.api_base_url) trustedApiBases.add(draft.upload.api_base_url);
   if (credentials.api_base_url) trustedApiBases.add(credentials.api_base_url);
   if (![...trustedApiBases].some((apiBaseUrl) => isTrustedReviewUrl(draft.upload.review_url!, apiBaseUrl))) {
     throw new Error('Saved draft review URL is invalid. Run agentfeed share again to upload a fresh private review draft.');

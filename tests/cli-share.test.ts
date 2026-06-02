@@ -452,6 +452,75 @@ describe('share CLI command', () => {
     }
   });
 
+  it('trusts the draft upload API base when current API config has changed', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.upload = {
+      uploaded: true,
+      worklog_id: 'worklog_stored_upload_base',
+      review_url: 'https://api.internal.example/worklogs/worklog_stored_upload_base/review',
+      uploaded_at: '2026-05-31T00:00:00.000Z',
+      api_base_url: 'https://api.internal.example/v1'
+    };
+    await writeDraft(dir, draft);
+    const binDir = await mkdtemp(join(tmpdir(), 'agentfeed-browser-bin-'));
+    const browserLog = await installFakeBrowserOpener(binDir);
+
+    try {
+      const open = await execFileAsync(process.execPath, [cliPath, 'open', '--id', draft.id], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          PATH: `${binDir}:${process.env.PATH ?? ''}`,
+          AGENTFEED_TEST_BROWSER_LOG: browserLog,
+          AGENTFEED_TOKEN: 'af_live_test_token',
+          AGENTFEED_API_BASE_URL: 'https://api.other.example/v1'
+        }
+      });
+
+      expect(open.stdout).toContain('Opened review URL.');
+      await expect(readFile(browserLog, 'utf8')).resolves.toBe('https://api.internal.example/worklogs/worklog_stored_upload_base/review\n');
+    } finally {
+      await rm(binDir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects saved review URLs when neither stored upload base nor current config trusts them', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.upload = {
+      uploaded: true,
+      worklog_id: 'worklog_untrusted_stored_base',
+      review_url: 'https://review.internal.example/worklogs/worklog_untrusted_stored_base/review',
+      uploaded_at: '2026-05-31T00:00:00.000Z',
+      api_base_url: 'https://api.internal.example/v1'
+    };
+    await writeDraft(dir, draft);
+    const binDir = await mkdtemp(join(tmpdir(), 'agentfeed-browser-bin-'));
+    const browserLog = await installFakeBrowserOpener(binDir);
+
+    try {
+      const open = execFileAsync(process.execPath, [cliPath, 'open', '--id', draft.id], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          PATH: `${binDir}:${process.env.PATH ?? ''}`,
+          AGENTFEED_TEST_BROWSER_LOG: browserLog,
+          AGENTFEED_TOKEN: 'af_live_test_token',
+          AGENTFEED_API_BASE_URL: 'https://api.other.example/v1',
+          AGENTFEED_REVIEW_BASE_URL: ''
+        }
+      });
+
+      await expect(open).rejects.toMatchObject({ code: 1 });
+      await expect(readFile(browserLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+    } finally {
+      await rm(binDir, { recursive: true, force: true });
+    }
+  });
+
   it('opens a split-host review URL when the review frontend origin is explicitly configured', async () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
     draft.upload = {

@@ -427,3 +427,5 @@ graph LR
 - [[Commercial Readiness Hardening - Moderator Allowlist Production Gate 2026-06-03]]
 - [[Commercial Readiness Hardening - Mixed Auth Rate Limit and Notification Link Contract 2026-06-03]]
 - [[Commercial Readiness Hardening - Token Rotation Quota and Notification Legacy Routing 2026-06-03]]
+
+- [[Commercial Readiness Hardening - Runtime Contract and Ingest Identity 2026-06-03]]

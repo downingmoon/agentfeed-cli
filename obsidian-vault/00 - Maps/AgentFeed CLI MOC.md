@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Dashboard Saved DOM Smoke 2026-06-02]] — authenticated dashboard smoke verifies saved worklogs and followed-author DOM
+
 - [[Commercial Readiness Hardening - Dashboard Saved Bookmarks Surface 2026-06-02]] — dashboard consumes saved/bookmarked worklogs and followed-author viewer state
 
 - [[Commercial Readiness Hardening - Bookmark Follow State Contract 2026-06-02]] — bookmarked worklog cards preserve following_author viewer state

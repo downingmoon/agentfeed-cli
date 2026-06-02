@@ -23,6 +23,9 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Dev live smoke가 authenticated Dashboard Saved worklogs와 `Following author` hydrated DOM을 검증
+- 관련 노트: [[Commercial Readiness Hardening - Dashboard Saved DOM Smoke 2026-06-02]]
+
 - [x] Dashboard가 `/me/bookmarks` saved worklogs를 실제 사용자 화면에서 소비하고 followed-author badge를 표시
 - 관련 노트: [[Commercial Readiness Hardening - Dashboard Saved Bookmarks Surface 2026-06-02]]
 

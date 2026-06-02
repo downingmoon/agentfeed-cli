@@ -12,6 +12,21 @@ created: 2026-05-30
 
 # Integration - CLI Backend Frontend
 
+## 2026-06-02 dashboard saved DOM smoke
+
+> [!success]
+> Dev live smoke now proves the authenticated Dashboard renders saved/bookmarked worklogs plus followed-author viewer state in hydrated browser DOM.
+
+계약:
+
+- Smoke fixture seeds a non-self followed author, public worklog, `Bookmark`, and `Follow` row before visiting `/dashboard`.
+- Browser DOM smoke asserts `Saved worklogs`, the seeded saved title, and `Following author` under authenticated cookie state.
+- CLI browser auth and token rotation smoke fill the terminal-only `user_code` before approval, matching the current Frontend/Backend contract.
+- `agentfeed-dev ./scripts/test-all.sh` statically pins both saved dashboard DOM markers and browser input-fill support.
+
+검증: [[Commercial Readiness Hardening - Dashboard Saved DOM Smoke 2026-06-02#검증 증거]]
+
+
 ## 2026-06-02 dashboard saved/bookmarks surface
 
 > [!success]

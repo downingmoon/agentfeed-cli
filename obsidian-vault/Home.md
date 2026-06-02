@@ -25,6 +25,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - Cache Workflow DNS and Production Secret Gates 2026-06-02]] — CLI cache trust boundary, Backend production placeholder rejection, Frontend hosted DNS diagnostic, Dev workflow evidence gate
+
 - [[Commercial Readiness Hardening - Hosted Compatibility Smoke 2026-06-02]] — hosted metadata/readiness + CLI doctor + Frontend diagnostic compatibility smoke
 
 - [[Commercial Readiness Hardening - API Compatibility Metadata Handshake 2026-06-02]] — shared CLI/Backend/Frontend API compatibility metadata handshake

@@ -1147,6 +1147,144 @@ describe('share CLI command', () => {
     await expect(readFile(browserLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
+  it('still requires confirmation for a cached upload from a different credential binding', async () => {
+    let requestCount = 0;
+    const server = createServer((_req, res) => {
+      requestCount += 1;
+      res.writeHead(500).end();
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    try {
+      const apiBaseUrl = `http://127.0.0.1:${address.port}/v1`;
+      const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+      draft.upload = {
+        uploaded: true,
+        worklog_id: 'worklog_other_binding',
+        review_url: 'http://localhost:3001/worklogs/worklog_other_binding/review',
+        uploaded_at: '2026-05-31T00:00:00.000Z',
+        payload_hash: draftUploadPayloadHash(draft),
+        ...cachedUploadBindingForEnv({ token: 'old-token', apiBaseUrl })
+      };
+      await writeDraft(dir, draft);
+
+      const publish = await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: 'new-token',
+          AGENTFEED_API_BASE_URL: apiBaseUrl,
+          AGENTFEED_FORCE_UPLOAD_CONFIRMATION: '1',
+          CI: '1'
+        }
+      });
+
+      expect(publish.stdout).toContain('Upload confirmation required.');
+      expect(publish.stdout).toContain('No data was uploaded to AgentFeed.');
+      expect(requestCount).toBe(0);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('checks API compatibility before uploading when cached upload binding is not reusable', async () => {
+    let metadataCount = 0;
+    let ingestCount = 0;
+    const server = createServer(async (req, res) => {
+      if (req.method === 'GET' && req.url === '/v1/metadata') {
+        metadataCount += 1;
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ data: { service: 'unexpected-api' } }));
+        return;
+      }
+      if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
+        ingestCount += 1;
+        await readRequestBody(req);
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({
+          data: {
+            id: 'worklog_should_not_upload',
+            status: 'needs_review',
+            visibility: 'private',
+            review_url: 'http://localhost:3001/worklogs/worklog_should_not_upload/review',
+            created_at: '2026-05-31T00:00:00.000Z'
+          }
+        }));
+        return;
+      }
+      res.writeHead(404).end();
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    try {
+      const apiBaseUrl = `http://127.0.0.1:${address.port}/v1`;
+      const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+      draft.upload = {
+        uploaded: true,
+        worklog_id: 'worklog_old_api',
+        review_url: 'http://localhost:3001/worklogs/worklog_old_api/review',
+        uploaded_at: '2026-05-31T00:00:00.000Z',
+        payload_hash: draftUploadPayloadHash(draft),
+        ...cachedUploadBindingForEnv({ token: 'old-token', apiBaseUrl })
+      };
+      await writeDraft(dir, draft);
+
+      await expect(execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id, '--yes'], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: 'new-token',
+          AGENTFEED_API_BASE_URL: apiBaseUrl,
+          CI: '1'
+        }
+      })).rejects.toMatchObject({
+        stderr: expect.stringContaining('API compatibility check failed')
+      });
+
+      expect(metadataCount).toBe(1);
+      expect(ingestCount).toBe(0);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('skips forced confirmation only when the cached upload is reusable for the current payload and credentials', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.upload = {
+      uploaded: true,
+      worklog_id: 'worklog_reusable_cli_cache',
+      review_url: 'https://agentfeed.dev/review/worklog_reusable_cli_cache',
+      uploaded_at: '2026-05-31T00:00:00.000Z',
+      payload_hash: draftUploadPayloadHash(draft),
+      ...cachedUploadBindingForEnv()
+    };
+    await writeDraft(dir, draft);
+
+    const publish = await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: 'af_live_test_token',
+        AGENTFEED_FORCE_UPLOAD_CONFIRMATION: '1',
+        CI: '1'
+      }
+    });
+
+    expect(publish.stdout).toContain('Private review draft already uploaded; reusing existing review URL.');
+    expect(publish.stdout).not.toContain('Upload confirmation required.');
+    expect(publish.stdout).toContain('https://agentfeed.dev/review/worklog_reusable_cli_cache');
+  });
+
   it('makes direct publish privacy policy clear for high-severity private review drafts', async () => {
     const secret = 'sk-123456789012345678901234';
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });

@@ -7,7 +7,7 @@ import { promisify } from 'node:util';
 import { initProject } from '../src/config/project-config.js';
 import { writeDraft } from '../src/draft/write.js';
 import { createEmptyDraft } from '../src/draft/create.js';
-import { apiMetadataCompatible, checkApiCompatibility, checkApiReachability, checkIngestionToken, createCliAuthSession, draftToIngestRequest, draftUploadCredentialBindingHash, draftUploadPayloadHash, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
+import { apiMetadataCompatible, cachedUploadReusableForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, createCliAuthSession, draftToIngestRequest, draftUploadCredentialBindingHash, draftUploadPayloadHash, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
 import { browserLogin, waitForCliAuthExchange } from '../src/auth/browser-login.js';
 import { buildClaudeCodeStopHookCommand, installClaudeCodeHook, uninstallClaudeCodeHook } from '../src/hooks/claude-code-settings.js';
 import { pathExists } from '../src/utils/fs.js';
@@ -314,6 +314,27 @@ describe('api client', () => {
     });
   });
 
+  it('reports cached upload reusable only when redacted payload and credential binding both match', () => {
+    const credentials = { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' };
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    draft.worklog.summary = 'Reusable cache contains sk-abcdefghijklmnopqrstuvwxyz1234567890';
+    draft.upload = {
+      uploaded: true,
+      worklog_id: 'worklog_reusable',
+      review_url: 'https://agentfeed.dev/review/worklog_reusable',
+      uploaded_at: '2026-05-19T00:00:00Z',
+      payload_hash: draftUploadPayloadHash(draft),
+      ...uploadBinding(credentials)
+    };
+
+    expect(cachedUploadReusableForCredentials(draft, credentials)).toBe(true);
+
+    const editedDraft = structuredClone(draft);
+    editedDraft.worklog.title = 'Edited after upload';
+    expect(cachedUploadReusableForCredentials(editedDraft, credentials)).toBe(false);
+    expect(cachedUploadReusableForCredentials(draft, { ...credentials, ingestion_token: 'different-token' })).toBe(false);
+  });
+
   it('reuses an unchanged uploaded draft after the first upload redacts public fields', async () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
     draft.worklog.summary = 'First upload contains sk-abcdefghijklmnopqrstuvwxyz1234567890';
@@ -431,6 +452,36 @@ describe('api client', () => {
       worklog_id: 'worklog_existing',
       review_url: 'https://agentfeed.dev/worklogs/worklog_existing/review',
       uploaded_at: '2026-05-19T00:00:00Z'
+    });
+  });
+
+  it('reconciles duplicate ingestion review URLs that use the /review/:id route', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    await writeDraft(dir, draft);
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      error: {
+        code: 'DUPLICATE_INGESTION_SESSION',
+        message: 'Duplicate ingestion session.',
+        details: {
+          review_url: 'https://agentfeed.dev/review/worklog_review_route',
+          created_at: '2026-05-19T00:00:00Z'
+        }
+      }
+    }), { status: 409, headers: { 'content-type': 'application/json' } })));
+
+    const result = await publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } });
+
+    expect(result).toMatchObject({
+      id: 'worklog_review_route',
+      status: 'already_uploaded',
+      review_url: 'https://agentfeed.dev/review/worklog_review_route',
+      reused_existing: true
+    });
+    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+    expect(saved.upload).toMatchObject({
+      uploaded: true,
+      worklog_id: 'worklog_review_route',
+      review_url: 'https://agentfeed.dev/review/worklog_review_route'
     });
   });
 

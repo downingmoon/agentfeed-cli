@@ -691,6 +691,19 @@ export function isTrustedReviewUrl(reviewUrl: string, apiBaseUrl: string): boole
   return validateReviewUrl(reviewUrl, apiBaseUrl);
 }
 
+export function cachedUploadReusableForCredentials(draft: LocalDraft, credentials: AgentFeedCredentials): boolean {
+  if (!draft.upload.uploaded || !draft.upload.worklog_id || !draft.upload.review_url) return false;
+  const safeDraft = structuredClone(draft) as LocalDraft;
+  scanAndRedactDraftPublicFields(safeDraft, { preserveResolvedFindings: true });
+  try {
+    parseCachedUploadResult(safeDraft, credentials.api_base_url);
+  } catch {
+    return false;
+  }
+  return safeDraft.upload.payload_hash === draftUploadPayloadHash(safeDraft)
+    && safeDraft.upload.credential_binding_hash === draftUploadCredentialBindingHash(credentials);
+}
+
 function parseCachedUploadResult(draft: LocalDraft, apiBaseUrl: string): PublishDraftResult {
   return parsePublishDraftResult({
     id: draft.upload.worklog_id,
@@ -741,7 +754,9 @@ function worklogIdFromReviewUrl(reviewUrl: string): string | null {
   try {
     const parts = new URL(reviewUrl).pathname.split('/').filter(Boolean);
     const worklogsIndex = parts.indexOf('worklogs');
-    return worklogsIndex >= 0 ? parts[worklogsIndex + 1] ?? null : null;
+    if (worklogsIndex >= 0) return parts[worklogsIndex + 1] ?? null;
+    const reviewIndex = parts.indexOf('review');
+    return reviewIndex >= 0 ? parts[reviewIndex + 1] ?? null : null;
   } catch {
     return null;
   }

@@ -9,7 +9,7 @@ import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 import { formatCollectionExplain } from '../draft/explain.js';
-import { checkApiCompatibility, checkApiReachability, checkIngestionToken, isTrustedReviewUrl, previewDraftRemote, publishDraft } from '../api/client.js';
+import { cachedUploadReusableForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, isTrustedReviewUrl, previewDraftRemote, publishDraft } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
 import { applyRedactedPublicFields, publicScanFieldsFromDraft, scanAndRedactDraftPublicFields, type PublicScanFields } from '../privacy/draft-sanitizer.js';
@@ -622,12 +622,12 @@ async function cmdPublish(args: string[]) {
   if (!creds) throw new Error('AgentFeed token is missing. Run: agentfeed login, or pipe a token with: printf %s "$TOKEN" | agentfeed login --token-stdin');
   const id = await resolveDraftId(process.cwd(), args);
   const existingDraft = await readDraft(process.cwd(), id);
-  const hasCachedUpload = existingDraft.upload.uploaded && existingDraft.upload.worklog_id && existingDraft.upload.review_url;
-  if (!hasCachedUpload && shouldRequireUploadConfirmation({ json: flag(args, '--json'), yes: flag(args, '--yes') || flag(args, '-y') })) {
+  const reusableCachedUpload = cachedUploadReusableForCredentials(existingDraft, creds);
+  if (!reusableCachedUpload && shouldRequireUploadConfirmation({ json: flag(args, '--json'), yes: flag(args, '--yes') || flag(args, '-y') })) {
     printUploadConfirmationRequired(existingDraft, `agentfeed publish --id ${id} --yes`);
     return;
   }
-  if (!hasCachedUpload) await requireApiCompatibilityBeforeUpload(creds.api_base_url);
+  if (!reusableCachedUpload) await requireApiCompatibilityBeforeUpload(creds.api_base_url);
   const result = await publishDraft({ cwd: process.cwd(), id, credentials: creds });
   const savedDraft = await readDraft(process.cwd(), id);
   if (flag(args, '--json')) {

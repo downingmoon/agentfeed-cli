@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Frontend Manual Release Smoke Workflow Inputs 2026-06-02]] — Frontend manual CI release smoke inputs for root-login and live API compatibility checks
+
 - [[Commercial Readiness Hardening - Upload Confirmation Startup Preflight and Explicit Root Smoke 2026-06-02]] — CLI interactive upload confirmation, Backend production startup DB/migration preflight, and Frontend explicit root-login smoke CI opt-in
 
 - [[Commercial Readiness Hardening - CLI Logout Atomic Writes OAuth Audit and Root Smoke 2026-06-02]] — CLI logout/atomic writes, Backend OAuth login audit, and Frontend root-login smoke

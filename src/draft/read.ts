@@ -3,13 +3,14 @@ import { join } from 'node:path';
 import type { LocalDraft } from '../types.js';
 import { resolveProjectRoot } from '../config/project-config.js';
 import { pathExists, readJson } from '../utils/fs.js';
+import { validateLocalDraft } from './validation.js';
 import { draftPaths, isSafeDraftId } from './paths.js';
 
 export async function readDraft(cwd: string, id: string): Promise<LocalDraft> {
   const root = await resolveProjectRoot(cwd);
   const { jsonPath } = draftPaths(root, id);
   if (!(await pathExists(jsonPath))) throw new Error(`Draft not found: ${id}`);
-  return readJson<LocalDraft>(jsonPath);
+  return validateLocalDraft(await readJson<unknown>(jsonPath), jsonPath);
 }
 
 export async function listDrafts(cwd: string): Promise<Array<{ id: string; path: string; mtimeMs: number }>> {

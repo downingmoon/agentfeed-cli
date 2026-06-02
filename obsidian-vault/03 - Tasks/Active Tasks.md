@@ -23,12 +23,14 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Backend social/UGC mutation audit coverage 보강
+- [x] CLI local draft runtime shape validation 보강
+- [x] CLI credentials runtime shape validation 보강
+- 관련 노트: [[Commercial Readiness Hardening - Social Audit and Local State Validation 2026-06-02]]
+
 - [x] Frontend 401/session-expiry recovery state와 GitHub 재로그인 CTA 명시화
 - [x] Backend GitHub OAuth account/token mutation과 `auth.login` audit event를 단일 commit으로 원자화
 - [x] Backend audit `request_id` incident lookup partial index 추가
-- [ ] Backend social/UGC mutation audit coverage 보강
-- [ ] CLI local draft runtime shape validation 보강
-- [ ] CLI credentials runtime shape validation 보강
 - 관련 노트: [[Commercial Readiness Hardening - Session Expiry and OAuth Audit Atomicity 2026-06-02]]
 
 - [x] CLI `.agentfeed/config.json` runtime schema validation/fail-fast 보강

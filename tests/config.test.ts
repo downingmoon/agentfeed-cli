@@ -25,6 +25,7 @@ beforeEach(async () => {
   process.env.HOME = home;
   delete process.env.AGENTFEED_HOME;
   delete process.env.AGENTFEED_API_BASE_URL;
+  delete process.env.AGENTFEED_TOKEN;
   delete process.env.AGENTFEED_ALLOW_INSECURE_API;
   delete process.env.AGENTFEED_ALLOW_INSECURE_CREDENTIAL_STORE;
   delete process.env.AGENTFEED_TRUST_REPO_API_BASE;
@@ -424,6 +425,46 @@ describe('project config', () => {
     expect(resolved.token_source).toBe('environment');
     expect(resolved.api_base_url).toBe('http://localhost:8001/v1');
     expect(resolved.warnings.join('\n')).toContain('ignored malformed AgentFeed credentials file');
+  });
+
+
+  it('ignores stored credentials fields with invalid runtime types instead of flowing them into credentials', async () => {
+    delete process.env.AGENTFEED_TOKEN;
+    await mkdir(globalAgentFeedDir(), { recursive: true });
+    await writeFile(credentialsPath(), JSON.stringify({
+      ingestion_token: 123,
+      api_base_url: ['https://collector.example/v1'],
+      token_expires_at: false,
+      created_at: { at: 'now' },
+      user: 'not-object',
+      credential_store: 'file'
+    }, null, 2));
+
+    const resolved = await loadCredentialsWithMetadata({ cwd: dir });
+
+    expect(resolved.credentials).toBeNull();
+    expect(resolved.token_source).toBe('missing');
+    expect(resolved.api_base_url).toBe('https://api.agentfeed.dev/v1');
+    expect(resolved.warnings.join('\n')).toContain('ignored invalid AgentFeed credentials field ingestion_token');
+    expect(resolved.warnings.join('\n')).toContain('ignored invalid AgentFeed credentials field api_base_url');
+    expect(resolved.warnings.join('\n')).toContain(credentialsPath());
+  });
+
+  it('lets AGENTFEED_TOKEN win over invalid stored credential shapes with warnings', async () => {
+    await mkdir(globalAgentFeedDir(), { recursive: true });
+    await writeFile(credentialsPath(), JSON.stringify({
+      ingestion_token: 123,
+      api_base_url: { href: 'https://collector.example/v1' },
+      created_at: 0
+    }, null, 2));
+    process.env.AGENTFEED_TOKEN = 'af_live_env_shape_guard';
+
+    const resolved = await loadCredentialsWithMetadata({ cwd: dir });
+
+    expect(resolved.credentials?.ingestion_token).toBe('af_live_env_shape_guard');
+    expect(resolved.token_source).toBe('environment');
+    expect(resolved.credentials?.api_base_url).toBe('https://api.agentfeed.dev/v1');
+    expect(resolved.warnings.join('\n')).toContain('ignored invalid AgentFeed credentials field api_base_url');
   });
 
   it('does not combine authenticated tokens with repo-local API base discovery unless explicitly trusted', async () => {

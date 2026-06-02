@@ -386,4 +386,31 @@ describe('git collector and drafts', () => {
     expect(draft.worklog.metrics.commands_run).toBe(1);
     expect(draft.worklog.metrics.failed_commands).toBeNull();
   });
+  it('round-trips valid local drafts through runtime validation', async () => {
+    await initProject({ cwd: dir, projectName: 'Draft Guard', noGitCheck: false });
+    const draft = await collectDraft({ cwd: dir, source: 'codex' });
+
+    const loaded = await readDraft(dir, draft.id);
+
+    expect(loaded).toMatchObject({ id: draft.id, schema_version: '0.2', upload: { uploaded: false } });
+    expect(loaded.privacy_scan.findings).toEqual(draft.privacy_scan.findings);
+  });
+
+  it('rejects corrupted local draft shapes with actionable field guidance', async () => {
+    await initProject({ cwd: dir, projectName: 'Draft Guard', noGitCheck: false });
+    const draft = await collectDraft({ cwd: dir, source: 'codex' });
+    const draftPath = join(dir, '.agentfeed', 'drafts', `${draft.id}.json`);
+
+    const cases: Array<{ name: string; mutate: (draft: Record<string, unknown>) => unknown; expected: RegExp }> = [
+      { name: 'missing worklog', mutate: (value) => ({ ...value, worklog: undefined }), expected: /AgentFeed draft is invalid.*worklog must be an object.*agentfeed collect/is },
+      { name: 'missing upload', mutate: (value) => ({ ...value, upload: undefined }), expected: /AgentFeed draft is invalid.*upload must be an object.*agentfeed collect/is },
+      { name: 'invalid findings', mutate: (value) => ({ ...value, privacy_scan: { status: 'safe', findings: { id: 'not-array' } } }), expected: /AgentFeed draft is invalid.*privacy_scan\.findings must be an array.*agentfeed collect/is },
+    ];
+
+    for (const testCase of cases) {
+      await writeFile(draftPath, JSON.stringify(testCase.mutate(draft as unknown as Record<string, unknown>), null, 2));
+      await expect(readDraft(dir, draft.id), testCase.name).rejects.toThrow(testCase.expected);
+    }
+  });
+
 });

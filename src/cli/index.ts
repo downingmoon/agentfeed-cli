@@ -410,6 +410,18 @@ async function cmdRotate(args: string[]) {
   );
 }
 
+async function draftUploadPendingForStatus(path: string): Promise<boolean> {
+  try {
+    const draft = await readJson<unknown>(path);
+    if (typeof draft !== 'object' || draft === null || Array.isArray(draft)) return false;
+    const upload = (draft as { upload?: unknown }).upload;
+    if (typeof upload !== 'object' || upload === null || Array.isArray(upload)) return true;
+    return (upload as { uploaded?: unknown }).uploaded !== true;
+  } catch {
+    return false;
+  }
+}
+
 async function cmdStatus() {
   const credentialResolution = await loadCredentialsWithMetadata({ cwd: process.cwd() });
   const creds = credentialResolution.credentials;
@@ -417,7 +429,7 @@ async function cmdStatus() {
   let root = process.cwd();
   try { root = await resolveProjectRoot(process.cwd()); config = await loadProjectConfig(root); } catch { /* not initialized */ }
   const drafts = config ? await listDrafts(root) : [];
-  const pending = await Promise.all(drafts.map((d) => readDraft(root, d.id))).then((rows) => rows.filter((d) => !d.upload.uploaded).length).catch(() => 0);
+  const pending = (await Promise.all(drafts.map((d) => draftUploadPendingForStatus(d.path)))).filter(Boolean).length;
   const collectionState = config ? await readCollectionState(root) : {};
   const settingsPath = config ? resolveClaudeSettingsPath({ projectRoot: root, scope: config.agents.claude_code.hook_scope }) : '';
   let hook = 'unknown';

@@ -23,6 +23,10 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Hosted compatibility smoke failure evidence JSON 보강
+- [x] Failure artifact에 `failure_stage`/`failure_message`/partial artifacts 기록
+- 관련 노트: [[Commercial Readiness Hardening - Hosted Failure Evidence 2026-06-02]]
+
 - [x] Hosted compatibility smoke evidence artifact 및 workflow upload 보강
 - [x] Commercial readiness manifest에 hosted evidence/per-step logs 기록
 - [x] Frontend CI production API compatibility opt-in gate 추가

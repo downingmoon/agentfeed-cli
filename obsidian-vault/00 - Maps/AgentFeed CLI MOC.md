@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Hosted Failure Evidence 2026-06-02]] — hosted compatibility smoke writes structured failure evidence
+
 - [[Commercial Readiness Hardening - Hosted Evidence and Frontend Prod API Gate 2026-06-02]] — hosted compatibility evidence artifacts and frontend production API compatibility opt-in gate
 
 - [[Commercial Readiness Hardening - Backend Production Deploy Contract 2026-06-02]] — Backend production deploy/start contract and JWT runtime fail-closed gate

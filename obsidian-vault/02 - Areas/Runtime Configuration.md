@@ -13,6 +13,13 @@ created: 2026-05-30
 
 # Runtime Configuration
 
+## 2026-06-02 Hosted failure evidence
+
+> [!success]
+> Hosted compatibility smoke now writes structured failure evidence with failure stage/message and partial artifacts when an evidence directory is configured.
+
+검증: [[Commercial Readiness Hardening - Hosted Failure Evidence 2026-06-02#Verification evidence]]
+
 ## 2026-06-02 Hosted evidence and Frontend production API gate
 
 > [!success]

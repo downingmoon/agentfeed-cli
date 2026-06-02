@@ -54,7 +54,7 @@ The smoke must verify:
 ### Dev orchestration
 
 - `scripts/smoke-hosted-compatibility.sh`
-  - Calls hosted metadata/readiness with `curl` and strict JSON validation.
+  - Resolves the hosted API hostname before curl, then calls hosted metadata/readiness with strict JSON validation, bounded connect/max-time, retries, and classified DNS/timeout/TLS failure messages.
   - Builds and runs the local CLI package entrypoint with `AGENTFEED_API_BASE_URL` forced to the hosted API.
   - Runs the Frontend `check:api-compatibility` diagnostic command.
   - Prints `HOSTED_COMPATIBILITY_SMOKE_PASSED` on success.
@@ -81,6 +81,13 @@ The smoke must verify:
 > [!success] GREEN — hosted harness mock E2E
 > `AGENTFEED_HOSTED_API_BASE_URL=http://127.0.0.1:18182/v1 AGENTFEED_HOSTED_API_ROOT_URL=http://127.0.0.1:18182 ./scripts/smoke-hosted-compatibility.sh` passed against a local mock metadata/readiness server and printed `HOSTED_COMPATIBILITY_SMOKE_PASSED`.
 
+
+> [!success] GREEN — DNS/deployment failure clarity
+> `make smoke-hosted-compatibility` against default `https://api.agentfeed.dev/v1` now fails before curl with `Hosted API host did not resolve: api.agentfeed.dev` and points to DNS/deployment or `AGENTFEED_HOSTED_API_BASE_URL` override.
+
+> [!success] GREEN — curl timeout/retry contract
+> `./scripts/test-hosted-compatibility-smoke.sh` now asserts `AGENTFEED_CURL_CONNECT_TIMEOUT`, `AGENTFEED_CURL_MAX_TIME`, and `AGENTFEED_CURL_RETRIES`, plus a deterministic slow local metadata server that must fail with `Backend metadata request timed out` and timeout tuning hints.
+
 > [!success] GREEN — Dev full gate
 > `./scripts/test-all.sh` passed: dev static contracts, OpenAPI gate, CLI 326 tests/typecheck/release preflight/audit, Frontend CI/audit, Backend ruff/287 pytest/Alembic offline chain.
 
@@ -90,7 +97,7 @@ The smoke must verify:
 ## Remaining risk
 
 > [!warning]
-> The actual production hosted smoke must be run after the Backend deployment containing `/v1/metadata`. If production has not been deployed yet, the smoke should fail and point to deployment drift rather than code drift.
+> The actual production hosted smoke currently fails because `api.agentfeed.dev` does not resolve from this environment. That is now captured as a DNS/deployment readiness issue rather than an ambiguous curl failure. Run the smoke again after DNS/deployment is configured.
 
 > [!todo]
 > Next candidate: add deployment automation or a deploy-status note that records the first successful `make smoke-hosted-compatibility` result against `https://api.agentfeed.dev/v1` after release.

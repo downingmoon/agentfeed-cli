@@ -965,3 +965,9 @@ created: 2026-05-30
 - [x] CLI `readDraft(cwd, id)`가 요청된 draft filename/id와 JSON 내부 `draft.id` 불일치를 거부
 - [x] 손상된 draft가 다른 draft 경로로 upload metadata를 쓰는 local-state integrity 리스크 차단
 - [[Commercial Readiness Hardening - CLI Draft Identity Guard 2026-06-03]]
+
+## 2026-06-03 backend session-window identity continuation
+
+- [x] Backend ingest source identity에서 bare `session_id` dedupe hash를 제거
+- [x] `session_id + collection_window` fallback으로 retry idempotency는 유지하고 동일 세션 내 다른 worklog 충돌 방지
+- [[Commercial Readiness Hardening - Backend Session Window Identity 2026-06-03]]

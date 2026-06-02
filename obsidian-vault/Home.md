@@ -138,3 +138,5 @@ created: 2026-05-30
 - [[Commercial Readiness Hardening - Runtime Contract and Ingest Identity 2026-06-03]] — Frontend runtime API contract gate, CLI stored review URL provenance, Backend ingest identity idempotency
 
 - [[Commercial Readiness Hardening - CLI Draft Identity Guard 2026-06-03]] — CLI draft filename과 embedded id mismatch fail-closed guard
+
+- [[Commercial Readiness Hardening - Backend Session Window Identity 2026-06-03]] — Backend bare session_id dedupe collision 방지, session+collection_window fallback

@@ -23,6 +23,9 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Frontend `npm run ci`가 hosted DNS에 의존하지 않는 mock `/v1/metadata` compatibility diagnostic gate를 실행
+- 관련 노트: [[Commercial Readiness Hardening - Frontend Mock API Compatibility CI Gate 2026-06-02]]
+
 - [x] Backend `/health`와 `/health/ready` probe traffic을 explicit IP-based rate-limit rule로 보호
 - 관련 노트: [[Commercial Readiness Hardening - Backend Health Readiness Rate Limits 2026-06-02]]
 

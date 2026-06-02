@@ -23,6 +23,11 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Backend secret-bearing auth/token responses에 `no-store, private` / `Pragma: no-cache` 적용
+- [x] Dev commercial readiness gate에 browser release smoke 포함
+- [x] Commercial readiness 실행 레벨 manifest/log regression 및 self-hosted evidence workflow 추가
+- 관련 노트: [[Commercial Readiness Hardening - Secret No-Store and Commercial Evidence Workflow 2026-06-02]]
+
 - [x] Frontend CI/deploy build에서 hosted default API fallback 제거
 - [x] Backend `/v1/health` 및 `/v1/health/ready` probe alias 추가
 - [x] Hosted smoke transport diagnostics 및 workflow curl tunable inputs 보강

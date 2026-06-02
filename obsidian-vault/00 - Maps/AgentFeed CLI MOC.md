@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Secret No-Store and Commercial Evidence Workflow 2026-06-02]] — Backend secret no-store headers and self-hosted commercial readiness evidence workflow
+
 - [[Commercial Readiness Hardening - Hosted Deployment Probe and CI API Explicitness 2026-06-02]] — Frontend explicit API CI, Backend /v1 health probes, and hosted smoke transport diagnostics
 
 - [[Commercial Readiness Hardening - CLI Release Workflow Parity 2026-06-02]] — CLI CI/Release trusted publishing toolchain parity and release prepack gate

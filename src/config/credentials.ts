@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import type { AgentFeedCredentials } from '../types.js';
 import { pathExists, readJson, writeTextFileAtomic } from '../utils/fs.js';
+import { createScrubbedCommandEnv } from '../utils/subprocess-env.js';
 import { DEFAULT_API_BASE_URL } from './defaults.js';
 import { normalizeApiBaseUrl, resolveApiBaseUrl, resolveApiBaseUrlWithMetadata, type ApiBaseUrlResolution } from './api-base.js';
 
@@ -156,9 +157,13 @@ function keychainAccount(): string {
   return `agentfeed-${digest}`;
 }
 
+function keychainCommandEnv(): NodeJS.ProcessEnv {
+  return createScrubbedCommandEnv(process.env, { respectAllowlist: false });
+}
+
 async function commandAvailable(command: string, args: string[] = ['--version']): Promise<boolean> {
   try {
-    await execFileAsync(command, args, { timeout: 2_000 });
+    await execFileAsync(command, args, { timeout: 2_000, env: keychainCommandEnv() });
     return true;
   } catch {
     return false;
@@ -167,7 +172,7 @@ async function commandAvailable(command: string, args: string[] = ['--version'])
 
 function spawnWithInput(command: string, args: string[], input: string, timeoutMs = KEYCHAIN_TIMEOUT_MS): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { stdio: ['pipe', 'pipe', 'pipe'] });
+    const child = spawn(command, args, { stdio: ['pipe', 'pipe', 'pipe'], env: keychainCommandEnv() });
     let stdout = '';
     let stderr = '';
     let settled = false;
@@ -217,17 +222,17 @@ function nativeKeychainStore(metadata: { keychain_service?: string; keychain_acc
       },
       async read() {
         try {
-          const { stdout } = await execFileAsync('security', ['find-generic-password', '-a', account, '-s', service, '-w'], { timeout: KEYCHAIN_TIMEOUT_MS });
+          const { stdout } = await execFileAsync('security', ['find-generic-password', '-a', account, '-s', service, '-w'], { timeout: KEYCHAIN_TIMEOUT_MS, env: keychainCommandEnv() });
           return trimOneTrailingNewline(stdout);
         } catch {
           return null;
         }
       },
       async write(secret: string) {
-        await execFileAsync('security', ['add-generic-password', '-a', account, '-s', service, '-w', secret, '-U'], { timeout: KEYCHAIN_TIMEOUT_MS });
+        await execFileAsync('security', ['add-generic-password', '-a', account, '-s', service, '-w', secret, '-U'], { timeout: KEYCHAIN_TIMEOUT_MS, env: keychainCommandEnv() });
       },
       async delete() {
-        try { await execFileAsync('security', ['delete-generic-password', '-a', account, '-s', service], { timeout: KEYCHAIN_TIMEOUT_MS }); } catch { /* item may not exist */ }
+        try { await execFileAsync('security', ['delete-generic-password', '-a', account, '-s', service], { timeout: KEYCHAIN_TIMEOUT_MS, env: keychainCommandEnv() }); } catch { /* item may not exist */ }
       },
     };
   }
@@ -241,7 +246,7 @@ function nativeKeychainStore(metadata: { keychain_service?: string; keychain_acc
       },
       async read() {
         try {
-          const { stdout } = await execFileAsync('secret-tool', ['lookup', 'service', service, 'account', account], { timeout: KEYCHAIN_TIMEOUT_MS });
+          const { stdout } = await execFileAsync('secret-tool', ['lookup', 'service', service, 'account', account], { timeout: KEYCHAIN_TIMEOUT_MS, env: keychainCommandEnv() });
           const secret = trimOneTrailingNewline(stdout);
           return secret || null;
         } catch {
@@ -252,7 +257,7 @@ function nativeKeychainStore(metadata: { keychain_service?: string; keychain_acc
         await spawnWithInput('secret-tool', ['store', '--label', 'AgentFeed CLI token', 'service', service, 'account', account], secret);
       },
       async delete() {
-        try { await execFileAsync('secret-tool', ['clear', 'service', service, 'account', account], { timeout: KEYCHAIN_TIMEOUT_MS }); } catch { /* item may not exist */ }
+        try { await execFileAsync('secret-tool', ['clear', 'service', service, 'account', account], { timeout: KEYCHAIN_TIMEOUT_MS, env: keychainCommandEnv() }); } catch { /* item may not exist */ }
       },
     };
   }

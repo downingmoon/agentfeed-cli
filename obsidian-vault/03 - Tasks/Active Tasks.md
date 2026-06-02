@@ -23,6 +23,11 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] CLI native keychain helper subprocess env scrub 보강
+- [x] Backend unmatched/unknown path default shared rate-limit bucket 적용
+- [x] Frontend Settings API-config recovery GitHub redirect crash guard 및 local `npm run ci` production dependency audit 통합
+- 관련 노트: [[Commercial Readiness Hardening - Keychain Unmatched Settings CI 2026-06-02]]
+
 - [x] CLI collection cursor visibility, duplicate draft stale reuse guard, Backend production start ENV fail-fast, Frontend unsafe request CSRF intent header 보강
 - 관련 노트: [[Commercial Readiness Hardening - Cursor Duplicate Start and CSRF Intent 2026-06-02]]
 

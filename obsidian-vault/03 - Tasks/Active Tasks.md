@@ -947,3 +947,8 @@ created: 2026-05-30
 - [x] Backend mixed cookie/Bearer 요청의 실행 user와 rate-limit user bucket precedence 정렬
 - [x] Frontend worklog comment notification deep-link가 comment id가 아니라 parent worklog id를 사용하도록 계약 고정
 - [[Commercial Readiness Hardening - Mixed Auth Rate Limit and Notification Link Contract 2026-06-03]]
+## 2026-06-03 token rotation quota and notification legacy routing continuation
+
+- [x] Backend token rotation이 active token quota full 상태에서도 기존 토큰 교체를 허용하는 회귀 테스트 추가
+- [x] Frontend legacy comment notification이 parent worklog id를 제공하면 comment id가 아닌 worklog route로 이동하도록 보강
+- [[Commercial Readiness Hardening - Token Rotation Quota and Notification Legacy Routing 2026-06-03]]

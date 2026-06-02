@@ -12,6 +12,21 @@ created: 2026-05-30
 
 # Integration - CLI Backend Frontend
 
+## 2026-06-02 bookmark follow-state viewer contract
+
+> [!success]
+> Saved/bookmarked worklog cards now preserve `viewer_state.following_author`, matching feed/profile/project card viewer-state semantics.
+
+계약:
+
+- `/v1/me/bookmarks`는 `viewer_state.bookmarked=true`와 실제 `following_author` state를 함께 반환합니다.
+- Backend `check_following` 정책을 사용하므로 self-author rows는 follow state를 false로 유지합니다.
+- Frontend adapter can trust `following_author -> followingAuthor` on saved/bookmarked cards.
+- `agentfeed-dev ./scripts/test-all.sh`가 Backend, Frontend, CLI integration gate를 재검증합니다.
+
+검증: [[Commercial Readiness Hardening - Bookmark Follow State Contract 2026-06-02#검증 증거]]
+
+
 ## 2026-06-02 smoke-e2e OAuth fail-closed readiness
 
 > [!success]

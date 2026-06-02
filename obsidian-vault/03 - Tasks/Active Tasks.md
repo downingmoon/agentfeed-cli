@@ -23,6 +23,9 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] `/me/bookmarks` worklog card가 `viewer_state.following_author`를 실제 follow 상태로 반환
+- 관련 노트: [[Commercial Readiness Hardening - Bookmark Follow State Contract 2026-06-02]]
+
 - [x] `make smoke-e2e`가 GitHub OAuth 설정 누락 시 false-green 없이 fail-closed 처리
 - 관련 노트: [[Commercial Readiness Hardening - Smoke E2E OAuth Fail Closed 2026-06-02]]
 

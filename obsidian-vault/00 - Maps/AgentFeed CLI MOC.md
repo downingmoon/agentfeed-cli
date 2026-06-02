@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Bookmark Follow State Contract 2026-06-02]] — bookmarked worklog cards preserve following_author viewer state
+
 - [[Commercial Readiness Hardening - Smoke E2E OAuth Fail Closed 2026-06-02]] — smoke-e2e OAuth prerequisite fail-closed gate
 
 - [[Commercial Readiness Hardening - OpenAPI Request Body and Schema Contract Gate 2026-06-02]] — OpenAPI request body/schema type-required-nullability drift gate

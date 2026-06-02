@@ -424,3 +424,4 @@ graph LR
 - [[Integration - CLI Backend Frontend#End-to-end 흐름|End-to-end 흐름]]
 - [[Active Tasks#P1 후보|P1 후보]]
 - [[Commercial Readiness Hardening - Moderation Report Lifecycle 2026-06-03]]
+- [[Commercial Readiness Hardening - Moderator Allowlist Production Gate 2026-06-03]]

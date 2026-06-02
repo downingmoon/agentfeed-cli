@@ -131,3 +131,4 @@ created: 2026-05-30
 > [!warning] 동기화 정책
 > 이 Vault는 프로젝트 문서의 Obsidian용 정리본입니다. 원본 `README.md`와 `docs/`가 canonical source이면, 변경 후 Vault 복사본도 다시 동기화하세요.
 - [[Commercial Readiness Hardening - Moderation Report Lifecycle 2026-06-03]]
+- [[Commercial Readiness Hardening - Moderator Allowlist Production Gate 2026-06-03]]

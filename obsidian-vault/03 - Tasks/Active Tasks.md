@@ -936,3 +936,9 @@ created: 2026-05-30
 - [x] Frontend `/moderation/reports` 운영자 신고 큐 및 moderation API client 추가
 - [x] Dev OpenAPI contract가 moderation response/request/schema를 fail-closed 검증
 - [[Commercial Readiness Hardening - Moderation Report Lifecycle 2026-06-03]]
+
+## 2026-06-03 moderator allowlist production gate continuation
+
+- [x] Backend production-like 환경에서 `MODERATOR_USER_IDS` 누락 시 fail-fast
+- [x] Frontend `/moderation/reports` 403 권한 오류를 운영자 allowlist 설정 문제로 명확화
+- [[Commercial Readiness Hardening - Moderator Allowlist Production Gate 2026-06-03]]

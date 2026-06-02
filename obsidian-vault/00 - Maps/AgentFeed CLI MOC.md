@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - CLI Release Workflow Parity 2026-06-02]] — CLI CI/Release trusted publishing toolchain parity and release prepack gate
+
 - [[Commercial Readiness Hardening - Hosted Failure Evidence 2026-06-02]] — hosted compatibility smoke writes structured failure evidence
 
 - [[Commercial Readiness Hardening - Hosted Evidence and Frontend Prod API Gate 2026-06-02]] — hosted compatibility evidence artifacts and frontend production API compatibility opt-in gate

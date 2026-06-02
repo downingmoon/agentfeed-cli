@@ -43,8 +43,8 @@ jobs:
       - name: Audit full dependency graph
         run: npm audit --audit-level=high
 
-      - name: Build package
-        run: npm run build
+      - name: Run package quality gates
+        run: npm run prepack
 
       - name: Release preflight
         run: npm run release:preflight

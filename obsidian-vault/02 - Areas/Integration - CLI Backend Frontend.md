@@ -12,6 +12,21 @@ created: 2026-05-30
 
 # Integration - CLI Backend Frontend
 
+## 2026-06-02 hosted compatibility smoke
+
+> [!success]
+> Hosted compatibility drift now has a reproducible read-only smoke path that checks Backend metadata/readiness, CLI `doctor`, and Frontend diagnostic compatibility together.
+
+계약:
+
+- `make smoke-hosted-compatibility` calls hosted `GET /v1/metadata` and `/health/ready` without auth secrets.
+- The smoke runs `agentfeed doctor` with `AGENTFEED_API_BASE_URL` forced to the hosted API and a temporary HOME/file credential store.
+- The Frontend `check:api-compatibility` script executes the real `system.metadata()` + `isBackendCompatible()` path against the same API root.
+- Normal `test-all.sh` locks the smoke/workflow contract without calling production; the GitHub Actions **Hosted compatibility smoke** workflow is manual and SHA-pinned.
+
+검증: [[Commercial Readiness Hardening - Hosted Compatibility Smoke 2026-06-02#Verification evidence]]
+
+
 ## 2026-06-02 API compatibility metadata handshake
 
 > [!success]

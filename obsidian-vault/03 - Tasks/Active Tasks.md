@@ -23,6 +23,9 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Hosted `/v1/metadata`/readiness, CLI `doctor`, Frontend `system.metadata()` compatibility smoke harness 추가
+- 관련 노트: [[Commercial Readiness Hardening - Hosted Compatibility Smoke 2026-06-02]]
+
 - [x] Backend `/v1/metadata`, CLI `doctor` compatibility check, Frontend diagnostic metadata client, Dev OpenAPI shared schema gate 보강
 - 관련 노트: [[Commercial Readiness Hardening - API Compatibility Metadata Handshake 2026-06-02]]
 

@@ -23,6 +23,12 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Backend `/health`와 `/health/ready` probe traffic을 explicit IP-based rate-limit rule로 보호
+- 관련 노트: [[Commercial Readiness Hardening - Backend Health Readiness Rate Limits 2026-06-02]]
+
+- [x] CLI `doctor`가 DNS/timeout/TLS/connection-refused API transport 실패를 운영자용 메시지로 분류
+- 관련 노트: [[Commercial Readiness Hardening - CLI Doctor Network Diagnostics 2026-06-02]]
+
 - [x] Hosted `/v1/metadata`/readiness, CLI `doctor`, Frontend `system.metadata()` compatibility smoke harness 추가
 - 관련 노트: [[Commercial Readiness Hardening - Hosted Compatibility Smoke 2026-06-02]]
 

@@ -490,6 +490,25 @@ describe('status and doctor provenance output', () => {
     expect(stdout).toContain('API ready: no');
   });
 
+  it('doctor classifies API DNS failures with host and API base remediation', () => {
+    const stdout = execFileSync(process.execPath, [cliPath, 'doctor'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: '',
+        AGENTFEED_API_BASE_URL: 'https://agentfeed-doctor.invalid/v1',
+        AGENTFEED_API_TIMEOUT_MS: '50'
+      }
+    });
+
+    expect(stdout).toContain('API base URL configured: https://agentfeed-doctor.invalid/v1');
+    expect(stdout).toContain('API ready: no (DNS lookup failed for agentfeed-doctor.invalid');
+    expect(stdout).toContain('API compatibility: no (DNS lookup failed for agentfeed-doctor.invalid');
+    expect(stdout).toContain('AGENTFEED_API_BASE_URL');
+  });
+
   it('doctor reports remote token expiry and warns when it is near expiry', async () => {
     const soon = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     const requestedUrls: string[] = [];

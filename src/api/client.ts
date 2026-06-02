@@ -55,6 +55,7 @@ export const EXPECTED_API_VERSION = 'v1';
 export const EXPECTED_API_CONTRACT_VERSION = '2026-06-02';
 
 const DEFAULT_API_REQUEST_TIMEOUT_MS = 30_000;
+const API_CHECK_TIMEOUT_MS = 3_000;
 const DEFAULT_API_RETRY_ATTEMPTS = 3;
 const DEFAULT_API_RETRY_BASE_DELAY_MS = 250;
 const DEFAULT_DRAFT_UPLOAD_LOCK_TIMEOUT_MS = 60_000;
@@ -130,14 +131,71 @@ async function parseMetadataData(response: Response): Promise<ApiMetadata | unde
   }
 }
 
+function errorCauseChain(error: unknown): Array<Record<string, unknown>> {
+  const chain: Array<Record<string, unknown>> = [];
+  let current: unknown = error;
+  const seen = new Set<unknown>();
+  while (current && typeof current === 'object' && !seen.has(current) && chain.length < 6) {
+    seen.add(current);
+    chain.push(current as Record<string, unknown>);
+    current = (current as { cause?: unknown }).cause;
+  }
+  return chain;
+}
+
+function diagnosticStringField(value: unknown): string | undefined {
+  return typeof value === 'string' && value.length ? value : undefined;
+}
+
+function diagnosticHostFromUrl(url: string): string {
+  try {
+    return new URL(url).hostname || url;
+  } catch {
+    return url;
+  }
+}
+
+function describeNetworkFailure(error: unknown, url: string, timeoutMs: number): string {
+  const host = diagnosticHostFromUrl(url);
+  const chain = errorCauseChain(error);
+  const codes = chain.map(item => diagnosticStringField(item.code)).filter((value): value is string => Boolean(value));
+  const names = chain.map(item => diagnosticStringField(item.name)).filter((value): value is string => Boolean(value));
+  const messages = chain.map(item => diagnosticStringField(item.message)).filter((value): value is string => Boolean(value));
+  const text = [...codes, ...names, ...messages].join(' ').toLowerCase();
+
+  if (text.includes('aborterror') || text.includes('aborted')) {
+    return `request timed out for ${host} after ${timeoutMs}ms. Check API availability or tune AGENTFEED_API_TIMEOUT_MS.`;
+  }
+  if (codes.some(code => code === 'ENOTFOUND' || code === 'EAI_AGAIN') || text.includes('getaddrinfo') || text.includes('dns')) {
+    return `DNS lookup failed for ${host}. Check AGENTFEED_API_BASE_URL or hosted DNS/deployment.`;
+  }
+  if (codes.some(code => code === 'ECONNREFUSED')) {
+    return `connection refused for ${host}. Check that the AgentFeed API is running and reachable.`;
+  }
+  if (codes.some(code => code === 'ETIMEDOUT' || code === 'UND_ERR_CONNECT_TIMEOUT') || text.includes('timed out') || text.includes('timeout')) {
+    return `connection timed out for ${host}. Check API availability or tune AGENTFEED_API_TIMEOUT_MS.`;
+  }
+  if (
+    codes.some(code => code.startsWith('CERT_') || code.startsWith('ERR_TLS') || code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' || code === 'SELF_SIGNED_CERT_IN_CHAIN')
+    || text.includes('certificate')
+    || text.includes('tls')
+    || text.includes('ssl')
+  ) {
+    return `TLS/certificate verification failed for ${host}. Check the hosted API certificate configuration.`;
+  }
+
+  const message = messages.find(value => value !== 'fetch failed') ?? messages[0];
+  return message ?? 'unreachable';
+}
+
 async function fetchCheck(url: string, init: RequestInit): Promise<ApiCheckResult> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 3000);
+  const timer = setTimeout(() => controller.abort(), API_CHECK_TIMEOUT_MS);
   try {
     const response = await fetch(url, { ...init, signal: controller.signal });
     return { ok: response.ok, url, status: response.status, data: await parseCheckData(response) };
   } catch (error) {
-    return { ok: false, url, error: error instanceof Error ? error.message : String(error) };
+    return { ok: false, url, error: describeNetworkFailure(error, url, API_CHECK_TIMEOUT_MS) };
   } finally {
     clearTimeout(timer);
   }
@@ -179,7 +237,7 @@ export async function checkApiReachability(apiBaseUrl: string): Promise<ApiCheck
 export async function checkApiCompatibility(apiBaseUrl: string): Promise<ApiCompatibilityCheckResult> {
   const url = apiUrl(apiBaseUrl, '/metadata');
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 3000);
+  const timer = setTimeout(() => controller.abort(), API_CHECK_TIMEOUT_MS);
   try {
     const response = await fetch(url, { method: 'GET', signal: controller.signal });
     const data = await parseMetadataData(response);
@@ -197,7 +255,7 @@ export async function checkApiCompatibility(apiBaseUrl: string): Promise<ApiComp
       ok: false,
       compatible: false,
       url,
-      error: error instanceof Error ? error.message : String(error)
+      error: describeNetworkFailure(error, url, API_CHECK_TIMEOUT_MS)
     };
   } finally {
     clearTimeout(timer);
@@ -262,8 +320,10 @@ function friendlyError(status: number, code: string, message: string, details?: 
   return message || `AgentFeed API error (${status})`;
 }
 
-function networkErrorMessage(error: unknown, options: { localDraftKept?: boolean } = {}): string {
-  const reason = error instanceof Error && error.message ? ` ${error.message}` : '';
+function networkErrorMessage(error: unknown, options: { localDraftKept?: boolean; url?: string; timeoutMs?: number } = {}): string {
+  const reason = options.url
+    ? ` ${describeNetworkFailure(error, options.url, options.timeoutMs ?? apiRequestTimeoutMs())}`
+    : error instanceof Error && error.message ? ` ${error.message}` : '';
   return options.localDraftKept
     ? `Could not reach AgentFeed API. Local draft was kept.${reason}`
     : `Could not reach AgentFeed API.${reason}`;
@@ -284,7 +344,7 @@ async function fetchWithTimeout(url: string, init: RequestInit, options: { local
           : 'AgentFeed API request timed out.'
       );
     }
-    throw new AgentFeedApiError(0, 'API_REQUEST_FAILED', networkErrorMessage(error, options));
+    throw new AgentFeedApiError(0, 'API_REQUEST_FAILED', networkErrorMessage(error, { ...options, url, timeoutMs: options.timeoutMs ?? apiRequestTimeoutMs() }));
   } finally {
     clearTimeout(timer);
   }

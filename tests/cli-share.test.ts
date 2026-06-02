@@ -324,6 +324,8 @@ describe('share CLI command', () => {
     const address = server.address();
     if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
 
+    const fakeBin = await mkdtemp(join(tmpdir(), 'agentfeed-publish-confirmed-bin-'));
+    const browserLog = await installFakeBrowserOpener(fakeBin);
     try {
       const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
       draft.worklog.title = 'Confirmed publish';
@@ -335,9 +337,12 @@ describe('share CLI command', () => {
         env: {
           ...process.env,
           HOME: home,
+          PATH: `${fakeBin}:${process.env.PATH ?? ''}`,
+          AGENTFEED_TEST_BROWSER_LOG: browserLog,
           AGENTFEED_TOKEN: 'af_live_confirmation_confirmed',
           AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`,
           AGENTFEED_FORCE_UPLOAD_CONFIRMATION: '1',
+          AGENTFEED_CI: '1',
           CI: '0'
         }
       });
@@ -345,7 +350,9 @@ describe('share CLI command', () => {
       expect(publish.stdout).toContain('Private review draft uploaded.');
       expect(publish.stdout).toContain('http://localhost:3001/worklogs/worklog_publish_confirmed/review');
       expect(ingestRequestCount).toBe(1);
+      await expect(readFile(browserLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
     } finally {
+      await rm(fakeBin, { recursive: true, force: true });
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
   });

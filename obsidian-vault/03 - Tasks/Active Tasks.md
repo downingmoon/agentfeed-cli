@@ -125,6 +125,11 @@ created: 2026-05-30
 
 ## External release blockers
 
+- [x] CLI login/token-stdin/browser rotate credential 저장 전 API compatibility gate 추가
+- [x] Backend GitHub OAuth provider token non-retention 및 legacy retained token purge migration 추가
+- [x] Dev commercial-readiness interactive OAuth no-open workflow fail-fast ACK 추가
+- 관련 노트: [[Commercial Readiness Hardening - Login Provider Token and Interactive Evidence Gates 2026-06-03]]
+
 - [x] CLI cached upload 재사용을 current redacted payload + credential/API binding 기준으로 제한
 - [x] Backend production placeholder secrets fail-fast 및 notification dedupe migration restart safety 보강
 - [x] Frontend hosted API DNS preflight diagnostic gate 보강

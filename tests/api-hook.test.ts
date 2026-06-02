@@ -555,6 +555,20 @@ describe('api client', () => {
     });
     const before = await readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8');
     const fetchMock = vi.fn(async (url: string) => {
+      if (url.endsWith('/metadata')) {
+        return new Response(JSON.stringify({
+          data: {
+            service: 'agentfeed-api',
+            api_version: 'v1',
+            backend_version: '0.1.0',
+            contract_version: '2026-06-02',
+            supported_clients: {
+              cli: { min_version: '0.2.0', contract_version: '2026-06-02' },
+              frontend: { min_version: '0.1.0', contract_version: '2026-06-02' }
+            }
+          }
+        }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
       if (url.endsWith('/auth/cli/sessions')) {
         return new Response(JSON.stringify({
           data: {
@@ -573,7 +587,7 @@ describe('api client', () => {
     await expect(browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1', noOpen: true, waitMs: 50, allowCiBrowser: true }))
       .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
 
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
     await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).resolves.toBe(before);
   });
 
@@ -1084,6 +1098,21 @@ describe('api client', () => {
   it('completes no-open browser login by exchanging the CLI session and saving credentials', async () => {
     let sessionVerifier: string | undefined;
     const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.endsWith('/metadata')) {
+        return new Response(JSON.stringify({
+          data: {
+            service: 'agentfeed-api',
+            api_version: 'v1',
+            backend_version: '0.1.0',
+            contract_version: '2026-06-02',
+            supported_clients: {
+              cli: { min_version: '0.2.0', contract_version: '2026-06-02' },
+              frontend: { min_version: '0.1.0', contract_version: '2026-06-02' }
+            }
+          }
+        }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+
       if (url.endsWith('/auth/cli/sessions')) {
         const body = JSON.parse(String(init?.body ?? '{}')) as { verifier?: string; device_name?: string };
         expect(body.verifier).toMatch(/^[a-f0-9]{64}$/);
@@ -1125,14 +1154,32 @@ describe('api client', () => {
       token_expires_at: '2026-06-15T00:00:00Z',
       user: { id: 'user-no-open', username: 'cli-user' }
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.agentfeed.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
-    expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://api.agentfeed.dev/v1/auth/cli/sessions/session-no-open/exchange', expect.objectContaining({ method: 'POST' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.agentfeed.dev/v1/metadata', expect.objectContaining({ method: 'GET' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://api.agentfeed.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(3, 'https://api.agentfeed.dev/v1/auth/cli/sessions/session-no-open/exchange', expect.objectContaining({ method: 'POST' }));
     await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8').then(JSON.parse)).resolves.toMatchObject({
       api_base_url: 'https://api.agentfeed.dev/v1',
       ingestion_token: 'af_live_no_open',
       token_expires_at: '2026-06-15T00:00:00Z',
       user: { id: 'user-no-open', username: 'cli-user' }
     });
+  });
+
+  it('refuses browser login before session creation and credential saving when API metadata is incompatible', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.endsWith('/metadata')) {
+        return new Response(JSON.stringify({ data: { service: 'agentfeed-api', api_version: 'v0' } }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      return new Response(JSON.stringify({ error: { code: 'UNEXPECTED_SESSION_REQUEST' } }), { status: 500, headers: { 'content-type': 'application/json' } });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1', noOpen: true, waitMs: 50, allowCiBrowser: true }))
+      .rejects.toThrow(/API compatibility check failed.*before saving credentials/);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith('https://api.agentfeed.dev/v1/metadata', expect.objectContaining({ method: 'GET' }));
+    await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
   it('completes no-open browser login without saving credentials when requested', async () => {

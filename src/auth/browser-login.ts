@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { hostname } from 'node:os';
 import { stdin as input, stdout as output } from 'node:process';
-import { createCliAuthSession, exchangeCliAuthSession, AgentFeedApiError } from '../api/client.js';
+import { createCliAuthSession, exchangeCliAuthSession, AgentFeedApiError, checkApiCompatibility } from '../api/client.js';
 import { resolveApiBaseUrlWithMetadata } from '../config/api-base.js';
 import { credentialsFromToken, saveCredentials } from '../config/credentials.js';
 import { openBrowser } from '../utils/open-browser.js';
@@ -65,6 +65,15 @@ function ciBrowserLoginBlocked(options: { allowCiBrowser?: boolean }): boolean {
     && options.allowCiBrowser !== true;
 }
 
+async function requireApiCompatibilityBeforeCredentialSave(apiBaseUrl: string): Promise<void> {
+  const result = await checkApiCompatibility(apiBaseUrl);
+  if (result.compatible) return;
+  const detail = result.status != null
+    ? `HTTP ${result.status}`
+    : result.error ?? 'unknown compatibility failure';
+  throw new Error(`API compatibility check failed for ${result.url}: ${detail}. Run agentfeed doctor for details before saving credentials.`);
+}
+
 export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: boolean; waitMs?: number; save?: boolean; cwd?: string; storedApiBaseUrl?: string; allowCiBrowser?: boolean; replaceTokenId?: string } = {}) {
   if (ciBrowserLoginBlocked(options)) {
     throw new Error('Browser login is disabled in CI. If AGENTFEED_TOKEN is already set, use non-login AgentFeed commands directly. Otherwise set AGENTFEED_TOKEN or pipe a token with: printf %s "$TOKEN" | agentfeed login --token-stdin. To intentionally run browser auth anyway, pass --browser.');
@@ -78,6 +87,9 @@ export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: bool
   const apiBaseUrl = apiResolution.value;
   for (const warning of apiResolution.warnings) output.write(`Warning: ${warning}\n`);
   output.write(`Using AgentFeed API: ${apiBaseUrl}\n`);
+  if (options.save !== false || options.replaceTokenId) {
+    await requireApiCompatibilityBeforeCredentialSave(apiBaseUrl);
+  }
   const verifier = randomBytes(32).toString('hex');
   const session = await createCliAuthSession(apiBaseUrl, {
     verifier,

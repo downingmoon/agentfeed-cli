@@ -26,6 +26,21 @@ function execFileWithInput(args: string[], input: string, options: Parameters<ty
 let dir: string;
 let home: string;
 
+function compatibleMetadata() {
+  return {
+    data: {
+      service: 'agentfeed-api',
+      api_version: 'v1',
+      backend_version: '0.1.0',
+      contract_version: '2026-06-02',
+      supported_clients: {
+        cli: { min_version: '0.2.0', contract_version: '2026-06-02' },
+        frontend: { min_version: '0.1.0', contract_version: '2026-06-02' }
+      }
+    }
+  };
+}
+
 beforeAll(() => {
   ensureCliBuilt(repoRoot);
 });
@@ -171,48 +186,101 @@ describe('status and doctor provenance output', () => {
 
   it('login reads a token from stdin without requiring the secret in argv or output', async () => {
     const token = 'af_live_stdin_secret';
-
-    const { stdout, stderr } = await execFileWithInput(
-      ['login', '--token-stdin', '--api-base-url', 'http://127.0.0.1:9/v1'],
-      `${token}\n`,
-      {
-        cwd: dir,
-        encoding: 'utf8',
-        env: {
-          ...process.env,
-          HOME: home,
-          AGENTFEED_TOKEN: '',
-          AGENTFEED_CI: '1',
-          AGENTFEED_CREDENTIAL_STORE: 'file'
-        }
+    const server = await import('node:http').then(({ createServer }) => createServer((req, res) => {
+      if (req.url === '/v1/metadata') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify(compatibleMetadata()));
+        return;
       }
-    );
+      res.writeHead(404).end();
+    }));
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind');
 
-    expect(stdout).toContain('AgentFeed credentials saved.');
-    expect(stdout).toContain('API: http://127.0.0.1:9/v1');
-    expect(stdout).not.toContain(token);
-    expect(stderr).not.toContain(token);
-    const saved = JSON.parse(await readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8'));
-    expect(saved.ingestion_token).toBe(token);
+    try {
+      const { stdout, stderr } = await execFileWithInput(
+        ['login', '--token-stdin', '--api-base-url', `http://127.0.0.1:${address.port}/v1`],
+        `${token}\n`,
+        {
+          cwd: dir,
+          encoding: 'utf8',
+          env: {
+            ...process.env,
+            HOME: home,
+            AGENTFEED_TOKEN: '',
+            AGENTFEED_CI: '1',
+            AGENTFEED_CREDENTIAL_STORE: 'file'
+          }
+        }
+      );
+
+      expect(stdout).toContain('AgentFeed credentials saved.');
+      expect(stdout).toContain(`API: http://127.0.0.1:${address.port}/v1`);
+      expect(stdout).not.toContain(token);
+      expect(stderr).not.toContain(token);
+      const saved = JSON.parse(await readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8'));
+      expect(saved.ingestion_token).toBe(token);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('refuses token-stdin login before writing credentials when API metadata is incompatible', async () => {
+    const token = 'af_live_incompatible_stdin_secret';
+    const server = await import('node:http').then(({ createServer }) => createServer((req, res) => {
+      if (req.url === '/v1/metadata') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ data: { service: 'other-api', api_version: 'v1' } }));
+        return;
+      }
+      res.writeHead(404).end();
+    }));
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind');
+
+    try {
+      let failure: { stderr?: string; stdout?: string } | undefined;
+      try {
+        await execFileWithInput(
+          ['login', '--token-stdin', '--api-base-url', `http://127.0.0.1:${address.port}/v1`],
+          `${token}\n`,
+          {
+            cwd: dir,
+            encoding: 'utf8',
+            env: {
+              ...process.env,
+              HOME: home,
+              AGENTFEED_TOKEN: '',
+              AGENTFEED_CI: '1',
+              AGENTFEED_CREDENTIAL_STORE: 'file'
+            }
+          }
+        );
+      } catch (error) {
+        failure = error as { stderr?: string; stdout?: string };
+      }
+
+      expect(failure).toBeTruthy();
+      expect(failure?.stderr).toContain('API compatibility check failed');
+      expect(failure?.stderr).toContain('before saving credentials');
+      expect(failure?.stderr).not.toContain(token);
+      expect(failure?.stdout ?? '').toBe('');
+      await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
   });
 
   it('logout removes saved credentials and warns when an environment token remains active', async () => {
     const token = 'af_live_logout_cli_secret';
-    await execFileWithInput(
-      ['login', '--token-stdin', '--api-base-url', 'http://127.0.0.1:9/v1'],
-      `${token}\n`,
-      {
-        cwd: dir,
-        encoding: 'utf8',
-        env: {
-          ...process.env,
-          HOME: home,
-          AGENTFEED_TOKEN: '',
-          AGENTFEED_CI: '1',
-          AGENTFEED_CREDENTIAL_STORE: 'file'
-        }
-      }
-    );
+    await mkdir(join(home, '.agentfeed'), { recursive: true });
+    await writeFile(join(home, '.agentfeed', 'credentials.json'), JSON.stringify({
+      api_base_url: 'http://127.0.0.1:9/v1',
+      ingestion_token: token,
+      created_at: '2026-05-30T00:00:00Z'
+    }));
 
     const { stdout, stderr } = await execFileAsync(process.execPath, [cliPath, 'logout', '--json'], {
       cwd: dir,
@@ -408,6 +476,11 @@ describe('status and doctor provenance output', () => {
     const newExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     let sessionVerifier: string | undefined;
     const server = await import('node:http').then(({ createServer }) => createServer((req, res) => {
+      if (req.url === '/v1/metadata') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify(compatibleMetadata()));
+        return;
+      }
       if (req.url === '/v1/ingest/status') {
         expect(req.headers.authorization).toBe('Bearer af_live_old_secret');
         res.writeHead(200, { 'content-type': 'application/json' });
@@ -508,6 +581,88 @@ describe('status and doctor provenance output', () => {
         token_expires_at: newExpiry,
         user: { id: 'user-1', username: 'downingmoon' }
       });
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('rotate refuses to replace saved credentials when API metadata is incompatible', async () => {
+    await mkdir(join(home, '.agentfeed'), { recursive: true });
+    await writeFile(join(home, '.agentfeed', 'credentials.json'), JSON.stringify({
+      api_base_url: 'http://127.0.0.1:9/v1',
+      ingestion_token: 'af_live_old_incompatible_secret',
+      token_expires_at: '2026-06-01T00:00:00Z',
+      created_at: '2026-05-30T00:00:00Z'
+    }));
+    let sessionRequests = 0;
+    const server = await import('node:http').then(({ createServer }) => createServer((req, res) => {
+      if (req.url === '/v1/ingest/status') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({
+          data: {
+            ok: true,
+            user: { id: 'user-1', username: 'downingmoon' },
+            token: {
+              id: 'token-old',
+              name: 'CLI: old',
+              created_at: '2026-05-30T00:00:00Z',
+              last_used_at: null,
+              expires_at: '2026-06-01T00:00:00Z',
+              expires_in_seconds: 3600,
+              expiring_soon: true
+            }
+          }
+        }));
+        return;
+      }
+      if (req.url === '/v1/metadata') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ data: { service: 'agentfeed-api', api_version: 'v0' } }));
+        return;
+      }
+      if (req.url === '/v1/auth/cli/sessions') sessionRequests += 1;
+      res.writeHead(500, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ error: { code: 'UNEXPECTED_SESSION_REQUEST' } }));
+    }));
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind');
+
+    try {
+      let failure: { stderr?: string; stdout?: string } | undefined;
+      try {
+        await execFileAsync(process.execPath, [cliPath, 'rotate', '--no-open'], {
+          cwd: dir,
+          encoding: 'utf8',
+          env: {
+            ...process.env,
+            HOME: home,
+            AGENTFEED_TOKEN: '',
+            AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`,
+            AGENTFEED_CI: '0',
+            CI: '0',
+            GITHUB_ACTIONS: '0',
+            GITLAB_CI: '0',
+            BUILDKITE: '0',
+            CIRCLECI: '0',
+            JENKINS_URL: '0',
+            TF_BUILD: '0',
+            TEAMCITY_VERSION: '0',
+            VERCEL: '0',
+            NETLIFY: '0'
+          }
+        });
+      } catch (error) {
+        failure = error as { stderr?: string; stdout?: string };
+      }
+
+      expect(failure).toBeTruthy();
+      expect(failure?.stderr).toContain('API compatibility check failed');
+      expect(failure?.stderr).toContain('before saving credentials');
+      expect(failure?.stderr).not.toContain('af_live_old_incompatible_secret');
+      expect(sessionRequests).toBe(0);
+      const saved = JSON.parse(await readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8'));
+      expect(saved.ingestion_token).toBe('af_live_old_incompatible_secret');
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }

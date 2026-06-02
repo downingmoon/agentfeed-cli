@@ -152,13 +152,22 @@ function printReviewUrlHandoff(handoff: ReviewUrlHandoff, reviewUrl: string): vo
   }
 }
 
+function apiCompatibilityFailureDetail(result: Awaited<ReturnType<typeof checkApiCompatibility>>): string {
+  return result.status != null
+    ? `HTTP ${result.status}`
+    : result.error ?? 'unknown compatibility failure';
+}
+
 async function requireApiCompatibilityBeforeUpload(apiBaseUrl: string): Promise<void> {
   const result = await checkApiCompatibility(apiBaseUrl);
   if (result.compatible) return;
-  const detail = result.status != null
-    ? `HTTP ${result.status}`
-    : result.error ?? 'unknown compatibility failure';
-  throw new Error(`API compatibility check failed for ${result.url}: ${detail}. Run agentfeed doctor for details before uploading drafts.`);
+  throw new Error(`API compatibility check failed for ${result.url}: ${apiCompatibilityFailureDetail(result)}. Run agentfeed doctor for details before uploading drafts.`);
+}
+
+async function requireApiCompatibilityBeforeCredentialSave(apiBaseUrl: string): Promise<void> {
+  const result = await checkApiCompatibility(apiBaseUrl);
+  if (result.compatible) return;
+  throw new Error(`API compatibility check failed for ${result.url}: ${apiCompatibilityFailureDetail(result)}. Run agentfeed doctor for details before saving credentials.`);
 }
 
 async function readStdinText(): Promise<string> {
@@ -340,7 +349,13 @@ async function cmdLogin(args: string[]) {
     return;
   }
   const loginApiOptions = { apiBaseUrl, cwd: process.cwd(), trustRepoDiscoveredApiBase: process.env.AGENTFEED_TRUST_REPO_API_BASE === '1' };
-  const creds = noSave ? await credentialsFromToken(token, loginApiOptions) : await saveCredentials(token, loginApiOptions);
+  const tokenCredentials = await credentialsFromToken(token, loginApiOptions);
+  const creds = noSave
+    ? tokenCredentials
+    : await (async () => {
+      await requireApiCompatibilityBeforeCredentialSave(tokenCredentials.api_base_url);
+      return saveCredentials(token, { ...loginApiOptions, apiBaseUrl: tokenCredentials.api_base_url });
+    })();
   print(noSave ? 'AgentFeed token loaded for this command only (not saved).\n' : 'AgentFeed credentials saved.\n');
   print(`API: ${creds.api_base_url}`);
   if (creds.token_expires_at) print(`Token expires at: ${formatTokenExpiry(creds.token_expires_at)}`);

@@ -977,3 +977,15 @@ created: 2026-05-30
 - [x] `agentfeed publish --json` 기본 경로가 clipboard/browser side effect를 실행하지 않는 계약 고정
 - [x] 요청된 `--clipboard --open-review` 실패가 JSON `handoff`에 machine-readable하게 남는 계약 고정
 - [[Commercial Readiness Hardening - CLI Publish JSON Handoff Contract 2026-06-03]]
+
+## 2026-06-03 CLI release ref fail-fast continuation
+
+- [x] Release workflow manual dispatch가 branch 또는 version mismatch tag에서 dependency install 전 fail-fast
+- [x] release-preflight가 early release-ref guard ordering을 고정
+- [[Commercial Readiness Hardening - CLI Release Ref Fail Fast 2026-06-03]]
+
+## 2026-06-03 CLI test browser side-effect guard
+
+- [x] Vitest child process에서 실제 OS browser opener 실행 방지
+- [x] fake opener shim이 있는 테스트는 기존처럼 명시적으로 검증 가능
+- [[Commercial Readiness Hardening - CLI Test Browser Side Effect Guard 2026-06-03]]

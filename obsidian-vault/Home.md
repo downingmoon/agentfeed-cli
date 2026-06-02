@@ -142,3 +142,6 @@ created: 2026-05-30
 - [[Commercial Readiness Hardening - Backend Session Window Identity 2026-06-03]] — Backend bare session_id dedupe collision 방지, session+collection_window fallback
 
 - [[Commercial Readiness Hardening - CLI Publish JSON Handoff Contract 2026-06-03]] — `publish --json` clipboard/browser handoff side-effect contract
+
+- [[Commercial Readiness Hardening - CLI Release Ref Fail Fast 2026-06-03]] — Release workflow branch/manual ref mismatch를 dependency install 전 fail-fast
+- [[Commercial Readiness Hardening - CLI Test Browser Side Effect Guard 2026-06-03]] — 테스트 중 실제 브라우저 창이 열리지 않도록 test-only opener guard 추가

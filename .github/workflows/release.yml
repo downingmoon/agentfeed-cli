@@ -27,6 +27,19 @@ jobs:
           node-version: 22.14.0
           registry-url: https://registry.npmjs.org
 
+      - name: Verify release tag matches package version
+        run: |
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+          const expectedTag = `v${pkg.version}`;
+          const refType = process.env.GITHUB_REF_TYPE || '';
+          const refName = process.env.GITHUB_REF_NAME || '';
+          if (refType !== 'tag' || refName !== expectedTag) {
+            throw new Error(`Release workflow must run from ${expectedTag}; got ${refType || 'unknown'} ${refName || process.env.GITHUB_REF || 'unknown'}.`);
+          }
+          JS
+
       - name: Use pinned npm
         run: npm install -g npm@11.6.0
 

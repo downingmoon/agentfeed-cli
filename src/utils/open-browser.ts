@@ -2,7 +2,13 @@ import { spawn } from 'node:child_process';
 import { platform, release } from 'node:os';
 import { createScrubbedCommandEnv } from './subprocess-env.js';
 
+function realBrowserOpenDisabledForTests(): boolean {
+  return process.env.AGENTFEED_TEST_DISABLE_REAL_BROWSER === '1'
+    && !process.env.AGENTFEED_TEST_BROWSER_LOG;
+}
+
 export async function openBrowser(url: string, options: { timeoutMs?: number } = {}): Promise<boolean> {
+  if (realBrowserOpenDisabledForTests()) return false;
   const currentPlatform = platform();
   const isWsl = currentPlatform === 'linux' && release().toLowerCase().includes('microsoft');
   const cmd = currentPlatform === 'darwin' ? 'open' : currentPlatform === 'win32' ? 'cmd' : isWsl ? 'wslview' : 'xdg-open';

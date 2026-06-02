@@ -66,7 +66,15 @@ jobs:
         with:
           node-version: 22.14.0
           registry-url: https://registry.npmjs.org
+      - name: Verify release tag matches package version
+        run: |
+          const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+          const expectedTag = \`v\${pkg.version}\`;
+          const refType = process.env.GITHUB_REF_TYPE || '';
+          const refName = process.env.GITHUB_REF_NAME || '';
+          if (refType !== 'tag' || refName !== expectedTag) throw new Error('bad release ref');
       - run: npm install -g npm@11.6.0
+      - run: npm ci
       - run: npm audit --audit-level=high
       - run: npm run prepack
       - run: npm run release:preflight
@@ -157,6 +165,12 @@ describe('release preflight guardrails', () => {
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('id-token: write', 'id-token: read'))).toThrow('id-token');
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('node-version: 22.14.0', 'node-version: 20'))).toThrow('Node.js 22.14.0');
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('npm install -g npm@11.6.0', 'npm install -g npm@10'))).toThrow('npm 11.6.0');
+    expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace(/      - name: Verify release tag matches package version[\s\S]*?      - run: npm install -g npm@11\.6\.0/, '      - run: npm install -g npm@11.6.0'))).toThrow('matching version tag');
+    expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('expectedTag = `v${pkg.version}`', 'expectedTag = process.env.GITHUB_REF_NAME'))).toThrow('package.json version');
+    expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace(
+      '      - name: Verify release tag matches package version',
+      '      - run: npm ci\n      - name: Verify release tag matches package version'
+    ))).toThrow('before installing dependencies');
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('      - run: npm audit --audit-level=high\n', ''))).toThrow('audit');
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('      - run: npm run prepack\n', ''))).toThrow('prepack');
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace(

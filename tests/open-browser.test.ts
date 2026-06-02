@@ -12,6 +12,9 @@ vi.mock('node:os', () => ({ platform: osMock.platform, release: osMock.release }
 
 const { openBrowser } = await import('../src/utils/open-browser.js');
 
+const originalDisableRealBrowser = process.env.AGENTFEED_TEST_DISABLE_REAL_BROWSER;
+const originalTestBrowserLog = process.env.AGENTFEED_TEST_BROWSER_LOG;
+
 function mockChild() {
   const child = new EventEmitter() as EventEmitter & { unref: ReturnType<typeof vi.fn> };
   child.unref = vi.fn();
@@ -24,6 +27,8 @@ describe('openBrowser', () => {
     spawnMock.mockReset();
     osMock.platform.mockReturnValue('darwin');
     osMock.release.mockReturnValue('');
+    process.env.AGENTFEED_TEST_DISABLE_REAL_BROWSER = originalDisableRealBrowser ?? '1';
+    process.env.AGENTFEED_TEST_BROWSER_LOG = originalTestBrowserLog ?? '/tmp/agentfeed-open-browser-test.log';
   });
 
   it('does not keep the CLI process alive while the browser opener is running', async () => {
@@ -35,6 +40,14 @@ describe('openBrowser', () => {
     child.emit('close', 0);
 
     await expect(opened).resolves.toBe(true);
+  });
+
+  it('refuses to launch a real browser during Vitest child processes unless a test opener is installed', async () => {
+    process.env.AGENTFEED_TEST_DISABLE_REAL_BROWSER = '1';
+    delete process.env.AGENTFEED_TEST_BROWSER_LOG;
+
+    await expect(openBrowser('http://localhost:3001/worklogs/worklog_publish_confirmed/review')).resolves.toBe(false);
+    expect(spawnMock).not.toHaveBeenCalled();
   });
 
   it('times out a stuck browser opener instead of hanging login forever', async () => {

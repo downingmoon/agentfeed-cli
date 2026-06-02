@@ -435,3 +435,6 @@ graph LR
 - [[Commercial Readiness Hardening - Backend Session Window Identity 2026-06-03]]
 
 - [[Commercial Readiness Hardening - CLI Publish JSON Handoff Contract 2026-06-03]]
+
+- [[Commercial Readiness Hardening - CLI Release Ref Fail Fast 2026-06-03]]
+- [[Commercial Readiness Hardening - CLI Test Browser Side Effect Guard 2026-06-03]]

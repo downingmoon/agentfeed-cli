@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - CLI Upload API Compatibility Preflight 2026-06-02]] — CLI upload paths fail closed on incompatible Backend metadata
+
 - [[Commercial Readiness Hardening - Hosted Frontend Deployment Smoke 2026-06-02]] — hosted Frontend DNS/root freshness smoke for commercial readiness
 
 - [[Commercial Readiness Hardening - Unified Readiness Gate 2026-06-02]] — one-command fail-closed commercial readiness gate and OAuth evidence artifacts

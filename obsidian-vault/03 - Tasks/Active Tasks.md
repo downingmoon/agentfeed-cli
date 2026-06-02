@@ -23,6 +23,10 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] CLI `share`/`publish`/`collect --upload`/`preview --remote`가 upload 전 API metadata compatibility를 fail-closed 확인
+- [x] incompatible metadata 시 `/ingest/worklogs`를 호출하지 않는 regression 추가
+- 관련 노트: [[Commercial Readiness Hardening - CLI Upload API Compatibility Preflight 2026-06-02]]
+
 - [x] Dev hosted compatibility smoke가 실제 hosted Frontend root deployment freshness를 검증
 - [x] stale `/login` redirect Frontend deployment를 fail-closed 처리
 - 관련 노트: [[Commercial Readiness Hardening - Hosted Frontend Deployment Smoke 2026-06-02]]

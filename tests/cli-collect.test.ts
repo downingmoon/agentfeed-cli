@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { execFile, execFileSync } from 'node:child_process';
-import { createServer, type IncomingMessage } from 'node:http';
+import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -37,6 +37,29 @@ afterEach(async () => {
   await rm(dir, { recursive: true, force: true });
   await rm(home, { recursive: true, force: true });
 });
+
+
+function compatibleMetadataPayload() {
+  return {
+    data: {
+      service: 'agentfeed-api',
+      api_version: 'v1',
+      backend_version: '0.1.0',
+      contract_version: '2026-06-02',
+      supported_clients: {
+        cli: { min_version: '0.2.0', contract_version: '2026-06-02' },
+        frontend: { min_version: '0.1.0', contract_version: '2026-06-02' }
+      }
+    }
+  };
+}
+
+function handleCompatibleMetadata(req: IncomingMessage, res: ServerResponse): boolean {
+  if (req.method !== 'GET' || req.url !== '/v1/metadata') return false;
+  res.writeHead(200, { 'content-type': 'application/json' });
+  res.end(JSON.stringify(compatibleMetadataPayload()));
+  return true;
+}
 
 async function readRequestBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   const chunks: Buffer[] = [];
@@ -219,6 +242,7 @@ describe('collect CLI command', () => {
     let requestCount = 0;
     let uploadedPayload: Record<string, unknown> | null = null;
     const server = createServer(async (req, res) => {
+      if (handleCompatibleMetadata(req, res)) return;
       if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
         requestCount += 1;
         uploadedPayload = await readRequestBody(req);
@@ -282,6 +306,7 @@ describe('collect CLI command', () => {
   it('reports requested collect JSON open-review handoff failures in the draft upload payload', async () => {
     await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = "json-upload-open";\n');
     const server = createServer(async (req, res) => {
+      if (handleCompatibleMetadata(req, res)) return;
       if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
         await readRequestBody(req);
         res.writeHead(200, { 'content-type': 'application/json' });

@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { execFile, execFileSync, spawn } from 'node:child_process';
-import { createServer, type IncomingMessage } from 'node:http';
+import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -74,6 +74,29 @@ async function installFailingReviewUrlHandoff(binDir: string): Promise<void> {
   }));
 }
 
+
+function compatibleMetadataPayload() {
+  return {
+    data: {
+      service: 'agentfeed-api',
+      api_version: 'v1',
+      backend_version: '0.1.0',
+      contract_version: '2026-06-02',
+      supported_clients: {
+        cli: { min_version: '0.2.0', contract_version: '2026-06-02' },
+        frontend: { min_version: '0.1.0', contract_version: '2026-06-02' }
+      }
+    }
+  };
+}
+
+function handleCompatibleMetadata(req: IncomingMessage, res: ServerResponse): boolean {
+  if (req.method !== 'GET' || req.url !== '/v1/metadata') return false;
+  res.writeHead(200, { 'content-type': 'application/json' });
+  res.end(JSON.stringify(compatibleMetadataPayload()));
+  return true;
+}
+
 async function readRequestBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   const chunks: Buffer[] = [];
   for await (const chunk of req) chunks.push(Buffer.from(chunk));
@@ -115,6 +138,62 @@ async function writeCodexShareSession(sessionId: string, model: string, exportNa
 }
 
 describe('share CLI command', () => {
+
+  it('refuses share upload before ingest when API metadata is incompatible', async () => {
+    let ingestRequestCount = 0;
+    const server = createServer(async (req, res) => {
+      if (req.method === 'GET' && req.url === '/v1/metadata') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({
+          data: {
+            service: 'agentfeed-api',
+            api_version: 'v1',
+            backend_version: '0.1.0',
+            contract_version: '1999-01-01',
+            supported_clients: {
+              cli: { min_version: '99.0.0', contract_version: '1999-01-01' }
+            }
+          }
+        }));
+        return;
+      }
+      if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
+        ingestRequestCount += 1;
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ data: {} }));
+        return;
+      }
+      res.writeHead(404).end();
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    try {
+      const sessionFile = await writeCodexShareSession('share-incompatible-api', 'gpt-incompatible-api', 'incompatibleApi');
+      await expect(spawnAgentFeedJson([
+        'share',
+        '--json',
+        '--source',
+        'codex',
+        '--session-file',
+        sessionFile,
+        '--all',
+        '--no-clipboard'
+      ], {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: 'af_live_incompatible_api',
+        AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+      })).rejects.toMatchObject({
+        stderr: expect.stringContaining('API compatibility check failed')
+      });
+      expect(ingestRequestCount).toBe(0);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
   it('refuses unsafe cached review URLs before invoking the browser opener', async () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
     draft.upload = {
@@ -353,6 +432,7 @@ describe('share CLI command', () => {
   it('includes the collected draft in uploaded JSON output for smoke verification', async () => {
     let ingestPayload: Record<string, unknown> | null = null;
     const server = createServer(async (req, res) => {
+      if (handleCompatibleMetadata(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -423,6 +503,7 @@ describe('share CLI command', () => {
 
   it('does not copy or open review URLs for share JSON by default', async () => {
     const server = createServer(async (req, res) => {
+      if (handleCompatibleMetadata(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -485,6 +566,7 @@ describe('share CLI command', () => {
 
   it('copies and opens review URLs for share JSON only when explicitly requested', async () => {
     const server = createServer(async (req, res) => {
+      if (handleCompatibleMetadata(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -548,6 +630,7 @@ describe('share CLI command', () => {
 
   it('reports requested share JSON review URL handoff failures inside the JSON payload', async () => {
     const server = createServer(async (req, res) => {
+      if (handleCompatibleMetadata(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -617,6 +700,7 @@ describe('share CLI command', () => {
 
   it('does not copy or open review URLs when share JSON upload fails', async () => {
     const server = createServer(async (req, res) => {
+      if (handleCompatibleMetadata(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -673,6 +757,7 @@ describe('share CLI command', () => {
     const secret = 'sk-123456789012345678901234';
     let ingestPayload: Record<string, unknown> | null = null;
     const server = createServer(async (req, res) => {
+      if (handleCompatibleMetadata(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -807,6 +892,7 @@ describe('share CLI command', () => {
 
   it('opens the review URL after publish when project config enables it', async () => {
     const server = createServer(async (req, res) => {
+      if (handleCompatibleMetadata(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -938,6 +1024,7 @@ describe('share CLI command', () => {
 
   it('prints machine-readable publish JSON and copies the review URL only when requested', async () => {
     const server = createServer(async (req, res) => {
+      if (handleCompatibleMetadata(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -998,6 +1085,7 @@ describe('share CLI command', () => {
   it('serializes two publish processes for the same draft and issues one ingest request', async () => {
     const ingestPayloads: Record<string, unknown>[] = [];
     const server = createServer(async (req, res) => {
+      if (handleCompatibleMetadata(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -1061,6 +1149,7 @@ describe('share CLI command', () => {
 
   it('prints visible warnings when publish review URL handoff fails in human output', async () => {
     const server = createServer(async (req, res) => {
+      if (handleCompatibleMetadata(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;

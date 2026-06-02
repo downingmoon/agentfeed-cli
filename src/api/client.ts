@@ -1,6 +1,10 @@
 import type { AgentFeedCredentials, CliAuthExchangeResult, CliAuthSession, IngestWorklogRequest, LocalDraft, Visibility, WorklogStatus } from '../types.js';
+import { randomUUID } from 'node:crypto';
+import { open, readFile, rm, stat, type FileHandle } from 'node:fs/promises';
 import { isIP } from 'node:net';
+import { resolveProjectRoot } from '../config/project-config.js';
 import { readDraft } from '../draft/read.js';
+import { draftPaths } from '../draft/paths.js';
 import { writeDraft } from '../draft/write.js';
 import { sanitizedDraftForUpload, scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
 import { stripUrlUserInfo } from '../privacy/url.js';
@@ -23,6 +27,9 @@ export interface ApiCheckResult {
 const DEFAULT_API_REQUEST_TIMEOUT_MS = 30_000;
 const DEFAULT_API_RETRY_ATTEMPTS = 3;
 const DEFAULT_API_RETRY_BASE_DELAY_MS = 250;
+const DEFAULT_DRAFT_UPLOAD_LOCK_TIMEOUT_MS = 60_000;
+const DRAFT_UPLOAD_LOCK_POLL_MS = 25;
+const DRAFT_UPLOAD_LOCK_STALE_MS = 5 * 60_000;
 
 function apiRequestTimeoutMs(): number {
   const configured = Number(process.env.AGENTFEED_API_TIMEOUT_MS);
@@ -38,6 +45,11 @@ function apiRetryAttempts(): number {
 function apiRetryBaseDelayMs(): number {
   const configured = Number(process.env.AGENTFEED_API_RETRY_BASE_DELAY_MS);
   return Number.isFinite(configured) && configured >= 0 ? configured : DEFAULT_API_RETRY_BASE_DELAY_MS;
+}
+
+function draftUploadLockTimeoutMs(): number {
+  const configured = Number(process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_TIMEOUT_MS);
+  return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_DRAFT_UPLOAD_LOCK_TIMEOUT_MS;
 }
 
 function apiUrl(apiBaseUrl: string, path: string): string {
@@ -574,7 +586,83 @@ function duplicateIngestResult(error: AgentFeedApiError, fallbackCreatedAt: stri
   }
 }
 
+async function removeStaleDraftUploadLock(lockPath: string): Promise<void> {
+  let lockStat: Awaited<ReturnType<typeof stat>>;
+  try {
+    lockStat = await stat(lockPath);
+  } catch {
+    return;
+  }
+  if (Date.now() - lockStat.mtimeMs <= DRAFT_UPLOAD_LOCK_STALE_MS) return;
+  await rm(lockPath, { force: true }).catch(() => undefined);
+}
+
+async function createDraftUploadLockFile(lockPath: string, token: string): Promise<FileHandle> {
+  const handle = await open(lockPath, 'wx', 0o600);
+  try {
+    await handle.writeFile(`${JSON.stringify({ pid: process.pid, token, created_at: new Date().toISOString() })}\n`, 'utf8');
+    return handle;
+  } catch (error) {
+    await handle.close().catch(() => undefined);
+    await rm(lockPath, { force: true }).catch(() => undefined);
+    throw error;
+  }
+}
+
+async function acquireDraftUploadLock(cwd: string, id: string): Promise<() => Promise<void>> {
+  const root = await resolveProjectRoot(cwd);
+  const { jsonPath } = draftPaths(root, id);
+  const lockPath = `${jsonPath}.upload.lock`;
+  const deadline = Date.now() + draftUploadLockTimeoutMs();
+  const token = randomUUID();
+  let removedStaleLock = false;
+
+  while (true) {
+    try {
+      const handle = await createDraftUploadLockFile(lockPath, token);
+      let released = false;
+      return async () => {
+        if (released) return;
+        released = true;
+        await handle.close().catch(() => undefined);
+        try {
+          const lockContents = await readFile(lockPath, 'utf8');
+          const parsed = JSON.parse(lockContents) as { token?: unknown };
+          if (parsed.token === token) await rm(lockPath, { force: true });
+        } catch {
+          // If the lock file is already gone or corrupted, never delete a replacement lock.
+        }
+      };
+    } catch (error) {
+      const code = typeof error === 'object' && error !== null && 'code' in error ? String((error as { code?: unknown }).code) : '';
+      if (code !== 'EEXIST') throw error;
+      if (!removedStaleLock) {
+        removedStaleLock = true;
+        await removeStaleDraftUploadLock(lockPath);
+        continue;
+      }
+      if (Date.now() >= deadline) {
+        throw new AgentFeedApiError(
+          423,
+          'DRAFT_UPLOAD_LOCKED',
+          'Another agentfeed process is uploading this draft. Wait for it to finish, then rerun the same command.'
+        );
+      }
+      await sleep(Math.min(DRAFT_UPLOAD_LOCK_POLL_MS, Math.max(1, deadline - Date.now())));
+    }
+  }
+}
+
 export async function publishDraft(options: { cwd: string; id: string; credentials: AgentFeedCredentials }): Promise<PublishDraftResult> {
+  const releaseUploadLock = await acquireDraftUploadLock(options.cwd, options.id);
+  try {
+    return await publishDraftWithLock(options);
+  } finally {
+    await releaseUploadLock();
+  }
+}
+
+async function publishDraftWithLock(options: { cwd: string; id: string; credentials: AgentFeedCredentials }): Promise<PublishDraftResult> {
   const draft = await readDraft(options.cwd, options.id);
   scanAndRedactDraftPublicFields(draft, { preserveResolvedFindings: true });
   const payloadHash = draftUploadPayloadHash(draft);

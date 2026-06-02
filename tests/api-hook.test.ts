@@ -22,6 +22,7 @@ const oldCi = process.env.CI;
 const oldGithubActions = process.env.GITHUB_ACTIONS;
 const oldAgentFeedToken = process.env.AGENTFEED_TOKEN;
 const oldAgentFeedReviewBaseUrl = process.env.AGENTFEED_REVIEW_BASE_URL;
+const oldAgentFeedDraftUploadLockTimeoutMs = process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_TIMEOUT_MS;
 
 function configureUploadRetryEnv(values: { timeoutMs?: string; attempts?: string; baseDelayMs?: string }): () => void {
   const previous = {
@@ -74,6 +75,8 @@ afterEach(async () => {
   else process.env.AGENTFEED_TOKEN = oldAgentFeedToken;
   if (oldAgentFeedReviewBaseUrl === undefined) delete process.env.AGENTFEED_REVIEW_BASE_URL;
   else process.env.AGENTFEED_REVIEW_BASE_URL = oldAgentFeedReviewBaseUrl;
+  if (oldAgentFeedDraftUploadLockTimeoutMs === undefined) delete process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_TIMEOUT_MS;
+  else process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_TIMEOUT_MS = oldAgentFeedDraftUploadLockTimeoutMs;
   vi.unstubAllGlobals();
   await rm(dir, { recursive: true, force: true });
   await rm(home, { recursive: true, force: true });
@@ -92,6 +95,66 @@ describe('api client', () => {
     expect(fetchMock).toHaveBeenCalledWith('https://api.agentfeed.dev/v1/ingest/worklogs', expect.objectContaining({ method: 'POST' }));
     const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
     expect(saved.upload).toMatchObject({ uploaded: true, worklog_id: 'worklog_1', review_url: 'https://agentfeed.dev/review/1' });
+  });
+
+  it('serializes concurrent publishes for the same draft before upload', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    await writeDraft(dir, draft);
+    const fetchMock = vi.fn(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+      return new Response(JSON.stringify({
+        data: {
+          id: 'worklog_concurrent',
+          status: 'needs_review',
+          visibility: 'private',
+          review_url: 'https://agentfeed.dev/review/concurrent',
+          created_at: '2026-05-19T00:00:00Z'
+        }
+      }), { status: 200, headers: { 'content-type': 'application/json' } });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const results = await Promise.all([
+      publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }),
+      publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } })
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(results).toEqual([
+      expect.objectContaining({
+        id: 'worklog_concurrent',
+        review_url: 'https://agentfeed.dev/review/concurrent'
+      }),
+      expect.objectContaining({
+        id: 'worklog_concurrent',
+        review_url: 'https://agentfeed.dev/review/concurrent'
+      })
+    ]);
+    expect(results.some((result) => result.reused_existing === true)).toBe(true);
+    expect(results.find((result) => result.reused_existing === true)).toMatchObject({
+      id: 'worklog_concurrent',
+      review_url: 'https://agentfeed.dev/review/concurrent',
+      reused_existing: true
+    });
+    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+    expect(saved.upload).toMatchObject({ uploaded: true, worklog_id: 'worklog_concurrent' });
+  });
+
+  it('fails fast without uploading when the draft upload lock is held', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    await writeDraft(dir, draft);
+    await writeFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json.upload.lock`), JSON.stringify({ pid: 999999, token: 'active-lock', created_at: new Date().toISOString() }));
+    process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_TIMEOUT_MS = '1';
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
+      .rejects.toMatchObject({
+        status: 423,
+        code: 'DRAFT_UPLOAD_LOCKED'
+      });
+    expect(fetchMock).not.toHaveBeenCalled();
+    await expect(readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json.upload.lock`), 'utf8')).resolves.toContain('active-lock');
   });
 
   it('accepts upload review URLs from an explicitly configured split review frontend host', async () => {

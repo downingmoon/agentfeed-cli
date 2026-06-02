@@ -3368,3 +3368,18 @@ Frontend 계약:
 - Backend/Frontend/CLI GitHub Actions remote `uses:` refs는 40-character commit SHA로 pinning되어야 합니다.
 
 검증: [[Commercial Readiness Hardening - OAuth Contract Smoke and Action Pinning 2026-06-02#검증 증거]]
+
+
+## 2026-06-02 CLI concurrent publish serialization
+
+> [!success]
+> CLI local metadata and Backend private-review ingest path now have a safer client-side serialization layer for same-draft concurrent uploads.
+
+통합 계약:
+
+- CLI does not rely only on Backend duplicate detection for same local draft races.
+- Local upload metadata write happens before another same-draft caller can decide whether to POST.
+- Cached upload reuse still validates payload hash and trusted review URL before returning.
+- If a lock cannot be acquired within the bounded wait, CLI returns `DRAFT_UPLOAD_LOCKED` with a rerun instruction instead of issuing another POST.
+
+검증: [[Commercial Readiness Hardening - CLI Concurrent Publish Serialization 2026-06-02#검증 증거]]

@@ -338,6 +338,9 @@ created: 2026-05-30
 
 ## P2 후보
 
+- [x] CLI 같은 local draft에 대한 concurrent publish/share upload를 per-draft lock으로 직렬화해 중복 private review 업로드 방지
+- 관련 노트: [[Commercial Readiness Hardening - CLI Concurrent Publish Serialization 2026-06-02]]
+
 - [x] Backend stale/corrupt browser cookie가 valid Bearer client 인증을 막지 않도록 mixed auth fallback 보강
 - [x] Backend trusted proxy `X-Forwarded-For` malformed hop이 rate-limit identity를 shared proxy IP로 붕괴시키지 않도록 보강
 - 관련 노트: [[Commercial Readiness Hardening - Backend Mixed Auth and Proxy Identity 2026-06-02]]

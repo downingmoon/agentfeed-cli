@@ -805,3 +805,18 @@ created: 2026-05-30
 - Malformed `.agentfeed/config.json` fails with actionable recovery guidance, not raw parser output.
 
 검증: [[Commercial Readiness Hardening - CLI Diagnostics Backend Privacy Rescan and Feed Backdrop 2026-06-01#검증 증거]]
+
+
+## 2026-06-02 CLI concurrent publish serialization
+
+> [!success]
+> 같은 local draft에 대한 `publish` / `share` upload path가 per-draft lock 아래에서 read/redact/upload/write를 수행하도록 보강했습니다.
+
+계약:
+
+- Same draft id upload critical section is serialized with an exclusive `.upload.lock` file.
+- The second concurrent caller re-reads the draft after the first caller writes upload metadata and reuses the cached review URL.
+- Stale lock recovery is bounded; active locks are released in `finally`.
+- Draft list output remains JSON/Markdown only, because lock files do not use `.json` suffix.
+
+검증: [[Commercial Readiness Hardening - CLI Concurrent Publish Serialization 2026-06-02#검증 증거]]

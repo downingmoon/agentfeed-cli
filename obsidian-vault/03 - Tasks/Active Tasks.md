@@ -929,3 +929,10 @@ created: 2026-05-30
 - [x] `agentfeed-dev` manual `Cross-repo integration` workflow 추가: private sibling repo checkout은 `AGENTFEED_CI_REPO_READ_TOKEN` 필요
 - [x] `agentfeed-dev` action pin gate에 자체 workflow directory 포함
 - [[Commercial Readiness Hardening - Installed CLI Tarball Smoke and Manual Cross Repo CI 2026-06-02]]
+
+## 2026-06-03 moderation lifecycle continuation
+
+- [x] Backend report moderation lifecycle API와 DB check constraints 추가
+- [x] Frontend `/moderation/reports` 운영자 신고 큐 및 moderation API client 추가
+- [x] Dev OpenAPI contract가 moderation response/request/schema를 fail-closed 검증
+- [[Commercial Readiness Hardening - Moderation Report Lifecycle 2026-06-03]]

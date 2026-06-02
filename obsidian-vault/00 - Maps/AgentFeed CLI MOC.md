@@ -423,3 +423,4 @@ graph LR
 - [[Collection System#2026-05-30 share dry-run command execution guard|share dry-run command guard]]
 - [[Integration - CLI Backend Frontend#End-to-end 흐름|End-to-end 흐름]]
 - [[Active Tasks#P1 후보|P1 후보]]
+- [[Commercial Readiness Hardening - Moderation Report Lifecycle 2026-06-03]]

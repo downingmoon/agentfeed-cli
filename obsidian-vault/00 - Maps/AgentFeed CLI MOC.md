@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Session Expiry and OAuth Audit Atomicity 2026-06-02]] — Frontend explicit session-expiry recovery, Backend OAuth audit atomicity, and audit request-id incident lookup index
+
 - [[Commercial Readiness Hardening - Config Schema Audit Coverage and Session Recovery Candidate 2026-06-02]] — CLI config schema fail-fast, Backend mutation audit request-id coverage, and Frontend session-expiry recovery P1 candidate
 
 - [[Commercial Readiness Hardening - Keychain Unmatched Settings CI 2026-06-02]] — CLI native keychain helper env scrub, Backend unmatched-path rate-limit bucket, and Frontend Settings/API-config recovery plus local CI audit unification

@@ -23,6 +23,12 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] CLI `logout` local credential removal 및 environment token residual warning 추가
+- [x] CLI credentials/config/state/draft writes atomic rename 경로로 보강
+- [x] Backend GitHub browser OAuth login 성공 `auth.login` audit event 기록
+- [x] Frontend root `/login` redirect 회귀를 `smoke:root-login` 및 source contract로 fail-closed 검증
+- 관련 노트: [[Commercial Readiness Hardening - CLI Logout Atomic Writes OAuth Audit and Root Smoke 2026-06-02]]
+
 - [x] Backend secret-bearing auth/token responses에 `no-store, private` / `Pragma: no-cache` 적용
 - [x] Dev commercial readiness gate에 browser release smoke 포함
 - [x] Commercial readiness 실행 레벨 manifest/log regression 및 self-hosted evidence workflow 추가

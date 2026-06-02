@@ -171,6 +171,47 @@ describe('status and doctor provenance output', () => {
     expect(saved.ingestion_token).toBe(token);
   });
 
+  it('logout removes saved credentials and warns when an environment token remains active', async () => {
+    const token = 'af_live_logout_cli_secret';
+    await execFileWithInput(
+      ['login', '--token-stdin', '--api-base-url', 'http://127.0.0.1:9/v1'],
+      `${token}\n`,
+      {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: '',
+          AGENTFEED_CI: '1',
+          AGENTFEED_CREDENTIAL_STORE: 'file'
+        }
+      }
+    );
+
+    const { stdout, stderr } = await execFileAsync(process.execPath, [cliPath, 'logout', '--json'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: 'af_live_env_logout_still_active'
+      }
+    });
+
+    const result = JSON.parse(stdout) as {
+      credentials_file_deleted: boolean;
+      environment_token_active: boolean;
+      warnings: string[];
+    };
+    expect(result.credentials_file_deleted).toBe(true);
+    expect(result.environment_token_active).toBe(true);
+    expect(result.warnings.join('\n')).toContain('AGENTFEED_TOKEN is still set');
+    expect(stdout).not.toContain(token);
+    expect(stderr).not.toContain(token);
+    await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
 
 
   it('status survives malformed Claude Code settings and reports hook as unknown', async () => {
@@ -217,6 +258,7 @@ describe('status and doctor provenance output', () => {
     });
 
     expect(stdout).toContain('agentfeed login --token-stdin');
+    expect(stdout).toContain('agentfeed logout');
     expect(stdout).toContain('agentfeed login --token - --no-save');
     expect(stdout).not.toContain('agentfeed login --token <token>');
   });

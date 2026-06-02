@@ -1,12 +1,12 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { initProject, loadProjectConfig } from '../src/config/project-config.js';
 import { resolveApiBaseUrl, resolveApiBaseUrlWithMetadata } from '../src/config/api-base.js';
-import { credentialsFromToken, credentialsPath, globalAgentFeedDir, loadCredentialsWithMetadata, resolveCredentials, resolveHomeDir, saveCredentials, type SecretStore } from '../src/config/credentials.js';
-import { pathExists } from '../src/utils/fs.js';
+import { credentialsFromToken, credentialsPath, deleteSavedCredentials, globalAgentFeedDir, loadCredentialsWithMetadata, resolveCredentials, resolveHomeDir, saveCredentials, type SecretStore } from '../src/config/credentials.js';
+import { pathExists, writeJson } from '../src/utils/fs.js';
 
 let dir: string;
 let home: string;
@@ -94,6 +94,63 @@ describe('project config', () => {
     const fileMode = (await stat(credentialsPath())).mode & 0o777;
     expect(dirMode).toBe(0o700);
     expect(fileMode).toBe(0o600);
+  });
+
+  it('removes saved file credentials without exposing token values', async () => {
+    await saveCredentials('af_live_logout_file_secret', { apiBaseUrl: 'http://localhost:8001/v1', credentialStore: 'file' });
+
+    await expect(pathExists(credentialsPath())).resolves.toBe(true);
+    const result = await deleteSavedCredentials();
+
+    expect(result).toMatchObject({
+      credentials_file_deleted: true,
+      keychain_deleted: null,
+      warnings: []
+    });
+    expect(JSON.stringify(result)).not.toContain('af_live_logout_file_secret');
+    await expect(pathExists(credentialsPath())).resolves.toBe(false);
+  });
+
+  it('removes keychain metadata and asks the injected keychain backend to delete the secret', async () => {
+    let savedSecret: string | null = null;
+    let deleteCalled = false;
+    const keychain: SecretStore = {
+      service: 'AgentFeed CLI Test',
+      account: 'logout-account',
+      async isAvailable() { return true; },
+      async read() { return savedSecret; },
+      async write(secret: string) { savedSecret = secret; },
+      async delete() { deleteCalled = true; savedSecret = null; },
+    };
+
+    await saveCredentials('af_live_logout_keychain_secret', {
+      apiBaseUrl: 'http://localhost:8001/v1',
+      credentialStore: 'keychain',
+      secretStore: keychain,
+    });
+
+    const result = await deleteSavedCredentials({ secretStore: keychain });
+
+    expect(result.credentials_file_deleted).toBe(true);
+    expect(result.keychain_deleted).toBe(true);
+    expect(deleteCalled).toBe(true);
+    expect(savedSecret).toBeNull();
+    expect(JSON.stringify(result)).not.toContain('af_live_logout_keychain_secret');
+    await expect(pathExists(credentialsPath())).resolves.toBe(false);
+  });
+
+  it('writes JSON files atomically without leaving temp files behind', async () => {
+    const jsonPath = join(dir, '.agentfeed', 'atomic.json');
+
+    await writeJson(jsonPath, { value: 'first' }, { mode: 0o600 });
+    await writeJson(jsonPath, { value: 'second' }, { mode: 0o600 });
+
+    await expect(readFile(jsonPath, 'utf8')).resolves.toBe('{\n  "value": "second"\n}\n');
+    const entries = await readdir(join(dir, '.agentfeed'));
+    expect(entries.filter((entry) => entry.includes('atomic.json') && entry.endsWith('.tmp'))).toEqual([]);
+    if (process.platform !== 'win32') {
+      expect((await stat(jsonPath)).mode & 0o777).toBe(0o600);
+    }
   });
 
   it('can round-trip credentials through the native macOS keychain when explicitly enabled', async () => {

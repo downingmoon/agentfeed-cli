@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { rm } from 'node:fs/promises';
 import { initProject, loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
-import { credentialsFromToken, loadCredentials, loadCredentialsWithMetadata, saveCredentials, type CredentialTokenSource } from '../config/credentials.js';
+import { credentialsFromToken, deleteSavedCredentials, loadCredentials, loadCredentialsWithMetadata, saveCredentials, type CredentialTokenSource } from '../config/credentials.js';
 import { resolveApiBaseUrl, resolveApiBaseUrlWithMetadata, type ApiBaseUrlSource } from '../config/api-base.js';
 import { DEFAULT_API_BASE_URL } from '../config/defaults.js';
 import { markCollectionComplete, resolveCollectionWindow } from '../config/collection-state.js';
@@ -414,6 +414,32 @@ async function cmdStatus() {
   print(`Pending upload count: ${pending}`);
 }
 
+async function cmdLogout(args: string[]) {
+  const result = await deleteSavedCredentials();
+  const envTokenActive = Boolean(process.env.AGENTFEED_TOKEN);
+  if (flag(args, '--json')) {
+    print(JSON.stringify({
+      credentials_file_deleted: result.credentials_file_deleted,
+      credentials_file_path: result.credentials_file_path,
+      keychain_deleted: result.keychain_deleted,
+      environment_token_active: envTokenActive,
+      warnings: [
+        ...result.warnings,
+        ...(envTokenActive ? ['AGENTFEED_TOKEN is still set in this shell; unset it or update your shell/secret manager to finish logout.'] : [])
+      ]
+    }, null, 2));
+    return;
+  }
+  print(result.credentials_file_deleted ? 'AgentFeed saved credentials removed.' : 'No saved AgentFeed credentials were found.');
+  if (result.keychain_deleted === true) print('OS keychain token removed.');
+  if (result.keychain_deleted === false) print('Warning: OS keychain token could not be removed automatically.');
+  for (const warning of result.warnings) print(`Warning: ${warning}`);
+  if (envTokenActive) {
+    print('Warning: AGENTFEED_TOKEN is still set in this shell; unset it or update your shell/secret manager to finish logout.');
+  }
+  print('Next:\n  agentfeed status');
+}
+
 async function cmdCollect(args: string[]) {
   const source = parseAgentSource(option(args, '--source'));
   const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
@@ -691,6 +717,7 @@ async function main() {
   switch (command) {
     case 'init': return cmdInit(args);
     case 'login': return cmdLogin(args);
+    case 'logout': return cmdLogout(args);
     case 'status': return cmdStatus();
     case 'rotate': return cmdRotate(args);
     case 'token':
@@ -713,9 +740,10 @@ async function main() {
     case undefined:
     case '--help':
     case '-h':
-      print('Usage: agentfeed <init|login|rotate|status|collect|share|preview|publish|scan|hook|doctor|drafts|discard|open>');
+      print('Usage: agentfeed <init|login|logout|rotate|status|collect|share|preview|publish|scan|hook|doctor|drafts|discard|open>');
       print(`Version: ${AGENTFEED_CLI_VERSION}`);
       print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --no-save\n  agentfeed login --browser\n  printf %s "$TOKEN" | agentfeed login --token-stdin\n  printf %s "$TOKEN" | agentfeed login --token - --no-save\n  agentfeed rotate\n  agentfeed rotate --browser\n  unset AGENTFEED_TOKEN && agentfeed rotate --browser\n  agentfeed token rotate');
+      print('\nLogout:\n  agentfeed logout\n  agentfeed logout --json');
       print('\nCollect:\n  agentfeed collect\n  agentfeed collect --explain\n  agentfeed collect --source codex\n  agentfeed collect --source gemini-cli\n  agentfeed collect --source claude-code --session-file <path>\n  agentfeed collect --since 2026-05-20T01:00:00Z\n  agentfeed collect --all\n  agentfeed collect --run-configured-commands');
       print('\nShare:\n  agentfeed share\n  agentfeed share --dry\n  agentfeed share --open-review\n  agentfeed share --since 2026-05-20T01:00:00Z\n  agentfeed share --all\n  agentfeed share --note "Fixed auth flow"\n  agentfeed share --no-clipboard\n  agentfeed share --json --clipboard\n  agentfeed share --run-configured-commands');
       print('\nPublish:\n  agentfeed publish --latest\n  agentfeed publish --id <draft_id>\n  agentfeed publish --json\n  agentfeed publish --json --clipboard\n  agentfeed publish --no-clipboard\n  agentfeed publish --open-review');

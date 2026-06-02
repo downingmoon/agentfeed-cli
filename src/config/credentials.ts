@@ -1,11 +1,11 @@
 import { execFile, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { chmod, mkdir, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, rm } from 'node:fs/promises';
 import { homedir, platform } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import type { AgentFeedCredentials } from '../types.js';
-import { pathExists, readJson } from '../utils/fs.js';
+import { pathExists, readJson, writeTextFileAtomic } from '../utils/fs.js';
 import { DEFAULT_API_BASE_URL } from './defaults.js';
 import { normalizeApiBaseUrl, resolveApiBaseUrl, resolveApiBaseUrlWithMetadata, type ApiBaseUrlResolution } from './api-base.js';
 
@@ -47,6 +47,13 @@ export interface CredentialsResolution {
   warnings: string[];
 }
 
+export interface CredentialsDeleteResult {
+  credentials_file_path: string;
+  credentials_file_deleted: boolean;
+  keychain_deleted: boolean | null;
+  warnings: string[];
+}
+
 interface CredentialStoreOptions {
   credentialStore?: CredentialStorePreference;
   secretStore?: SecretStore;
@@ -79,7 +86,7 @@ async function ensurePrivateAgentFeedDir(): Promise<void> {
 }
 
 async function writePrivateJsonFile(value: unknown): Promise<void> {
-  await writeFile(credentialsPath(), `${JSON.stringify(value, null, 2)}\n`, { encoding: 'utf8', mode: 0o600 });
+  await writeTextFileAtomic(credentialsPath(), `${JSON.stringify(value, null, 2)}\n`, { mode: 0o600 });
   try { await chmod(credentialsPath(), 0o600); } catch { /* best-effort on non-POSIX filesystems */ }
 }
 
@@ -336,6 +343,45 @@ export async function saveCredentials(token: string, options: { apiBaseUrl?: str
 
   await writePrivateCredentialsFile(credentials, fileFallbackWarning);
   return credentials;
+}
+
+export async function deleteSavedCredentials(options: CredentialStoreOptions = {}): Promise<CredentialsDeleteResult> {
+  const file = credentialsPath();
+  const fileExists = await pathExists(file);
+  const fileResult = fileExists ? await readCredentialsFile(file) : { credentials: null, warnings: [] };
+  const base = fileResult.credentials;
+  const warnings = [...fileResult.warnings];
+  let keychainDeleted: boolean | null = null;
+
+  if (base?.credential_store === 'keychain') {
+    const store = options.secretStore ?? nativeKeychainStore({ keychain_service: base.keychain_service, keychain_account: base.keychain_account });
+    try {
+      if (await store.isAvailable()) {
+        if (store.delete) {
+          await store.delete();
+          keychainDeleted = true;
+        } else {
+          keychainDeleted = false;
+          warnings.push('saved AgentFeed credentials use a keychain backend that does not support deletion; revoke the token in AgentFeed Settings if needed.');
+        }
+      } else {
+        keychainDeleted = false;
+        warnings.push('saved AgentFeed credentials use the OS keychain, but no supported keychain command is available on this host; revoke the token in AgentFeed Settings if needed.');
+      }
+    } catch (error) {
+      const detail = error instanceof Error && error.message ? ` ${error.message}` : '';
+      keychainDeleted = false;
+      warnings.push(`saved AgentFeed keychain credential could not be deleted.${detail} Revoke the token in AgentFeed Settings if needed.`);
+    }
+  }
+
+  await rm(file, { force: true });
+  return {
+    credentials_file_path: file,
+    credentials_file_deleted: fileExists,
+    keychain_deleted: keychainDeleted,
+    warnings,
+  };
 }
 
 export async function loadCredentials(): Promise<AgentFeedCredentials | null> {

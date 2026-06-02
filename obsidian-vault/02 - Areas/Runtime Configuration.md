@@ -13,6 +13,13 @@ created: 2026-05-30
 
 # Runtime Configuration
 
+## 2026-06-02 CLI split review host allowlist
+
+> [!success]
+> `AGENTFEED_REVIEW_BASE_URL` is the explicit exact-origin allowlist for deployments where `AGENTFEED_API_BASE_URL` and review frontend URLs live on different hosts.
+
+검증: [[Commercial Readiness Hardening - CLI Split Review Host Allowlist 2026-06-02#검증 증거]]
+
 ## 2026-06-02 Frontend/CLI API base parity
 
 > [!success]

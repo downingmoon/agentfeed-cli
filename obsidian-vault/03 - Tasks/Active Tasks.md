@@ -23,8 +23,8 @@ created: 2026-05-30
 
 ## P1 후보
 
-- [ ] CLI `open`이 API/review frontend split-host 배포를 명시적 allowlist로 지원
-- 후보 근거: [[Commercial Readiness Hardening - Settings Notifications and API Base Parity 2026-06-02#후속 후보]]
+- [x] CLI `open`과 upload response parsing이 API/review frontend split-host 배포를 명시적 allowlist로 지원
+- 관련 노트: [[Commercial Readiness Hardening - CLI Split Review Host Allowlist 2026-06-02]]
 
 - [x] Settings가 Backend notification preference 6개 전체를 사용자 토글로 노출
 - [x] Dev gate가 Frontend `NEXT_PUBLIC_API_URL`과 CLI `AGENTFEED_API_BASE_URL` split-brain 설정을 fail-closed 검증

@@ -12,6 +12,21 @@ created: 2026-05-30
 
 # Integration - CLI Backend Frontend
 
+## 2026-06-02 CLI split review host allowlist
+
+> [!success]
+> CLI private-review upload/open trust now supports self-hosted split API and review frontend hosts without trusting arbitrary API-returned URLs.
+
+계약:
+
+- API base and review frontend origin may differ only when `AGENTFEED_REVIEW_BASE_URL` explicitly names the exact review origin.
+- Upload response parsing, duplicate resync, cached upload reuse, and `agentfeed open` share the same review URL trust policy.
+- Review URLs still require allowed review paths, no credentials, no query/hash, and remote HTTPS.
+- Without the explicit review origin, custom split-host review URLs remain rejected before browser open.
+
+검증: [[Commercial Readiness Hardening - CLI Split Review Host Allowlist 2026-06-02#검증 증거]]
+
+
 ## 2026-06-02 settings notification controls and API base parity
 
 > [!success]

@@ -281,6 +281,20 @@ function isExpectedReviewPath(pathname: string): boolean {
   return /^\/(?:review\/[^/]+|worklogs\/[^/]+\/review)$/.test(normalized);
 }
 
+function trustedConfiguredReviewOrigin(rawBaseUrl: string | undefined): string | null {
+  if (!rawBaseUrl) return null;
+  try {
+    const url = new URL(rawBaseUrl);
+    if (!['http:', 'https:'].includes(url.protocol)) return null;
+    if (url.username || url.password || url.search || url.hash) return null;
+    if (url.pathname.replace(/\/+$/, '') !== '') return null;
+    if (!isLocalHostname(url.hostname) && url.protocol !== 'https:') return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
 function validateReviewUrl(reviewUrl: string, apiBaseUrl: string): boolean {
   try {
     const review = new URL(reviewUrl);
@@ -289,8 +303,10 @@ function validateReviewUrl(reviewUrl: string, apiBaseUrl: string): boolean {
     if (review.username || review.password) return false;
     if (review.search || review.hash) return false;
     if (!isExpectedReviewPath(review.pathname)) return false;
+    if (!isLocalHostname(review.hostname) && review.protocol !== 'https:') return false;
+    const configuredReviewOrigin = trustedConfiguredReviewOrigin(process.env.AGENTFEED_REVIEW_BASE_URL);
+    if (configuredReviewOrigin && review.origin === configuredReviewOrigin) return true;
     if (isLocalHostname(api.hostname)) return isLocalHostname(review.hostname);
-    if (review.protocol !== 'https:') return false;
     if (isAgentFeedHostname(api.hostname)) return isAgentFeedReviewHostname(review.hostname);
     return review.hostname === api.hostname;
   } catch {

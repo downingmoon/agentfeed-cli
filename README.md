@@ -174,7 +174,7 @@ Draft collection also records a stable fingerprint from `session_id + git head +
 
 Successful human-readable `share` / `publish` copies the review URL to the clipboard when the platform supports it. Use `--no-clipboard` to opt out. If clipboard or browser opening is requested but unavailable, the CLI prints a visible warning and leaves the review URL in the output for manual copy/open.
 
-Use `agentfeed open`, `agentfeed open --latest`, or `agentfeed open --id <draft_id>` to reopen a previously uploaded private review draft in your browser. Cached review URLs are opened only when they match the trusted AgentFeed host or the configured local/custom API base.
+Use `agentfeed open`, `agentfeed open --latest`, or `agentfeed open --id <draft_id>` to reopen a previously uploaded private review draft in your browser. Cached review URLs are opened only when they match the built-in AgentFeed review host, a safe local development host, or an explicitly configured `AGENTFEED_REVIEW_BASE_URL` exact origin. Use that variable for self-hosted deployments where the API and review frontend live on different hosts, for example `AGENTFEED_API_BASE_URL=https://api.example.com/v1` with `AGENTFEED_REVIEW_BASE_URL=https://review.example.com`; remote review origins must use HTTPS and cannot include credentials, query strings, hashes, or paths.
 
 ## Privacy scan dry-run
 

@@ -189,6 +189,113 @@ describe('share CLI command', () => {
     }
   });
 
+  it('opens a split-host review URL when the review frontend origin is explicitly configured', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.upload = {
+      uploaded: true,
+      worklog_id: 'worklog_split_host_open',
+      review_url: 'https://review.internal.example/worklogs/worklog_split_host_open/review',
+      uploaded_at: '2026-05-31T00:00:00.000Z'
+    };
+    await writeDraft(dir, draft);
+    const binDir = await mkdtemp(join(tmpdir(), 'agentfeed-browser-bin-'));
+    const browserLog = await installFakeBrowserOpener(binDir);
+
+    try {
+      const open = await execFileAsync(process.execPath, [cliPath, 'open', '--id', draft.id], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          PATH: `${binDir}:${process.env.PATH ?? ''}`,
+          AGENTFEED_TEST_BROWSER_LOG: browserLog,
+          AGENTFEED_TOKEN: 'af_live_test_token',
+          AGENTFEED_API_BASE_URL: 'https://api.internal.example/v1',
+          AGENTFEED_REVIEW_BASE_URL: 'https://review.internal.example'
+        }
+      });
+
+      expect(open.stdout).toContain('Opened review URL.');
+      await expect(readFile(browserLog, 'utf8')).resolves.toBe('https://review.internal.example/worklogs/worklog_split_host_open/review\n');
+    } finally {
+      await rm(binDir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects split-host review URLs when no explicit review frontend origin is configured', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.upload = {
+      uploaded: true,
+      worklog_id: 'worklog_split_host_no_env',
+      review_url: 'https://review.internal.example/worklogs/worklog_split_host_no_env/review',
+      uploaded_at: '2026-05-31T00:00:00.000Z'
+    };
+    await writeDraft(dir, draft);
+    const binDir = await mkdtemp(join(tmpdir(), 'agentfeed-browser-bin-'));
+    const browserLog = await installFakeBrowserOpener(binDir);
+
+    try {
+      const open = execFileAsync(process.execPath, [cliPath, 'open', '--id', draft.id], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          PATH: `${binDir}:${process.env.PATH ?? ''}`,
+          AGENTFEED_TEST_BROWSER_LOG: browserLog,
+          AGENTFEED_TOKEN: 'af_live_test_token',
+          AGENTFEED_API_BASE_URL: 'https://api.internal.example/v1',
+          AGENTFEED_REVIEW_BASE_URL: ''
+        }
+      });
+
+      await expect(open).rejects.toMatchObject({ code: 1 });
+      await expect(readFile(browserLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+    } finally {
+      await rm(binDir, { recursive: true, force: true });
+    }
+  });
+
+  it.each([
+    'https://review.internal.example/worklogs/worklog_split_host_bad/review?token=leak',
+    'https://review.internal.example/worklogs/worklog_split_host_bad/review#secret',
+    'http://review.internal.example/worklogs/worklog_split_host_bad/review',
+    'https://review.internal.example.evil.com/worklogs/worklog_split_host_bad/review'
+  ])('rejects unsafe split-host review URLs before invoking the browser opener: %s', async (reviewUrl) => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.upload = {
+      uploaded: true,
+      worklog_id: 'worklog_split_host_bad',
+      review_url: reviewUrl,
+      uploaded_at: '2026-05-31T00:00:00.000Z'
+    };
+    await writeDraft(dir, draft);
+    const binDir = await mkdtemp(join(tmpdir(), 'agentfeed-browser-bin-'));
+    const browserLog = await installFakeBrowserOpener(binDir);
+
+    try {
+      const open = execFileAsync(process.execPath, [cliPath, 'open', '--id', draft.id], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          PATH: `${binDir}:${process.env.PATH ?? ''}`,
+          AGENTFEED_TEST_BROWSER_LOG: browserLog,
+          AGENTFEED_TOKEN: 'af_live_test_token',
+          AGENTFEED_API_BASE_URL: 'https://api.internal.example/v1',
+          AGENTFEED_REVIEW_BASE_URL: 'https://review.internal.example'
+        }
+      });
+
+      await expect(open).rejects.toMatchObject({ code: 1 });
+      await expect(readFile(browserLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+    } finally {
+      await rm(binDir, { recursive: true, force: true });
+    }
+  });
+
   it('rejects fake 127-prefixed local review hostnames before invoking the browser opener', async () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
     draft.upload = {

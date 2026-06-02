@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - CLI Auth Status Token Logout Recovery and Hook Settings 2026-06-02]] — CLI auth status lookup token, Frontend logout recovery isolation, and Claude hook settings validation
+
 - [[Commercial Readiness Hardening - Social Audit and Local State Validation 2026-06-02]] — Backend social/UGC audit coverage and CLI local draft/credential runtime shape validation
 
 - [[Commercial Readiness Hardening - Session Expiry and OAuth Audit Atomicity 2026-06-02]] — Frontend explicit session-expiry recovery, Backend OAuth audit atomicity, and audit request-id incident lookup index

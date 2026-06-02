@@ -23,6 +23,11 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Backend CLI auth session status 조회 token hash 요구
+- [x] Frontend CLI authorize `session_id/status_token` TTL storage 및 explicit logout recovery event isolation
+- [x] CLI Claude Code hook settings JSON validation 및 atomic write 보강
+- 관련 노트: [[Commercial Readiness Hardening - CLI Auth Status Token Logout Recovery and Hook Settings 2026-06-02]]
+
 - [x] Backend social/UGC mutation audit coverage 보강
 - [x] CLI local draft runtime shape validation 보강
 - [x] CLI credentials runtime shape validation 보강
@@ -35,7 +40,7 @@ created: 2026-05-30
 
 - [x] CLI `.agentfeed/config.json` runtime schema validation/fail-fast 보강
 - [x] Backend 주요 mutation audit event에 request id correlation 및 누락 mutation coverage 보강
-- [ ] Frontend session-expiry recovery state/CTA 명시화
+- [x] Frontend session-expiry recovery state/CTA 명시화
 - 관련 노트: [[Commercial Readiness Hardening - Config Schema Audit Coverage and Session Recovery Candidate 2026-06-02]]
 
 - [x] CLI native keychain helper subprocess env scrub 보강

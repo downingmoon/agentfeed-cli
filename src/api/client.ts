@@ -490,7 +490,11 @@ function isExpectedAuthorizePath(pathname: string): boolean {
 
 function hasOnlyExpectedAuthorizeQuery(url: URL, sessionId: string): boolean {
   const entries = Array.from(url.searchParams.entries());
-  return entries.length === 1 && entries[0]?.[0] === 'session_id' && entries[0][1] === sessionId;
+  const allowed = new Set(['session_id', 'status_token']);
+  if (![1, 2].includes(entries.length) || entries.some(([key]) => !allowed.has(key))) return false;
+  if (entries.length === 1) return entries[0]?.[0] === 'session_id' && entries[0][1] === sessionId;
+  const statusToken = url.searchParams.get('status_token')?.trim() ?? '';
+  return url.searchParams.get('session_id') === sessionId && statusToken.length >= 16 && statusToken.length <= 256;
 }
 
 function validateAuthorizeUrl(authorizeUrl: string, apiBaseUrl: string, sessionId: string): boolean {

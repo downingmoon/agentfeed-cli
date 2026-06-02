@@ -1,7 +1,7 @@
-import { cp, readFile, writeFile } from 'node:fs/promises';
+import { cp, readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { globalAgentFeedDir, homeDir } from '../config/credentials.js';
-import { ensureDir, pathExists } from '../utils/fs.js';
+import { ensureDir, pathExists, writeJson } from '../utils/fs.js';
 import { sensitiveEnvironmentNames } from '../utils/subprocess-env.js';
 
 type JsonObj = Record<string, unknown>;
@@ -42,7 +42,17 @@ export function resolveClaudeSettingsPath(options: { projectRoot: string; scope?
 
 async function readSettings(path: string): Promise<JsonObj> {
   if (!(await pathExists(path))) return {};
-  return JSON.parse(await readFile(path, 'utf8')) as JsonObj;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(await readFile(path, 'utf8')) as unknown;
+  } catch (error) {
+    const reason = error instanceof Error && error.message ? ` ${error.message}` : '';
+    throw new Error(`Claude Code settings could not be parsed at ${path}.${reason} Fix the JSON or move the file aside, then rerun agentfeed hook install claude-code.`);
+  }
+  if (!isJsonObject(parsed)) {
+    throw new Error(`Claude Code settings must be a JSON object at ${path}. Fix the file or move it aside, then rerun agentfeed hook install claude-code.`);
+  }
+  return parsed;
 }
 
 async function backupSettings(projectRoot: string, path: string): Promise<string | null> {
@@ -97,7 +107,7 @@ export async function installClaudeCodeHook(options: { projectRoot: string; scop
   if (options.dryRun) return { path, settings, backupPath: null };
   await ensureDir(dirname(path));
   const backupPath = await backupSettings(options.projectRoot, path);
-  await writeFile(path, `${JSON.stringify(settings, null, 2)}\n`, 'utf8');
+  await writeJson(path, settings);
   return { path, settings, backupPath };
 }
 
@@ -129,6 +139,6 @@ export async function uninstallClaudeCodeHook(options: { projectRoot: string; sc
     hooks.Stop = removeAgentFeedFromHookList(hooks.Stop) as unknown[];
   }
   await ensureDir(dirname(path));
-  await writeFile(path, `${JSON.stringify(settings, null, 2)}\n`, 'utf8');
+  await writeJson(path, settings);
   return { path, settings, backupPath };
 }

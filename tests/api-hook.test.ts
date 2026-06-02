@@ -647,7 +647,7 @@ describe('api client', () => {
         return new Response(JSON.stringify({
           data: {
             session_id: 'session-1',
-            authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-1',
+            authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-1&status_token=status-token-for-session-1',
             user_code: '123-456',
             expires_at: '2026-05-20T00:05:00Z',
             poll_interval_seconds: 2
@@ -671,6 +671,7 @@ describe('api client', () => {
     const exchange = await exchangeCliAuthSession('https://api.agentfeed.dev/v1', session.session_id, 'verifier-1');
 
     expect(session.authorize_url).toContain('/cli/authorize');
+    expect(session.authorize_url).toContain('status_token=status-token-for-session-1');
     expect(session.user_code).toBe('123-456');
     expect(exchange.token).toBe('af_live_test');
     expect(exchange.token_id).toBe('token-new');
@@ -679,6 +680,21 @@ describe('api client', () => {
     expect(exchange.rotated_at).toBe('2026-05-30T00:01:00Z');
     expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.agentfeed.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
     expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://api.agentfeed.dev/v1/auth/cli/sessions/session-1/exchange', expect.objectContaining({ method: 'POST' }));
+  });
+
+  it('rejects browser login authorize URLs with unexpected query parameters', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      data: {
+        session_id: 'session-extra-query',
+        authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-extra-query&status_token=status-token-for-session-extra&next=https%3A%2F%2Fevil.example',
+        user_code: '123-456',
+        expires_at: '2026-05-20T00:05:00Z',
+        poll_interval_seconds: 2
+      }
+    }), { status: 200, headers: { 'content-type': 'application/json' } })));
+
+    await expect(createCliAuthSession('https://api.agentfeed.dev/v1', { verifier: 'verifier-1', deviceName: 'devbox' }))
+      .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
   });
 
   it('rejects untrusted browser login authorize URLs before opening them', async () => {
@@ -1205,6 +1221,25 @@ describe('Claude Code hook installer', () => {
     await uninstallClaudeCodeHook({ projectRoot: dir, settingsPath: settings });
 
     expect(await pathExists(settings)).toBe(false);
+  });
+
+  it('fails hook install with actionable guidance when Claude settings JSON is malformed', async () => {
+    const settings = join(dir, '.claude', 'settings.json');
+    await mkdir(join(dir, '.claude'), { recursive: true });
+    await writeFile(settings, '{not-json');
+
+    await expect(installClaudeCodeHook({ projectRoot: dir, settingsPath: settings }))
+      .rejects.toThrow(/Claude Code settings could not be parsed.*settings\.json.*rerun agentfeed hook install claude-code/s);
+  });
+
+  it('rejects non-object Claude settings instead of replacing user configuration shape', async () => {
+    const settings = join(dir, '.claude', 'settings.json');
+    await mkdir(join(dir, '.claude'), { recursive: true });
+    await writeFile(settings, '[]\n');
+
+    await expect(installClaudeCodeHook({ projectRoot: dir, settingsPath: settings }))
+      .rejects.toThrow(/Claude Code settings must be a JSON object.*settings\.json/s);
+    expect(await readFile(settings, 'utf8')).toBe('[]\n');
   });
 
 

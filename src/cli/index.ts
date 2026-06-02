@@ -9,7 +9,7 @@ import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 import { formatCollectionExplain } from '../draft/explain.js';
-import { checkApiReachability, checkIngestionToken, isTrustedReviewUrl, previewDraftRemote, publishDraft } from '../api/client.js';
+import { checkApiCompatibility, checkApiReachability, checkIngestionToken, isTrustedReviewUrl, previewDraftRemote, publishDraft } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
 import { applyRedactedPublicFields, publicScanFieldsFromDraft, scanAndRedactDraftPublicFields, type PublicScanFields } from '../privacy/draft-sanitizer.js';
@@ -579,6 +579,7 @@ async function cmdDoctor() {
     : await resolveApiBaseUrlWithMetadata({ cwd: process.cwd() });
   const apiBaseUrl = credentialResolution.api_base_url ?? apiResolution?.value ?? await resolveApiBaseUrl();
   const apiReachability = await checkApiReachability(apiBaseUrl);
+  const apiCompatibility = await checkApiCompatibility(apiBaseUrl);
   checks.push(['global credentials file exists', creds ? 'yes' : 'no']);
   checks.push(['credentials file path', credentialResolution.credentials_file_path]);
   checks.push(['credential source', credentialSourceLabel(credentialResolution.token_source)]);
@@ -593,6 +594,12 @@ async function cmdDoctor() {
     )
   ]);
   checks.push(['API ready', apiReachability.ok ? `yes (${apiReachability.status})` : `no (${apiReachability.status ?? apiReachability.error ?? 'unreachable'})`]);
+  checks.push([
+    'API compatibility',
+    apiCompatibility.compatible
+      ? `yes (${apiCompatibility.data?.api_version ?? 'unknown'} / ${apiCompatibility.data?.contract_version ?? 'unknown'})`
+      : `no (${apiCompatibility.status ?? apiCompatibility.error ?? 'unreachable'})`
+  ]);
   const tokenWarnings: string[] = [];
   if (creds?.ingestion_token) {
     const tokenCheck = await checkIngestionToken(creds);

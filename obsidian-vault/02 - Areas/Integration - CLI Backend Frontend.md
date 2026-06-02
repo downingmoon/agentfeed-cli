@@ -12,6 +12,21 @@ created: 2026-05-30
 
 # Integration - CLI Backend Frontend
 
+## 2026-06-02 API compatibility metadata handshake
+
+> [!success]
+> Backend `/v1/metadata`, CLI `doctor`, Frontend diagnostic metadata client, and dev OpenAPI contracts now share one compatibility source of truth.
+
+계약:
+
+- Backend exposes `service`, `api_version`, `backend_version`, `contract_version`, and explicit `supported_clients.cli/frontend` fields.
+- CLI validates API version, contract version, and minimum CLI version before reporting doctor compatibility as `yes`; malformed semver metadata fails closed.
+- Frontend can call `system.metadata()` and reject backend contract/version or malformed minimum-version metadata without coupling the global app bootstrap to metadata availability.
+- `agentfeed-dev` gates the shared endpoint, response fields, and OpenAPI schema fields so API/client drift fails locally and in orchestration.
+
+검증: [[Commercial Readiness Hardening - API Compatibility Metadata Handshake 2026-06-02#Verification evidence]]
+
+
 ## 2026-06-02 CLI split review host allowlist
 
 > [!success]

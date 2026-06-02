@@ -500,6 +500,22 @@ describe('status and doctor provenance output', () => {
         res.end(JSON.stringify({ status: 'ready', database: { connected: true }, migration: { up_to_date: true } }));
         return;
       }
+      if (req.url === '/v1/metadata') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({
+          data: {
+            service: 'agentfeed-api',
+            api_version: 'v1',
+            backend_version: '0.1.0',
+            contract_version: '2026-06-02',
+            supported_clients: {
+              cli: { min_version: '0.2.0', contract_version: '2026-06-02' },
+              frontend: { min_version: '0.1.0', contract_version: '2026-06-02' }
+            }
+          }
+        }));
+        return;
+      }
       if (req.url === '/v1/ingest/status') {
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end(JSON.stringify({
@@ -536,7 +552,9 @@ describe('status and doctor provenance output', () => {
 
       expect(stdout).toContain('API ready: yes (200)');
       expect(requestedUrls).toContain('/health/ready');
+      expect(requestedUrls).toContain('/v1/metadata');
       expect(requestedUrls).not.toContain('/health');
+      expect(stdout).toContain('API compatibility: yes (v1 / 2026-06-02)');
       expect(stdout).toContain('ingestion token valid: yes (200)');
       expect(stdout).toContain(`ingestion token expires at: ${soon}`);
       expect(stdout).toContain('Warning: ingestion token expires soon');

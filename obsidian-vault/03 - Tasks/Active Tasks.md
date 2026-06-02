@@ -23,6 +23,9 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Backend `/v1/metadata`, CLI `doctor` compatibility check, Frontend diagnostic metadata client, Dev OpenAPI shared schema gate 보강
+- 관련 노트: [[Commercial Readiness Hardening - API Compatibility Metadata Handshake 2026-06-02]]
+
 - [x] CLI `open`과 upload response parsing이 API/review frontend split-host 배포를 명시적 allowlist로 지원
 - 관련 노트: [[Commercial Readiness Hardening - CLI Split Review Host Allowlist 2026-06-02]]
 

@@ -9,6 +9,7 @@ import { writeDraft } from '../draft/write.js';
 import { sanitizedDraftForUpload, scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
 import { stripUrlUserInfo } from '../privacy/url.js';
 import { shortHash } from '../utils/hash.js';
+import { AGENTFEED_CLI_VERSION } from '../version.js';
 
 export class AgentFeedApiError extends Error {
   constructor(public status: number, public code: string, message: string, public details?: Record<string, unknown>) {
@@ -23,6 +24,35 @@ export interface ApiCheckResult {
   error?: string;
   data?: IngestionTokenStatus;
 }
+
+export interface ApiMetadata {
+  service?: string;
+  api_version?: string;
+  backend_version?: string;
+  contract_version?: string;
+  supported_clients?: {
+    cli?: {
+      min_version?: string;
+      contract_version?: string;
+    };
+    frontend?: {
+      min_version?: string;
+      contract_version?: string;
+    };
+  };
+}
+
+export interface ApiCompatibilityCheckResult {
+  ok: boolean;
+  compatible: boolean;
+  url: string;
+  status?: number;
+  error?: string;
+  data?: ApiMetadata;
+}
+
+export const EXPECTED_API_VERSION = 'v1';
+export const EXPECTED_API_CONTRACT_VERSION = '2026-06-02';
 
 const DEFAULT_API_REQUEST_TIMEOUT_MS = 30_000;
 const DEFAULT_API_RETRY_ATTEMPTS = 3;
@@ -89,6 +119,17 @@ async function parseCheckData(response: Response): Promise<IngestionTokenStatus 
   }
 }
 
+async function parseMetadataData(response: Response): Promise<ApiMetadata | undefined> {
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.includes('application/json')) return undefined;
+  try {
+    const parsed = await response.json() as { data?: ApiMetadata };
+    return parsed.data;
+  } catch {
+    return undefined;
+  }
+}
+
 async function fetchCheck(url: string, init: RequestInit): Promise<ApiCheckResult> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 3000);
@@ -102,8 +143,65 @@ async function fetchCheck(url: string, init: RequestInit): Promise<ApiCheckResul
   }
 }
 
+function parseSemverParts(value: string): [number, number, number] | undefined {
+  const match = value.match(/^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/);
+  if (!match) return undefined;
+  return [Number(match[1]), Number(match[2]), Number(match[3])];
+}
+
+function compareSemver(left: string, right: string): number | undefined {
+  const leftParts = parseSemverParts(left);
+  const rightParts = parseSemverParts(right);
+  if (!leftParts || !rightParts) return undefined;
+  for (let index = 0; index < 3; index += 1) {
+    const a = leftParts[index];
+    const b = rightParts[index];
+    if (a !== b) return a > b ? 1 : -1;
+  }
+  return 0;
+}
+
+export function apiMetadataCompatible(metadata: ApiMetadata | undefined): boolean {
+  if (!metadata) return false;
+  const cli = metadata.supported_clients?.cli;
+  return metadata.service === 'agentfeed-api'
+    && metadata.api_version === EXPECTED_API_VERSION
+    && metadata.contract_version === EXPECTED_API_CONTRACT_VERSION
+    && cli?.contract_version === EXPECTED_API_CONTRACT_VERSION
+    && typeof cli.min_version === 'string'
+    && (compareSemver(AGENTFEED_CLI_VERSION, cli.min_version) ?? -1) >= 0;
+}
+
 export async function checkApiReachability(apiBaseUrl: string): Promise<ApiCheckResult> {
   return fetchCheck(healthUrl(apiBaseUrl), { method: 'GET' });
+}
+
+export async function checkApiCompatibility(apiBaseUrl: string): Promise<ApiCompatibilityCheckResult> {
+  const url = apiUrl(apiBaseUrl, '/metadata');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 3000);
+  try {
+    const response = await fetch(url, { method: 'GET', signal: controller.signal });
+    const data = await parseMetadataData(response);
+    const compatible = response.ok && apiMetadataCompatible(data);
+    return {
+      ok: response.ok,
+      compatible,
+      url,
+      status: response.status,
+      data,
+      error: compatible ? undefined : 'AgentFeed API compatibility metadata is missing or unsupported.'
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      compatible: false,
+      url,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function checkIngestionToken(credentials: AgentFeedCredentials): Promise<ApiCheckResult> {

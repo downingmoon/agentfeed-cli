@@ -7,7 +7,7 @@ import { promisify } from 'node:util';
 import { initProject } from '../src/config/project-config.js';
 import { writeDraft } from '../src/draft/write.js';
 import { createEmptyDraft } from '../src/draft/create.js';
-import { checkApiReachability, checkIngestionToken, createCliAuthSession, draftToIngestRequest, draftUploadPayloadHash, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
+import { apiMetadataCompatible, checkApiCompatibility, checkApiReachability, checkIngestionToken, createCliAuthSession, draftToIngestRequest, draftUploadPayloadHash, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
 import { browserLogin, waitForCliAuthExchange } from '../src/auth/browser-login.js';
 import { buildClaudeCodeStopHookCommand, installClaudeCodeHook, uninstallClaudeCodeHook } from '../src/hooks/claude-code-settings.js';
 import { pathExists } from '../src/utils/fs.js';
@@ -562,6 +562,35 @@ describe('api client', () => {
 
     expect(payload.worklog.summary).toBe('Generated machine summary.');
     expect(payload.worklog.user_note).toBe('Human review context.');
+  });
+
+  it('checks API compatibility metadata before release-sensitive operations', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      data: {
+        service: 'agentfeed-api',
+        api_version: 'v1',
+        backend_version: '0.1.0',
+        contract_version: '2026-06-02',
+        supported_clients: {
+          cli: { min_version: '0.2.0', contract_version: '2026-06-02' },
+          frontend: { min_version: '0.1.0', contract_version: '2026-06-02' }
+        }
+      }
+    }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await checkApiCompatibility('http://localhost:8001/v1');
+
+    expect(result).toMatchObject({ ok: true, compatible: true, status: 200, url: 'http://localhost:8001/v1/metadata' });
+    expect(result.data?.contract_version).toBe('2026-06-02');
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/v1/metadata', expect.objectContaining({ method: 'GET' }));
+    expect(apiMetadataCompatible({
+      ...result.data,
+      supported_clients: {
+        ...result.data?.supported_clients,
+        cli: { min_version: 'not-a-version', contract_version: '2026-06-02' }
+      }
+    })).toBe(false);
   });
 
   it('checks API reachability against the backend readiness endpoint', async () => {

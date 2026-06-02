@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Frontend Review API Config Recovery 2026-06-02]] — review page fails closed on API config bootstrap errors
+
 - [[Commercial Readiness Hardening - CLI Upload API Compatibility Preflight 2026-06-02]] — CLI upload paths fail closed on incompatible Backend metadata
 
 - [[Commercial Readiness Hardening - Hosted Frontend Deployment Smoke 2026-06-02]] — hosted Frontend DNS/root freshness smoke for commercial readiness

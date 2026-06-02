@@ -23,6 +23,10 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Frontend Worklog Review page가 `apiConfigError`를 auth recovery와 동일하게 fail-closed 처리
+- [x] Review page API config bootstrap failure source contract 추가
+- 관련 노트: [[Commercial Readiness Hardening - Frontend Review API Config Recovery 2026-06-02]]
+
 - [x] CLI `share`/`publish`/`collect --upload`/`preview --remote`가 upload 전 API metadata compatibility를 fail-closed 확인
 - [x] incompatible metadata 시 `/ingest/worklogs`를 호출하지 않는 regression 추가
 - 관련 노트: [[Commercial Readiness Hardening - CLI Upload API Compatibility Preflight 2026-06-02]]

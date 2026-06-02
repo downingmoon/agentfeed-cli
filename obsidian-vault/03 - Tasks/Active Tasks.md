@@ -338,6 +338,9 @@ created: 2026-05-30
 
 ## P2 후보
 
+- [x] Frontend Settings profile 저장 성공 후 username 변경 실패 시 partial-success 복구와 local state rollback 보장
+- 관련 노트: [[Commercial Readiness Hardening - Frontend Settings Profile Partial Save 2026-06-02]]
+
 - [x] CLI 같은 local draft에 대한 concurrent publish/share upload를 per-draft lock으로 직렬화해 중복 private review 업로드 방지
 - 관련 노트: [[Commercial Readiness Hardening - CLI Concurrent Publish Serialization 2026-06-02]]
 

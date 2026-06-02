@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Frontend Settings Profile Partial Save 2026-06-02]] — Settings preserves saved profile fields when username mutation fails
+
 - [[Commercial Readiness Hardening - CLI Concurrent Publish Serialization 2026-06-02]] — CLI serializes same-draft publish/share upload to prevent duplicate private review artifacts
 
 - [[Commercial Readiness Hardening - Backend Mixed Auth and Proxy Identity 2026-06-02]] — Backend mixed cookie/Bearer auth fallback and malformed forwarded-chain identity hardening

@@ -3383,3 +3383,18 @@ Frontend 계약:
 - If a lock cannot be acquired within the bounded wait, CLI returns `DRAFT_UPLOAD_LOCKED` with a rerun instruction instead of issuing another POST.
 
 검증: [[Commercial Readiness Hardening - CLI Concurrent Publish Serialization 2026-06-02#검증 증거]]
+
+
+## 2026-06-02 Frontend settings profile partial-save recovery
+
+> [!success]
+> Settings profile save now preserves successfully saved profile fields even when the separate username mutation fails.
+
+통합 계약:
+
+- Frontend treats `/me/profile` and `/me/username` as separate mutations, not a fake atomic transaction.
+- If profile save succeeds and username save fails, AppContext/form state apply the committed profile fields.
+- The username field rolls back to the committed handle instead of displaying an unsaved requested handle.
+- UI copy reports both saved profile details and username failure recovery.
+
+검증: [[Commercial Readiness Hardening - Frontend Settings Profile Partial Save 2026-06-02#검증 증거]]

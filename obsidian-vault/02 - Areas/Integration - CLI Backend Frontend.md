@@ -12,6 +12,21 @@ created: 2026-05-30
 
 # Integration - CLI Backend Frontend
 
+## 2026-06-02 OpenAPI request-body and schema contract gate
+
+> [!success]
+> CLI/API/Frontend wire shape drift를 path/method뿐 아니라 request body와 response schema의 type, required, nullable, enum, format까지 검증합니다.
+
+계약:
+
+- CLI browser auth/ingest payload request body shape가 Backend OpenAPI와 일치해야 합니다.
+- Frontend worklog/project/profile/settings/token forms는 omitted-vs-null semantics와 enum visibility를 유지해야 합니다.
+- Feed/review/project/profile/token/settings responses는 client-critical type/nullability contract를 유지해야 합니다.
+- `agentfeed-dev ./scripts/test-all.sh`가 marker와 contract runner를 같이 검증합니다.
+
+검증: [[Commercial Readiness Hardening - OpenAPI Request Body and Schema Contract Gate 2026-06-02#검증 증거]]
+
+
 ## 2026-06-02 audit trail CI fail-closed supply-chain alignment
 
 > [!success]

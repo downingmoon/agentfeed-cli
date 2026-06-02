@@ -125,6 +125,11 @@ created: 2026-05-30
 
 ## External release blockers
 
+- [x] CLI Windows `auto`/`keychain` credential store를 DPAPI encrypted payload 방식으로 보강
+- [x] Backend `/v1/ingest/worklogs` user/day count+byte durable quota 추가
+- [x] Frontend hosted `/login` redirect가 local route/middleware code issue가 아님을 재확인
+- 관련 노트: [[Commercial Readiness Hardening - Windows DPAPI and Ingestion Quota 2026-06-03]]
+
 - [x] CLI login/token-stdin/browser rotate credential 저장 전 API compatibility gate 추가
 - [x] Backend GitHub OAuth provider token non-retention 및 legacy retained token purge migration 추가
 - [x] Dev commercial-readiness interactive OAuth no-open workflow fail-fast ACK 추가

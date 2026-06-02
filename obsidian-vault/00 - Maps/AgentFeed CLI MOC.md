@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Windows DPAPI and Ingestion Quota 2026-06-03]] — CLI Windows DPAPI credential store, Backend durable ingestion quota, hosted root code/deploy distinction
+
 - [[Commercial Readiness Hardening - Login Provider Token and Interactive Evidence Gates 2026-06-03]] — CLI login/rotate API compatibility gate, Backend GitHub provider token non-retention, Dev interactive OAuth evidence fail-fast
 
 - [[Commercial Readiness Hardening - Cache Workflow DNS and Production Secret Gates 2026-06-02]] — CLI cache trust boundary, Backend production placeholder rejection, Frontend hosted DNS diagnostic, Dev workflow evidence gate

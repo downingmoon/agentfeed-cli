@@ -1,6 +1,6 @@
 import { execFile, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { chmod, mkdir, rm } from 'node:fs/promises';
+import { chmod, mkdir, readFile, rm } from 'node:fs/promises';
 import { homedir, platform } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
@@ -290,6 +290,17 @@ function trimOneTrailingNewline(value: string): string {
   return value.endsWith('\n') ? value.slice(0, -1) : value;
 }
 
+async function windowsPowerShellCommand(): Promise<string | null> {
+  for (const command of ['powershell.exe', 'powershell', 'pwsh']) {
+    if (await commandAvailable(command, ['-NoProfile', '-NonInteractive', '-Command', '$PSVersionTable.PSVersion.Major'])) return command;
+  }
+  return null;
+}
+
+function windowsDpapiSecretPath(account: string): string {
+  return join(globalAgentFeedDir(), `${account}.dpapi`);
+}
+
 function nativeKeychainStore(metadata: { keychain_service?: string; keychain_account?: string } = {}): SecretStore {
   const service = metadata.keychain_service || KEYCHAIN_SERVICE;
   const account = metadata.keychain_account || keychainAccount();
@@ -340,6 +351,60 @@ function nativeKeychainStore(metadata: { keychain_service?: string; keychain_acc
       },
       async delete() {
         try { await execFileAsync('secret-tool', ['clear', 'service', service, 'account', account], { timeout: KEYCHAIN_TIMEOUT_MS, env: keychainCommandEnv() }); } catch { /* item may not exist */ }
+      },
+    };
+  }
+
+  if (currentPlatform === 'win32') {
+    return {
+      service,
+      account,
+      async isAvailable() {
+        return (await windowsPowerShellCommand()) !== null;
+      },
+      async read() {
+        const command = await windowsPowerShellCommand();
+        if (!command) return null;
+        try {
+          const encryptedSecret = await readFile(windowsDpapiSecretPath(account), 'utf8');
+          const { stdout } = await spawnWithInput(command, [
+            '-NoProfile',
+            '-NonInteractive',
+            '-Command',
+            [
+              "$ErrorActionPreference = 'Stop'",
+              '$blob = [Console]::In.ReadToEnd()',
+              '$secure = ConvertTo-SecureString -String $blob',
+              '$bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)',
+              'try { [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr) } finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }',
+            ].join('; '),
+          ], encryptedSecret);
+          const secret = trimOneTrailingNewline(stdout);
+          return secret || null;
+        } catch {
+          return null;
+        }
+      },
+      async write(secret: string) {
+        const command = await windowsPowerShellCommand();
+        if (!command) throw new Error('Windows PowerShell is not available for DPAPI credential storage.');
+        const { stdout } = await spawnWithInput(command, [
+          '-NoProfile',
+          '-NonInteractive',
+          '-Command',
+          [
+            "$ErrorActionPreference = 'Stop'",
+            '$secret = [Console]::In.ReadToEnd()',
+            'ConvertTo-SecureString -String $secret -AsPlainText -Force | ConvertFrom-SecureString',
+          ].join('; '),
+        ], secret);
+        const encryptedSecret = trimOneTrailingNewline(stdout);
+        if (!encryptedSecret) throw new Error('Windows DPAPI did not return an encrypted credential payload.');
+        await writeTextFileAtomic(windowsDpapiSecretPath(account), `${encryptedSecret}\n`, { mode: 0o600 });
+        try { await chmod(windowsDpapiSecretPath(account), 0o600); } catch { /* best-effort on non-POSIX filesystems */ }
+      },
+      async delete() {
+        await rm(windowsDpapiSecretPath(account), { force: true });
       },
     };
   }

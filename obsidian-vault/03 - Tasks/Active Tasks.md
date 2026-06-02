@@ -23,13 +23,17 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Dev `make commercial-readiness` unified fail-closed release-readiness gate 추가
+- [x] OAuth live smoke machine-readable evidence artifact 지원
+- 관련 노트: [[Commercial Readiness Hardening - Unified Readiness Gate 2026-06-02]]
+
 - [x] Frontend auth bootstrap 비-401 실패도 signed-in/social state fail-closed 처리
 - [x] Local dev OAuth contract smoke 및 hosted compatibility smoke harness local override 검증
 - 관련 노트: [[Commercial Readiness Hardening - Auth Bootstrap Fail Closed and Hosted Smoke Evidence 2026-06-02]]
 
 ## External release blockers
 
-- [ ] Default hosted compatibility smoke: `api.agentfeed.dev` DNS/deployment 준비 후 `make smoke-hosted-compatibility` 통과 필요
+- [ ] Default commercial readiness gate: `api.agentfeed.dev` DNS/deployment 준비 후 `make commercial-readiness`가 `COMMERCIAL_READINESS_PASSED` 출력 필요
 
 - [x] Frontend API response body size cap 및 Feed/Search request AbortSignal propagation 보강
 - 관련 노트: [[Commercial Readiness Hardening - Frontend API Body Limit and Abortable Requests 2026-06-02]]

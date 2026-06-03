@@ -23,6 +23,9 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Backend GitHub OAuth provider payload object/access token/provider id fail-closed 검증 보강
+- 관련 노트: [[Commercial Readiness Hardening - Backend OAuth Provider Payload Validation 2026-06-04]]
+
 - [x] Backend CLI auth session status 조회 token hash 요구
 - [x] Frontend CLI authorize `session_id/status_token` TTL storage 및 explicit logout recovery event isolation
 - [x] CLI Claude Code hook settings JSON validation 및 atomic write 보강

@@ -25,6 +25,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - Backend OAuth Provider Payload Validation 2026-06-04]] — Backend GitHub OAuth provider malformed payloads fail closed with explicit 502 diagnostics
+
 - [[Commercial Readiness Hardening - CLI Cached Upload Reuse Diagnostics 2026-06-04]] — CLI cached private review reuse now reports explicit failure reasons
 
 - [[Commercial Readiness Hardening - Frontend Hosted HTTPS Readiness Gate 2026-06-04]] — Frontend hosted readiness rejects non-local plaintext HTTP URLs and suppresses X-Powered-By

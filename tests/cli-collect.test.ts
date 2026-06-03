@@ -404,6 +404,108 @@ describe('collect CLI command', () => {
     }
   });
 
+  it('keeps the collection cursor unchanged when collect JSON upload preflight fails', async () => {
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = "json-upload-cursor-invalid-token";\n');
+    const server = createServer(async (req, res) => {
+      if (handleCompatibleMetadata(req, res)) return;
+      if (req.method === 'GET' && req.url === '/v1/ingest/status') {
+        res.writeHead(401, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid ingestion token' } }));
+        return;
+      }
+      if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
+        await readRequestBody(req);
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ data: {} }));
+        return;
+      }
+      res.writeHead(404, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ error: { code: 'NOT_FOUND' } }));
+    });
+    await new Promise<void>((resolve, reject) => {
+      server.once('error', reject);
+      server.listen(0, '127.0.0.1', resolve);
+    });
+    try {
+      const address = server.address();
+      if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+      await expect(execFileAsync(process.execPath, [
+        cliPath,
+        'collect',
+        '--json',
+        '--upload',
+        '--since',
+        '2026-05-20T01:00:00Z',
+        '--until',
+        '2026-05-20T02:00:00Z'
+      ], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: 'af_live_collect_cursor_invalid_token',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+        }
+      })).rejects.toMatchObject({
+        stderr: expect.stringContaining('Ingestion token check failed')
+      });
+      await expect(readCollectionState(dir)).resolves.toEqual({});
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('keeps the collection cursor unchanged when collect JSON ingest upload fails', async () => {
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = "json-upload-cursor-ingest-fails";\n');
+    let ingestRequestCount = 0;
+    const server = createServer(async (req, res) => {
+      if (handleUploadPreflight(req, res)) return;
+      if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
+        ingestRequestCount += 1;
+        await readRequestBody(req);
+        res.writeHead(500, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ error: { code: 'SERVER_ERROR', message: 'boom', details: {} } }));
+        return;
+      }
+      res.writeHead(404, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ error: { code: 'NOT_FOUND' } }));
+    });
+    await new Promise<void>((resolve, reject) => {
+      server.once('error', reject);
+      server.listen(0, '127.0.0.1', resolve);
+    });
+    try {
+      const address = server.address();
+      if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+      await expect(execFileAsync(process.execPath, [
+        cliPath,
+        'collect',
+        '--json',
+        '--upload',
+        '--since',
+        '2026-05-20T01:00:00Z',
+        '--until',
+        '2026-05-20T02:00:00Z'
+      ], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: 'af_live_collect_cursor_upload_fails',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+        }
+      })).rejects.toMatchObject({
+        stderr: expect.stringContaining('Server error. Local draft was kept.')
+      });
+      expect(ingestRequestCount).toBeGreaterThan(0);
+      await expect(readCollectionState(dir)).resolves.toEqual({});
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
   it('reports requested collect JSON open-review handoff failures in the draft upload payload', async () => {
     await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = "json-upload-open";\n');
     const server = createServer(async (req, res) => {

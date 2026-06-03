@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { initProject } from '../src/config/project-config.js';
+import { readCollectionState } from '../src/config/collection-state.js';
 import { createEmptyDraft } from '../src/draft/create.js';
 import { writeDraft } from '../src/draft/write.js';
 import { draftUploadCredentialBindingHash, draftUploadPayloadHash } from '../src/api/client.js';
@@ -1029,6 +1030,10 @@ describe('share CLI command', () => {
         '--session-file',
         sessionFile,
         '--all',
+        '--since',
+        '2026-05-31T00:00:00Z',
+        '--until',
+        '2026-05-31T01:00:00Z',
         '--clipboard',
         '--open-review'
       ], {
@@ -1174,6 +1179,7 @@ describe('share CLI command', () => {
       await expect(run).rejects.toMatchObject({ code: 1 });
       await expect(readFile(clipboardLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
       await expect(readFile(browserLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+      await expect(readCollectionState(dir)).resolves.toEqual({});
     } finally {
       await rm(fakeBin, { recursive: true, force: true });
       await new Promise<void>((resolve) => server.close(() => resolve()));

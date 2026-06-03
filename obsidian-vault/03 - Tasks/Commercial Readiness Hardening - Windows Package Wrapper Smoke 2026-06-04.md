@@ -41,10 +41,11 @@ CLI npm 패키지는 `agentfeed` bin을 배포하지만 Windows에서는 npm이 
 > - `npm run typecheck` ✅
 > - `npm run release:preflight` ✅ — build/typecheck/396 tests/npm pack/install smoke 통과
 > - First remote Windows run exposed `spawnSync npm ENOENT`; fixed by resolving `npm.cmd` on Windows and executing command shims through shell.
+> - GitHub Actions CI `26899124155` ✅ — `CLI release gate` success, `Windows native credential smoke` success including package wrapper smoke.
 
 ## 남은 외부 차단 조건
 
-- 실제 Windows runner 결과는 push 후 GitHub Actions `Windows native credential smoke` job에서 확인해야 한다.
+- Windows runner package wrapper smoke는 GitHub Actions `26899124155`에서 통과했다.
 - Default commercial readiness의 hosted blocker(`api.agentfeed.dev` DNS, `agentfeed.dev/` stale `/login`)는 별도 외부 배포/DNS 작업으로 유지한다.
 
 ## 관련 노트

@@ -175,3 +175,18 @@ npm audit --audit-level=high
 ```
 
 Result: targeted Windows helper test passed, release preflight passed with `389 passed`, and audit found `0 vulnerabilities`.
+
+## Final Remote Verification
+
+```bash
+gh run watch 26893935973 --repo downingmoon/agentfeed-cli --exit-status
+```
+
+Result: GitHub Actions CI passed.
+
+- `CLI release gate`: success in `1m27s`.
+- `Windows native credential smoke`: success in `1m17s`.
+- The successful Windows job covered checkout, Node/npm pinning, `npm ci`, `npm run build`, and native Windows DPAPI credential smoke.
+
+> [!success] Final status
+> Windows DPAPI credential storage is now proven by both local regression tests and a real `windows-latest` GitHub Actions runner.

@@ -177,6 +177,9 @@ created: 2026-05-30
 - [x] Frontend API compatibility gate가 `/v1/metadata` 외 `/v1/feed`, `/v1/tags`, `/v1/explore` public endpoint shape까지 probe하도록 보강
 - 관련 노트: [[Commercial Readiness Hardening - Frontend Core API Compatibility Probes 2026-06-03]]
 
+- [x] Frontend compatibility evidence marker와 hung CI subprocess timeout fail-closed 보강
+- 관련 노트: [[Commercial Readiness Hardening - Compatibility Evidence and CI Timeout 2026-06-03]]
+
 - [ ] Default commercial readiness gate: `https://agentfeed.dev/` stale `/login` redirect 해소 + `api.agentfeed.dev` DNS/deployment 준비 후 `make commercial-readiness`가 `COMMERCIAL_READINESS_PASSED` 출력 필요
 
 - [x] Frontend API response body size cap 및 Feed/Search request AbortSignal propagation 보강

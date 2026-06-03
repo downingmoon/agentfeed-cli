@@ -168,13 +168,12 @@ describe('api client', () => {
     await expect(readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json.upload.lock`), 'utf8')).resolves.toContain('active-lock');
   });
 
-  it('keeps stale-looking upload locks when the owner process is still alive', async () => {
+  it('keeps fresh upload locks while the owner heartbeat is current', async () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
     await writeDraft(dir, draft);
     const lockPath = join(dir, '.agentfeed', 'drafts', `${draft.id}.json.upload.lock`);
-    await writeFile(lockPath, JSON.stringify({ pid: process.pid, token: 'live-stale-lock', created_at: new Date(Date.now() - 10 * 60_000).toISOString() }));
-    const oldTimestamp = new Date(Date.now() - 10 * 60_000);
-    await utimes(lockPath, oldTimestamp, oldTimestamp);
+    const now = new Date().toISOString();
+    await writeFile(lockPath, JSON.stringify({ pid: process.pid, token_hash: 'live-lock-hash', created_at: now, heartbeat_at: now }));
     process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_TIMEOUT_MS = '1';
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({
       data: {
@@ -191,9 +190,64 @@ describe('api client', () => {
       .rejects.toMatchObject({
         status: 423,
         code: 'DRAFT_UPLOAD_LOCKED'
-      });
+    });
     expect(fetchMock).not.toHaveBeenCalled();
-    await expect(readFile(lockPath, 'utf8')).resolves.toContain('live-stale-lock');
+    await expect(readFile(lockPath, 'utf8')).resolves.toContain('live-lock-hash');
+  });
+
+  it('does not persist raw upload lock tokens and releases only matching lock hashes', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    await writeDraft(dir, draft);
+    const lockPath = join(dir, '.agentfeed', 'drafts', `${draft.id}.json.upload.lock`);
+    let observedLock = '';
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      observedLock = await readFile(lockPath, 'utf8');
+      return new Response(JSON.stringify({
+        data: {
+          id: 'worklog_lock_hash',
+          status: 'needs_review',
+          visibility: 'private',
+          review_url: 'https://agentfeed.dev/worklogs/worklog_lock_hash/review',
+          created_at: '2026-05-19T00:00:00Z'
+        }
+      }), { status: 200, headers: { 'content-type': 'application/json' } });
+    }));
+
+    await publishDraft({ cwd: dir, id: draft.id, credentials: defaultPublishCredentials });
+
+    const parsed = JSON.parse(observedLock) as Record<string, unknown>;
+    expect(parsed.token_hash).toEqual(expect.any(String));
+    expect(Object.hasOwn(parsed, 'token')).toBe(false);
+  });
+
+  it('removes stale upload locks even when an unrelated process reuses the recorded pid without heartbeat', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    await writeDraft(dir, draft);
+    const lockPath = join(dir, '.agentfeed', 'drafts', `${draft.id}.json.upload.lock`);
+    await writeFile(lockPath, JSON.stringify({
+      pid: process.pid,
+      token_hash: 'old-lock-hash',
+      created_at: new Date(Date.now() - 10 * 60_000).toISOString(),
+      heartbeat_at: new Date(Date.now() - 10 * 60_000).toISOString()
+    }));
+    const oldTimestamp = new Date(Date.now() - 10 * 60_000);
+    await utimes(lockPath, oldTimestamp, oldTimestamp);
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      data: {
+        id: 'worklog_pid_reuse',
+        status: 'needs_review',
+        visibility: 'private',
+        review_url: 'https://agentfeed.dev/worklogs/worklog_pid_reuse/review',
+        created_at: '2026-05-19T00:00:00Z'
+      }
+    }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await publishDraft({ cwd: dir, id: draft.id, credentials: defaultPublishCredentials });
+
+    expect(result.id).toBe('worklog_pid_reuse');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await expect(readFile(lockPath, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
   it('accepts upload review URLs from an explicitly configured split review frontend host', async () => {

@@ -97,6 +97,29 @@ function redactedUserNoteForFingerprint(note?: string | null): string | null {
   return typeof value === 'string' && value ? value : null;
 }
 
+function collectionPolicyForFingerprint(config: AgentFeedProjectConfig): Record<string, unknown> {
+  return {
+    project: {
+      name: config.project.name,
+      repository_url: config.project.repository_url ?? null,
+      visibility: config.project.visibility,
+      tags: config.project.tags
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+        .slice(0, 10)
+        .sort((a, b) => a.localeCompare(b))
+    },
+    collection: {
+      include_file_stats: config.collection.include_file_stats,
+      include_public_prompt: config.collection.include_public_prompt,
+      include_token_usage: config.collection.include_token_usage,
+      include_estimated_cost: config.collection.include_estimated_cost,
+      include_test_results: config.collection.include_test_results,
+      run_tests_on_collect: config.collection.run_tests_on_collect
+    }
+  };
+}
+
 function collectionFingerprint(input: {
   source: AgentType;
   sessionId?: string | null;
@@ -105,12 +128,14 @@ function collectionFingerprint(input: {
   changedFiles?: ChangedFileSummary[];
   userNote?: string | null;
   configuredCommandIntent?: boolean;
+  collectionPolicy?: Record<string, unknown>;
 }): string | null {
   if (!input.headCommit) return null;
   const changedFiles = normalizedChangedFilesForFingerprint(input.changedFiles ?? []);
   const uploadAffectingInputs = {
     user_note: input.userNote ?? null,
-    configured_command_intent: input.configuredCommandIntent === true
+    configured_command_intent: input.configuredCommandIntent === true,
+    collection_policy: input.collectionPolicy ?? null
   };
   if (input.sessionId) {
     return shortHash(JSON.stringify({ source: input.source, session_id: input.sessionId, head_commit: input.headCommit, window: input.window ?? null, changed_files: changedFiles, upload_affecting_inputs: uploadAffectingInputs }), 16);
@@ -278,7 +303,8 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
     window: actualWindow,
     changedFiles,
     userNote: redactedUserNoteForFingerprint(normalizedNote),
-    configuredCommandIntent
+    configuredCommandIntent,
+    collectionPolicy: collectionPolicyForFingerprint(config)
   });
   if (fingerprint && !options.force && !configuredCommandIntent) {
     const existing = await findDraftByFingerprint(root, fingerprint);

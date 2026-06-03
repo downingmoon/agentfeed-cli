@@ -1,6 +1,6 @@
 import type { AgentFeedCredentials, CliAuthExchangeResult, CliAuthSession, IngestWorklogRequest, LocalDraft, Visibility, WorklogStatus } from '../types.js';
 import { randomUUID } from 'node:crypto';
-import { open, readFile, rm, stat, type FileHandle } from 'node:fs/promises';
+import { open, readFile, rm, stat, utimes, type FileHandle } from 'node:fs/promises';
 import { isIP } from 'node:net';
 import { resolveProjectRoot } from '../config/project-config.js';
 import { readDraft } from '../draft/read.js';
@@ -800,39 +800,40 @@ async function removeStaleDraftUploadLock(lockPath: string): Promise<void> {
     return;
   }
   if (Date.now() - lockStat.mtimeMs <= DRAFT_UPLOAD_LOCK_STALE_MS) return;
-  if (await draftUploadLockOwnerAppearsAlive(lockPath)) return;
   await rm(lockPath, { force: true }).catch(() => undefined);
 }
 
-async function draftUploadLockOwnerAppearsAlive(lockPath: string): Promise<boolean> {
-  let parsed: { pid?: unknown };
-  try {
-    parsed = JSON.parse(await readFile(lockPath, 'utf8')) as { pid?: unknown };
-  } catch {
-    return false;
-  }
-  const pid = parsed.pid;
-  if (!Number.isInteger(pid) || (pid as number) <= 0) return false;
-  try {
-    process.kill(pid as number, 0);
-    return true;
-  } catch (error) {
-    const code = typeof error === 'object' && error !== null && 'code' in error ? String((error as { code?: unknown }).code) : '';
-    if (code === 'ESRCH') return false;
-    return true;
-  }
+function draftUploadLockTokenHash(token: string): string {
+  return shortHash(`draft-upload-lock:${token}`, 32);
 }
 
 async function createDraftUploadLockFile(lockPath: string, token: string): Promise<FileHandle> {
   const handle = await open(lockPath, 'wx', 0o600);
   try {
-    await handle.writeFile(`${JSON.stringify({ pid: process.pid, token, created_at: new Date().toISOString() })}\n`, 'utf8');
+    const now = new Date().toISOString();
+    await handle.writeFile(`${JSON.stringify({
+      schema_version: 2,
+      pid: process.pid,
+      token_hash: draftUploadLockTokenHash(token),
+      created_at: now,
+      heartbeat_at: now
+    })}\n`, 'utf8');
     return handle;
   } catch (error) {
     await handle.close().catch(() => undefined);
     await rm(lockPath, { force: true }).catch(() => undefined);
     throw error;
   }
+}
+
+function startDraftUploadLockHeartbeat(lockPath: string): ReturnType<typeof setInterval> {
+  const heartbeatMs = Math.max(1_000, Math.floor(DRAFT_UPLOAD_LOCK_STALE_MS / 4));
+  const heartbeat = setInterval(() => {
+    const now = new Date();
+    void utimes(lockPath, now, now).catch(() => undefined);
+  }, heartbeatMs);
+  heartbeat.unref?.();
+  return heartbeat;
 }
 
 async function acquireDraftUploadLock(cwd: string, id: string): Promise<() => Promise<void>> {
@@ -846,15 +847,17 @@ async function acquireDraftUploadLock(cwd: string, id: string): Promise<() => Pr
   while (true) {
     try {
       const handle = await createDraftUploadLockFile(lockPath, token);
+      const heartbeat = startDraftUploadLockHeartbeat(lockPath);
       let released = false;
       return async () => {
         if (released) return;
         released = true;
+        clearInterval(heartbeat);
         await handle.close().catch(() => undefined);
         try {
           const lockContents = await readFile(lockPath, 'utf8');
-          const parsed = JSON.parse(lockContents) as { token?: unknown };
-          if (parsed.token === token) await rm(lockPath, { force: true });
+          const parsed = JSON.parse(lockContents) as { token_hash?: unknown };
+          if (parsed.token_hash === draftUploadLockTokenHash(token)) await rm(lockPath, { force: true });
         } catch {
           // If the lock file is already gone or corrupted, never delete a replacement lock.
         }

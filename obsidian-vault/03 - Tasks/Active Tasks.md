@@ -162,6 +162,10 @@ created: 2026-05-30
 - [x] Backend production/staging `TRUSTED_PROXY_IPS` explicit fail-fast 보강
 - 관련 노트: [[Commercial Readiness Hardening - Review Path Proxy and Clipboard Fail Closed 2026-06-03]]
 
+
+- [x] CLI Vitest child-process 실제 browser opener 차단, Frontend hosted readiness skip invariant, Backend `uv pip check` CI gate 보강
+- 관련 노트: [[Commercial Readiness Hardening - Test Browser Guard and CI Dependency Gates 2026-06-03]]
+
 - [ ] Default commercial readiness gate: `https://agentfeed.dev/` stale `/login` redirect 해소 + `api.agentfeed.dev` DNS/deployment 준비 후 `make commercial-readiness`가 `COMMERCIAL_READINESS_PASSED` 출력 필요
 
 - [x] Frontend API response body size cap 및 Feed/Search request AbortSignal propagation 보강

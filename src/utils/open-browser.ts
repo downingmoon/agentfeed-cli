@@ -3,8 +3,11 @@ import { platform, release } from 'node:os';
 import { createScrubbedCommandEnv } from './subprocess-env.js';
 
 function realBrowserOpenDisabledForTests(): boolean {
-  return process.env.AGENTFEED_TEST_DISABLE_REAL_BROWSER === '1'
-    && !process.env.AGENTFEED_TEST_BROWSER_LOG;
+  const testHarnessRequestedNoBrowser = process.env.AGENTFEED_TEST_DISABLE_REAL_BROWSER === '1'
+    || process.env.NODE_ENV === 'test'
+    || process.env.VITEST === 'true'
+    || process.env.VITEST_WORKER_ID !== undefined;
+  return testHarnessRequestedNoBrowser && !process.env.AGENTFEED_TEST_BROWSER_LOG;
 }
 
 export async function openBrowser(url: string, options: { timeoutMs?: number } = {}): Promise<boolean> {

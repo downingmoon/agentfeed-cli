@@ -50,6 +50,19 @@ describe('openBrowser', () => {
     expect(spawnMock).not.toHaveBeenCalled();
   });
 
+
+  it('refuses to launch a real browser from Vitest child-process environments unless a test opener is installed', async () => {
+    delete process.env.AGENTFEED_TEST_DISABLE_REAL_BROWSER;
+    delete process.env.AGENTFEED_TEST_BROWSER_LOG;
+    process.env.VITEST_WORKER_ID = '1';
+    try {
+      await expect(openBrowser('http://localhost:3001/worklogs/worklog_publish_confirmed/review')).resolves.toBe(false);
+      expect(spawnMock).not.toHaveBeenCalled();
+    } finally {
+      delete process.env.VITEST_WORKER_ID;
+    }
+  });
+
   it('times out a stuck browser opener instead of hanging login forever', async () => {
     vi.useFakeTimers();
     try {

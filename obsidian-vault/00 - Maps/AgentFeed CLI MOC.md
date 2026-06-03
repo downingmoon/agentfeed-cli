@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Backend Batched Worklog Card Hydration 2026-06-04]] — Backend feed/search card hydration N+1 removal for commercial read-path scale
+
 - [[Commercial Readiness Hardening - Backend OAuth Provider Payload Validation 2026-06-04]] — Backend GitHub OAuth provider response validation and fail-closed malformed payload diagnostics
 
 - [[Commercial Readiness Hardening - CLI Cached Upload Reuse Diagnostics 2026-06-04]] — Structured cached upload reuse diagnostics for publish confirmation

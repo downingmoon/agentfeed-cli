@@ -23,6 +23,9 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Backend public feed/search worklog card hydration N+1 제거 및 batch query 계약 보강
+- 관련 노트: [[Commercial Readiness Hardening - Backend Batched Worklog Card Hydration 2026-06-04]]
+
 - [x] Backend GitHub OAuth provider payload object/access token/provider id fail-closed 검증 보강
 - 관련 노트: [[Commercial Readiness Hardening - Backend OAuth Provider Payload Validation 2026-06-04]]
 

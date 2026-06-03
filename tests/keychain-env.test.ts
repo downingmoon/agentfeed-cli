@@ -38,10 +38,10 @@ const childProcessMock = vi.hoisted(() => {
         call.input = input;
         setImmediate(() => {
           const commandText = args.join(' ');
-          if ((command === 'powershell.exe' || command === 'powershell' || command === 'pwsh') && commandText.includes('ConvertFrom-SecureString')) {
-            child.stdout.emit('data', '01000000-dpapi-encrypted-secret\n');
+          if ((command === 'powershell.exe' || command === 'powershell' || command === 'pwsh') && commandText.includes('ProtectedData]::Protect')) {
+            child.stdout.emit('data', 'base64-dpapi-protected-secret\n');
           }
-          if ((command === 'powershell.exe' || command === 'powershell' || command === 'pwsh') && commandText.includes('PtrToStringBSTR')) {
+          if ((command === 'powershell.exe' || command === 'powershell' || command === 'pwsh') && commandText.includes('ProtectedData]::Unprotect')) {
             child.stdout.emit('data', 'af_live_from_windows_dpapi\n');
           }
           child.emit('close', 0);
@@ -190,7 +190,7 @@ describe('native keychain helper environments', () => {
     const encryptedSecretFile = await readFile(encryptedSecretPath, 'utf8');
     expect(metadataFile).toContain('"credential_store": "keychain"');
     expect(metadataFile).not.toContain('af_live_saved_to_windows_dpapi');
-    expect(encryptedSecretFile).toContain('01000000-dpapi-encrypted-secret');
+    expect(encryptedSecretFile).toContain('base64-dpapi-protected-secret');
     expect(encryptedSecretFile).not.toContain('af_live_saved_to_windows_dpapi');
 
     delete process.env.AGENTFEED_TOKEN;
@@ -208,10 +208,12 @@ describe('native keychain helper environments', () => {
       'powershell.exe',
     ]);
     expect(childProcessMock.spawnCalls[0].input).toBe('af_live_saved_to_windows_dpapi');
-    expect(childProcessMock.spawnCalls[1].input).toContain('01000000-dpapi-encrypted-secret');
+    expect(childProcessMock.spawnCalls[1].input).toContain('base64-dpapi-protected-secret');
     for (const call of childProcessMock.spawnCalls) {
       expectScrubbed(call.options?.env);
       expect(JSON.stringify(call.args)).not.toContain('af_live_saved_to_windows_dpapi');
+      expect(JSON.stringify(call.args)).not.toContain('ConvertTo-SecureString');
+      expect(JSON.stringify(call.args)).not.toContain('ConvertFrom-SecureString');
     }
     for (const call of childProcessMock.execFileCalls) expectScrubbed(call.options?.env);
     expect(childProcessMock.execFileCalls.map((call) => [call.command, call.args[0]])).toEqual([

@@ -373,10 +373,10 @@ function nativeKeychainStore(metadata: { keychain_service?: string; keychain_acc
             '-Command',
             [
               "$ErrorActionPreference = 'Stop'",
-              '$blob = [Console]::In.ReadToEnd()',
-              '$secure = ConvertTo-SecureString -String $blob',
-              '$bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)',
-              'try { [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr) } finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }',
+              '$blob = [Console]::In.ReadToEnd().Trim()',
+              '$protected = [Convert]::FromBase64String($blob)',
+              '$bytes = [System.Security.Cryptography.ProtectedData]::Unprotect($protected, $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser)',
+              '[System.Text.Encoding]::UTF8.GetString($bytes)',
             ].join('; '),
           ], encryptedSecret);
           const secret = trimOneTrailingNewline(stdout);
@@ -395,7 +395,9 @@ function nativeKeychainStore(metadata: { keychain_service?: string; keychain_acc
           [
             "$ErrorActionPreference = 'Stop'",
             '$secret = [Console]::In.ReadToEnd()',
-            'ConvertTo-SecureString -String $secret -AsPlainText -Force | ConvertFrom-SecureString',
+            '$bytes = [System.Text.Encoding]::UTF8.GetBytes($secret)',
+            '$protected = [System.Security.Cryptography.ProtectedData]::Protect($bytes, $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser)',
+            '[Convert]::ToBase64String($protected)',
           ].join('; '),
         ], secret);
         const encryptedSecret = trimOneTrailingNewline(stdout);

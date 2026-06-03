@@ -90,3 +90,42 @@ A parallel read-only `test-engineer` review confirmed the prior risk:
 
 > [!warning] Hosted strict readiness
 > Production hosted readiness still depends on external infra: `api.agentfeed.dev` DNS resolution and the production frontend root behavior must be fixed outside this local CLI hardening branch.
+
+## Remote CI Follow-up
+
+First remote Windows smoke run caught a real runner compatibility issue:
+
+```text
+Unable to save AgentFeed credentials to the OS keychain. powershell.exe exited with 1:
+ConvertTo-SecureString ... Microsoft.PowerShell.Security ... module could not be loaded
+```
+
+Fix applied:
+
+- Replaced `ConvertTo-SecureString` / `ConvertFrom-SecureString` cmdlet usage with direct `.NET` `System.Security.Cryptography.ProtectedData` DPAPI calls.
+- Strengthened `tests/keychain-env.test.ts` so Windows helper command arguments must not depend on `ConvertTo-SecureString` or `ConvertFrom-SecureString`.
+
+### RED - cmdlet dependency caught locally after remote failure
+
+```bash
+npm test -- --run tests/keychain-env.test.ts -t "Windows DPAPI-backed"
+```
+
+Result: failed because helper arguments still contained `ConvertTo-SecureString`.
+
+### GREEN - ProtectedData helper path
+
+```bash
+npm test -- --run tests/keychain-env.test.ts -t "Windows DPAPI-backed"
+```
+
+Result: `1 passed, 2 skipped`.
+
+### Full local gate after ProtectedData fix
+
+```bash
+npm run release:preflight
+npm audit --audit-level=high
+```
+
+Result: release preflight passed with `389 passed`; audit found `0 vulnerabilities`.

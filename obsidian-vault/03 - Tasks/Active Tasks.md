@@ -186,7 +186,8 @@ created: 2026-05-30
 - [x] Frontend CLI authorize transient API/network failure 자동 retry/backoff 보강
 - 관련 노트: [[Commercial Readiness Hardening - Frontend CLI Authorize Transient Retry 2026-06-03]]
 
-- [ ] Backend OAuth full callback path provider-token non-retention regression test 추가 후보
+- [x] Backend OAuth full callback path provider-token non-retention regression test 추가
+- 관련 노트: [[Commercial Readiness Hardening - Backend OAuth Callback Token Non Retention 2026-06-03]]
 
 - [ ] Default commercial readiness gate: `https://agentfeed.dev/` stale `/login` redirect 해소 + `api.agentfeed.dev` DNS/deployment 준비 후 `make commercial-readiness`가 `COMMERCIAL_READINESS_PASSED` 출력 필요
 

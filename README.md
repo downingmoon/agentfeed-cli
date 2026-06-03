@@ -118,7 +118,7 @@ Use `agentfeed doctor` to check server-side token validity and expiry.
 
 ### Credential storage policy
 
-Saved browser-login or stdin-login tokens prefer the OS keychain when available (`security` on macOS, `secret-tool` on Linux). To intentionally store the token in the private local credentials file, set:
+Saved browser-login or stdin-login tokens prefer native OS-protected storage when available: `security` on macOS, `secret-tool` on Linux, and Windows DPAPI via PowerShell on Windows. The saved `credentials.json` stores only metadata for keychain-backed credentials; the raw token stays out of the credentials file. To intentionally store the token in the private local credentials file, set:
 
 ```bash
 AGENTFEED_CREDENTIAL_STORE=file agentfeed login

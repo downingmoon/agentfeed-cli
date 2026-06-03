@@ -209,6 +209,38 @@ describe('project config', () => {
     }
   }, 20_000);
 
+  it('can round-trip credentials through native Windows DPAPI when explicitly enabled', async () => {
+    if (process.platform !== 'win32' || process.env.AGENTFEED_RUN_NATIVE_KEYCHAIN_TESTS !== '1') return;
+
+    let metadata: { keychain_account?: string; keychain_service?: string } | null = null;
+    const token = 'af_live_windows_dpapi_native_smoke';
+    process.env.AGENTFEED_HOME = home;
+    try {
+      await saveCredentials(token, {
+        apiBaseUrl: 'http://localhost:8001/v1',
+        credentialStore: 'keychain',
+      });
+
+      const metadataFile = await readFile(credentialsPath(), 'utf8');
+      metadata = JSON.parse(metadataFile);
+      expect(metadata?.keychain_account).toBeTruthy();
+      expect(metadata?.keychain_service).toBe('AgentFeed CLI');
+      expect(metadataFile).not.toContain(token);
+
+      const encryptedSecretPath = join(globalAgentFeedDir(), `${metadata?.keychain_account}.dpapi`);
+      const encryptedSecretFile = await readFile(encryptedSecretPath, 'utf8');
+      expect(encryptedSecretFile.trim()).toBeTruthy();
+      expect(encryptedSecretFile).not.toContain(token);
+
+      const resolved = await loadCredentialsWithMetadata({ cwd: dir });
+      expect(resolved.token_source).toBe('keychain');
+      expect(resolved.credential_store).toBe('keychain');
+      expect(resolved.credentials?.ingestion_token).toBe(token);
+    } finally {
+      await deleteSavedCredentials().catch(() => undefined);
+    }
+  }, 20_000);
+
   it('can store the token in an injected keychain backend without plaintext credential-file leakage', async () => {
     let savedSecret: string | null = null;
     const keychain: SecretStore = {

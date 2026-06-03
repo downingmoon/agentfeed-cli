@@ -191,6 +191,23 @@ describe('release preflight guardrails', () => {
     expect(() => validateTrustedPublishingWorkflow(`${validTrustedPublishingWorkflow}\n      - run: echo "$NODE_AUTH_TOKEN"\n`)).toThrow('long-lived npm tokens');
   });
 
+  it('requires native Windows DPAPI credential smoke coverage in CI', () => {
+    const ciWorkflow = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+    const windowsJobIndex = ciWorkflow.indexOf('runs-on: windows-latest');
+    const nativeSmokeFlagIndex = ciWorkflow.indexOf('AGENTFEED_RUN_NATIVE_KEYCHAIN_TESTS: 1');
+    const nativeSmokeCommandIndex = ciWorkflow.indexOf('npm test -- --run tests/config.test.ts -t "native Windows DPAPI"');
+    const windowsJob = windowsJobIndex === -1 ? '' : ciWorkflow.slice(windowsJobIndex);
+    const windowsBuildIndex = windowsJob.indexOf('npm run build');
+    const windowsNativeSmokeIndex = windowsJob.indexOf('npm test -- --run tests/config.test.ts -t "native Windows DPAPI"');
+
+    expect(windowsJobIndex).toBeGreaterThan(-1);
+    expect(windowsBuildIndex).toBeGreaterThan(-1);
+    expect(windowsNativeSmokeIndex).toBeGreaterThan(windowsBuildIndex);
+    expect(nativeSmokeFlagIndex).toBeGreaterThan(windowsJobIndex);
+    expect(nativeSmokeCommandIndex).toBeGreaterThan(nativeSmokeFlagIndex);
+    expect(ciWorkflow).not.toContain('AGENTFEED_ALLOW_INSECURE_CREDENTIAL_STORE: 1');
+  });
+
   it('keeps the CI workflow from relying on test side effects or production-only audit scope', () => {
     const ciWorkflow = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
     const installNpmIndex = ciWorkflow.indexOf('npm install -g npm@11.6.0');
@@ -207,6 +224,16 @@ describe('release preflight guardrails', () => {
     expect(buildIndex).toBeLessThan(preflightIndex);
     expect(ciWorkflow).toContain('npm audit --audit-level=high');
     expect(ciWorkflow).not.toContain('npm audit --omit=dev');
+  });
+
+  it('documents Windows DPAPI credential storage policy', () => {
+    const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
+    const credentialStorageSection = readme.slice(readme.indexOf('### Credential storage policy'));
+
+    expect(credentialStorageSection).toContain('Windows DPAPI');
+    expect(credentialStorageSection).toContain('macOS');
+    expect(credentialStorageSection).toContain('Linux');
+    expect(credentialStorageSection).toContain('does **not** silently downgrade to file storage');
   });
 
   it('requires GitHub release runs to publish only from the matching version tag', () => {

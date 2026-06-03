@@ -215,6 +215,9 @@ created: 2026-05-30
 - [x] Frontend hosted/API compatibility gate가 Backend `review_base_url`과 hosted Frontend origin 불일치를 fail-closed 검증
 - 관련 노트: [[Commercial Readiness Hardening - Frontend Review Origin Cross Validation 2026-06-04]]
 
+- [x] CLI Windows npm package wrapper smoke를 CI release path에 추가
+- 관련 노트: [[Commercial Readiness Hardening - Windows Package Wrapper Smoke 2026-06-04]]
+
 - [ ] Default commercial readiness gate: `https://agentfeed.dev/` stale `/login` redirect 해소 + `api.agentfeed.dev` DNS/deployment 준비 후 `make commercial-readiness`가 `COMMERCIAL_READINESS_PASSED` 출력 필요
 
 - [x] Frontend API response body size cap 및 Feed/Search request AbortSignal propagation 보강

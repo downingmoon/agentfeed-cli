@@ -75,3 +75,6 @@ jobs:
         env:
           AGENTFEED_RUN_NATIVE_KEYCHAIN_TESTS: 1
         run: npm test -- --run tests/config.test.ts -t "native Windows DPAPI"
+
+      - name: Windows npm package wrapper smoke
+        run: node scripts/release-preflight.mjs

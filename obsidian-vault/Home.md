@@ -25,6 +25,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - Windows Package Wrapper Smoke 2026-06-04]] — CLI Windows npm package `agentfeed.cmd` wrapper smoke를 CI release path에 추가
+
 - [[Commercial Readiness Hardening - Frontend Review Origin Cross Validation 2026-06-04]] — Frontend hosted/API compatibility gate가 Backend `review_base_url`과 hosted Frontend origin drift를 fail-closed 검증
 
 - [[Commercial Readiness Hardening - CLI Upload Lock Heartbeat Failure 2026-06-04]] — CLI upload lock heartbeat failure fail-closed metadata guard

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import {
+  installedBinExecOptions,
+  installedBinPath,
   isDirectInvocation,
   parsePackJson,
   validateCliSmokeOutput,
@@ -191,7 +193,7 @@ describe('release preflight guardrails', () => {
     expect(() => validateTrustedPublishingWorkflow(`${validTrustedPublishingWorkflow}\n      - run: echo "$NODE_AUTH_TOKEN"\n`)).toThrow('long-lived npm tokens');
   });
 
-  it('requires native Windows DPAPI credential smoke coverage in CI', () => {
+  it('requires native Windows DPAPI and npm package wrapper smoke coverage in CI', () => {
     const ciWorkflow = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
     const windowsJobIndex = ciWorkflow.indexOf('runs-on: windows-latest');
     const nativeSmokeFlagIndex = ciWorkflow.indexOf('AGENTFEED_RUN_NATIVE_KEYCHAIN_TESTS: 1');
@@ -199,10 +201,12 @@ describe('release preflight guardrails', () => {
     const windowsJob = windowsJobIndex === -1 ? '' : ciWorkflow.slice(windowsJobIndex);
     const windowsBuildIndex = windowsJob.indexOf('npm run build');
     const windowsNativeSmokeIndex = windowsJob.indexOf('npm test -- --run tests/config.test.ts -t "native Windows DPAPI"');
+    const windowsPackageWrapperSmokeIndex = windowsJob.indexOf('node scripts/release-preflight.mjs');
 
     expect(windowsJobIndex).toBeGreaterThan(-1);
     expect(windowsBuildIndex).toBeGreaterThan(-1);
     expect(windowsNativeSmokeIndex).toBeGreaterThan(windowsBuildIndex);
+    expect(windowsPackageWrapperSmokeIndex).toBeGreaterThan(windowsNativeSmokeIndex);
     expect(nativeSmokeFlagIndex).toBeGreaterThan(windowsJobIndex);
     expect(nativeSmokeCommandIndex).toBeGreaterThan(nativeSmokeFlagIndex);
     expect(ciWorkflow).not.toContain('AGENTFEED_ALLOW_INSECURE_CREDENTIAL_STORE: 1');
@@ -279,6 +283,13 @@ describe('release preflight guardrails', () => {
     expect(() => validateCliVersionOutput('0.2.1\n', validPackageJson)).toThrow('package.json version');
   });
 
+
+  it('builds platform-specific installed bin paths and executes Windows cmd shims through a shell', () => {
+    expect(installedBinPath('/tmp/install', 'linux')).toContain('node_modules/.bin/agentfeed');
+    expect(installedBinPath('C:/tmp/install', 'win32').replace(/\\/g, '/')).toContain('node_modules/.bin/agentfeed.cmd');
+    expect(installedBinExecOptions('linux')).toEqual({});
+    expect(installedBinExecOptions('win32')).toEqual({ shell: true });
+  });
 
   it('validates installed tarball CLI smoke output', () => {
     expect(() => validateInstalledPackageSmokeResult({

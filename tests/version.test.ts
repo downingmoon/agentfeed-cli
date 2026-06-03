@@ -82,6 +82,7 @@ describe('CLI version metadata', () => {
     expect(releaseScript).toContain('validateTrustedPublishingWorkflow');
     expect(releaseScript).toContain('validateCliSmokeOutput');
     expect(releaseScript).toContain('validateInstalledPackageSmokeResult');
+    expect(releaseScript).toContain('installedBinExecOptions');
     expect(releaseScript).toContain("'npm', ['install', '--prefix'");
     expect(readme).toContain('npm run release:preflight');
     expect(readme).toContain('installs that tarball into a temporary project');

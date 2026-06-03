@@ -81,5 +81,5 @@ Related: [[Active Tasks]], [[Commercial Readiness Hardening - Lock Fingerprint H
 - [ ] Frontend: hide `userNote`/private detail fields immediately when auth expires or current viewer permission is no longer valid.
 - [ ] Backend: prune expired OAuth state nonce rows and abandoned CLI auth sessions.
 - [ ] CLI: harden upload lock heartbeat for filesystems where `utimes` fails repeatedly.
-- [ ] CLI release: add Windows release-path package wrapper smoke to release workflow.
+- [x] CLI release: add Windows release-path package wrapper smoke to release workflow. → [[Commercial Readiness Hardening - Windows Package Wrapper Smoke 2026-06-04]]
 - [ ] Dev: optional machine-readable `wait-ready` evidence artifact for local stack readiness.

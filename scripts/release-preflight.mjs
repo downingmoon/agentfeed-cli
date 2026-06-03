@@ -243,10 +243,23 @@ function runCliSmoke(pkg) {
   validateCliVersionOutput(versionOutput, pkg);
 }
 
-function installedBinPath(installRoot) {
-  return process.platform === 'win32'
+export function installedBinPath(installRoot, platform = process.platform) {
+  return platform === 'win32'
     ? join(installRoot, 'node_modules', '.bin', 'agentfeed.cmd')
     : join(installRoot, 'node_modules', '.bin', 'agentfeed');
+}
+
+export function installedBinExecOptions(platform = process.platform) {
+  return platform === 'win32' ? { shell: true } : {};
+}
+
+function runInstalledBin(commandPath, args, cwd) {
+  return execFileSync(commandPath, args, {
+    cwd,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    ...installedBinExecOptions(),
+  });
 }
 
 function runInstalledPackageSmoke(pkg) {
@@ -267,16 +280,8 @@ function runInstalledPackageSmoke(pkg) {
     const commandPath = installedBinPath(installRoot);
     assert(existsSync(commandPath), 'npm install must expose the agentfeed bin in node_modules/.bin.');
 
-    const helpOutput = execFileSync(commandPath, ['--help'], {
-      cwd: installRoot,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-    const versionOutput = execFileSync(commandPath, ['--version'], {
-      cwd: installRoot,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    const helpOutput = runInstalledBin(commandPath, ['--help'], installRoot);
+    const versionOutput = runInstalledBin(commandPath, ['--version'], installRoot);
     validateInstalledPackageSmokeResult({ command: 'agentfeed', helpOutput, versionOutput }, pkg);
   } finally {
     rmSync(tmpRoot, { recursive: true, force: true });

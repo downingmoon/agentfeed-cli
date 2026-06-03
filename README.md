@@ -24,7 +24,9 @@ gate, then verifies `npm pack --dry-run --json` output so stale `dist/` cannot
 pass a local release check. It also verifies that the publish tarball contains
 the built CLI and excludes source, tests, local drafts, env files, and agent
 runtime state, then installs that tarball into a temporary project and executes
-the installed `agentfeed --help` / `agentfeed --version` binary path.
+the installed `agentfeed --help` / `agentfeed --version` binary path. CI also
+runs this installed-package smoke on Windows so the npm-generated `agentfeed.cmd`
+wrapper is covered before release.
 
 ## Release and provenance
 

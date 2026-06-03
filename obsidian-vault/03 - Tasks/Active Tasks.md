@@ -203,6 +203,9 @@ created: 2026-05-30
 - [x] CLI cached publish preflight, Backend cursor/leaderboard pagination abuse guard, Dev commercial-readiness branch drift gate 보강
 - 관련 노트: [[Commercial Readiness Hardening - Cached Publish Cursor and Branch Drift Gates 2026-06-04]]
 
+- [x] Frontend private author note current-auth guard 및 Backend OAuth expired nonce cleanup 보강
+- 관련 노트: [[Commercial Readiness Hardening - Private Note Auth and OAuth Nonce Cleanup 2026-06-04]]
+
 - [ ] Default commercial readiness gate: `https://agentfeed.dev/` stale `/login` redirect 해소 + `api.agentfeed.dev` DNS/deployment 준비 후 `make commercial-readiness`가 `COMMERCIAL_READINESS_PASSED` 출력 필요
 
 - [x] Frontend API response body size cap 및 Feed/Search request AbortSignal propagation 보강

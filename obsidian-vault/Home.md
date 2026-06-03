@@ -25,6 +25,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - Private Note Auth and OAuth Nonce Cleanup 2026-06-04]] — Frontend private note current-auth guard and Backend OAuth expired nonce cleanup
+
 - [[Commercial Readiness Hardening - Backend Review Privacy Preview Contract 2026-06-03]] — Backend review privacy preview가 publish gate fallback scan과 같은 계약 사용
 
 - [[Commercial Readiness Hardening - Frontend Hosted Readiness Preflight 2026-06-03]] — Frontend push CI hosted preflight가 API DNS와 root `/login` redirect를 함께 fail-closed 진단

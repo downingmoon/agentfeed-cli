@@ -1006,3 +1006,10 @@ created: 2026-05-30
 - [x] hosted CI/deploy marker가 있으면 skip을 fail-fast로 거부
 - [x] agentfeed-dev local cross-repo gate는 새 marker를 함께 전달
 - [[Commercial Readiness Hardening - Frontend Local DNSless CI Guard 2026-06-03]]
+
+## 2026-06-03 CLI review auto-open override continuation
+
+- [x] `share` / `publish`에 `--no-open-review` 추가로 프로젝트 설정 기반 browser handoff를 명령 단위에서 명시적으로 차단
+- [x] `collect --upload --no-open-review`가 내부 publish 호출에도 override를 전달
+- [x] release preflight로 browser side-effect regression과 package smoke 재검증
+- [[Commercial Readiness Hardening - CLI Review Auto Open Override 2026-06-03]]

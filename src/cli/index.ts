@@ -275,7 +275,8 @@ function redactedFieldPreviews(original: PublicScanFields, redacted: PublicScanF
     .map(([field, value]) => ({ field, value: singleLine(value) }));
 }
 
-async function shouldOpenReviewAfterUpload(openFlag: boolean, options: { respectConfig?: boolean } = {}): Promise<boolean> {
+async function shouldOpenReviewAfterUpload(openFlag: boolean, options: { respectConfig?: boolean; noOpen?: boolean } = {}): Promise<boolean> {
+  if (options.noOpen) return false;
   if (openFlag) return true;
   if (isCiEnvironment()) return false;
   if (options.respectConfig === false) return false;
@@ -540,7 +541,7 @@ async function cmdCollect(args: string[]) {
   print(`Preview:\n  agentfeed preview --id ${draft.id}\n`);
   print(`Upload:\n  agentfeed publish --id ${draft.id} --yes`);
   if (flag(args, '--upload')) {
-    await cmdPublish(['--id', draft.id, '--yes', ...(flag(args, '--open-review') ? ['--open-review'] : [])]);
+    await cmdPublish(['--id', draft.id, '--yes', ...(flag(args, '--open-review') ? ['--open-review'] : []), ...(flag(args, '--no-open-review') ? ['--no-open-review'] : [])]);
   } else {
     const config = await loadProjectConfig(process.cwd());
     if (!flag(args, '--no-upload') && config.collection.auto_upload) {
@@ -570,7 +571,7 @@ async function cmdShare(args: string[]) {
     await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
     const handoff = await handoffReviewUrl(result.review_url, {
       copy: shouldCopyReviewUrl({ json: true, noClipboard: opts.noClipboard, clipboard: flag(args, '--clipboard') }),
-      open: await shouldOpenReviewAfterUpload(opts.openReview, { respectConfig: false }),
+      open: await shouldOpenReviewAfterUpload(opts.openReview, { respectConfig: false, noOpen: opts.noOpenReview }),
       apiBaseUrl: creds!.api_base_url,
       reviewBaseUrl: result.review_base_url ?? metadata.review_base_url
     });
@@ -603,7 +604,7 @@ async function cmdShare(args: string[]) {
 ${result.review_url}`);
   printReviewUrlHandoff(await handoffReviewUrl(result.review_url, {
     copy: shouldCopyReviewUrl({ noClipboard: opts.noClipboard }),
-    open: await shouldOpenReviewAfterUpload(opts.openReview),
+    open: await shouldOpenReviewAfterUpload(opts.openReview, { noOpen: opts.noOpenReview }),
     apiBaseUrl: creds!.api_base_url,
     reviewBaseUrl: result.review_base_url ?? metadata.review_base_url
   }), result.review_url);
@@ -650,7 +651,7 @@ async function cmdPublish(args: string[]) {
   if (flag(args, '--json')) {
     const handoff = await handoffReviewUrl(result.review_url, {
       copy: shouldCopyReviewUrl({ json: true, noClipboard: flag(args, '--no-clipboard'), clipboard: flag(args, '--clipboard') }),
-      open: await shouldOpenReviewAfterUpload(flag(args, '--open-review'), { respectConfig: false }),
+      open: await shouldOpenReviewAfterUpload(flag(args, '--open-review'), { respectConfig: false, noOpen: flag(args, '--no-open-review') }),
       apiBaseUrl: creds.api_base_url,
       reviewBaseUrl: result.review_base_url ?? metadata?.review_base_url
     });
@@ -665,7 +666,7 @@ async function cmdPublish(args: string[]) {
   print(`Review URL:\n${result.review_url}`);
   printReviewUrlHandoff(await handoffReviewUrl(result.review_url, {
     copy: shouldCopyReviewUrl({ noClipboard: flag(args, '--no-clipboard') }),
-    open: await shouldOpenReviewAfterUpload(flag(args, '--open-review')),
+    open: await shouldOpenReviewAfterUpload(flag(args, '--open-review'), { noOpen: flag(args, '--no-open-review') }),
     apiBaseUrl: creds.api_base_url,
     reviewBaseUrl: result.review_base_url ?? metadata?.review_base_url
   }), result.review_url);
@@ -841,8 +842,8 @@ async function main() {
       print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --no-save\n  agentfeed login --browser\n  printf %s "$TOKEN" | agentfeed login --token-stdin\n  printf %s "$TOKEN" | agentfeed login --token - --no-save\n  agentfeed rotate\n  agentfeed rotate --browser\n  unset AGENTFEED_TOKEN && agentfeed rotate --browser\n  agentfeed token rotate');
       print('\nLogout:\n  agentfeed logout\n  agentfeed logout --json');
       print('\nCollect:\n  agentfeed collect\n  agentfeed collect --explain\n  agentfeed collect --source codex\n  agentfeed collect --source gemini-cli\n  agentfeed collect --source claude-code --session-file <path>\n  agentfeed collect --since 2026-05-20T01:00:00Z\n  agentfeed collect --all\n  agentfeed collect --run-configured-commands');
-      print('\nShare:\n  agentfeed share\n  agentfeed share --yes\n  agentfeed share --dry\n  agentfeed share --open-review\n  agentfeed share --since 2026-05-20T01:00:00Z\n  agentfeed share --all\n  agentfeed share --note "Fixed auth flow"\n  agentfeed share --no-clipboard\n  agentfeed share --json --clipboard\n  agentfeed share --run-configured-commands');
-      print('\nPublish:\n  agentfeed publish --latest --yes\n  agentfeed publish --id <draft_id> --yes\n  agentfeed publish --json\n  agentfeed publish --json --clipboard\n  agentfeed publish --no-clipboard\n  agentfeed publish --open-review');
+      print('\nShare:\n  agentfeed share\n  agentfeed share --yes\n  agentfeed share --dry\n  agentfeed share --open-review\n  agentfeed share --no-open-review\n  agentfeed share --since 2026-05-20T01:00:00Z\n  agentfeed share --all\n  agentfeed share --note "Fixed auth flow"\n  agentfeed share --no-clipboard\n  agentfeed share --json --clipboard\n  agentfeed share --run-configured-commands');
+      print('\nPublish:\n  agentfeed publish --latest --yes\n  agentfeed publish --id <draft_id> --yes\n  agentfeed publish --json\n  agentfeed publish --json --clipboard\n  agentfeed publish --no-clipboard\n  agentfeed publish --open-review\n  agentfeed publish --no-open-review');
       print('\nOpen:\n  agentfeed open\n  agentfeed open --latest\n  agentfeed open --id <draft_id>');
       print('\nScan:\n  agentfeed scan --id <draft_id>\n  agentfeed scan --id <draft_id> --dry-run\n  agentfeed scan --path . --json');
       return;

@@ -6,6 +6,7 @@ import { parseAgentSource } from './source.js';
 export interface ShareOptions {
   dryRun: boolean;
   openReview: boolean;
+  noOpenReview: boolean;
   json: boolean;
   source?: AgentType;
   sessionFile?: string | null;
@@ -99,6 +100,7 @@ export function parseShareArgs(args: string[]): ShareOptions {
   return {
     dryRun: flag(args, '--dry') || flag(args, '--dry-run'),
     openReview: flag(args, '--open-review'),
+    noOpenReview: flag(args, '--no-open-review'),
     json: flag(args, '--json'),
     source: parseAgentSource(option(args, '--source')),
     sessionFile: option(args, '--session-file') ?? null,

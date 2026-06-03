@@ -73,12 +73,14 @@ agentfeed collect --run-configured-commands
 agentfeed share --yes
 agentfeed share --dry
 agentfeed share --open-review
+agentfeed share --no-open-review
 agentfeed share --run-configured-commands
 agentfeed collect --since 2026-05-20T01:00:00Z
 agentfeed collect --all
 agentfeed preview
 agentfeed scan --id <draft_id> --dry-run
 agentfeed publish --latest --yes --open-review
+agentfeed publish --latest --yes --no-open-review
 agentfeed open --latest
 ```
 
@@ -133,7 +135,8 @@ AGENTFEED_CREDENTIAL_STORE=file agentfeed login
 agentfeed share              # collect -> preview, then print the exact --yes command for interactive upload
 agentfeed share --yes        # collect -> preview -> upload private review draft
 agentfeed share --dry        # collect + preview only, keep the local draft
-agentfeed share --open-review
+agentfeed share --open-review     # force browser handoff after upload
+agentfeed share --no-open-review  # suppress project-configured browser handoff
 agentfeed share --note "Fixed auth flow"
 agentfeed share --no-clipboard
 agentfeed share --json --clipboard   # automation JSON keeps clipboard off unless explicitly requested
@@ -175,7 +178,7 @@ Repo-local test/build commands are never executed by default, even when `.agentf
 
 Draft collection also records a stable fingerprint from `session_id + git head + collection_window`; repeated runs reuse the existing local draft unless `--force` or `--all` is used. If that draft was already uploaded, `share` / `publish` reuse the saved review URL instead of uploading a duplicate worklog.
 
-Successful human-readable `share` / `publish` copies the review URL to the clipboard when the platform supports it. Use `--no-clipboard` to opt out. If clipboard or browser opening is requested but unavailable, the CLI prints a visible warning and leaves the review URL in the output for manual copy/open.
+Successful human-readable `share` / `publish` copies the review URL to the clipboard when the platform supports it. Use `--no-clipboard` to opt out. `--open-review` forces a browser handoff after upload; `--no-open-review` suppresses project-configured browser handoff for that run. If clipboard or browser opening is requested but unavailable, the CLI prints a visible warning and leaves the review URL in the output for manual copy/open.
 
 Use `agentfeed open`, `agentfeed open --latest`, or `agentfeed open --id <draft_id>` to reopen a previously uploaded private review draft in your browser. Cached review URLs are opened only when they match the built-in AgentFeed review host, a safe local development host, the Backend-advertised `/v1/metadata` `review_base_url`, or an explicitly configured `AGENTFEED_REVIEW_BASE_URL` exact origin. For self-hosted deployments where the API and review frontend live on different hosts, prefer configuring Backend `FRONTEND_URL` so `/v1/metadata` exposes `review_base_url`; use `AGENTFEED_REVIEW_BASE_URL=https://review.example.com` only as a local override/fallback. Remote review origins must use HTTPS and cannot include credentials, query strings, hashes, or paths.
 

@@ -39,6 +39,7 @@ describe('share command helpers', () => {
     expect(parseShareArgs(['--dry', '--open-review', '--source', 'gemini-cli', '--session-file=/tmp/session.jsonl', '--since', '2026-05-20T01:00:00Z', '--until=2026-05-20T02:00:00Z', '--note', 'Refined login flow', '--no-clipboard', '--run-configured-commands'])).toEqual({
       dryRun: true,
       openReview: true,
+      noOpenReview: false,
       json: false,
       source: 'gemini_cli',
       sessionFile: '/tmp/session.jsonl',
@@ -50,6 +51,7 @@ describe('share command helpers', () => {
       yes: false
     });
     expect(parseShareArgs(['--yes']).yes).toBe(true);
+    expect(parseShareArgs(['--no-open-review']).noOpenReview).toBe(true);
   });
 
   it('rejects missing option values before treating flags as values', () => {

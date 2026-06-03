@@ -989,3 +989,10 @@ created: 2026-05-30
 - [x] Vitest child process에서 실제 OS browser opener 실행 방지
 - [x] fake opener shim이 있는 테스트는 기존처럼 명시적으로 검증 가능
 - [[Commercial Readiness Hardening - CLI Test Browser Side Effect Guard 2026-06-03]]
+
+## 2026-06-03 Frontend following feed scope continuation
+
+- [x] `/feed?scope=following` shareable state 추가
+- [x] Frontend `useFeed`가 Backend `/v1/feed/following`을 실제로 호출
+- [x] signed-out following scope는 401 API 호출 대신 login CTA 표시
+- [[Commercial Readiness Hardening - Frontend Following Feed Scope 2026-06-03]]

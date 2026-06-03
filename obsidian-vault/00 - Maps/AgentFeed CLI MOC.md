@@ -438,3 +438,4 @@ graph LR
 
 - [[Commercial Readiness Hardening - CLI Release Ref Fail Fast 2026-06-03]]
 - [[Commercial Readiness Hardening - CLI Test Browser Side Effect Guard 2026-06-03]]
+- [[Commercial Readiness Hardening - Frontend Following Feed Scope 2026-06-03]]

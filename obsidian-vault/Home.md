@@ -145,3 +145,4 @@ created: 2026-05-30
 
 - [[Commercial Readiness Hardening - CLI Release Ref Fail Fast 2026-06-03]] — Release workflow branch/manual ref mismatch를 dependency install 전 fail-fast
 - [[Commercial Readiness Hardening - CLI Test Browser Side Effect Guard 2026-06-03]] — 테스트 중 실제 브라우저 창이 열리지 않도록 test-only opener guard 추가
+- [[Commercial Readiness Hardening - Frontend Following Feed Scope 2026-06-03]] — Backend following feed endpoint를 Frontend `/feed?scope=following` UI로 연결

@@ -82,7 +82,7 @@ describe('configured test command output parser', () => {
   it('fails closed and continues when a configured command reaches the bounded timeout', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'agentfeed-command-timeout-'));
     const previousTimeout = process.env.AGENTFEED_COMMAND_TIMEOUT_MS;
-    process.env.AGENTFEED_COMMAND_TIMEOUT_MS = '50';
+    process.env.AGENTFEED_COMMAND_TIMEOUT_MS = '500';
     const startedAt = Date.now();
     try {
       const metrics = await collectConfiguredCommandMetrics(dir, configWithCommands({

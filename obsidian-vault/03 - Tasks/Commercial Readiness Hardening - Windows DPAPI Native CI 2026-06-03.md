@@ -129,3 +129,26 @@ npm audit --audit-level=high
 ```
 
 Result: release preflight passed with `389 passed`; audit found `0 vulnerabilities`.
+
+### Remote CI Follow-up 2 - ProtectedData assembly load
+
+Second remote Windows run proved `System.Security.Cryptography.ProtectedData` is also not auto-loaded on `windows-2025`:
+
+```text
+Unable to find type [System.Security.Cryptography.ProtectedData]
+```
+
+Fix applied:
+
+- Added explicit `Add-Type -AssemblyName System.Security` before DPAPI `Protect` and `Unprotect` calls.
+- Strengthened `tests/keychain-env.test.ts` so Windows helper argv must include the explicit assembly load.
+
+Verification after the assembly-load fix:
+
+```bash
+npm test -- --run tests/keychain-env.test.ts -t "Windows DPAPI-backed"
+npm run release:preflight
+npm audit --audit-level=high
+```
+
+Result: targeted Windows helper test passed, release preflight passed with `389 passed`, and audit found `0 vulnerabilities`.

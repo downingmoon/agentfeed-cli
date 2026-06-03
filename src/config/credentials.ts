@@ -373,6 +373,7 @@ function nativeKeychainStore(metadata: { keychain_service?: string; keychain_acc
             '-Command',
             [
               "$ErrorActionPreference = 'Stop'",
+              'Add-Type -AssemblyName System.Security',
               '$blob = [Console]::In.ReadToEnd().Trim()',
               '$protected = [Convert]::FromBase64String($blob)',
               '$bytes = [System.Security.Cryptography.ProtectedData]::Unprotect($protected, $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser)',
@@ -394,6 +395,7 @@ function nativeKeychainStore(metadata: { keychain_service?: string; keychain_acc
           '-Command',
           [
             "$ErrorActionPreference = 'Stop'",
+            'Add-Type -AssemblyName System.Security',
             '$secret = [Console]::In.ReadToEnd()',
             '$bytes = [System.Text.Encoding]::UTF8.GetBytes($secret)',
             '$protected = [System.Security.Cryptography.ProtectedData]::Protect($bytes, $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser)',

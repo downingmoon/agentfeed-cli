@@ -212,6 +212,7 @@ describe('native keychain helper environments', () => {
     for (const call of childProcessMock.spawnCalls) {
       expectScrubbed(call.options?.env);
       expect(JSON.stringify(call.args)).not.toContain('af_live_saved_to_windows_dpapi');
+      expect(JSON.stringify(call.args)).toContain('Add-Type -AssemblyName System.Security');
       expect(JSON.stringify(call.args)).not.toContain('ConvertTo-SecureString');
       expect(JSON.stringify(call.args)).not.toContain('ConvertFrom-SecureString');
     }

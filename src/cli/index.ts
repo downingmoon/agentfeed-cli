@@ -205,15 +205,9 @@ function isCiEnvironment(): boolean {
   return CI_ENVIRONMENT_VARIABLES.some((name) => isTruthyEnvironmentValue(process.env[name]));
 }
 
-function isInteractiveTerminalUpload(): boolean {
-  return process.stdin.isTTY === true && process.stdout.isTTY === true;
-}
-
 function shouldRequireUploadConfirmation(options: { json?: boolean; yes?: boolean }): boolean {
   if (options.json || options.yes) return false;
-  if (process.env.AGENTFEED_FORCE_UPLOAD_CONFIRMATION === '1') return true;
-  if (isCiEnvironment()) return false;
-  return isInteractiveTerminalUpload();
+  return true;
 }
 
 function printUploadConfirmationRequired(draft: LocalDraft, command: string, extraCommand?: string): void {

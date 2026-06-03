@@ -129,7 +129,7 @@ AGENTFEED_CREDENTIAL_STORE=file agentfeed login
 
 ## One-command sharing
 
-`agentfeed share` is the recommended daily command. It creates a local draft, prints the public-safe preview that will be uploaded, and requires `--yes` from human terminal sessions before uploading it as a private AgentFeed review draft. Automation should pass an explicit upload intent (`--yes` for human-readable output, or `--json` when a machine will inspect the returned upload/handoff object); CI/non-interactive runs are never treated as public publishing.
+`agentfeed share` is the recommended daily command. It creates a local draft, prints the public-safe preview that will be uploaded, and requires explicit upload intent before creating a private AgentFeed review draft. Use `--yes` for human-readable uploads, or `--json` when a machine will inspect the returned upload/handoff object; CI/non-interactive runs are not exempt from this private-review upload gate.
 
 ```bash
 agentfeed share              # collect -> preview, then print the exact --yes command for interactive upload

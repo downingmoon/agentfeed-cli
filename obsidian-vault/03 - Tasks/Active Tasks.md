@@ -170,6 +170,10 @@ created: 2026-05-30
 - [x] Frontend API body read failure diagnostics, Backend CORS preflight contract, CLI upload intent copy 보강
 - 관련 노트: [[Commercial Readiness Hardening - API Diagnostics CORS and Upload Intent Copy 2026-06-03]]
 
+
+- [x] CLI fresh private review upload가 CI/non-interactive 포함 모든 human-readable 경로에서 `--yes` 또는 `--json` 없이는 서버 전송되지 않도록 fail-closed 보강
+- 관련 노트: [[Commercial Readiness Hardening - Explicit Upload Intent Everywhere 2026-06-03]]
+
 - [ ] Default commercial readiness gate: `https://agentfeed.dev/` stale `/login` redirect 해소 + `api.agentfeed.dev` DNS/deployment 준비 후 `make commercial-readiness`가 `COMMERCIAL_READINESS_PASSED` 출력 필요
 
 - [x] Frontend API response body size cap 및 Feed/Search request AbortSignal propagation 보강

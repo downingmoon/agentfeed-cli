@@ -300,6 +300,49 @@ describe('share CLI command', () => {
     }
   });
 
+
+  it('requires explicit upload intent before fresh human-readable publish uploads even in CI', async () => {
+    let ingestRequestCount = 0;
+    const server = createServer(async (req, res) => {
+      if (handleCompatibleMetadata(req, res)) return;
+      if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
+        ingestRequestCount += 1;
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ data: {} }));
+        return;
+      }
+      res.writeHead(404).end();
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    try {
+      const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+      draft.worklog.title = 'CI confirmation gated publish';
+      await writeDraft(dir, draft);
+
+      const publish = await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: 'af_live_confirmation_required',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`,
+          CI: '1'
+        }
+      });
+
+      expect(publish.stdout).toContain('Upload confirmation required.');
+      expect(publish.stdout).toContain('No data was uploaded to AgentFeed.');
+      expect(publish.stdout).toContain(`agentfeed publish --id ${draft.id} --yes`);
+      expect(ingestRequestCount).toBe(0);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
   it('allows --yes to bypass the interactive publish confirmation gate', async () => {
     let ingestRequestCount = 0;
     const server = createServer(async (req, res) => {
@@ -1204,7 +1247,7 @@ describe('share CLI command', () => {
       const fakeBin = join(dir, '.agentfeed', 'fake-bin');
       const browserLog = await installFakeBrowserOpener(fakeBin);
 
-      const publish = await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id], {
+      const publish = await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id, '--yes'], {
         cwd: dir,
         encoding: 'utf8',
         env: {
@@ -1774,7 +1817,7 @@ describe('share CLI command', () => {
       draft.worklog.summary = 'Warn when requested handoff fails';
       await writeDraft(dir, draft);
 
-      const publish = await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id, '--open-review'], {
+      const publish = await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id, '--yes', '--open-review'], {
         cwd: dir,
         encoding: 'utf8',
         env: {

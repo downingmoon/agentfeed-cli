@@ -11,6 +11,17 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function isDefaultRetryableCliAuthExchangeError(error: unknown): boolean {
+  if (error instanceof AgentFeedApiError) {
+    if (error.code === 'API_RESPONSE_INVALID') return false;
+    return error.code === 'CLI_AUTH_SESSION_PENDING'
+      || error.status === 408
+      || error.status === 429
+      || error.status >= 500;
+  }
+  return error instanceof TypeError;
+}
+
 export async function waitForCliAuthExchange(options: {
   apiBaseUrl: string;
   session: CliAuthSession;
@@ -22,7 +33,7 @@ export async function waitForCliAuthExchange(options: {
 }): Promise<CliAuthExchangeResult> {
   const exchange = options.exchange ?? exchangeCliAuthSession;
   const sleepFn = options.sleep ?? sleep;
-  const isPendingError = options.isPendingError ?? ((error: unknown) => error instanceof AgentFeedApiError && error.code === 'CLI_AUTH_SESSION_PENDING');
+  const isPendingError = options.isPendingError ?? isDefaultRetryableCliAuthExchangeError;
   const deadline = Date.now() + (options.waitMs ?? 120_000);
   const intervalMs = Math.max(1, options.session.poll_interval_seconds) * 1000;
 

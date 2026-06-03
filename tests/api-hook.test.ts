@@ -7,7 +7,7 @@ import { promisify } from 'node:util';
 import { initProject } from '../src/config/project-config.js';
 import { writeDraft } from '../src/draft/write.js';
 import { createEmptyDraft } from '../src/draft/create.js';
-import { apiMetadataCompatible, cachedUploadReusableForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, createCliAuthSession, draftToIngestRequest, draftUploadCredentialBindingHash, draftUploadPayloadHash, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
+import { AgentFeedApiError, apiMetadataCompatible, cachedUploadReusableForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, createCliAuthSession, draftToIngestRequest, draftUploadCredentialBindingHash, draftUploadPayloadHash, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
 import { browserLogin, waitForCliAuthExchange } from '../src/auth/browser-login.js';
 import { buildClaudeCodeStopHookCommand, installClaudeCodeHook, uninstallClaudeCodeHook } from '../src/hooks/claude-code-settings.js';
 import { pathExists } from '../src/utils/fs.js';
@@ -1371,6 +1371,58 @@ describe('api client', () => {
 
     expect(result.token).toBe('af_live_after_approval');
     expect(exchange).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries transient browser login exchange failures before succeeding', async () => {
+    const exchange = vi.fn(async () => {
+      if (exchange.mock.calls.length === 1) {
+        throw new AgentFeedApiError(503, 'SERVICE_UNAVAILABLE', 'AgentFeed API is temporarily unavailable.');
+      }
+      return { token: 'af_live_after_transient_exchange', user: { id: 'user-1' } };
+    });
+
+    const result = await waitForCliAuthExchange({
+      apiBaseUrl: 'https://api.agentfeed.dev/v1',
+      session: {
+        session_id: 'session-transient',
+        authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-transient',
+        user_code: '123-456',
+        expires_at: '2026-05-20T00:05:00Z',
+        poll_interval_seconds: 1
+      },
+      verifier: 'verifier-transient',
+      exchange,
+      sleep: async () => undefined
+    });
+
+    expect(result.token).toBe('af_live_after_transient_exchange');
+    expect(exchange).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not retry terminal browser login exchange failures', async () => {
+    const exchange = vi.fn(async () => {
+      throw new AgentFeedApiError(403, 'CLI_AUTH_SESSION_VERIFIER_INVALID', 'CLI authorization verifier is invalid.');
+    });
+
+    await expect(waitForCliAuthExchange({
+      apiBaseUrl: 'https://api.agentfeed.dev/v1',
+      session: {
+        session_id: 'session-terminal',
+        authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-terminal',
+        user_code: '123-456',
+        expires_at: '2026-05-20T00:05:00Z',
+        poll_interval_seconds: 1
+      },
+      verifier: 'bad-verifier',
+      exchange,
+      sleep: async () => {
+        throw new Error('terminal failures must not sleep/retry');
+      }
+    })).rejects.toMatchObject({
+      status: 403,
+      code: 'CLI_AUTH_SESSION_VERIFIER_INVALID'
+    });
+    expect(exchange).toHaveBeenCalledTimes(1);
   });
 
   it('caps browser login polling sleep to the remaining timeout window', async () => {

@@ -112,6 +112,27 @@ function handleCompatibleMetadata(req: IncomingMessage, res: ServerResponse): bo
   return true;
 }
 
+function handleHealthyIngestionToken(req: IncomingMessage, res: ServerResponse): boolean {
+  if (req.method !== 'GET' || req.url !== '/v1/ingest/status') return false;
+  res.writeHead(200, { 'content-type': 'application/json' });
+  res.end(JSON.stringify({
+    data: {
+      ok: true,
+      token: {
+        id: 'token_test',
+        name: 'CLI test token',
+        expires_at: '2026-06-15T00:00:00.000Z',
+        expiring_soon: false
+      }
+    }
+  }));
+  return true;
+}
+
+function handleUploadPreflight(req: IncomingMessage, res: ServerResponse): boolean {
+  return handleCompatibleMetadata(req, res) || handleHealthyIngestionToken(req, res);
+}
+
 async function readRequestBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   const chunks: Buffer[] = [];
   for await (const chunk of req) chunks.push(Buffer.from(chunk));
@@ -209,10 +230,106 @@ describe('share CLI command', () => {
     }
   });
 
-  it('requires explicit confirmation before interactive share uploads', async () => {
+  it('refuses share upload before ingest when the ingestion token preflight fails', async () => {
+    let tokenStatusCount = 0;
     let ingestRequestCount = 0;
     const server = createServer(async (req, res) => {
       if (handleCompatibleMetadata(req, res)) return;
+      if (req.method === 'GET' && req.url === '/v1/ingest/status') {
+        tokenStatusCount += 1;
+        res.writeHead(401, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid ingestion token' } }));
+        return;
+      }
+      if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
+        ingestRequestCount += 1;
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ data: {} }));
+        return;
+      }
+      res.writeHead(404).end();
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    try {
+      const sessionFile = await writeCodexShareSession('share-invalid-token', 'gpt-invalid-token', 'invalidToken');
+      await expect(spawnAgentFeedJson([
+        'share',
+        '--json',
+        '--source',
+        'codex',
+        '--session-file',
+        sessionFile,
+        '--all',
+        '--no-clipboard'
+      ], {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: 'af_live_invalid_token',
+        AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+      })).rejects.toMatchObject({
+        stderr: expect.stringContaining('Ingestion token check failed')
+      });
+      expect(tokenStatusCount).toBe(1);
+      expect(ingestRequestCount).toBe(0);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('refuses direct publish before ingest when the ingestion token preflight fails', async () => {
+    let tokenStatusCount = 0;
+    let ingestRequestCount = 0;
+    const server = createServer(async (req, res) => {
+      if (handleCompatibleMetadata(req, res)) return;
+      if (req.method === 'GET' && req.url === '/v1/ingest/status') {
+        tokenStatusCount += 1;
+        res.writeHead(401, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid ingestion token' } }));
+        return;
+      }
+      if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
+        ingestRequestCount += 1;
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ data: {} }));
+        return;
+      }
+      res.writeHead(404).end();
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    try {
+      const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+      draft.worklog.title = 'Invalid token publish';
+      await writeDraft(dir, draft);
+
+      await expect(execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id, '--yes'], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: 'af_live_invalid_token',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+        }
+      })).rejects.toMatchObject({
+        stderr: expect.stringContaining('Ingestion token check failed')
+      });
+      expect(tokenStatusCount).toBe(1);
+      expect(ingestRequestCount).toBe(0);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('requires explicit confirmation before interactive share uploads', async () => {
+    let ingestRequestCount = 0;
+    const server = createServer(async (req, res) => {
+      if (handleUploadPreflight(req, res)) return;
       if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
         ingestRequestCount += 1;
         res.writeHead(200, { 'content-type': 'application/json' });
@@ -261,7 +378,7 @@ describe('share CLI command', () => {
   it('requires explicit confirmation before direct interactive publish uploads', async () => {
     let ingestRequestCount = 0;
     const server = createServer(async (req, res) => {
-      if (handleCompatibleMetadata(req, res)) return;
+      if (handleUploadPreflight(req, res)) return;
       if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
         ingestRequestCount += 1;
         res.writeHead(200, { 'content-type': 'application/json' });
@@ -304,7 +421,7 @@ describe('share CLI command', () => {
   it('requires explicit upload intent before fresh human-readable publish uploads even in CI', async () => {
     let ingestRequestCount = 0;
     const server = createServer(async (req, res) => {
-      if (handleCompatibleMetadata(req, res)) return;
+      if (handleUploadPreflight(req, res)) return;
       if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
         ingestRequestCount += 1;
         res.writeHead(200, { 'content-type': 'application/json' });
@@ -346,7 +463,7 @@ describe('share CLI command', () => {
   it('allows --yes to bypass the interactive publish confirmation gate', async () => {
     let ingestRequestCount = 0;
     const server = createServer(async (req, res) => {
-      if (handleCompatibleMetadata(req, res)) return;
+      if (handleUploadPreflight(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -742,7 +859,7 @@ describe('share CLI command', () => {
   it('includes the collected draft in uploaded JSON output for smoke verification', async () => {
     let ingestPayload: Record<string, unknown> | null = null;
     const server = createServer(async (req, res) => {
-      if (handleCompatibleMetadata(req, res)) return;
+      if (handleUploadPreflight(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -813,7 +930,7 @@ describe('share CLI command', () => {
 
   it('does not copy or open review URLs for share JSON by default', async () => {
     const server = createServer(async (req, res) => {
-      if (handleCompatibleMetadata(req, res)) return;
+      if (handleUploadPreflight(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -876,7 +993,7 @@ describe('share CLI command', () => {
 
   it('copies and opens review URLs for share JSON only when explicitly requested', async () => {
     const server = createServer(async (req, res) => {
-      if (handleCompatibleMetadata(req, res)) return;
+      if (handleUploadPreflight(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -940,7 +1057,7 @@ describe('share CLI command', () => {
 
   it('reports requested share JSON review URL handoff failures inside the JSON payload', async () => {
     const server = createServer(async (req, res) => {
-      if (handleCompatibleMetadata(req, res)) return;
+      if (handleUploadPreflight(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -1010,7 +1127,7 @@ describe('share CLI command', () => {
 
   it('does not copy or open review URLs when share JSON upload fails', async () => {
     const server = createServer(async (req, res) => {
-      if (handleCompatibleMetadata(req, res)) return;
+      if (handleUploadPreflight(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -1067,7 +1184,7 @@ describe('share CLI command', () => {
     const secret = 'sk-123456789012345678901234';
     let ingestPayload: Record<string, unknown> | null = null;
     const server = createServer(async (req, res) => {
-      if (handleCompatibleMetadata(req, res)) return;
+      if (handleUploadPreflight(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -1202,7 +1319,7 @@ describe('share CLI command', () => {
 
   it('opens the review URL after publish when project config enables it', async () => {
     const server = createServer(async (req, res) => {
-      if (handleCompatibleMetadata(req, res)) return;
+      if (handleUploadPreflight(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -1303,7 +1420,7 @@ describe('share CLI command', () => {
 
   it('lets users explicitly suppress configured review auto-open during publish', async () => {
     const server = createServer(async (req, res) => {
-      if (handleCompatibleMetadata(req, res)) return;
+      if (handleUploadPreflight(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -1527,7 +1644,7 @@ describe('share CLI command', () => {
 
   it('prints machine-readable publish JSON and copies the review URL only when requested', async () => {
     const server = createServer(async (req, res) => {
-      if (handleCompatibleMetadata(req, res)) return;
+      if (handleUploadPreflight(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -1587,7 +1704,7 @@ describe('share CLI command', () => {
 
   it('does not copy or open review URLs for publish JSON by default', async () => {
     const server = createServer(async (req, res) => {
-      if (handleCompatibleMetadata(req, res)) return;
+      if (handleUploadPreflight(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -1652,7 +1769,7 @@ describe('share CLI command', () => {
 
   it('reports requested publish JSON review URL handoff failures inside the JSON payload', async () => {
     const server = createServer(async (req, res) => {
-      if (handleCompatibleMetadata(req, res)) return;
+      if (handleUploadPreflight(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -1724,7 +1841,7 @@ describe('share CLI command', () => {
   it('serializes two publish processes for the same draft and issues one ingest request', async () => {
     const ingestPayloads: Record<string, unknown>[] = [];
     const server = createServer(async (req, res) => {
-      if (handleCompatibleMetadata(req, res)) return;
+      if (handleUploadPreflight(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;
@@ -1788,7 +1905,7 @@ describe('share CLI command', () => {
 
   it('prints visible warnings when publish review URL handoff fails in human output', async () => {
     const server = createServer(async (req, res) => {
-      if (handleCompatibleMetadata(req, res)) return;
+      if (handleUploadPreflight(req, res)) return;
       if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
         res.writeHead(404).end();
         return;

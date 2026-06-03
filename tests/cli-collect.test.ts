@@ -62,6 +62,27 @@ function handleCompatibleMetadata(req: IncomingMessage, res: ServerResponse): bo
   return true;
 }
 
+function handleHealthyIngestionToken(req: IncomingMessage, res: ServerResponse): boolean {
+  if (req.method !== 'GET' || req.url !== '/v1/ingest/status') return false;
+  res.writeHead(200, { 'content-type': 'application/json' });
+  res.end(JSON.stringify({
+    data: {
+      ok: true,
+      token: {
+        id: 'token_collect_test',
+        name: 'CLI collect test token',
+        expires_at: '2026-06-15T00:00:00.000Z',
+        expiring_soon: false
+      }
+    }
+  }));
+  return true;
+}
+
+function handleUploadPreflight(req: IncomingMessage, res: ServerResponse): boolean {
+  return handleCompatibleMetadata(req, res) || handleHealthyIngestionToken(req, res);
+}
+
 async function readRequestBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   const chunks: Buffer[] = [];
   for await (const chunk of req) chunks.push(Buffer.from(chunk));
@@ -267,7 +288,7 @@ describe('collect CLI command', () => {
     let requestCount = 0;
     let uploadedPayload: Record<string, unknown> | null = null;
     const server = createServer(async (req, res) => {
-      if (handleCompatibleMetadata(req, res)) return;
+      if (handleUploadPreflight(req, res)) return;
       if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
         requestCount += 1;
         uploadedPayload = await readRequestBody(req);
@@ -328,10 +349,65 @@ describe('collect CLI command', () => {
     }
   });
 
+  it('refuses collect JSON upload before ingest when the ingestion token preflight fails', async () => {
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = "json-upload-invalid-token";\n');
+    let tokenStatusCount = 0;
+    let ingestRequestCount = 0;
+    const server = createServer(async (req, res) => {
+      if (handleCompatibleMetadata(req, res)) return;
+      if (req.method === 'GET' && req.url === '/v1/ingest/status') {
+        tokenStatusCount += 1;
+        res.writeHead(401, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid ingestion token' } }));
+        return;
+      }
+      if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
+        ingestRequestCount += 1;
+        await readRequestBody(req);
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ data: {} }));
+        return;
+      }
+      res.writeHead(404, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ error: { code: 'NOT_FOUND' } }));
+    });
+    await new Promise<void>((resolve, reject) => {
+      server.once('error', reject);
+      server.listen(0, '127.0.0.1', resolve);
+    });
+    try {
+      const address = server.address();
+      if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+      await expect(execFileAsync(process.execPath, [
+        cliPath,
+        'collect',
+        '--json',
+        '--upload',
+        '--all',
+        '--no-save-cursor'
+      ], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: 'af_live_collect_invalid_token',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+        }
+      })).rejects.toMatchObject({
+        stderr: expect.stringContaining('Ingestion token check failed')
+      });
+      expect(tokenStatusCount).toBe(1);
+      expect(ingestRequestCount).toBe(0);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
   it('reports requested collect JSON open-review handoff failures in the draft upload payload', async () => {
     await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = "json-upload-open";\n');
     const server = createServer(async (req, res) => {
-      if (handleCompatibleMetadata(req, res)) return;
+      if (handleUploadPreflight(req, res)) return;
       if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
         await readRequestBody(req);
         res.writeHead(200, { 'content-type': 'application/json' });

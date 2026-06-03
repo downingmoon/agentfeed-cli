@@ -13,7 +13,7 @@ import { cachedUploadReusableForCredentials, checkApiCompatibility, checkApiReac
 import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
 import { applyRedactedPublicFields, publicScanFieldsFromDraft, scanAndRedactDraftPublicFields, type PublicScanFields } from '../privacy/draft-sanitizer.js';
-import type { LocalDraft, ReviewUrlHandoff } from '../types.js';
+import type { AgentFeedCredentials, LocalDraft, ReviewUrlHandoff } from '../types.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { detectAgentSignals, formatAgentSignalLines } from '../collectors/agent-discovery.js';
 import { changedAreas } from '../summary/changed-areas.js';
@@ -158,10 +158,28 @@ function apiCompatibilityFailureDetail(result: Awaited<ReturnType<typeof checkAp
     : result.error ?? 'unknown compatibility failure';
 }
 
+function apiCheckFailureDetail(result: Awaited<ReturnType<typeof checkIngestionToken>>): string {
+  return result.status != null
+    ? `HTTP ${result.status}`
+    : result.error ?? 'unknown token check failure';
+}
+
 async function requireApiCompatibilityBeforeUpload(apiBaseUrl: string): Promise<ApiMetadata> {
   const result = await checkApiCompatibility(apiBaseUrl);
   if (result.compatible && result.data) return result.data;
   throw new Error(`API compatibility check failed for ${result.url}: ${apiCompatibilityFailureDetail(result)}. Run agentfeed doctor for details before uploading drafts.`);
+}
+
+async function requireIngestionTokenBeforeUpload(credentials: AgentFeedCredentials): Promise<void> {
+  const result = await checkIngestionToken(credentials);
+  if (result.ok) return;
+  throw new Error(`Ingestion token check failed for ${result.url}: ${apiCheckFailureDetail(result)}. Run agentfeed login or agentfeed rotate before uploading drafts.`);
+}
+
+async function requireUploadPreflight(credentials: AgentFeedCredentials): Promise<ApiMetadata> {
+  const metadata = await requireApiCompatibilityBeforeUpload(credentials.api_base_url);
+  await requireIngestionTokenBeforeUpload(credentials);
+  return metadata;
 }
 
 async function requireApiCompatibilityBeforeCredentialSave(apiBaseUrl: string): Promise<void> {
@@ -514,7 +532,7 @@ async function cmdCollect(args: string[]) {
     if (flag(args, '--upload')) {
       const creds = await loadCredentials();
       if (!creds) throw new Error('AgentFeed token is missing. Run: agentfeed login');
-      const metadata = await requireApiCompatibilityBeforeUpload(creds.api_base_url);
+      const metadata = await requireUploadPreflight(creds);
       const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds, reviewBaseUrl: metadata.review_base_url });
       draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, review_base_url: result.review_base_url ?? metadata.review_base_url ?? null, uploaded_at: result.created_at };
       if (flag(args, '--open-review')) {
@@ -559,7 +577,7 @@ async function cmdShare(args: string[]) {
       print(JSON.stringify({ dry_run: true, reused_existing_draft: collection.reusedExisting, draft, privacy_policy: privacyPolicySummary(draft) }, null, 2));
       return;
     }
-    const metadata = await requireApiCompatibilityBeforeUpload(creds!.api_base_url);
+    const metadata = await requireUploadPreflight(creds!);
     const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds!, reviewBaseUrl: metadata.review_base_url });
     draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, review_base_url: result.review_base_url ?? metadata.review_base_url ?? null, uploaded_at: result.created_at };
     await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
@@ -589,7 +607,7 @@ async function cmdShare(args: string[]) {
     return;
   }
 
-  const metadata = await requireApiCompatibilityBeforeUpload(creds!.api_base_url);
+  const metadata = await requireUploadPreflight(creds!);
   const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds!, reviewBaseUrl: metadata.review_base_url });
   await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
   print(result.reused_existing ? 'Worklog already uploaded; reusing existing review URL.' : 'Worklog uploaded.');
@@ -639,7 +657,7 @@ async function cmdPublish(args: string[]) {
     printUploadConfirmationRequired(existingDraft, `agentfeed publish --id ${id} --yes`);
     return;
   }
-  const metadata = reusableCachedUpload ? undefined : await requireApiCompatibilityBeforeUpload(creds.api_base_url);
+  const metadata = reusableCachedUpload ? undefined : await requireUploadPreflight(creds);
   const result = await publishDraft({ cwd: process.cwd(), id, credentials: creds, reviewBaseUrl: metadata?.review_base_url });
   const savedDraft = await readDraft(process.cwd(), id);
   if (flag(args, '--json')) {

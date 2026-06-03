@@ -180,6 +180,9 @@ created: 2026-05-30
 - [x] Frontend compatibility evidence marker와 hung CI subprocess timeout fail-closed 보강
 - 관련 노트: [[Commercial Readiness Hardening - Compatibility Evidence and CI Timeout 2026-06-03]]
 
+- [x] CLI fresh private review upload가 API compatibility 후 ingestion token status preflight를 통과해야만 `/v1/ingest/worklogs`를 호출하도록 보강
+- 관련 노트: [[Commercial Readiness Hardening - CLI Upload Token Preflight 2026-06-03]]
+
 - [ ] Default commercial readiness gate: `https://agentfeed.dev/` stale `/login` redirect 해소 + `api.agentfeed.dev` DNS/deployment 준비 후 `make commercial-readiness`가 `COMMERCIAL_READINESS_PASSED` 출력 필요
 
 - [x] Frontend API response body size cap 및 Feed/Search request AbortSignal propagation 보강

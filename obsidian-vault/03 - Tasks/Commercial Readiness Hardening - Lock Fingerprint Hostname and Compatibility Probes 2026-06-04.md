@@ -79,9 +79,18 @@ Related: [[Active Tasks]], [[Commercial Readiness Hardening - Hosted Readiness D
 > - `npm run lint` → passed
 > - `npm test` → contract suite passed
 
+## Push and CI evidence
+
+- AgentFeed-CLI `ee5f891` pushed to `main`.
+  - GitHub Actions `CI` run `26895993755` passed.
+- agentfeed-backend `6817ea7` pushed to `master`.
+  - GitHub Actions `CI` run `26895994868` passed.
+- agentfeed-frontend `471fce6` pushed to `main`.
+  - GitHub Actions `Code CI` run `26895994239` passed.
+  - GitHub Actions strict hosted `CI` run `26895994182` failed only at hosted readiness preflight with known external blockers:
+    - `api.agentfeed.dev` DNS `ENOTFOUND`
+    - `https://agentfeed.dev/` root redirects to `/login` with 307
+
 ## Remaining
 
-- [ ] Wait for final read-only code-review result before commit/push.
-- [ ] Commit/push CLI, backend, and frontend changes.
-- [ ] Confirm GitHub CI for pushed commits.
 - [ ] External: fix `api.agentfeed.dev` DNS and `https://agentfeed.dev/` stale `/login` redirect, then rerun strict hosted readiness.

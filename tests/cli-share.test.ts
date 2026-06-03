@@ -1425,7 +1425,7 @@ describe('share CLI command', () => {
     draft.upload = {
       uploaded: true,
       worklog_id: 'worklog_reusable_cli_cache',
-      review_url: 'https://agentfeed.dev/review/worklog_reusable_cli_cache',
+      review_url: 'https://agentfeed.dev/worklogs/worklog_reusable_cli_cache/review',
       uploaded_at: '2026-05-31T00:00:00.000Z',
       payload_hash: draftUploadPayloadHash(draft),
       ...cachedUploadBindingForEnv()
@@ -1446,7 +1446,7 @@ describe('share CLI command', () => {
 
     expect(publish.stdout).toContain('Private review draft already uploaded; reusing existing review URL.');
     expect(publish.stdout).not.toContain('Upload confirmation required.');
-    expect(publish.stdout).toContain('https://agentfeed.dev/review/worklog_reusable_cli_cache');
+    expect(publish.stdout).toContain('https://agentfeed.dev/worklogs/worklog_reusable_cli_cache/review');
   });
 
   it('makes direct publish privacy policy clear for high-severity private review drafts', async () => {

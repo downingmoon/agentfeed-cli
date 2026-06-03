@@ -460,7 +460,7 @@ function isAgentFeedReviewHostname(hostname: string): boolean {
 
 function isExpectedReviewPath(pathname: string): boolean {
   const normalized = pathname.replace(/\/+$/, '');
-  return /^\/(?:review\/[^/]+|worklogs\/[^/]+\/review)$/.test(normalized);
+  return /^\/worklogs\/[^/]+\/review$/.test(normalized);
 }
 
 function trustedReviewOrigin(rawBaseUrl: string | null | undefined): string | null {
@@ -587,6 +587,7 @@ function parsePublishDraftResult(value: unknown, apiBaseUrl: string, reviewBaseU
     || !createdAt
     || !Number.isFinite(Date.parse(createdAt))
     || !validateReviewUrl(reviewUrl, apiBaseUrl, reviewBaseUrl)
+    || worklogIdFromReviewUrl(reviewUrl) !== id
   ) {
     throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid upload response. Local draft was kept.');
   }
@@ -761,9 +762,8 @@ function worklogIdFromReviewUrl(reviewUrl: string): string | null {
   try {
     const parts = new URL(reviewUrl).pathname.split('/').filter(Boolean);
     const worklogsIndex = parts.indexOf('worklogs');
-    if (worklogsIndex >= 0) return parts[worklogsIndex + 1] ?? null;
-    const reviewIndex = parts.indexOf('review');
-    return reviewIndex >= 0 ? parts[reviewIndex + 1] ?? null : null;
+    const encodedId = worklogsIndex >= 0 ? parts[worklogsIndex + 1] : null;
+    return encodedId ? decodeURIComponent(encodedId) : null;
   } catch {
     return null;
   }

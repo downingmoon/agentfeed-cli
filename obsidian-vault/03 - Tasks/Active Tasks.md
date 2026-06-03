@@ -192,6 +192,9 @@ created: 2026-05-30
 - [x] CLI upload preflight/ingest 실패 시 collection cursor 미저장 회귀 테스트 추가
 - 관련 노트: [[Commercial Readiness Hardening - CLI Upload Failure Cursor Safety 2026-06-03]]
 
+- [x] Frontend malformed `/v1/metadata` compatibility payload throw 없이 fail-closed 처리
+- 관련 노트: [[Commercial Readiness Hardening - Frontend Metadata Malformed Fail Closed 2026-06-03]]
+
 - [ ] Default commercial readiness gate: `https://agentfeed.dev/` stale `/login` redirect 해소 + `api.agentfeed.dev` DNS/deployment 준비 후 `make commercial-readiness`가 `COMMERCIAL_READINESS_PASSED` 출력 필요
 
 - [x] Frontend API response body size cap 및 Feed/Search request AbortSignal propagation 보강

@@ -439,3 +439,4 @@ graph LR
 - [[Commercial Readiness Hardening - CLI Release Ref Fail Fast 2026-06-03]]
 - [[Commercial Readiness Hardening - CLI Test Browser Side Effect Guard 2026-06-03]]
 - [[Commercial Readiness Hardening - Frontend Following Feed Scope 2026-06-03]]
+- [[Commercial Readiness Hardening - Frontend Local DNSless CI Guard 2026-06-03]] — production API compatibility skip을 로컬 DNS-less 검증 전용으로 제한

@@ -996,3 +996,10 @@ created: 2026-05-30
 - [x] Frontend `useFeed`가 Backend `/v1/feed/following`을 실제로 호출
 - [x] signed-out following scope는 401 API 호출 대신 login CTA 표시
 - [[Commercial Readiness Hardening - Frontend Following Feed Scope 2026-06-03]]
+
+## 2026-06-03 Frontend local DNS-less CI guard continuation
+
+- [x] production API compatibility skip을 `AGENTFEED_LOCAL_DNSLESS_CI=1`이 있는 로컬 검증으로 제한
+- [x] hosted CI/deploy marker가 있으면 skip을 fail-fast로 거부
+- [x] agentfeed-dev local cross-repo gate는 새 marker를 함께 전달
+- [[Commercial Readiness Hardening - Frontend Local DNSless CI Guard 2026-06-03]]

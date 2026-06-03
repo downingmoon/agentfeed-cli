@@ -48,6 +48,18 @@ The previous split-host support depended on a CLI-side environment allowlist (`A
 - Dev: `node scripts/check-openapi-contract.mjs` passed.
 - Dev integrated gate: `/Users/downing/PersonalProjects/agentfeed-dev/scripts/test-all.sh` passed, including CLI release preflight, Frontend CI/build, Backend 345-test suite, and Alembic offline migration chain.
 
+## Documentation follow-up
+
+> [!info]
+> A continuation pass aligned deployment/operator docs with the new contract so self-hosted and production operators configure Backend `FRONTEND_URL` instead of relying on CLI-only review host overrides.
+
+- CLI README now explains that `/v1/metadata` `review_base_url` is the preferred trust source for split-host review deployments and `AGENTFEED_REVIEW_BASE_URL` is only a local override/fallback.
+- Backend README now shows the expected production `/v1/metadata` contract snippet including `review_base_url`.
+- Frontend README now states that hosted CI/readiness must prove metadata includes `review_base_url`.
+- Dev README now includes `review_base_url` in the commercial readiness gate description.
+
+Verification: `rg "review_base_url|FRONTEND_URL|AGENTFEED_REVIEW_BASE_URL" README.md` across CLI/Backend/Frontend/Dev confirmed docs mention the new contract.
+
 ## Remaining release blocker
 
 > [!warning]

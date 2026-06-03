@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Frontend Review Origin Cross Validation 2026-06-04]] — Frontend hosted/API compatibility gate cross-validates Backend review_base_url against deployed frontend origin
+
 - [[Commercial Readiness Hardening - Backend Review Privacy Preview Contract 2026-06-03]] — Backend review API safe_public_preview aligned with publish privacy gate
 
 - [[Commercial Readiness Hardening - Frontend Hosted Readiness Preflight 2026-06-03]] — Frontend hosted readiness preflight for API DNS plus root `/login` redirect

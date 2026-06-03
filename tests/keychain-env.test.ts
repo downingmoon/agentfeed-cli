@@ -42,7 +42,7 @@ const childProcessMock = vi.hoisted(() => {
             child.stdout.emit('data', 'base64-dpapi-protected-secret\n');
           }
           if ((command === 'powershell.exe' || command === 'powershell' || command === 'pwsh') && commandText.includes('ProtectedData]::Unprotect')) {
-            child.stdout.emit('data', 'af_live_from_windows_dpapi\n');
+            child.stdout.emit('data', 'af_live_from_windows_dpapi\r\n');
           }
           child.emit('close', 0);
         });

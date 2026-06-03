@@ -152,3 +152,26 @@ npm audit --audit-level=high
 ```
 
 Result: targeted Windows helper test passed, release preflight passed with `389 passed`, and audit found `0 vulnerabilities`.
+
+### Remote CI Follow-up 3 - Windows CRLF stdout
+
+Third remote Windows run proved PowerShell stdout returned the decrypted token with CRLF, and the previous newline trimming left a trailing `\r`:
+
+```text
+expected 'af_live_windows_dpapi_native_smoke\r' to be 'af_live_windows_dpapi_native_smoke'
+```
+
+Fix applied:
+
+- Updated `trimOneTrailingNewline` to remove one trailing LF or CRLF sequence.
+- Updated the Windows DPAPI mocked read path to emit CRLF so this runner behavior remains covered locally.
+
+Verification after the CRLF fix:
+
+```bash
+npm test -- --run tests/keychain-env.test.ts -t "Windows DPAPI-backed"
+npm run release:preflight
+npm audit --audit-level=high
+```
+
+Result: targeted Windows helper test passed, release preflight passed with `389 passed`, and audit found `0 vulnerabilities`.

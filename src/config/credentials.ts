@@ -287,7 +287,7 @@ function spawnWithInput(command: string, args: string[], input: string, timeoutM
 }
 
 function trimOneTrailingNewline(value: string): string {
-  return value.endsWith('\n') ? value.slice(0, -1) : value;
+  return value.replace(/\r?\n$/, '');
 }
 
 async function windowsPowerShellCommand(): Promise<string | null> {

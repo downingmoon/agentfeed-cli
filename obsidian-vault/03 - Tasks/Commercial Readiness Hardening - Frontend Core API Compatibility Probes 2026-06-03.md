@@ -29,6 +29,7 @@ related:
   - `explore.get()` → explore section core arrays 확인
 - `scripts/mock-api-compatibility-check.mjs` mock server가 `/v1/metadata`, `/v1/feed`, `/v1/tags`, `/v1/explore` 요청을 각각 정확히 1회 기대한다.
 - `scripts/check-api-compatibility.contract.test.mjs`에 source-level regression을 추가해 compatibility script가 metadata-only로 퇴행하지 않도록 고정했다.
+- Incompatible metadata 경로는 public endpoint probe 전에 멈추는 것이 정상이라 mock diagnostic도 `/v1/feed`/`/v1/tags`/`/v1/explore` missing-request noise를 내지 않도록 정리했다.
 
 ## 검증
 

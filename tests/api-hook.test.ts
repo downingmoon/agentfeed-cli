@@ -7,7 +7,7 @@ import { promisify } from 'node:util';
 import { initProject } from '../src/config/project-config.js';
 import { writeDraft } from '../src/draft/write.js';
 import { createEmptyDraft } from '../src/draft/create.js';
-import { AgentFeedApiError, apiMetadataCompatible, cachedUploadReusableForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, createCliAuthSession, draftToIngestRequest, draftUploadCredentialBindingHash, draftUploadPayloadHash, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
+import { AgentFeedApiError, apiMetadataCompatible, cachedUploadReusableForCredentials, cachedUploadReuseStatusForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, createCliAuthSession, draftToIngestRequest, draftUploadCredentialBindingHash, draftUploadPayloadHash, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
 import { browserLogin, waitForCliAuthExchange } from '../src/auth/browser-login.js';
 import { buildClaudeCodeStopHookCommand, installClaudeCodeHook, uninstallClaudeCodeHook } from '../src/hooks/claude-code-settings.js';
 import { pathExists } from '../src/utils/fs.js';
@@ -476,11 +476,22 @@ describe('api client', () => {
     };
 
     expect(cachedUploadReusableForCredentials(draft, credentials)).toBe(true);
+    expect(cachedUploadReuseStatusForCredentials(draft, credentials)).toEqual({ reusable: true });
 
     const editedDraft = structuredClone(draft);
     editedDraft.worklog.title = 'Edited after upload';
     expect(cachedUploadReusableForCredentials(editedDraft, credentials)).toBe(false);
+    expect(cachedUploadReuseStatusForCredentials(editedDraft, credentials)).toEqual({ reusable: false, reason: 'payload_hash_mismatch', canRetry: true });
     expect(cachedUploadReusableForCredentials(draft, { ...credentials, ingestion_token: 'different-token' })).toBe(false);
+    expect(cachedUploadReuseStatusForCredentials(draft, { ...credentials, ingestion_token: 'different-token' })).toEqual({ reusable: false, reason: 'credential_binding_mismatch', canRetry: true });
+
+    const missingReviewUrl = structuredClone(draft);
+    delete missingReviewUrl.upload.review_url;
+    expect(cachedUploadReuseStatusForCredentials(missingReviewUrl, credentials)).toEqual({ reusable: false, reason: 'missing_review_url', canRetry: true });
+
+    const baseUrlMismatch = structuredClone(draft);
+    baseUrlMismatch.upload.api_base_url = 'https://api.other.example/v1';
+    expect(cachedUploadReuseStatusForCredentials(baseUrlMismatch, credentials)).toEqual({ reusable: false, reason: 'base_url_mismatch', canRetry: true });
   });
 
   it('reuses an unchanged uploaded draft after the first upload redacts public fields', async () => {

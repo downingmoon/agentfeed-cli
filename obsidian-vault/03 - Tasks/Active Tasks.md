@@ -221,6 +221,9 @@ created: 2026-05-30
 - [x] Dev `wait-ready` machine-readable local stack readiness evidence artifact 및 commercial-readiness workflow upload 보강
 - 관련 노트: [[Commercial Readiness Hardening - Dev Wait Ready Evidence 2026-06-04]]
 
+- [x] CLI cached private review reuse 실패 이유를 structured status와 publish confirmation 메시지로 노출
+- 관련 노트: [[Commercial Readiness Hardening - CLI Cached Upload Reuse Diagnostics 2026-06-04]]
+
 - [x] Frontend hosted readiness preflight가 non-local plaintext HTTP API/Frontend URL을 fail-closed 거부하고 `X-Powered-By` header를 비활성화
 - 관련 노트: [[Commercial Readiness Hardening - Frontend Hosted HTTPS Readiness Gate 2026-06-04]]
 

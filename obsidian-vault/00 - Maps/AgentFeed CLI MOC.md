@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - CLI Cached Upload Reuse Diagnostics 2026-06-04]] — Structured cached upload reuse diagnostics for publish confirmation
+
 - [[Commercial Readiness Hardening - Frontend Hosted HTTPS Readiness Gate 2026-06-04]] — Frontend hosted readiness HTTPS policy and Next.js fingerprint header hardening
 
 - [[Commercial Readiness Hardening - Dev Wait Ready Evidence 2026-06-04]] — `wait-ready` writes local stack readiness JSON evidence for self-hosted commercial readiness artifacts

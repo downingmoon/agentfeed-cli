@@ -705,17 +705,43 @@ export function isTrustedReviewUrl(reviewUrl: string, apiBaseUrl: string, review
   return validateReviewUrl(reviewUrl, apiBaseUrl, reviewBaseUrl);
 }
 
-export function cachedUploadReusableForCredentials(draft: LocalDraft, credentials: AgentFeedCredentials): boolean {
-  if (!draft.upload.uploaded || !draft.upload.worklog_id || !draft.upload.review_url) return false;
+export type CachedUploadReuseFailureReason =
+  | 'missing_upload_marker'
+  | 'missing_worklog_id'
+  | 'missing_review_url'
+  | 'missing_payload_hash'
+  | 'missing_credential_binding'
+  | 'base_url_mismatch'
+  | 'invalid_review_url'
+  | 'payload_hash_mismatch'
+  | 'credential_binding_mismatch';
+
+export type CachedUploadReuseStatus =
+  | { reusable: true }
+  | { reusable: false; reason: CachedUploadReuseFailureReason; canRetry: true };
+
+export function cachedUploadReuseStatusForCredentials(draft: LocalDraft, credentials: AgentFeedCredentials): CachedUploadReuseStatus {
+  if (!draft.upload.uploaded) return { reusable: false, reason: 'missing_upload_marker', canRetry: true };
+  if (!draft.upload.worklog_id) return { reusable: false, reason: 'missing_worklog_id', canRetry: true };
+  if (!draft.upload.review_url) return { reusable: false, reason: 'missing_review_url', canRetry: true };
+  if (!draft.upload.payload_hash) return { reusable: false, reason: 'missing_payload_hash', canRetry: true };
+  if (!draft.upload.credential_binding_hash) return { reusable: false, reason: 'missing_credential_binding', canRetry: true };
+  if (draft.upload.api_base_url && draft.upload.api_base_url !== credentials.api_base_url) return { reusable: false, reason: 'base_url_mismatch', canRetry: true };
+
   const safeDraft = structuredClone(draft) as LocalDraft;
   scanAndRedactDraftPublicFields(safeDraft, { preserveResolvedFindings: true });
   try {
     parseCachedUploadResult(safeDraft, credentials.api_base_url);
   } catch {
-    return false;
+    return { reusable: false, reason: 'invalid_review_url', canRetry: true };
   }
-  return safeDraft.upload.payload_hash === draftUploadPayloadHash(safeDraft)
-    && safeDraft.upload.credential_binding_hash === draftUploadCredentialBindingHash(credentials);
+  if (safeDraft.upload.payload_hash !== draftUploadPayloadHash(safeDraft)) return { reusable: false, reason: 'payload_hash_mismatch', canRetry: true };
+  if (safeDraft.upload.credential_binding_hash !== draftUploadCredentialBindingHash(credentials)) return { reusable: false, reason: 'credential_binding_mismatch', canRetry: true };
+  return { reusable: true };
+}
+
+export function cachedUploadReusableForCredentials(draft: LocalDraft, credentials: AgentFeedCredentials): boolean {
+  return cachedUploadReuseStatusForCredentials(draft, credentials).reusable;
 }
 
 function parseCachedUploadResult(draft: LocalDraft, apiBaseUrl: string): PublishDraftResult {

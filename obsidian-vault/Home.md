@@ -25,6 +25,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - CLI Cached Upload Reuse Diagnostics 2026-06-04]] — CLI cached private review reuse now reports explicit failure reasons
+
 - [[Commercial Readiness Hardening - Frontend Hosted HTTPS Readiness Gate 2026-06-04]] — Frontend hosted readiness rejects non-local plaintext HTTP URLs and suppresses X-Powered-By
 
 - [[Commercial Readiness Hardening - Dev Wait Ready Evidence 2026-06-04]] — Dev local Compose readiness JSON evidence and commercial readiness artifact upload

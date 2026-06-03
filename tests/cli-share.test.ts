@@ -1535,6 +1535,7 @@ describe('share CLI command', () => {
 
       expect(publish.stdout).toContain('Upload confirmation required.');
       expect(publish.stdout).toContain('No data was uploaded to AgentFeed.');
+      expect(publish.stdout).toContain('Saved private review cache cannot be reused: saved upload was created with a different token or user binding.');
       expect(requestCount).toBe(0);
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));

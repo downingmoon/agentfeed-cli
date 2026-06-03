@@ -9,7 +9,7 @@ import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 import { formatCollectionExplain } from '../draft/explain.js';
-import { cachedUploadReusableForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, isTrustedReviewUrl, previewDraftRemote, publishDraft, type ApiMetadata } from '../api/client.js';
+import { cachedUploadReuseStatusForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, isTrustedReviewUrl, previewDraftRemote, publishDraft, type ApiMetadata, type CachedUploadReuseFailureReason } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
 import { applyRedactedPublicFields, publicScanFieldsFromDraft, scanAndRedactDraftPublicFields, type PublicScanFields } from '../privacy/draft-sanitizer.js';
@@ -228,9 +228,24 @@ function shouldRequireUploadConfirmation(options: { json?: boolean; yes?: boolea
   return true;
 }
 
-function printUploadConfirmationRequired(draft: LocalDraft, command: string, extraCommand?: string): void {
+function cachedUploadReuseReasonLabel(reason: CachedUploadReuseFailureReason): string {
+  switch (reason) {
+    case 'missing_upload_marker': return 'no saved private review upload marker is present';
+    case 'missing_worklog_id': return 'saved upload metadata is missing the worklog id';
+    case 'missing_review_url': return 'saved upload metadata is missing the review URL';
+    case 'missing_payload_hash': return 'saved upload metadata is missing the redacted payload hash';
+    case 'missing_credential_binding': return 'saved upload metadata is missing the credential binding';
+    case 'base_url_mismatch': return 'saved upload was created for a different API base URL';
+    case 'invalid_review_url': return 'saved review URL is no longer trusted for the current API/review origin';
+    case 'payload_hash_mismatch': return 'local draft content changed after the saved upload';
+    case 'credential_binding_mismatch': return 'saved upload was created with a different token or user binding';
+  }
+}
+
+function printUploadConfirmationRequired(draft: LocalDraft, command: string, extraCommand?: string, options: { cacheReuseReason?: CachedUploadReuseFailureReason } = {}): void {
   print('Upload confirmation required.');
   print('No data was uploaded to AgentFeed.');
+  if (options.cacheReuseReason) print(`Saved private review cache cannot be reused: ${cachedUploadReuseReasonLabel(options.cacheReuseReason)}.`);
   print();
   print(`Draft: ${draft.id}`);
   print(`Project: ${draft.project.name}`);
@@ -652,9 +667,9 @@ async function cmdPublish(args: string[]) {
   if (!creds) throw new Error('AgentFeed token is missing. Run: agentfeed login, or pipe a token with: printf %s "$TOKEN" | agentfeed login --token-stdin');
   const id = await resolveDraftId(process.cwd(), args);
   const existingDraft = await readDraft(process.cwd(), id);
-  const reusableCachedUpload = cachedUploadReusableForCredentials(existingDraft, creds);
-  if (!reusableCachedUpload && shouldRequireUploadConfirmation({ json: flag(args, '--json'), yes: flag(args, '--yes') || flag(args, '-y') })) {
-    printUploadConfirmationRequired(existingDraft, `agentfeed publish --id ${id} --yes`);
+  const cacheReuseStatus = cachedUploadReuseStatusForCredentials(existingDraft, creds);
+  if (!cacheReuseStatus.reusable && shouldRequireUploadConfirmation({ json: flag(args, '--json'), yes: flag(args, '--yes') || flag(args, '-y') })) {
+    printUploadConfirmationRequired(existingDraft, `agentfeed publish --id ${id} --yes`, undefined, existingDraft.upload.uploaded ? { cacheReuseReason: cacheReuseStatus.reason } : {});
     return;
   }
   const metadata = await requireUploadPreflight(creds);

@@ -800,7 +800,27 @@ async function removeStaleDraftUploadLock(lockPath: string): Promise<void> {
     return;
   }
   if (Date.now() - lockStat.mtimeMs <= DRAFT_UPLOAD_LOCK_STALE_MS) return;
+  if (await draftUploadLockOwnerAppearsAlive(lockPath)) return;
   await rm(lockPath, { force: true }).catch(() => undefined);
+}
+
+async function draftUploadLockOwnerAppearsAlive(lockPath: string): Promise<boolean> {
+  let parsed: { pid?: unknown };
+  try {
+    parsed = JSON.parse(await readFile(lockPath, 'utf8')) as { pid?: unknown };
+  } catch {
+    return false;
+  }
+  const pid = parsed.pid;
+  if (!Number.isInteger(pid) || (pid as number) <= 0) return false;
+  try {
+    process.kill(pid as number, 0);
+    return true;
+  } catch (error) {
+    const code = typeof error === 'object' && error !== null && 'code' in error ? String((error as { code?: unknown }).code) : '';
+    if (code === 'ESRCH') return false;
+    return true;
+  }
 }
 
 async function createDraftUploadLockFile(lockPath: string, token: string): Promise<FileHandle> {

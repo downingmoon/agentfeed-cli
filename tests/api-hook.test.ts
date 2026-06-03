@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { execFile } from 'node:child_process';
-import { mkdtemp, rm, mkdir, writeFile, readFile, chmod } from 'node:fs/promises';
+import { mkdtemp, rm, mkdir, writeFile, readFile, chmod, utimes } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
@@ -166,6 +166,34 @@ describe('api client', () => {
       });
     expect(fetchMock).not.toHaveBeenCalled();
     await expect(readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json.upload.lock`), 'utf8')).resolves.toContain('active-lock');
+  });
+
+  it('keeps stale-looking upload locks when the owner process is still alive', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    await writeDraft(dir, draft);
+    const lockPath = join(dir, '.agentfeed', 'drafts', `${draft.id}.json.upload.lock`);
+    await writeFile(lockPath, JSON.stringify({ pid: process.pid, token: 'live-stale-lock', created_at: new Date(Date.now() - 10 * 60_000).toISOString() }));
+    const oldTimestamp = new Date(Date.now() - 10 * 60_000);
+    await utimes(lockPath, oldTimestamp, oldTimestamp);
+    process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_TIMEOUT_MS = '1';
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      data: {
+        id: 'worklog_live_lock_race',
+        status: 'needs_review',
+        visibility: 'private',
+        review_url: 'https://agentfeed.dev/worklogs/worklog_live_lock_race/review',
+        created_at: '2026-05-19T00:00:00Z'
+      }
+    }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: defaultPublishCredentials }))
+      .rejects.toMatchObject({
+        status: 423,
+        code: 'DRAFT_UPLOAD_LOCKED'
+      });
+    expect(fetchMock).not.toHaveBeenCalled();
+    await expect(readFile(lockPath, 'utf8')).resolves.toContain('live-stale-lock');
   });
 
   it('accepts upload review URLs from an explicitly configured split review frontend host', async () => {

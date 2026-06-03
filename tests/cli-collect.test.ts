@@ -344,6 +344,15 @@ describe('collect CLI command', () => {
         worklog_id: 'worklog_collect_json_upload',
         review_url: 'http://localhost:3001/worklogs/worklog_collect_json_upload/review'
       });
+
+      const savedDraft = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+      expect(savedDraft.upload).toMatchObject({
+        uploaded: true,
+        worklog_id: 'worklog_collect_json_upload',
+        review_url: 'http://localhost:3001/worklogs/worklog_collect_json_upload/review',
+        review_base_url: 'http://localhost:3001',
+        uploaded_at: '2026-05-31T00:00:00Z'
+      });
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }

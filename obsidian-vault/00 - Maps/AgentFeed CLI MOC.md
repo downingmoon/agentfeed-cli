@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Dev Wait Ready Evidence 2026-06-04]] — `wait-ready` writes local stack readiness JSON evidence for self-hosted commercial readiness artifacts
+
 - [[Commercial Readiness Hardening - Windows Package Wrapper Smoke 2026-06-04]] — Windows CI now runs installed npm tarball wrapper smoke for `agentfeed.cmd`
 
 - [[Commercial Readiness Hardening - Frontend Review Origin Cross Validation 2026-06-04]] — Frontend hosted/API compatibility gate cross-validates Backend review_base_url against deployed frontend origin

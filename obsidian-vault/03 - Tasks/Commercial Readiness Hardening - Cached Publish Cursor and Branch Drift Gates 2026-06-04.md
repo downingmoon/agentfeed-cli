@@ -82,4 +82,4 @@ Related: [[Active Tasks]], [[Commercial Readiness Hardening - Lock Fingerprint H
 - [ ] Backend: prune expired OAuth state nonce rows and abandoned CLI auth sessions.
 - [ ] CLI: harden upload lock heartbeat for filesystems where `utimes` fails repeatedly.
 - [x] CLI release: add Windows release-path package wrapper smoke to release workflow. → [[Commercial Readiness Hardening - Windows Package Wrapper Smoke 2026-06-04]]
-- [ ] Dev: optional machine-readable `wait-ready` evidence artifact for local stack readiness.
+- [x] Dev: optional machine-readable `wait-ready` evidence artifact for local stack readiness. → [[Commercial Readiness Hardening - Dev Wait Ready Evidence 2026-06-04]]

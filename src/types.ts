@@ -167,6 +167,7 @@ export interface LocalDraft {
     uploaded_at?: string | null;
     payload_hash?: string | null;
     api_base_url?: string | null;
+    review_base_url?: string | null;
     credential_binding_hash?: string | null;
     token_id?: string | null;
     user_id?: string | null;

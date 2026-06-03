@@ -30,6 +30,7 @@ export interface ApiMetadata {
   api_version?: string;
   backend_version?: string;
   contract_version?: string;
+  review_base_url?: string;
   supported_clients?: {
     cli?: {
       min_version?: string;
@@ -52,7 +53,7 @@ export interface ApiCompatibilityCheckResult {
 }
 
 export const EXPECTED_API_VERSION = 'v1';
-export const EXPECTED_API_CONTRACT_VERSION = '2026-06-02';
+export const EXPECTED_API_CONTRACT_VERSION = '2026-06-03';
 
 const DEFAULT_API_REQUEST_TIMEOUT_MS = 30_000;
 const API_CHECK_TIMEOUT_MS = 3_000;
@@ -225,6 +226,7 @@ export function apiMetadataCompatible(metadata: ApiMetadata | undefined): boolea
   return metadata.service === 'agentfeed-api'
     && metadata.api_version === EXPECTED_API_VERSION
     && metadata.contract_version === EXPECTED_API_CONTRACT_VERSION
+    && trustedReviewOrigin(metadata.review_base_url) !== null
     && cli?.contract_version === EXPECTED_API_CONTRACT_VERSION
     && typeof cli.min_version === 'string'
     && (compareSemver(AGENTFEED_CLI_VERSION, cli.min_version) ?? -1) >= 0;
@@ -403,6 +405,7 @@ export interface PublishDraftResult {
   status: WorklogStatus | 'already_uploaded';
   visibility: Visibility;
   review_url: string;
+  review_base_url?: string | null;
   created_at: string;
   reused_existing?: boolean;
 }
@@ -460,7 +463,7 @@ function isExpectedReviewPath(pathname: string): boolean {
   return /^\/(?:review\/[^/]+|worklogs\/[^/]+\/review)$/.test(normalized);
 }
 
-function trustedConfiguredReviewOrigin(rawBaseUrl: string | undefined): string | null {
+function trustedReviewOrigin(rawBaseUrl: string | null | undefined): string | null {
   if (!rawBaseUrl) return null;
   try {
     const url = new URL(rawBaseUrl);
@@ -474,7 +477,7 @@ function trustedConfiguredReviewOrigin(rawBaseUrl: string | undefined): string |
   }
 }
 
-function validateReviewUrl(reviewUrl: string, apiBaseUrl: string): boolean {
+function validateReviewUrl(reviewUrl: string, apiBaseUrl: string, reviewBaseUrl?: string | null): boolean {
   try {
     const review = new URL(reviewUrl);
     const api = new URL(apiBaseUrl);
@@ -483,7 +486,9 @@ function validateReviewUrl(reviewUrl: string, apiBaseUrl: string): boolean {
     if (review.search || review.hash) return false;
     if (!isExpectedReviewPath(review.pathname)) return false;
     if (!isLocalHostname(review.hostname) && review.protocol !== 'https:') return false;
-    const configuredReviewOrigin = trustedConfiguredReviewOrigin(process.env.AGENTFEED_REVIEW_BASE_URL);
+    const metadataReviewOrigin = trustedReviewOrigin(reviewBaseUrl);
+    if (metadataReviewOrigin && review.origin === metadataReviewOrigin) return true;
+    const configuredReviewOrigin = trustedReviewOrigin(process.env.AGENTFEED_REVIEW_BASE_URL);
     if (configuredReviewOrigin && review.origin === configuredReviewOrigin) return true;
     if (isLocalHostname(api.hostname)) return isLocalHostname(review.hostname);
     if (isAgentFeedHostname(api.hostname)) return isAgentFeedReviewHostname(review.hostname);
@@ -566,7 +571,7 @@ const VALID_PRIVATE_REVIEW_UPLOAD_STATUSES = new Set<string>([
 
 const VALID_PRIVATE_REVIEW_VISIBILITY = 'private';
 
-function parsePublishDraftResult(value: unknown, apiBaseUrl: string): PublishDraftResult {
+function parsePublishDraftResult(value: unknown, apiBaseUrl: string, reviewBaseUrl?: string | null): PublishDraftResult {
   if (!isRecord(value)) throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid upload response.');
   const id = stringField(value.id);
   const status = stringField(value.status);
@@ -581,7 +586,7 @@ function parsePublishDraftResult(value: unknown, apiBaseUrl: string): PublishDra
     || !reviewUrl
     || !createdAt
     || !Number.isFinite(Date.parse(createdAt))
-    || !validateReviewUrl(reviewUrl, apiBaseUrl)
+    || !validateReviewUrl(reviewUrl, apiBaseUrl, reviewBaseUrl)
   ) {
     throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid upload response. Local draft was kept.');
   }
@@ -590,6 +595,7 @@ function parsePublishDraftResult(value: unknown, apiBaseUrl: string): PublishDra
     status: status as PublishDraftResult['status'],
     visibility: visibility as PublishDraftResult['visibility'],
     review_url: reviewUrl,
+    review_base_url: trustedReviewOrigin(reviewBaseUrl),
     created_at: createdAt,
     reused_existing: value.reused_existing === true ? true : undefined
   };
@@ -683,12 +689,12 @@ export async function previewDraftRemote(draft: LocalDraft, credentials: AgentFe
   return postIngest<RemotePreviewResult>('/ingest/worklogs/preview', draft, credentials);
 }
 
-export async function uploadDraft(draft: LocalDraft, credentials: AgentFeedCredentials): Promise<PublishDraftResult> {
-  return parsePublishDraftResult(await postIngest<unknown>('/ingest/worklogs', draft, credentials), credentials.api_base_url);
+export async function uploadDraft(draft: LocalDraft, credentials: AgentFeedCredentials, reviewBaseUrl?: string | null): Promise<PublishDraftResult> {
+  return parsePublishDraftResult(await postIngest<unknown>('/ingest/worklogs', draft, credentials), credentials.api_base_url, reviewBaseUrl);
 }
 
-export function isTrustedReviewUrl(reviewUrl: string, apiBaseUrl: string): boolean {
-  return validateReviewUrl(reviewUrl, apiBaseUrl);
+export function isTrustedReviewUrl(reviewUrl: string, apiBaseUrl: string, reviewBaseUrl?: string | null): boolean {
+  return validateReviewUrl(reviewUrl, apiBaseUrl, reviewBaseUrl);
 }
 
 export function cachedUploadReusableForCredentials(draft: LocalDraft, credentials: AgentFeedCredentials): boolean {
@@ -712,7 +718,7 @@ function parseCachedUploadResult(draft: LocalDraft, apiBaseUrl: string): Publish
     review_url: draft.upload.review_url,
     created_at: draft.upload.uploaded_at ?? draft.source.created_at,
     reused_existing: true
-  }, apiBaseUrl);
+  }, apiBaseUrl, draft.upload.review_base_url);
 }
 
 function staleCachedUploadError(draft: LocalDraft): AgentFeedApiError {
@@ -736,9 +742,10 @@ function cachedUploadCredentialBindingMatches(draft: LocalDraft, credentials: Ag
   return draft.upload.credential_binding_hash === draftUploadCredentialBindingHash(credentials);
 }
 
-function uploadMetadataForCredentials(credentials: AgentFeedCredentials): Pick<LocalDraft['upload'], 'api_base_url' | 'credential_binding_hash' | 'token_id' | 'user_id'> {
+function uploadMetadataForCredentials(credentials: AgentFeedCredentials, reviewBaseUrl?: string | null): Pick<LocalDraft['upload'], 'api_base_url' | 'review_base_url' | 'credential_binding_hash' | 'token_id' | 'user_id'> {
   return {
     api_base_url: credentials.api_base_url,
+    review_base_url: trustedReviewOrigin(reviewBaseUrl),
     credential_binding_hash: draftUploadCredentialBindingHash(credentials),
     token_id: credentials.token_id ?? null,
     user_id: credentials.user?.id ?? null
@@ -762,7 +769,7 @@ function worklogIdFromReviewUrl(reviewUrl: string): string | null {
   }
 }
 
-function duplicateIngestResult(error: AgentFeedApiError, fallbackCreatedAt: string, apiBaseUrl: string): PublishDraftResult | null {
+function duplicateIngestResult(error: AgentFeedApiError, fallbackCreatedAt: string, apiBaseUrl: string, reviewBaseUrl?: string | null): PublishDraftResult | null {
   if (error.status !== 409 || error.code !== 'DUPLICATE_INGESTION_SESSION') return null;
   const reviewUrl = detailString(error.details, 'review_url');
   if (!reviewUrl) return null;
@@ -779,7 +786,7 @@ function duplicateIngestResult(error: AgentFeedApiError, fallbackCreatedAt: stri
     reused_existing: true
   };
   try {
-    return parsePublishDraftResult(result, apiBaseUrl);
+    return parsePublishDraftResult(result, apiBaseUrl, reviewBaseUrl);
   } catch {
     return null;
   }
@@ -852,7 +859,7 @@ async function acquireDraftUploadLock(cwd: string, id: string): Promise<() => Pr
   }
 }
 
-export async function publishDraft(options: { cwd: string; id: string; credentials: AgentFeedCredentials }): Promise<PublishDraftResult> {
+export async function publishDraft(options: { cwd: string; id: string; credentials: AgentFeedCredentials; reviewBaseUrl?: string | null }): Promise<PublishDraftResult> {
   const releaseUploadLock = await acquireDraftUploadLock(options.cwd, options.id);
   try {
     return await publishDraftWithLock(options);
@@ -861,7 +868,7 @@ export async function publishDraft(options: { cwd: string; id: string; credentia
   }
 }
 
-async function publishDraftWithLock(options: { cwd: string; id: string; credentials: AgentFeedCredentials }): Promise<PublishDraftResult> {
+async function publishDraftWithLock(options: { cwd: string; id: string; credentials: AgentFeedCredentials; reviewBaseUrl?: string | null }): Promise<PublishDraftResult> {
   const draft = await readDraft(options.cwd, options.id);
   scanAndRedactDraftPublicFields(draft, { preserveResolvedFindings: true });
   const payloadHash = draftUploadPayloadHash(draft);
@@ -887,17 +894,17 @@ async function publishDraftWithLock(options: { cwd: string; id: string; credenti
   }
   let result: PublishDraftResult;
   try {
-    result = await uploadDraft(draft, options.credentials);
+    result = await uploadDraft(draft, options.credentials, options.reviewBaseUrl);
   } catch (error) {
     if (error instanceof AgentFeedApiError) {
-      const duplicate = duplicateIngestResult(error, draft.source.created_at, options.credentials.api_base_url);
+      const duplicate = duplicateIngestResult(error, draft.source.created_at, options.credentials.api_base_url, options.reviewBaseUrl);
       if (duplicate) result = duplicate;
       else throw error;
     } else {
       throw error;
     }
   }
-  draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, uploaded_at: result.created_at, payload_hash: payloadHash, ...uploadMetadataForCredentials(options.credentials) };
+  draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, uploaded_at: result.created_at, payload_hash: payloadHash, ...uploadMetadataForCredentials(options.credentials, options.reviewBaseUrl) };
   await writeDraft(options.cwd, draft);
   return result;
 }

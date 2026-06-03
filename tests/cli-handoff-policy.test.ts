@@ -22,11 +22,12 @@ describe('CLI review URL handoff trust policy', () => {
     expect(handoff).toContain('Review URL was rejected by trust policy');
   });
 
-  it('passes the active API base into every upload handoff call', () => {
+  it('passes the active API and review bases into every upload handoff call', () => {
     const cli = source('src/cli/index.ts');
     expect((cli.match(/handoffReviewUrl\(result\.review_url/g) ?? []).length).toBe(5);
-    expect(cli).toContain('draft.upload.handoff = await handoffReviewUrl(result.review_url, { copy: false, open: true, apiBaseUrl: creds.api_base_url });');
+    expect(cli).toContain('draft.upload.handoff = await handoffReviewUrl(result.review_url, { copy: false, open: true, apiBaseUrl: creds.api_base_url, reviewBaseUrl: result.review_base_url ?? metadata.review_base_url });');
     expect((cli.match(/apiBaseUrl: creds!\.api_base_url/g) ?? []).length).toBe(2);
     expect((cli.match(/apiBaseUrl: creds\.api_base_url/g) ?? []).length).toBe(3);
+    expect((cli.match(/reviewBaseUrl: result\.review_base_url/g) ?? []).length).toBe(5);
   });
 });

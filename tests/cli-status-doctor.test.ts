@@ -32,10 +32,11 @@ function compatibleMetadata() {
       service: 'agentfeed-api',
       api_version: 'v1',
       backend_version: '0.1.0',
-      contract_version: '2026-06-02',
+      contract_version: '2026-06-03',
+      review_base_url: 'http://localhost:3001',
       supported_clients: {
-        cli: { min_version: '0.2.0', contract_version: '2026-06-02' },
-        frontend: { min_version: '0.1.0', contract_version: '2026-06-02' }
+        cli: { min_version: '0.2.0', contract_version: '2026-06-03' },
+        frontend: { min_version: '0.1.0', contract_version: '2026-06-03' }
       }
     }
   };
@@ -764,10 +765,11 @@ describe('status and doctor provenance output', () => {
             service: 'agentfeed-api',
             api_version: 'v1',
             backend_version: '0.1.0',
-            contract_version: '2026-06-02',
+            contract_version: '2026-06-03',
+            review_base_url: 'http://localhost:3001',
             supported_clients: {
-              cli: { min_version: '0.2.0', contract_version: '2026-06-02' },
-              frontend: { min_version: '0.1.0', contract_version: '2026-06-02' }
+              cli: { min_version: '0.2.0', contract_version: '2026-06-03' },
+              frontend: { min_version: '0.1.0', contract_version: '2026-06-03' }
             }
           }
         }));
@@ -811,7 +813,7 @@ describe('status and doctor provenance output', () => {
       expect(requestedUrls).toContain('/health/ready');
       expect(requestedUrls).toContain('/v1/metadata');
       expect(requestedUrls).not.toContain('/health');
-      expect(stdout).toContain('API compatibility: yes (v1 / 2026-06-02)');
+      expect(stdout).toContain('API compatibility: yes (v1 / 2026-06-03)');
       expect(stdout).toContain('ingestion token valid: yes (200)');
       expect(stdout).toContain(`ingestion token expires at: ${soon}`);
       expect(stdout).toContain('Warning: ingestion token expires soon');

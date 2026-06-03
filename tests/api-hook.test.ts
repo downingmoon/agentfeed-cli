@@ -193,6 +193,37 @@ describe('api client', () => {
     });
   });
 
+  it('accepts upload review URLs from metadata-provided split review frontend host', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    await writeDraft(dir, draft);
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      data: {
+        id: 'worklog_metadata_split_host',
+        status: 'needs_review',
+        visibility: 'private',
+        review_url: 'https://review.internal.example/worklogs/worklog_metadata_split_host/review',
+        created_at: '2026-05-19T00:00:00Z'
+      }
+    }), { status: 200, headers: { 'content-type': 'application/json' } })));
+
+    const result = await publishDraft({
+      cwd: dir,
+      id: draft.id,
+      credentials: { ingestion_token: 'tok', api_base_url: 'https://api.internal.example/v1', created_at: 'now' },
+      reviewBaseUrl: 'https://review.internal.example'
+    });
+
+    expect(result.review_url).toBe('https://review.internal.example/worklogs/worklog_metadata_split_host/review');
+    expect(result.review_base_url).toBe('https://review.internal.example');
+    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+    expect(saved.upload).toMatchObject({
+      uploaded: true,
+      worklog_id: 'worklog_metadata_split_host',
+      review_url: 'https://review.internal.example/worklogs/worklog_metadata_split_host/review',
+      review_base_url: 'https://review.internal.example'
+    });
+  });
+
   it.each([
     { status: 'public', visibility: 'public' },
     { status: 'unlisted', visibility: 'unlisted' },
@@ -561,10 +592,11 @@ describe('api client', () => {
             service: 'agentfeed-api',
             api_version: 'v1',
             backend_version: '0.1.0',
-            contract_version: '2026-06-02',
+            contract_version: '2026-06-03',
+            review_base_url: 'https://agentfeed.dev',
             supported_clients: {
-              cli: { min_version: '0.2.0', contract_version: '2026-06-02' },
-              frontend: { min_version: '0.1.0', contract_version: '2026-06-02' }
+              cli: { min_version: '0.2.0', contract_version: '2026-06-03' },
+              frontend: { min_version: '0.1.0', contract_version: '2026-06-03' }
             }
           }
         }), { status: 200, headers: { 'content-type': 'application/json' } });
@@ -690,10 +722,11 @@ describe('api client', () => {
         service: 'agentfeed-api',
         api_version: 'v1',
         backend_version: '0.1.0',
-        contract_version: '2026-06-02',
+        contract_version: '2026-06-03',
+        review_base_url: 'https://agentfeed.dev',
         supported_clients: {
-          cli: { min_version: '0.2.0', contract_version: '2026-06-02' },
-          frontend: { min_version: '0.1.0', contract_version: '2026-06-02' }
+          cli: { min_version: '0.2.0', contract_version: '2026-06-03' },
+          frontend: { min_version: '0.1.0', contract_version: '2026-06-03' }
         }
       }
     }), { status: 200, headers: { 'content-type': 'application/json' } }));
@@ -702,15 +735,18 @@ describe('api client', () => {
     const result = await checkApiCompatibility('http://localhost:8001/v1');
 
     expect(result).toMatchObject({ ok: true, compatible: true, status: 200, url: 'http://localhost:8001/v1/metadata' });
-    expect(result.data?.contract_version).toBe('2026-06-02');
+    expect(result.data?.contract_version).toBe('2026-06-03');
     expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/v1/metadata', expect.objectContaining({ method: 'GET' }));
     expect(apiMetadataCompatible({
       ...result.data,
       supported_clients: {
         ...result.data?.supported_clients,
-        cli: { min_version: 'not-a-version', contract_version: '2026-06-02' }
+        cli: { min_version: 'not-a-version', contract_version: '2026-06-03' }
       }
     })).toBe(false);
+    expect(apiMetadataCompatible({ ...result.data, review_base_url: undefined })).toBe(false);
+    expect(apiMetadataCompatible({ ...result.data, review_base_url: 'http://review.internal.example' })).toBe(false);
+    expect(apiMetadataCompatible({ ...result.data, review_base_url: 'https://review.internal.example/path' })).toBe(false);
   });
 
   it('checks API reachability against the backend readiness endpoint', async () => {
@@ -1104,10 +1140,11 @@ describe('api client', () => {
             service: 'agentfeed-api',
             api_version: 'v1',
             backend_version: '0.1.0',
-            contract_version: '2026-06-02',
+            contract_version: '2026-06-03',
+            review_base_url: 'https://agentfeed.dev',
             supported_clients: {
-              cli: { min_version: '0.2.0', contract_version: '2026-06-02' },
-              frontend: { min_version: '0.1.0', contract_version: '2026-06-02' }
+              cli: { min_version: '0.2.0', contract_version: '2026-06-03' },
+              frontend: { min_version: '0.1.0', contract_version: '2026-06-03' }
             }
           }
         }), { status: 200, headers: { 'content-type': 'application/json' } });

@@ -9,7 +9,7 @@ import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 import { formatCollectionExplain } from '../draft/explain.js';
-import { cachedUploadReusableForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, isTrustedReviewUrl, previewDraftRemote, publishDraft } from '../api/client.js';
+import { cachedUploadReusableForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, isTrustedReviewUrl, previewDraftRemote, publishDraft, type ApiMetadata } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
 import { applyRedactedPublicFields, publicScanFieldsFromDraft, scanAndRedactDraftPublicFields, type PublicScanFields } from '../privacy/draft-sanitizer.js';
@@ -117,9 +117,9 @@ function rejectReviewUrlHandoff(handoff: ReviewUrlHandoff, options: { copy: bool
   return handoff;
 }
 
-async function handoffReviewUrl(reviewUrl: string, options: { copy: boolean; open: boolean; apiBaseUrl: string }): Promise<ReviewUrlHandoff> {
+async function handoffReviewUrl(reviewUrl: string, options: { copy: boolean; open: boolean; apiBaseUrl: string; reviewBaseUrl?: string | null }): Promise<ReviewUrlHandoff> {
   const handoff = emptyReviewUrlHandoff();
-  if ((options.copy || options.open) && !isTrustedReviewUrl(reviewUrl, options.apiBaseUrl)) {
+  if ((options.copy || options.open) && !isTrustedReviewUrl(reviewUrl, options.apiBaseUrl, options.reviewBaseUrl)) {
     return rejectReviewUrlHandoff(handoff, options);
   }
   const tasks: Promise<void>[] = [];
@@ -158,9 +158,9 @@ function apiCompatibilityFailureDetail(result: Awaited<ReturnType<typeof checkAp
     : result.error ?? 'unknown compatibility failure';
 }
 
-async function requireApiCompatibilityBeforeUpload(apiBaseUrl: string): Promise<void> {
+async function requireApiCompatibilityBeforeUpload(apiBaseUrl: string): Promise<ApiMetadata> {
   const result = await checkApiCompatibility(apiBaseUrl);
-  if (result.compatible) return;
+  if (result.compatible && result.data) return result.data;
   throw new Error(`API compatibility check failed for ${result.url}: ${apiCompatibilityFailureDetail(result)}. Run agentfeed doctor for details before uploading drafts.`);
 }
 
@@ -519,11 +519,11 @@ async function cmdCollect(args: string[]) {
     if (flag(args, '--upload')) {
       const creds = await loadCredentials();
       if (!creds) throw new Error('AgentFeed token is missing. Run: agentfeed login');
-      await requireApiCompatibilityBeforeUpload(creds.api_base_url);
-      const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds });
-      draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, uploaded_at: result.created_at };
+      const metadata = await requireApiCompatibilityBeforeUpload(creds.api_base_url);
+      const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds, reviewBaseUrl: metadata.review_base_url });
+      draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, review_base_url: result.review_base_url ?? metadata.review_base_url ?? null, uploaded_at: result.created_at };
       if (flag(args, '--open-review')) {
-        draft.upload.handoff = await handoffReviewUrl(result.review_url, { copy: false, open: true, apiBaseUrl: creds.api_base_url });
+        draft.upload.handoff = await handoffReviewUrl(result.review_url, { copy: false, open: true, apiBaseUrl: creds.api_base_url, reviewBaseUrl: result.review_base_url ?? metadata.review_base_url });
       }
     }
     if (!flag(args, '--no-save-cursor')) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
@@ -564,14 +564,15 @@ async function cmdShare(args: string[]) {
       print(JSON.stringify({ dry_run: true, reused_existing_draft: collection.reusedExisting, draft, privacy_policy: privacyPolicySummary(draft) }, null, 2));
       return;
     }
-    await requireApiCompatibilityBeforeUpload(creds!.api_base_url);
-    const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds! });
-    draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, uploaded_at: result.created_at };
+    const metadata = await requireApiCompatibilityBeforeUpload(creds!.api_base_url);
+    const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds!, reviewBaseUrl: metadata.review_base_url });
+    draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, review_base_url: result.review_base_url ?? metadata.review_base_url ?? null, uploaded_at: result.created_at };
     await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
     const handoff = await handoffReviewUrl(result.review_url, {
       copy: shouldCopyReviewUrl({ json: true, noClipboard: opts.noClipboard, clipboard: flag(args, '--clipboard') }),
       open: await shouldOpenReviewAfterUpload(opts.openReview, { respectConfig: false }),
-      apiBaseUrl: creds!.api_base_url
+      apiBaseUrl: creds!.api_base_url,
+      reviewBaseUrl: result.review_base_url ?? metadata.review_base_url
     });
     print(JSON.stringify({ dry_run: false, reused_existing_draft: collection.reusedExisting, draft_id: draft.id, draft, upload: result, privacy_policy: privacyPolicySummary(draft), handoff }, null, 2));
     return;
@@ -593,8 +594,8 @@ async function cmdShare(args: string[]) {
     return;
   }
 
-  await requireApiCompatibilityBeforeUpload(creds!.api_base_url);
-  const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds! });
+  const metadata = await requireApiCompatibilityBeforeUpload(creds!.api_base_url);
+  const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds!, reviewBaseUrl: metadata.review_base_url });
   await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
   print(result.reused_existing ? 'Worklog already uploaded; reusing existing review URL.' : 'Worklog uploaded.');
   print(`Status: ${result.status}`);
@@ -603,7 +604,8 @@ ${result.review_url}`);
   printReviewUrlHandoff(await handoffReviewUrl(result.review_url, {
     copy: shouldCopyReviewUrl({ noClipboard: opts.noClipboard }),
     open: await shouldOpenReviewAfterUpload(opts.openReview),
-    apiBaseUrl: creds!.api_base_url
+    apiBaseUrl: creds!.api_base_url,
+    reviewBaseUrl: result.review_base_url ?? metadata.review_base_url
   }), result.review_url);
 }
 
@@ -642,14 +644,15 @@ async function cmdPublish(args: string[]) {
     printUploadConfirmationRequired(existingDraft, `agentfeed publish --id ${id} --yes`);
     return;
   }
-  if (!reusableCachedUpload) await requireApiCompatibilityBeforeUpload(creds.api_base_url);
-  const result = await publishDraft({ cwd: process.cwd(), id, credentials: creds });
+  const metadata = reusableCachedUpload ? undefined : await requireApiCompatibilityBeforeUpload(creds.api_base_url);
+  const result = await publishDraft({ cwd: process.cwd(), id, credentials: creds, reviewBaseUrl: metadata?.review_base_url });
   const savedDraft = await readDraft(process.cwd(), id);
   if (flag(args, '--json')) {
     const handoff = await handoffReviewUrl(result.review_url, {
       copy: shouldCopyReviewUrl({ json: true, noClipboard: flag(args, '--no-clipboard'), clipboard: flag(args, '--clipboard') }),
       open: await shouldOpenReviewAfterUpload(flag(args, '--open-review'), { respectConfig: false }),
-      apiBaseUrl: creds.api_base_url
+      apiBaseUrl: creds.api_base_url,
+      reviewBaseUrl: result.review_base_url ?? metadata?.review_base_url
     });
     print(JSON.stringify({ draft_id: id, upload: result, privacy_policy: privacyPolicySummary(savedDraft), handoff }, null, 2));
     return;
@@ -663,7 +666,8 @@ async function cmdPublish(args: string[]) {
   printReviewUrlHandoff(await handoffReviewUrl(result.review_url, {
     copy: shouldCopyReviewUrl({ noClipboard: flag(args, '--no-clipboard') }),
     open: await shouldOpenReviewAfterUpload(flag(args, '--open-review')),
-    apiBaseUrl: creds.api_base_url
+    apiBaseUrl: creds.api_base_url,
+    reviewBaseUrl: result.review_base_url ?? metadata?.review_base_url
   }), result.review_url);
 }
 
@@ -797,7 +801,7 @@ async function cmdOpen(args: string[]) {
   const trustedApiBases = new Set([DEFAULT_API_BASE_URL]);
   if (draft.upload.api_base_url) trustedApiBases.add(draft.upload.api_base_url);
   if (credentials.api_base_url) trustedApiBases.add(credentials.api_base_url);
-  if (![...trustedApiBases].some((apiBaseUrl) => isTrustedReviewUrl(draft.upload.review_url!, apiBaseUrl))) {
+  if (![...trustedApiBases].some((apiBaseUrl) => isTrustedReviewUrl(draft.upload.review_url!, apiBaseUrl, draft.upload.review_base_url))) {
     throw new Error('Saved draft review URL is invalid. Run agentfeed share again to upload a fresh private review draft.');
   }
   const opened = await openBrowser(draft.upload.review_url);

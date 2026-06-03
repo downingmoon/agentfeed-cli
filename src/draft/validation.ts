@@ -222,6 +222,7 @@ export function validateLocalDraft(value: unknown, path: string): LocalDraft {
   optionalStringOrNull(upload.uploaded_at, 'upload.uploaded_at', path);
   optionalStringOrNull(upload.payload_hash, 'upload.payload_hash', path);
   optionalStringOrNull(upload.api_base_url, 'upload.api_base_url', path);
+  optionalStringOrNull(upload.review_base_url, 'upload.review_base_url', path);
   optionalStringOrNull(upload.credential_binding_hash, 'upload.credential_binding_hash', path);
   optionalStringOrNull(upload.token_id, 'upload.token_id', path);
   optionalStringOrNull(upload.user_id, 'upload.user_id', path);

@@ -95,10 +95,11 @@ function compatibleMetadataPayload() {
       service: 'agentfeed-api',
       api_version: 'v1',
       backend_version: '0.1.0',
-      contract_version: '2026-06-02',
+      contract_version: '2026-06-03',
+      review_base_url: 'http://localhost:3001',
       supported_clients: {
-        cli: { min_version: '0.2.0', contract_version: '2026-06-02' },
-        frontend: { min_version: '0.1.0', contract_version: '2026-06-02' }
+        cli: { min_version: '0.2.0', contract_version: '2026-06-03' },
+        frontend: { min_version: '0.1.0', contract_version: '2026-06-03' }
       }
     }
   };
@@ -316,7 +317,7 @@ describe('share CLI command', () => {
           status: 'needs_review',
           visibility: 'private',
           review_url: 'http://localhost:3001/worklogs/worklog_publish_confirmed/review',
-          created_at: '2026-06-02T00:00:00.000Z'
+          created_at: '2026-06-03T00:00:00.000Z'
         }
       }));
     });
@@ -550,6 +551,40 @@ describe('share CLI command', () => {
 
       expect(open.stdout).toContain('Opened review URL.');
       await expect(readFile(browserLog, 'utf8')).resolves.toBe('https://review.internal.example/worklogs/worklog_split_host_open/review\n');
+    } finally {
+      await rm(binDir, { recursive: true, force: true });
+    }
+  });
+
+  it('opens a split-host review URL when saved upload metadata contains the review frontend origin', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.upload = {
+      uploaded: true,
+      worklog_id: 'worklog_split_host_saved_metadata',
+      review_url: 'https://review.internal.example/worklogs/worklog_split_host_saved_metadata/review',
+      review_base_url: 'https://review.internal.example',
+      uploaded_at: '2026-05-19T00:00:00Z',
+      ...cachedUploadBindingForEnv({ apiBaseUrl: 'https://api.internal.example/v1' })
+    };
+    await writeDraft(dir, draft);
+    const binDir = await mkdtemp(join(tmpdir(), 'agentfeed-browser-bin-'));
+    const browserLog = await installFakeBrowserOpener(binDir);
+    try {
+      const open = await execFileAsync(process.execPath, [cliPath, 'open', '--id', draft.id], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          PATH: `${binDir}:${process.env.PATH ?? ''}`,
+          AGENTFEED_TEST_BROWSER_LOG: browserLog,
+          AGENTFEED_TOKEN: 'af_live_test_token',
+          AGENTFEED_API_BASE_URL: 'https://api.other.example/v1'
+        }
+      });
+
+      expect(open.stdout).toContain('Opened review URL.');
+      await expect(readFile(browserLog, 'utf8')).resolves.toBe('https://review.internal.example/worklogs/worklog_split_host_saved_metadata/review\n');
     } finally {
       await rm(binDir, { recursive: true, force: true });
     }
@@ -1607,7 +1642,7 @@ describe('share CLI command', () => {
           status: 'needs_review',
           visibility: 'private',
           review_url: 'http://localhost:3001/worklogs/worklog_two_process/review',
-          created_at: '2026-06-02T00:00:00.000Z'
+          created_at: '2026-06-03T00:00:00.000Z'
         }
       }));
     });

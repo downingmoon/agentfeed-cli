@@ -25,6 +25,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - CLI Upload Lock Heartbeat Failure 2026-06-04]] — CLI upload lock heartbeat failure fail-closed metadata guard
+
 - [[Commercial Readiness Hardening - CLI Auth Session Expiry Cleanup 2026-06-04]] — Backend CLI browser-login expired session durable cleanup and maintenance dry-run/apply path
 
 - [[Commercial Readiness Hardening - Private Note Auth and OAuth Nonce Cleanup 2026-06-04]] — Frontend private note current-auth guard and Backend OAuth expired nonce cleanup

@@ -23,6 +23,7 @@ const oldGithubActions = process.env.GITHUB_ACTIONS;
 const oldAgentFeedToken = process.env.AGENTFEED_TOKEN;
 const oldAgentFeedReviewBaseUrl = process.env.AGENTFEED_REVIEW_BASE_URL;
 const oldAgentFeedDraftUploadLockTimeoutMs = process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_TIMEOUT_MS;
+const oldAgentFeedDraftUploadLockHeartbeatMs = process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_HEARTBEAT_MS;
 
 const defaultPublishCredentials = { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' };
 
@@ -88,6 +89,8 @@ afterEach(async () => {
   else process.env.AGENTFEED_REVIEW_BASE_URL = oldAgentFeedReviewBaseUrl;
   if (oldAgentFeedDraftUploadLockTimeoutMs === undefined) delete process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_TIMEOUT_MS;
   else process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_TIMEOUT_MS = oldAgentFeedDraftUploadLockTimeoutMs;
+  if (oldAgentFeedDraftUploadLockHeartbeatMs === undefined) delete process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_HEARTBEAT_MS;
+  else process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_HEARTBEAT_MS = oldAgentFeedDraftUploadLockHeartbeatMs;
   vi.unstubAllGlobals();
   await rm(dir, { recursive: true, force: true });
   await rm(home, { recursive: true, force: true });
@@ -218,6 +221,38 @@ describe('api client', () => {
     const parsed = JSON.parse(observedLock) as Record<string, unknown>;
     expect(parsed.token_hash).toEqual(expect.any(String));
     expect(Object.hasOwn(parsed, 'token')).toBe(false);
+  });
+
+  it('fails closed without saving upload metadata when lock heartbeat fails during upload', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    await writeDraft(dir, draft);
+    const lockPath = join(dir, '.agentfeed', 'drafts', `${draft.id}.json.upload.lock`);
+    process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_HEARTBEAT_MS = '10';
+    const fetchMock = vi.fn(async () => {
+      await rm(lockPath, { force: true });
+      await new Promise(resolve => setTimeout(resolve, 50));
+      return new Response(JSON.stringify({
+        data: {
+          id: 'worklog_heartbeat_failed',
+          status: 'needs_review',
+          visibility: 'private',
+          review_url: 'https://agentfeed.dev/worklogs/worklog_heartbeat_failed/review',
+          created_at: '2026-05-19T00:00:00Z'
+        }
+      }), { status: 200, headers: { 'content-type': 'application/json' } });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: defaultPublishCredentials }))
+      .rejects.toMatchObject({
+        status: 423,
+        code: 'DRAFT_UPLOAD_LOCK_HEARTBEAT_FAILED'
+      });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+    expect(saved.upload).toMatchObject({ uploaded: false });
+    await expect(readFile(lockPath, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
   it('removes stale upload locks even when an unrelated process reuses the recorded pid without heartbeat', async () => {

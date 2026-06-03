@@ -62,6 +62,7 @@ const DEFAULT_API_RETRY_BASE_DELAY_MS = 250;
 const DEFAULT_DRAFT_UPLOAD_LOCK_TIMEOUT_MS = 60_000;
 const DRAFT_UPLOAD_LOCK_POLL_MS = 25;
 const DRAFT_UPLOAD_LOCK_STALE_MS = 5 * 60_000;
+const DEFAULT_DRAFT_UPLOAD_LOCK_HEARTBEAT_MS = Math.max(1_000, Math.floor(DRAFT_UPLOAD_LOCK_STALE_MS / 4));
 
 function apiRequestTimeoutMs(): number {
   const configured = Number(process.env.AGENTFEED_API_TIMEOUT_MS);
@@ -82,6 +83,12 @@ function apiRetryBaseDelayMs(): number {
 function draftUploadLockTimeoutMs(): number {
   const configured = Number(process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_TIMEOUT_MS);
   return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_DRAFT_UPLOAD_LOCK_TIMEOUT_MS;
+}
+
+function draftUploadLockHeartbeatMs(): number {
+  const configured = Number(process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_HEARTBEAT_MS);
+  if (Number.isFinite(configured) && configured > 0) return Math.max(10, Math.floor(configured));
+  return DEFAULT_DRAFT_UPLOAD_LOCK_HEARTBEAT_MS;
 }
 
 function apiUrl(apiBaseUrl: string, path: string): string {
@@ -826,17 +833,34 @@ async function createDraftUploadLockFile(lockPath: string, token: string): Promi
   }
 }
 
-function startDraftUploadLockHeartbeat(lockPath: string): ReturnType<typeof setInterval> {
-  const heartbeatMs = Math.max(1_000, Math.floor(DRAFT_UPLOAD_LOCK_STALE_MS / 4));
-  const heartbeat = setInterval(() => {
-    const now = new Date();
-    void utimes(lockPath, now, now).catch(() => undefined);
-  }, heartbeatMs);
-  heartbeat.unref?.();
-  return heartbeat;
+function draftUploadLockHeartbeatFailedError(error: unknown): AgentFeedApiError {
+  const reason = error instanceof Error && error.message ? error.message : 'unknown filesystem error';
+  return new AgentFeedApiError(
+    423,
+    'DRAFT_UPLOAD_LOCK_HEARTBEAT_FAILED',
+    `Draft upload lock heartbeat failed. Local draft metadata was kept unchanged; rerun the same publish/share command to reconcile any server-side duplicate. ${reason}`
+  );
 }
 
-async function acquireDraftUploadLock(cwd: string, id: string): Promise<() => Promise<void>> {
+function startDraftUploadLockHeartbeat(lockPath: string): { stop: () => void; assertHealthy: () => void } {
+  const heartbeatMs = draftUploadLockHeartbeatMs();
+  let heartbeatFailure: unknown;
+  const heartbeat = setInterval(() => {
+    const now = new Date();
+    void utimes(lockPath, now, now).catch(error => {
+      heartbeatFailure ??= error;
+    });
+  }, heartbeatMs);
+  heartbeat.unref?.();
+  return {
+    stop: () => clearInterval(heartbeat),
+    assertHealthy: () => {
+      if (heartbeatFailure) throw draftUploadLockHeartbeatFailedError(heartbeatFailure);
+    }
+  };
+}
+
+async function acquireDraftUploadLock(cwd: string, id: string): Promise<{ release: () => Promise<void>; assertHeartbeatHealthy: () => void }> {
   const root = await resolveProjectRoot(cwd);
   const { jsonPath } = draftPaths(root, id);
   const lockPath = `${jsonPath}.upload.lock`;
@@ -849,17 +873,20 @@ async function acquireDraftUploadLock(cwd: string, id: string): Promise<() => Pr
       const handle = await createDraftUploadLockFile(lockPath, token);
       const heartbeat = startDraftUploadLockHeartbeat(lockPath);
       let released = false;
-      return async () => {
-        if (released) return;
-        released = true;
-        clearInterval(heartbeat);
-        await handle.close().catch(() => undefined);
-        try {
-          const lockContents = await readFile(lockPath, 'utf8');
-          const parsed = JSON.parse(lockContents) as { token_hash?: unknown };
-          if (parsed.token_hash === draftUploadLockTokenHash(token)) await rm(lockPath, { force: true });
-        } catch {
-          // If the lock file is already gone or corrupted, never delete a replacement lock.
+      return {
+        assertHeartbeatHealthy: heartbeat.assertHealthy,
+        release: async () => {
+          if (released) return;
+          released = true;
+          heartbeat.stop();
+          await handle.close().catch(() => undefined);
+          try {
+            const lockContents = await readFile(lockPath, 'utf8');
+            const parsed = JSON.parse(lockContents) as { token_hash?: unknown };
+            if (parsed.token_hash === draftUploadLockTokenHash(token)) await rm(lockPath, { force: true });
+          } catch {
+            // If the lock file is already gone or corrupted, never delete a replacement lock.
+          }
         }
       };
     } catch (error) {
@@ -883,16 +910,17 @@ async function acquireDraftUploadLock(cwd: string, id: string): Promise<() => Pr
 }
 
 export async function publishDraft(options: { cwd: string; id: string; credentials: AgentFeedCredentials; reviewBaseUrl?: string | null }): Promise<PublishDraftResult> {
-  const releaseUploadLock = await acquireDraftUploadLock(options.cwd, options.id);
+  const uploadLock = await acquireDraftUploadLock(options.cwd, options.id);
   try {
-    return await publishDraftWithLock(options);
+    return await publishDraftWithLock(options, uploadLock.assertHeartbeatHealthy);
   } finally {
-    await releaseUploadLock();
+    await uploadLock.release();
   }
 }
 
-async function publishDraftWithLock(options: { cwd: string; id: string; credentials: AgentFeedCredentials; reviewBaseUrl?: string | null }): Promise<PublishDraftResult> {
+async function publishDraftWithLock(options: { cwd: string; id: string; credentials: AgentFeedCredentials; reviewBaseUrl?: string | null }, assertUploadLockHealthy: () => void): Promise<PublishDraftResult> {
   const draft = await readDraft(options.cwd, options.id);
+  assertUploadLockHealthy();
   scanAndRedactDraftPublicFields(draft, { preserveResolvedFindings: true });
   const payloadHash = draftUploadPayloadHash(draft);
   if (draft.upload.uploaded && draft.upload.worklog_id && draft.upload.review_url) {
@@ -901,16 +929,19 @@ async function publishDraftWithLock(options: { cwd: string; id: string; credenti
       cached = parseCachedUploadResult(draft, options.credentials.api_base_url);
     } catch {
       draft.upload = { uploaded: false };
+      assertUploadLockHealthy();
       await writeDraft(options.cwd, draft);
       throw new AgentFeedApiError(502, 'DRAFT_UPLOAD_METADATA_INVALID', 'Saved draft upload metadata is invalid. Run agentfeed share again to upload a fresh private review draft.');
     }
     try {
       assertCachedUploadPayloadCurrent(draft, payloadHash);
     } catch (error) {
+      assertUploadLockHealthy();
       await writeDraft(options.cwd, draft);
       throw error;
     }
     if (cachedUploadCredentialBindingMatches(draft, options.credentials)) {
+      assertUploadLockHealthy();
       await writeDraft(options.cwd, draft);
       return cached;
     }
@@ -927,7 +958,9 @@ async function publishDraftWithLock(options: { cwd: string; id: string; credenti
       throw error;
     }
   }
+  assertUploadLockHealthy();
   draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, uploaded_at: result.created_at, payload_hash: payloadHash, ...uploadMetadataForCredentials(options.credentials, options.reviewBaseUrl) };
+  assertUploadLockHealthy();
   await writeDraft(options.cwd, draft);
   return result;
 }

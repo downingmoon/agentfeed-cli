@@ -134,6 +134,20 @@ function handleUploadPreflight(req: IncomingMessage, res: ServerResponse): boole
   return handleCompatibleMetadata(req, res) || handleHealthyIngestionToken(req, res);
 }
 
+async function startUploadPreflightServer(): Promise<{ apiBaseUrl: string; close: () => Promise<void> }> {
+  const server = createServer(async (req, res) => {
+    if (handleUploadPreflight(req, res)) return;
+    res.writeHead(404).end();
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const address = server.address();
+  if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+  return {
+    apiBaseUrl: `http://127.0.0.1:${address.port}/v1`,
+    close: () => new Promise<void>((resolve) => server.close(() => resolve()))
+  };
+}
+
 async function readRequestBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   const chunks: Buffer[] = [];
   for await (const chunk of req) chunks.push(Buffer.from(chunk));
@@ -1394,34 +1408,40 @@ describe('share CLI command', () => {
   });
 
   it('does not auto-open review URLs in CI unless explicitly requested', async () => {
+    const preflight = await startUploadPreflightServer();
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
     draft.upload = {
       uploaded: true,
       worklog_id: 'worklog_ci_no_open',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_ci_no_open/review',
+      review_url: 'http://localhost:3001/worklogs/worklog_ci_no_open/review',
       uploaded_at: '2026-05-31T00:00:00.000Z',
       payload_hash: draftUploadPayloadHash(draft),
-      ...cachedUploadBindingForEnv()
+      ...cachedUploadBindingForEnv({ apiBaseUrl: preflight.apiBaseUrl })
     };
     await writeDraft(dir, draft);
     const fakeBin = join(dir, '.agentfeed', 'fake-ci-bin');
     const browserLog = await installFakeBrowserOpener(fakeBin);
 
-    const publish = await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id], {
-      cwd: dir,
-      encoding: 'utf8',
-      env: {
-        ...process.env,
-        HOME: home,
-        PATH: `${fakeBin}:${process.env.PATH ?? ''}`,
-        AGENTFEED_TEST_BROWSER_LOG: browserLog,
-        AGENTFEED_TOKEN: 'af_live_test_token',
-        CI: '1'
-      }
-    });
+    try {
+      const publish = await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          PATH: `${fakeBin}:${process.env.PATH ?? ''}`,
+          AGENTFEED_TEST_BROWSER_LOG: browserLog,
+          AGENTFEED_TOKEN: 'af_live_test_token',
+          AGENTFEED_API_BASE_URL: preflight.apiBaseUrl,
+          CI: '1'
+        }
+      });
 
-    expect(publish.stdout).toContain('Review URL:');
-    await expect(readFile(browserLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+      expect(publish.stdout).toContain('Review URL:');
+      await expect(readFile(browserLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+    } finally {
+      await preflight.close();
+    }
   });
 
   it('lets users explicitly suppress configured review auto-open during publish', async () => {
@@ -1586,66 +1606,143 @@ describe('share CLI command', () => {
     }
   });
 
+  it('checks API compatibility and token status before reusing a cached upload', async () => {
+    let metadataCount = 0;
+    let tokenStatusCount = 0;
+    let ingestCount = 0;
+    const server = createServer(async (req, res) => {
+      if (req.method === 'GET' && req.url === '/v1/metadata') {
+        metadataCount += 1;
+        handleCompatibleMetadata(req, res);
+        return;
+      }
+      if (req.method === 'GET' && req.url === '/v1/ingest/status') {
+        tokenStatusCount += 1;
+        res.writeHead(401, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid ingestion token' } }));
+        return;
+      }
+      if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
+        ingestCount += 1;
+        await readRequestBody(req);
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ data: {} }));
+        return;
+      }
+      res.writeHead(404).end();
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    try {
+      const apiBaseUrl = `http://127.0.0.1:${address.port}/v1`;
+      const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+      draft.upload = {
+        uploaded: true,
+        worklog_id: 'worklog_reusable_token_check',
+        review_url: 'http://localhost:3001/worklogs/worklog_reusable_token_check/review',
+        uploaded_at: '2026-05-31T00:00:00.000Z',
+        payload_hash: draftUploadPayloadHash(draft),
+        ...cachedUploadBindingForEnv({ apiBaseUrl })
+      };
+      await writeDraft(dir, draft);
+
+      await expect(execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: 'af_live_test_token',
+          AGENTFEED_API_BASE_URL: apiBaseUrl,
+          AGENTFEED_FORCE_UPLOAD_CONFIRMATION: '1',
+          CI: '1'
+        }
+      })).rejects.toMatchObject({
+        stderr: expect.stringContaining('Ingestion token check failed')
+      });
+
+      expect(metadataCount).toBe(1);
+      expect(tokenStatusCount).toBe(1);
+      expect(ingestCount).toBe(0);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
   it('skips forced confirmation only when the cached upload is reusable for the current payload and credentials', async () => {
+    const preflight = await startUploadPreflightServer();
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
     draft.upload = {
       uploaded: true,
       worklog_id: 'worklog_reusable_cli_cache',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_reusable_cli_cache/review',
+      review_url: 'http://localhost:3001/worklogs/worklog_reusable_cli_cache/review',
       uploaded_at: '2026-05-31T00:00:00.000Z',
       payload_hash: draftUploadPayloadHash(draft),
-      ...cachedUploadBindingForEnv()
+      ...cachedUploadBindingForEnv({ apiBaseUrl: preflight.apiBaseUrl })
     };
     await writeDraft(dir, draft);
 
-    const publish = await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id], {
-      cwd: dir,
-      encoding: 'utf8',
-      env: {
-        ...process.env,
-        HOME: home,
-        AGENTFEED_TOKEN: 'af_live_test_token',
-        AGENTFEED_FORCE_UPLOAD_CONFIRMATION: '1',
-        CI: '1'
-      }
-    });
+    try {
+      const publish = await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: 'af_live_test_token',
+          AGENTFEED_API_BASE_URL: preflight.apiBaseUrl,
+          AGENTFEED_FORCE_UPLOAD_CONFIRMATION: '1',
+          CI: '1'
+        }
+      });
 
-    expect(publish.stdout).toContain('Private review draft already uploaded; reusing existing review URL.');
-    expect(publish.stdout).not.toContain('Upload confirmation required.');
-    expect(publish.stdout).toContain('https://agentfeed.dev/worklogs/worklog_reusable_cli_cache/review');
+      expect(publish.stdout).toContain('Private review draft already uploaded; reusing existing review URL.');
+      expect(publish.stdout).not.toContain('Upload confirmation required.');
+      expect(publish.stdout).toContain('http://localhost:3001/worklogs/worklog_reusable_cli_cache/review');
+    } finally {
+      await preflight.close();
+    }
   });
 
   it('makes direct publish privacy policy clear for high-severity private review drafts', async () => {
+    const preflight = await startUploadPreflightServer();
     const secret = 'sk-123456789012345678901234';
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
     draft.worklog.summary = `Manual edit contains ${secret}`;
     draft.upload = {
       uploaded: true,
       worklog_id: 'worklog_privacy_policy',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_privacy_policy/review',
+      review_url: 'http://localhost:3001/worklogs/worklog_privacy_policy/review',
       uploaded_at: '2026-05-31T00:00:00.000Z',
       payload_hash: draftUploadPayloadHash(draft),
-      ...cachedUploadBindingForEnv()
+      ...cachedUploadBindingForEnv({ apiBaseUrl: preflight.apiBaseUrl })
     };
     await writeDraft(dir, draft);
 
-    const publish = await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id], {
-      cwd: dir,
-      encoding: 'utf8',
-      env: {
-        ...process.env,
-        HOME: home,
-        AGENTFEED_TOKEN: 'af_live_test_token',
-        CI: '1'
-      }
-    });
+    try {
+      const publish = await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: 'af_live_test_token',
+          AGENTFEED_API_BASE_URL: preflight.apiBaseUrl,
+          CI: '1'
+        }
+      });
 
-    expect(publish.stdout).toContain('Private review draft already uploaded; reusing existing review URL.');
-    expect(publish.stdout).toContain('Privacy review: required before public publishing.');
-    expect(publish.stdout).toContain('Public/unlisted publishing is blocked in AgentFeed until high-severity findings are resolved.');
-    expect(publish.stdout).toContain('Private review upload is allowed so you can resolve findings in the web review.');
-    const saved = await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8');
-    expect(saved).not.toContain(secret);
+      expect(publish.stdout).toContain('Private review draft already uploaded; reusing existing review URL.');
+      expect(publish.stdout).toContain('Privacy review: required before public publishing.');
+      expect(publish.stdout).toContain('Public/unlisted publishing is blocked in AgentFeed until high-severity findings are resolved.');
+      expect(publish.stdout).toContain('Private review upload is allowed so you can resolve findings in the web review.');
+      const saved = await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8');
+      expect(saved).not.toContain(secret);
+    } finally {
+      await preflight.close();
+    }
   });
 
   it('prints machine-readable publish JSON and copies the review URL only when requested', async () => {

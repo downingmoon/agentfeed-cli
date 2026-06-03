@@ -199,6 +199,10 @@ created: 2026-05-30
 - [x] CLI upload lock token hash/heartbeat stale cleanup, duplicate draft collection-policy fingerprint, Backend malformed production host validation, Frontend expanded API compatibility probes 보강
 - 관련 노트: [[Commercial Readiness Hardening - Lock Fingerprint Hostname and Compatibility Probes 2026-06-04]]
 
+
+- [x] CLI cached publish preflight, Backend cursor/leaderboard pagination abuse guard, Dev commercial-readiness branch drift gate 보강
+- 관련 노트: [[Commercial Readiness Hardening - Cached Publish Cursor and Branch Drift Gates 2026-06-04]]
+
 - [ ] Default commercial readiness gate: `https://agentfeed.dev/` stale `/login` redirect 해소 + `api.agentfeed.dev` DNS/deployment 준비 후 `make commercial-readiness`가 `COMMERCIAL_READINESS_PASSED` 출력 필요
 
 - [x] Frontend API response body size cap 및 Feed/Search request AbortSignal propagation 보강

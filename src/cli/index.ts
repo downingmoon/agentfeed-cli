@@ -657,7 +657,7 @@ async function cmdPublish(args: string[]) {
     printUploadConfirmationRequired(existingDraft, `agentfeed publish --id ${id} --yes`);
     return;
   }
-  const metadata = reusableCachedUpload ? undefined : await requireUploadPreflight(creds);
+  const metadata = await requireUploadPreflight(creds);
   const result = await publishDraft({ cwd: process.cwd(), id, credentials: creds, reviewBaseUrl: metadata?.review_base_url });
   const savedDraft = await readDraft(process.cwd(), id);
   if (flag(args, '--json')) {

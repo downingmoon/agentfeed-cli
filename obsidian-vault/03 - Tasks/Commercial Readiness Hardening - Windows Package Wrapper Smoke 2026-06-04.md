@@ -25,6 +25,7 @@ CLI npm 패키지는 `agentfeed` bin을 배포하지만 Windows에서는 npm이 
 - `scripts/release-preflight.mjs`
   - installed bin path helper를 platform-aware export로 분리했다.
   - Windows `.cmd` npm shim 실행 시 `shell: true`를 사용하도록 `installedBinExecOptions()`를 추가했다.
+  - Windows runner에서 `npm` command가 `ENOENT`가 되는 경로를 막기 위해 `npm.cmd` + shell execution helper를 추가했다.
   - installed package smoke가 같은 helper를 사용해 tarball install 후 bin wrapper를 실행한다.
 - `.github/workflows/ci.yml`
   - `windows-native-keychain` job에 `Windows npm package wrapper smoke` step 추가.
@@ -39,6 +40,7 @@ CLI npm 패키지는 `agentfeed` bin을 배포하지만 Windows에서는 npm이 
 > - `npm test -- --run tests/release-preflight.test.ts tests/version.test.ts` ✅ — 17 tests
 > - `npm run typecheck` ✅
 > - `npm run release:preflight` ✅ — build/typecheck/396 tests/npm pack/install smoke 통과
+> - First remote Windows run exposed `spawnSync npm ENOENT`; fixed by resolving `npm.cmd` on Windows and executing command shims through shell.
 
 ## 남은 외부 차단 조건
 

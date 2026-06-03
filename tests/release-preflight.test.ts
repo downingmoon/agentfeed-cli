@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import {
+  commandShimExecOptions,
   installedBinExecOptions,
   installedBinPath,
+  npmCommand,
   isDirectInvocation,
   parsePackJson,
   validateCliSmokeOutput,
@@ -287,8 +289,12 @@ describe('release preflight guardrails', () => {
   it('builds platform-specific installed bin paths and executes Windows cmd shims through a shell', () => {
     expect(installedBinPath('/tmp/install', 'linux')).toContain('node_modules/.bin/agentfeed');
     expect(installedBinPath('C:/tmp/install', 'win32').replace(/\\/g, '/')).toContain('node_modules/.bin/agentfeed.cmd');
+    expect(commandShimExecOptions('linux')).toEqual({});
+    expect(commandShimExecOptions('win32')).toEqual({ shell: true });
     expect(installedBinExecOptions('linux')).toEqual({});
     expect(installedBinExecOptions('win32')).toEqual({ shell: true });
+    expect(npmCommand('linux')).toBe('npm');
+    expect(npmCommand('win32')).toBe('npm.cmd');
   });
 
   it('validates installed tarball CLI smoke output', () => {

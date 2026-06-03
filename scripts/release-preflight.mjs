@@ -193,8 +193,23 @@ export function validateReleaseGitRef(pkg, env = process.env) {
   );
 }
 
+export function commandShimExecOptions(platform = process.platform) {
+  return platform === 'win32' ? { shell: true } : {};
+}
+
+export function npmCommand(platform = process.platform) {
+  return platform === 'win32' ? 'npm.cmd' : 'npm';
+}
+
+function runNpm(args, options) {
+  return execFileSync(npmCommand(), args, {
+    ...options,
+    ...commandShimExecOptions(),
+  });
+}
+
 function runPackDryRun() {
-  const stdout = execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
+  const stdout = runNpm(['pack', '--dry-run', '--json', '--ignore-scripts'], {
     cwd: repoRoot,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'inherit'],
@@ -203,7 +218,7 @@ function runPackDryRun() {
 }
 
 function runPackTarball(destination) {
-  const stdout = execFileSync('npm', ['pack', '--json', '--ignore-scripts', '--pack-destination', destination], {
+  const stdout = runNpm(['pack', '--json', '--ignore-scripts', '--pack-destination', destination], {
     cwd: repoRoot,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'inherit'],
@@ -250,7 +265,7 @@ export function installedBinPath(installRoot, platform = process.platform) {
 }
 
 export function installedBinExecOptions(platform = process.platform) {
-  return platform === 'win32' ? { shell: true } : {};
+  return commandShimExecOptions(platform);
 }
 
 function runInstalledBin(commandPath, args, cwd) {
@@ -271,7 +286,7 @@ function runInstalledPackageSmoke(pkg) {
 
     const installRoot = join(tmpRoot, 'install');
     mkdirSync(installRoot, { recursive: true });
-    execFileSync('npm', ['install', '--prefix', installRoot, tarballPath, '--ignore-scripts', '--no-audit', '--no-fund'], {
+    runNpm(['install', '--prefix', installRoot, tarballPath, '--ignore-scripts', '--no-audit', '--no-fund'], {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'inherit'],

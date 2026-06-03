@@ -73,7 +73,7 @@ describe('CLI version metadata', () => {
   it('keeps the release preflight tarball and provenance guardrails documented', () => {
     const releaseScript = readFileSync(resolve('scripts/release-preflight.mjs'), 'utf8');
     const readme = readFileSync(resolve('README.md'), 'utf8');
-    expect(releaseScript).toContain("execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts']");
+    expect(releaseScript).toContain("runNpm(['pack', '--dry-run', '--json', '--ignore-scripts']");
     expect(releaseScript).toContain("fileSet.has('dist/cli/index.js')");
     expect(releaseScript).toContain("'obsidian-vault/'");
     expect(releaseScript).toContain('npm tarball must contain only built dist files');
@@ -83,7 +83,8 @@ describe('CLI version metadata', () => {
     expect(releaseScript).toContain('validateCliSmokeOutput');
     expect(releaseScript).toContain('validateInstalledPackageSmokeResult');
     expect(releaseScript).toContain('installedBinExecOptions');
-    expect(releaseScript).toContain("'npm', ['install', '--prefix'");
+    expect(releaseScript).toContain('npmCommand');
+    expect(releaseScript).toContain("['install', '--prefix'");
     expect(readme).toContain('npm run release:preflight');
     expect(readme).toContain('installs that tarball into a temporary project');
     expect(readme).toContain('npm publish --access public');

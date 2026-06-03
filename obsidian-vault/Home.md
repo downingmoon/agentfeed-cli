@@ -25,6 +25,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - Frontend Hosted HTTPS Readiness Gate 2026-06-04]] — Frontend hosted readiness rejects non-local plaintext HTTP URLs and suppresses X-Powered-By
+
 - [[Commercial Readiness Hardening - Dev Wait Ready Evidence 2026-06-04]] — Dev local Compose readiness JSON evidence and commercial readiness artifact upload
 
 - [[Commercial Readiness Hardening - Windows Package Wrapper Smoke 2026-06-04]] — CLI Windows npm package `agentfeed.cmd` wrapper smoke를 CI release path에 추가

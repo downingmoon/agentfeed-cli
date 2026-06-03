@@ -221,6 +221,9 @@ created: 2026-05-30
 - [x] Dev `wait-ready` machine-readable local stack readiness evidence artifact 및 commercial-readiness workflow upload 보강
 - 관련 노트: [[Commercial Readiness Hardening - Dev Wait Ready Evidence 2026-06-04]]
 
+- [x] Frontend hosted readiness preflight가 non-local plaintext HTTP API/Frontend URL을 fail-closed 거부하고 `X-Powered-By` header를 비활성화
+- 관련 노트: [[Commercial Readiness Hardening - Frontend Hosted HTTPS Readiness Gate 2026-06-04]]
+
 - [ ] Default commercial readiness gate: `https://agentfeed.dev/` stale `/login` redirect 해소 + `api.agentfeed.dev` DNS/deployment 준비 후 `make commercial-readiness`가 `COMMERCIAL_READINESS_PASSED` 출력 필요
   - 2026-06-04 01:53 KST fresh check: `./scripts/smoke-hosted-compatibility.sh` failed because Frontend root returned HTTP 307 `Location: /login`; `curl https://api.agentfeed.dev/v1/health/ready` failed with `Could not resolve host`.
 

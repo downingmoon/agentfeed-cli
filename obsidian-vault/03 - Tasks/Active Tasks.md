@@ -152,6 +152,10 @@ created: 2026-05-30
 - [x] Backend metadata `review_base_url` 계약, CLI metadata-driven review URL trust, Frontend/Dev compatibility gate 정렬
 - 관련 노트: [[Commercial Readiness Hardening - Metadata Review URL Trust 2026-06-03]]
 
+
+- [x] Frontend worklog/detail/review/navigation/share link가 Backend `review_base_url` canonical origin을 사용하도록 정렬
+- 관련 노트: [[Commercial Readiness Hardening - Frontend Review Origin Navigation 2026-06-03]]
+
 - [ ] Default commercial readiness gate: `https://agentfeed.dev/` stale `/login` redirect 해소 + `api.agentfeed.dev` DNS/deployment 준비 후 `make commercial-readiness`가 `COMMERCIAL_READINESS_PASSED` 출력 필요
 
 - [x] Frontend API response body size cap 및 Feed/Search request AbortSignal propagation 보강

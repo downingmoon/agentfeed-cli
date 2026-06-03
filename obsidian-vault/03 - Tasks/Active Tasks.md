@@ -1013,3 +1013,10 @@ created: 2026-05-30
 - [x] `collect --upload --no-open-review`가 내부 publish 호출에도 override를 전달
 - [x] release preflight로 browser side-effect regression과 package smoke 재검증
 - [[Commercial Readiness Hardening - CLI Review Auto Open Override 2026-06-03]]
+
+## 2026-06-03 Backend production origin and proxy startup continuation
+
+- [x] `FRONTEND_URL` / `ALLOWED_ORIGINS`를 production에서 exact public HTTPS origin으로 제한
+- [x] production startup에 uvicorn `--proxy-headers`와 configured forwarded allow-list 연결
+- [x] Backend full test suite 353개 통과로 회귀 검증
+- [[Commercial Readiness Hardening - Backend Production Origin and Proxy Startup 2026-06-03]]

@@ -83,8 +83,8 @@ tags:
 - [ ] `api.agentfeed.dev` DNS/deployment 복구 후 Frontend production API compatibility CI green 확인
 - [ ] `agentfeed.dev/` hosted root stale `/login` redirect 제거 후 public landing smoke green 확인
 - [ ] self-hosted runner attached 상태 확인 또는 hosted equivalent evidence path 확정
-- [ ] Backend ingestion user/token durable quota 보강
-- [ ] CLI Windows secure credential store 정책 결정 또는 Windows keychain 구현
+- [x] Backend ingestion user/token durable quota 보강 → [[Commercial Readiness Hardening - Windows DPAPI and Ingestion Quota 2026-06-03]]
+- [x] CLI Windows secure credential store 정책 결정 또는 Windows keychain 구현 → [[Commercial Readiness Hardening - Windows DPAPI and Ingestion Quota 2026-06-03]]
 
 ## 관련 노트
 

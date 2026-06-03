@@ -78,8 +78,8 @@ Related: [[Active Tasks]], [[Commercial Readiness Hardening - Lock Fingerprint H
 
 ## Follow-up candidates from parallel audit
 
-- [ ] Frontend: hide `userNote`/private detail fields immediately when auth expires or current viewer permission is no longer valid.
-- [ ] Backend: prune expired OAuth state nonce rows and abandoned CLI auth sessions.
-- [ ] CLI: harden upload lock heartbeat for filesystems where `utimes` fails repeatedly.
+- [x] Frontend: hide `userNote`/private detail fields immediately when auth expires or current viewer permission is no longer valid. → [[Commercial Readiness Hardening - Private Note Auth and OAuth Nonce Cleanup 2026-06-04]]
+- [x] Backend: prune expired OAuth state nonce rows and abandoned CLI auth sessions. → [[Commercial Readiness Hardening - Private Note Auth and OAuth Nonce Cleanup 2026-06-04]], [[Commercial Readiness Hardening - CLI Auth Session Expiry Cleanup 2026-06-04]]
+- [x] CLI: harden upload lock heartbeat for filesystems where `utimes` fails repeatedly. → [[Commercial Readiness Hardening - CLI Upload Lock Heartbeat Failure 2026-06-04]]
 - [x] CLI release: add Windows release-path package wrapper smoke to release workflow. → [[Commercial Readiness Hardening - Windows Package Wrapper Smoke 2026-06-04]]
 - [x] Dev: optional machine-readable `wait-ready` evidence artifact for local stack readiness. → [[Commercial Readiness Hardening - Dev Wait Ready Evidence 2026-06-04]]

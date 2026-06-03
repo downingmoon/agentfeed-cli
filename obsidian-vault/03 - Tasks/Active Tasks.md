@@ -183,6 +183,11 @@ created: 2026-05-30
 - [x] CLI fresh private review upload가 API compatibility 후 ingestion token status preflight를 통과해야만 `/v1/ingest/worklogs`를 호출하도록 보강
 - 관련 노트: [[Commercial Readiness Hardening - CLI Upload Token Preflight 2026-06-03]]
 
+- [x] Frontend CLI authorize transient API/network failure 자동 retry/backoff 보강
+- 관련 노트: [[Commercial Readiness Hardening - Frontend CLI Authorize Transient Retry 2026-06-03]]
+
+- [ ] Backend OAuth full callback path provider-token non-retention regression test 추가 후보
+
 - [ ] Default commercial readiness gate: `https://agentfeed.dev/` stale `/login` redirect 해소 + `api.agentfeed.dev` DNS/deployment 준비 후 `make commercial-readiness`가 `COMMERCIAL_READINESS_PASSED` 출력 필요
 
 - [x] Frontend API response body size cap 및 Feed/Search request AbortSignal propagation 보강

@@ -23,6 +23,9 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Backend dashboard summary status count 4개 scalar query를 단일 GROUP BY aggregate로 통합
+- 관련 노트: [[Commercial Readiness Hardening - Backend Dashboard Summary Count Consolidation 2026-06-04]]
+
 - [x] Backend notifications actor hydration N+1 제거 및 soft-deleted actor suppression 유지
 - 관련 노트: [[Commercial Readiness Hardening - Backend Notification Actor Batching 2026-06-04]]
 

@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Frontend Worklog Card Partial Payload Safety 2026-06-04]] — Frontend feed card runtime safety for partial user/project payloads
+
 - [[Commercial Readiness Hardening - Backend Project Owner Stats Aggregation 2026-06-04]] — Backend project owner stats JSONB row summation moved into DB aggregates
 
 - [[Commercial Readiness Hardening - Backend Dashboard Metric Aggregation 2026-06-04]] — Backend dashboard metric JSONB row summation moved into DB aggregates

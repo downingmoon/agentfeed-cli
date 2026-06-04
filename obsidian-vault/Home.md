@@ -25,6 +25,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - Frontend Worklog Card Partial Payload Safety 2026-06-04]] — Frontend worklog cards fail-soft on partial author/project payloads
+
 - [[Commercial Readiness Hardening - Backend Project Owner Stats Aggregation 2026-06-04]] — Backend project owner/private stats now use DB aggregate queries
 
 - [[Commercial Readiness Hardening - Backend Dashboard Metric Aggregation 2026-06-04]] — Backend dashboard summary metrics now use DB aggregate queries

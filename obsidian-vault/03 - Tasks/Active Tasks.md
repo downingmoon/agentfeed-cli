@@ -23,6 +23,9 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Frontend WorklogCard A/B/C partial author/project payload runtime crash 방지
+- 관련 노트: [[Commercial Readiness Hardening - Frontend Worklog Card Partial Payload Safety 2026-06-04]]
+
 - [x] Backend project owner/private stats JSONB row 합산을 DB aggregate query로 이전
 - 관련 노트: [[Commercial Readiness Hardening - Backend Project Owner Stats Aggregation 2026-06-04]]
 

@@ -25,6 +25,7 @@ updated: 2026-06-04
 > - 2026-06-04 추가 UI smoke: desktop/mobile landing/feed/worklog detail snapshot 확인. landing mobile overflow와 worklog detail mobile column collapse 수정 후 재확인.
 > - 2026-06-04 추가 Profile/Project smoke: 임시 public profile/project/worklog fixture로 `/profile/downing`, `/projects/downing/smoke-project` 모바일 렌더링 확인 후 fixture 삭제. body/document horizontal overflow 없음.
 > - 2026-06-04 추가 Backend regression: legacy string `outcome_json` public detail 500 수정. backend `pytest`: 388 passed.
+> - 2026-06-04 push/CI: CLI `9361948`, Backend `286c981`, Frontend `2ec2455`, Dev `8db795e` 푸시 완료. 각 GitHub Actions CI 성공.
 
 > [!warning] 중요 정정
 > `agentfeed.dev`는 아직 준비된 도메인이 아니다. 이번 goal의 완료 기준에는 실제 hosted deployment/domain 검증을 포함하지 않는다. 실제 도메인을 고른 뒤 별도 hosted readiness goal로 실행한다.
@@ -48,8 +49,8 @@ updated: 2026-06-04
 
 ## P1 — 이번 goal에서 남은 확인/정리
 
-- [ ] 변경사항 커밋/푸시.
-- [ ] Push 후 각 레포 CI 상태 확인.
+- [x] 변경사항 커밋/푸시.
+- [x] Push 후 각 레포 CI 상태 확인.
 - [x] Frontend 모바일/데스크톱 smoke screenshot으로 header/feed/landing/profile/project/worklog detail 시각 깨짐 여부 최종 확인.
 - [x] 오래된 `docs/agentfeed_local_cli_mvp_implementation_spec_v0_2.md`와 backend `docs/fixes-required.md`가 현재 TODO로 오해되지 않도록 historical 문서로 표시.
 

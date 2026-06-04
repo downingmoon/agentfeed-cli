@@ -23,6 +23,9 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Backend project list stats N+1 제거 및 project worklog card batch hydration 적용
+- 관련 노트: [[Commercial Readiness Hardening - Backend Project Read Path Batching 2026-06-04]]
+
 - [x] Backend public feed/search worklog card hydration N+1 제거 및 batch query 계약 보강
 - 관련 노트: [[Commercial Readiness Hardening - Backend Batched Worklog Card Hydration 2026-06-04]]
 

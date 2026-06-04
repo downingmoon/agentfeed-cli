@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Backend Project Read Path Batching 2026-06-04]] — Backend project list stats N+1 removal and project detail card batching
+
 - [[Commercial Readiness Hardening - Backend Batched Worklog Card Hydration 2026-06-04]] — Backend feed/search card hydration N+1 removal for commercial read-path scale
 
 - [[Commercial Readiness Hardening - Backend OAuth Provider Payload Validation 2026-06-04]] — Backend GitHub OAuth provider response validation and fail-closed malformed payload diagnostics

@@ -14,11 +14,11 @@ updated: 2026-06-04
 
 ## 현재 결론
 
-로컬/CI/contract/UI/UX 기준 상용화 품질 goal은 **완료**됐다. 현재 남은 핵심은 실제 도메인, hosting, OAuth, npm, 법무/정책처럼 owner가 직접 결정하거나 계정 권한으로 처리해야 하는 항목이다.
+로컬/CI/contract/UI/UX 기준 상용화 품질 goal은 **완료**됐다. owner가 새로 정한 다음 방향은 **개인 서버에서 Frontend/Backend를 IP-only로 테스트 구동**하는 것이다.
 
 - 사람이 직접 해야 할 일: [[Human Action Checklist]]
+- 서버/env 기준: [[Runtime Configuration]]
 - 완료된 대량 hardening 요약: [[Commercial Readiness Completed Summary 2026-06-04]]
-- 런타임/env 기준: [[Runtime Configuration]]
 
 > [!success] 2026-06-04 로컬 상용화 품질 evidence
 > - CLI `npm run release:preflight`: 통과, 397 tests passed.
@@ -32,7 +32,7 @@ updated: 2026-06-04
 > - 2026-06-04 push/CI: CLI `9361948`, Backend `286c981`, Frontend `2ec2455`, Dev `8db795e` 푸시 완료. 이후 Obsidian evidence doc commit `45b6ee1`도 푸시/CI 성공.
 
 > [!warning] 도메인 상태
-> `agentfeed.dev`는 아직 준비된 도메인이 아니다. 현재 문서/코드의 `agentfeed.dev` 값은 예시 또는 계약 테스트용 placeholder로만 취급한다. 실제 hosted readiness는 owner가 도메인을 정한 뒤 실행한다.
+> `agentfeed.dev`는 아직 준비된 도메인이 아니다. 현재 문서/코드의 `agentfeed.dev` 값은 예시 또는 계약 테스트용 placeholder로만 취급한다. 개발 단계에서는 DNS 없이 개인 서버 IP로 테스트한다.
 
 ## 완료됨 — 로컬/CI/contract/UI 품질
 
@@ -51,29 +51,41 @@ updated: 2026-06-04
 - [x] Profile tab strip이 모바일에서 clipping되어 보이지 않도록 wrap 처리.
 - [x] Theme bootstrap nonce script의 hydration mismatch 경고를 억제.
 - [x] 오래된 `docs/todo/*`와 backend `docs/fixes-required.md`가 현재 TODO로 오해되지 않도록 historical 문서로 표시.
+- [x] 개발/테스트 배포 방향을 개인 서버 IP-only로 확정하고 Obsidian handoff 문서에 반영.
 
-## P0 — 사람이 직접 해야 할 출시 준비
+## P0 — 다음 실제 작업: 개인 서버 IP-only smoke
 
 상세 체크리스트는 [[Human Action Checklist]]를 기준으로 한다.
 
-- [ ] 실제 Frontend domain 결정.
-- [ ] 실제 Backend API domain 결정.
-- [ ] 도메인/DNS/hosting/provider/PostgreSQL 선택 및 계정 생성.
-- [ ] GitHub OAuth App callback을 실제 Backend callback URL로 설정.
-- [ ] Backend production/staging env와 secrets 등록.
-- [ ] Frontend deployment env 등록.
-- [ ] npm package 이름/license/homepage/trusted publishing 정책 결정.
-- [ ] 개인정보 처리방침, 이용약관, moderation/report 정책 결정.
+- [ ] 개인 서버 IP/OS/architecture 확인.
+- [ ] Docker/Compose 또는 native 구동 방식 결정.
+- [ ] 서버 포트/firewall 결정.
+- [ ] sibling repo layout 준비.
+- [ ] 서버 설정이 확정된 뒤 `.env`/secrets 작성.
+- [ ] Postgres volume/backup 위치 결정.
+- [ ] Backend/Frontend를 서버에서 구동.
+- [ ] 로컬 CLI에서 `AGENTFEED_API_BASE_URL=http://<SERVER_IP>:8000/v1 agentfeed status` smoke.
+- [ ] 브라우저에서 `http://<SERVER_IP>:3000/feed` smoke.
 
 ## P1 — 사람이 결정하면 agent가 이어서 할 일
 
-- [ ] 결정된 production URL 기준으로 CLI/Backend/Frontend metadata와 README 정리.
-- [ ] Backend/Frontend deployment env sanity check.
-- [ ] `make smoke-hosted-compatibility`를 실제 URL로 통과.
-- [ ] `make smoke-oauth-live`를 operator 승인으로 통과.
-- [ ] `make commercial-readiness`가 `COMMERCIAL_READINESS_PASSED` 출력.
-- [ ] hosted readiness evidence를 Obsidian/README/runbook에 반영.
-- [ ] npm release preflight 재확인 및 publish 절차 준비.
+- [ ] 개인 서버 정보 기준으로 `agentfeed-dev` 서버 runbook 작성.
+- [ ] 서버용 `.env` 예시를 실제 IP/port 기준으로 보정.
+- [ ] server smoke 결과를 Obsidian evidence로 반영.
+- [ ] GitHub OAuth App 설정 시점에 callback/env/live smoke 연결.
+- [ ] production domain이 생기면 hosted readiness와 `make commercial-readiness` 재실행.
+- [ ] npm package 이름/license/homepage/trusted publishing 정책이 확정되면 release/publish 절차 준비.
+
+## Deferred — 지금은 스킵/대기
+
+- [ ] 실제 Frontend production domain 결정.
+- [ ] 실제 Backend API production domain 결정.
+- [ ] DNS record 구성.
+- [ ] GitHub OAuth App callback production 설정.
+- [ ] Production hosting/provider/PostgreSQL 선택.
+- [ ] Backend production/staging env와 secrets 등록.
+- [ ] Frontend deployment env 등록.
+- [ ] 개인정보 처리방침, 이용약관, moderation/report 정책 결정.
 
 ## P2 — 제품 polish backlog
 

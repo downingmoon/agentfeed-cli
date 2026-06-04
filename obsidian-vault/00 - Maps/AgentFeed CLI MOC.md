@@ -50,9 +50,10 @@ graph LR
 1. `agentfeed share --yes` 또는 `agentfeed publish --yes` 전에는 서버 업로드가 일어나지 않는다.
 2. Browser login은 URL에 token을 노출하지 않고, CLI가 approval session을 exchange한다.
 3. Private review URL은 Backend metadata `review_base_url` 또는 명시 allowlist와 일치해야 열린다.
-4. Hosted readiness는 실제 URL 입력이 필수다. `agentfeed.dev`는 준비된 도메인이 아니다.
-5. Commercial readiness는 local cross-repo gate + hosted smoke + browser smoke + OAuth live evidence가 모두 필요하다.
-6. 실제 배포 전 owner가 처리할 항목은 [[Human Action Checklist]]를 기준으로 한다.
+4. 개발 단계에서는 개인 서버 IP-only로 server smoke를 할 수 있다.
+5. Hosted/commercial readiness는 실제 HTTPS public URL 입력이 필수다. `agentfeed.dev`는 준비된 도메인이 아니다.
+6. Commercial readiness는 local cross-repo gate + hosted smoke + browser smoke + OAuth live evidence가 모두 필요하다.
+7. 실제 배포 전 owner가 처리할 항목은 [[Human Action Checklist]]를 기준으로 한다.
 
 ## 삭제/통합된 이전 문서
 

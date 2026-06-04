@@ -42,7 +42,7 @@ agentfeed share --yes --open-review
 - 주요 검증: `npm run build`, `npm test -- --run`, `npm run typecheck`, `npm run release:preflight`, `npm audit --audit-level=high`
 
 > [!note]
-> `package.json.homepage`는 아직 `https://agentfeed.dev`로 남아 있다. 실제 도메인이 정해지기 전 public npm metadata를 최종 확정할 때 재검토해야 한다.
+> `package.json.homepage`는 아직 `https://agentfeed.dev`로 남아 있다. 실제 도메인 또는 public docs URL이 정해지기 전 public npm metadata를 최종 확정하지 않는다.
 
 ## Backend
 
@@ -87,8 +87,9 @@ make commercial-readiness
 
 ## 현재 상용화 판정
 
-- 로컬/소스/CI 하드닝은 상당 부분 완료.
-- 실제 production domain/deployment는 아직 준비되지 않았다.
+- 로컬/소스/CI 하드닝은 완료 기준을 충족했다.
+- 다음 실제 단계는 개인 서버에서 DNS 없이 IP-only로 Frontend/Backend server smoke를 수행하는 것이다.
+- IP-only server smoke는 production/commercial readiness와 다르다.
 - Hosted/commercial readiness는 owner가 도메인/OAuth/hosting/secrets를 결정하고 다음 값들이 설정된 뒤 실행해야 한다.
   - `AGENTFEED_HOSTED_API_BASE_URL`
   - `AGENTFEED_HOSTED_FRONTEND_URL`

@@ -89,9 +89,9 @@ make commercial-readiness
 
 - 로컬/소스/CI 하드닝은 상당 부분 완료.
 - 실제 production domain/deployment는 아직 준비되지 않았다.
-- Hosted/commercial readiness는 다음 값들이 설정된 뒤 실행해야 한다.
+- Hosted/commercial readiness는 owner가 도메인/OAuth/hosting/secrets를 결정하고 다음 값들이 설정된 뒤 실행해야 한다.
   - `AGENTFEED_HOSTED_API_BASE_URL`
   - `AGENTFEED_HOSTED_FRONTEND_URL`
   - OAuth live smoke용 GitHub OAuth app/secrets
 
-관련: [[Runtime Configuration]], [[Active Tasks]]
+관련: [[Runtime Configuration]], [[Active Tasks]], [[Human Action Checklist]]

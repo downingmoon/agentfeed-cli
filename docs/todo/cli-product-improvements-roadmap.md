@@ -1,5 +1,9 @@
 # AgentFeed CLI 개선 로드맵
 
+> [!IMPORTANT]
+> Historical CLI improvement roadmap입니다. 완료된 수집/공유/진단 hardening은 Obsidian `Commercial Readiness Completed Summary 2026-06-04.md`에 통합됐고, 최신 남은 작업은 Obsidian `Active Tasks.md` / `Human Action Checklist.md`를 기준으로 합니다.
+
+
 작성일: 2026-05-22
 근거: Claude/Gemini 외부 자문 아티팩트(`.omx/artifacts/*agentfeed-cli-advice-20260522-004538.md`)와 현재 CLI 구현 상태.
 

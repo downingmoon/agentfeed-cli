@@ -23,7 +23,8 @@ updated: 2026-06-04
 - [[Auth & Credential Safety]] — browser login/token/keychain 안전 정책
 - [[Privacy Safety]] — redaction/private review/publish gate
 - [[Runtime Configuration]] — local/dev/hosted env 기준
-- [[Active Tasks]] — 아직 남은 일
+- [[Active Tasks]] — 현재 남은 작업/parking lot
+- [[Human Action Checklist]] — 사람이 직접 결정/처리해야 하는 일
 - [[Commercial Readiness Completed Summary 2026-06-04]] — 삭제한 완료 로그들의 통합 요약
 
 ## 문서 운영 정책

@@ -70,4 +70,4 @@ Frontend manual workflow도 `api_url`, `frontend_url` 입력이 필수다.
 - Frontend production build는 `NEXT_PUBLIC_API_URL`이 필수이며 localhost/private HTTP host를 차단한다.
 - Hosted URL은 HTTPS public origin이어야 하며 credentials/query/hash/path를 포함하지 않는다.
 
-관련: [[Active Tasks]], [[Integration - CLI Backend Frontend]]
+관련: [[Active Tasks]], [[Human Action Checklist]], [[Integration - CLI Backend Frontend]]

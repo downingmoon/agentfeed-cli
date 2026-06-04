@@ -1,5 +1,9 @@
 # AgentFeed CLI / Frontend / Backend Integration TODO
 
+> [!IMPORTANT]
+> Historical integration TODO입니다. 2026-06-04 기준 주요 항목은 완료됐고, 최신 상태/남은 owner action은 `obsidian-vault/03 - Tasks/Active Tasks.md`와 `Human Action Checklist.md`를 기준으로 합니다.
+
+
 작성일: 2026-05-20 KST
 대상 repo:
 

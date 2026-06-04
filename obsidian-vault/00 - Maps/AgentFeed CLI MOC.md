@@ -34,6 +34,7 @@ graph LR
 - [[Privacy Safety]]
 - [[Runtime Configuration]]
 - [[Active Tasks]]
+- [[Human Action Checklist]]
 
 ## 현재 레포 책임
 
@@ -51,6 +52,7 @@ graph LR
 3. Private review URL은 Backend metadata `review_base_url` 또는 명시 allowlist와 일치해야 열린다.
 4. Hosted readiness는 실제 URL 입력이 필수다. `agentfeed.dev`는 준비된 도메인이 아니다.
 5. Commercial readiness는 local cross-repo gate + hosted smoke + browser smoke + OAuth live evidence가 모두 필요하다.
+6. 실제 배포 전 owner가 처리할 항목은 [[Human Action Checklist]]를 기준으로 한다.
 
 ## 삭제/통합된 이전 문서
 

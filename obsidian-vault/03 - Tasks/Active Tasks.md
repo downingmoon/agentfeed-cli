@@ -14,7 +14,11 @@ updated: 2026-06-04
 
 ## 현재 결론
 
-현재 goal은 **실제 hosted deployment/domain 검증을 제외**하고, 로컬/CI/contract/UI/UX 기준으로 CLI/API/Frontend/Dev를 상용화 가능한 품질까지 끌어올리는 것이다.
+로컬/CI/contract/UI/UX 기준 상용화 품질 goal은 **완료**됐다. 현재 남은 핵심은 실제 도메인, hosting, OAuth, npm, 법무/정책처럼 owner가 직접 결정하거나 계정 권한으로 처리해야 하는 항목이다.
+
+- 사람이 직접 해야 할 일: [[Human Action Checklist]]
+- 완료된 대량 hardening 요약: [[Commercial Readiness Completed Summary 2026-06-04]]
+- 런타임/env 기준: [[Runtime Configuration]]
 
 > [!success] 2026-06-04 로컬 상용화 품질 evidence
 > - CLI `npm run release:preflight`: 통과, 397 tests passed.
@@ -25,12 +29,12 @@ updated: 2026-06-04
 > - 2026-06-04 추가 UI smoke: desktop/mobile landing/feed/worklog detail snapshot 확인. landing mobile overflow와 worklog detail mobile column collapse 수정 후 재확인.
 > - 2026-06-04 추가 Profile/Project smoke: 임시 public profile/project/worklog fixture로 `/profile/downing`, `/projects/downing/smoke-project` 모바일 렌더링 확인 후 fixture 삭제. body/document horizontal overflow 없음.
 > - 2026-06-04 추가 Backend regression: legacy string `outcome_json` public detail 500 수정. backend `pytest`: 388 passed.
-> - 2026-06-04 push/CI: CLI `9361948`, Backend `286c981`, Frontend `2ec2455`, Dev `8db795e` 푸시 완료. 각 GitHub Actions CI 성공.
+> - 2026-06-04 push/CI: CLI `9361948`, Backend `286c981`, Frontend `2ec2455`, Dev `8db795e` 푸시 완료. 이후 Obsidian evidence doc commit `45b6ee1`도 푸시/CI 성공.
 
-> [!warning] 중요 정정
-> `agentfeed.dev`는 아직 준비된 도메인이 아니다. 이번 goal의 완료 기준에는 실제 hosted deployment/domain 검증을 포함하지 않는다. 실제 도메인을 고른 뒤 별도 hosted readiness goal로 실행한다.
+> [!warning] 도메인 상태
+> `agentfeed.dev`는 아직 준비된 도메인이 아니다. 현재 문서/코드의 `agentfeed.dev` 값은 예시 또는 계약 테스트용 placeholder로만 취급한다. 실제 hosted readiness는 owner가 도메인을 정한 뒤 실행한다.
 
-## P0 — 현재 goal: 로컬/CI/contract/UI 품질
+## 완료됨 — 로컬/CI/contract/UI 품질
 
 - [x] CLI subcommand `--help`가 수집/상태파일 작성 side effect 없이 종료되도록 수정.
 - [x] CLI 주요 명령 회귀: `release:preflight`로 `login`, `collect`, `share`, `publish`, `open`, `doctor`, `status` 관련 테스트 통과.
@@ -46,56 +50,43 @@ updated: 2026-06-04
 - [x] `prefers-reduced-motion` 전역 대응 추가.
 - [x] Profile tab strip이 모바일에서 clipping되어 보이지 않도록 wrap 처리.
 - [x] Theme bootstrap nonce script의 hydration mismatch 경고를 억제.
+- [x] 오래된 `docs/todo/*`와 backend `docs/fixes-required.md`가 현재 TODO로 오해되지 않도록 historical 문서로 표시.
 
-## P1 — 이번 goal에서 남은 확인/정리
+## P0 — 사람이 직접 해야 할 출시 준비
 
-- [x] 변경사항 커밋/푸시.
-- [x] Push 후 각 레포 CI 상태 확인.
-- [x] Frontend 모바일/데스크톱 smoke screenshot으로 header/feed/landing/profile/project/worklog detail 시각 깨짐 여부 최종 확인.
-- [x] 오래된 `docs/agentfeed_local_cli_mvp_implementation_spec_v0_2.md`와 backend `docs/fixes-required.md`가 현재 TODO로 오해되지 않도록 historical 문서로 표시.
-
-## P2 — 별도 polish backlog
-
-- [ ] Settings/Projects 편집 form의 label/id 연결을 더 촘촘하게 보강.
-- [ ] Project tabs의 `aria-controls`/tabpanel 연결까지 보강.
-
-## Parking lot — 실제 배포/상용 readiness
-
-아래 항목은 중요하지만, 사용자가 이번 goal에서 **실제 배포 검증은 제외**한다고 명확히 정정했다.
+상세 체크리스트는 [[Human Action Checklist]]를 기준으로 한다.
 
 - [ ] 실제 Frontend domain 결정.
 - [ ] 실제 Backend API domain 결정.
-- [ ] Backend production/staging env 구성:
-  - `DATABASE_URL` TLS
-  - `SECRET_KEY`
-  - `FRONTEND_URL`
-  - `ALLOWED_ORIGINS`
-  - `API_ALLOWED_HOSTS`
-  - `TRUSTED_PROXY_IPS`
-  - GitHub OAuth env
-- [ ] Frontend deployment env 구성:
-  - `NEXT_PUBLIC_API_URL`
-  - optional `AGENTFEED_HOSTED_FRONTEND_URL`
+- [ ] 도메인/DNS/hosting/provider/PostgreSQL 선택 및 계정 생성.
 - [ ] GitHub OAuth App callback을 실제 Backend callback URL로 설정.
+- [ ] Backend production/staging env와 secrets 등록.
+- [ ] Frontend deployment env 등록.
+- [ ] npm package 이름/license/homepage/trusted publishing 정책 결정.
+- [ ] 개인정보 처리방침, 이용약관, moderation/report 정책 결정.
+
+## P1 — 사람이 결정하면 agent가 이어서 할 일
+
+- [ ] 결정된 production URL 기준으로 CLI/Backend/Frontend metadata와 README 정리.
+- [ ] Backend/Frontend deployment env sanity check.
 - [ ] `make smoke-hosted-compatibility`를 실제 URL로 통과.
 - [ ] `make smoke-oauth-live`를 operator 승인으로 통과.
 - [ ] `make commercial-readiness`가 `COMMERCIAL_READINESS_PASSED` 출력.
+- [ ] hosted readiness evidence를 Obsidian/README/runbook에 반영.
+- [ ] npm release preflight 재확인 및 publish 절차 준비.
 
-## P1 — Public release 준비
+## P2 — 제품 polish backlog
+
+- [ ] Settings/Projects 편집 form의 label/id 연결을 더 촘촘하게 보강.
+- [ ] Project/Profile tabs의 `aria-controls`/tabpanel 연결 보강.
+- [ ] 사용자용 quick-start 문서와 개발자용 runbook 분리.
+- [ ] commercial readiness evidence artifact 위치와 재실행 절차를 운영 runbook으로 분리.
+- [ ] 실제 배포 후 [[Runtime Configuration]]에 production URL/환경 예시 추가.
+
+## Public release 메모
 
 - [ ] CLI `package.json.homepage`가 실제 domain 또는 GitHub/docs URL을 가리키도록 정리.
-- [ ] `license: UNLICENSED` 유지 여부 결정. public npm 배포 전 정책 확정.
+- [ ] `license: UNLICENSED` 유지 여부 결정. public npm 배포 전 owner가 정책을 확정해야 한다.
 - [ ] npm package 이름/README/install command 최종 확인.
-- [ ] Frontend landing copy의 `agentfeed preview --remote` 같은 현재 없는/혼동 가능한 명령어 문구 점검.
+- [x] Frontend landing copy의 `agentfeed preview --remote` 문구 점검. 현재 CLI에 `preview --remote`가 존재하므로 유지 가능.
 - [ ] Backend integration guide의 예시 command가 현재 CLI 명령과 일치하는지 점검.
-
-## P2 — 운영/문서 품질
-
-- [x] Obsidian 완료 작업 로그 rollup 및 노이즈 제거.
-- [ ] 실제 배포 후 [[Runtime Configuration]]에 production URL/환경 예시 추가.
-- [ ] commercial readiness evidence artifact 위치와 재실행 절차를 운영 runbook으로 분리.
-- [ ] 사용자용 quick-start 문서와 개발자용 runbook 분리.
-
-## 완료 요약
-
-완료된 대량 hardening 항목은 [[Commercial Readiness Completed Summary 2026-06-04]]에 통합했다.

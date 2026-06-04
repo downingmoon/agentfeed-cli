@@ -25,6 +25,8 @@ created: 2026-05-30
 
 ## 시작점
 
+- [[Commercial Readiness Hardening - Backend Notification Actor Batching 2026-06-04]] — Backend notifications page batches actor hydration instead of per-notification user queries
+
 - [[Commercial Readiness Hardening - Backend Project Read Path Batching 2026-06-04]] — Backend project list stats and project worklog cards use batched read-path hydration
 
 - [[Commercial Readiness Hardening - Backend Batched Worklog Card Hydration 2026-06-04]] — Backend feed/search worklog cards use batched relationship hydration instead of N+1 queries

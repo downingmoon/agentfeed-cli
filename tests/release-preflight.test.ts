@@ -60,6 +60,10 @@ permissions:
   contents: read
   id-token: write
 
+concurrency:
+  group: npm-release-\${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -167,6 +171,9 @@ describe('release preflight guardrails', () => {
   it('validates the trusted publishing workflow contract', () => {
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow)).not.toThrow();
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('id-token: write', 'id-token: read'))).toThrow('id-token');
+    expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('concurrency:', 'release_concurrency:'))).toThrow('concurrency');
+    expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('group: npm-release-${{ github.ref }}', 'group: npm-release'))).toThrow('github.ref');
+    expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('cancel-in-progress: false', 'cancel-in-progress: true'))).toThrow('must not cancel');
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('node-version: 22.14.0', 'node-version: 20'))).toThrow('Node.js 22.14.0');
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace('npm install -g npm@11.6.0', 'npm install -g npm@10'))).toThrow('npm 11.6.0');
     expect(() => validateTrustedPublishingWorkflow(validTrustedPublishingWorkflow.replace(/      - name: Verify release tag matches package version[\s\S]*?      - run: npm install -g npm@11\.6\.0/, '      - run: npm install -g npm@11.6.0'))).toThrow('matching version tag');

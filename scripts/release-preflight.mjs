@@ -98,6 +98,9 @@ export function validateTrustedPublishingWorkflow(workflowText) {
   assert(includesLine(workflowText, /^\s*tags:\s*$/m) && workflowText.includes("'v*'"), 'release workflow must be limited to v* tag pushes when automatic.');
   assert(includesLine(workflowText, /^\s*contents:\s*read\s*$/m), 'release workflow must grant contents: read.');
   assert(includesLine(workflowText, /^\s*id-token:\s*write\s*$/m), 'release workflow must grant id-token: write for npm OIDC trusted publishing.');
+  assert(includesLine(workflowText, /^\s*concurrency:\s*$/m), 'release workflow must define concurrency so duplicate publish attempts for the same ref cannot race.');
+  assert(includesLine(workflowText, /^\s*group:\s*npm-release-\$\{\{\s*github\.ref\s*\}\}\s*$/m), 'release workflow concurrency group must be keyed by github.ref so each version tag has one publish lane.');
+  assert(includesLine(workflowText, /^\s*cancel-in-progress:\s*false\s*$/m), 'release workflow must not cancel in-progress npm publishes once they have started.');
   assert(includesLine(workflowText, /^\s*runs-on:\s*ubuntu-latest\s*$/m), 'release workflow must use a GitHub-hosted ubuntu-latest runner for trusted publishing.');
   for (const [actionName, expectedSha] of Object.entries(PINNED_RELEASE_ACTIONS)) {
     assertPinnedWorkflowAction(workflowText, actionName, expectedSha);

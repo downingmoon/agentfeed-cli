@@ -57,8 +57,9 @@ updated: 2026-06-04
 
 상세 체크리스트는 [[Human Action Checklist]]를 기준으로 한다.
 
-- [ ] 개인 서버 IP/OS/architecture 확인.
-- [ ] Docker/Compose 또는 native 구동 방식 결정.
+- [x] 개인 서버 IP/OS/architecture 확인: SSH alias `trading-bot`, Ubuntu Linux `aarch64`.
+- [x] Docker Compose 기반 배포 준비 스크립트 생성.
+- [x] 서버 포트 scan 후 충돌 회피 후보 결정: Frontend `13030`, Backend `18080`, Postgres `127.0.0.1:15432`.
 - [ ] 서버 포트/firewall 결정.
 - [ ] sibling repo layout 준비.
 - [ ] 서버 설정이 확정된 뒤 `.env`/secrets 작성.
@@ -70,7 +71,7 @@ updated: 2026-06-04
 ## P1 — 사람이 결정하면 agent가 이어서 할 일
 
 - [ ] 개인 서버 정보 기준으로 `agentfeed-dev` 서버 runbook 작성.
-- [ ] 서버용 `.env` 예시를 실제 IP/port 기준으로 보정.
+- [x] 서버용 `.env.server`를 실제 IP/port 기준으로 생성하되 git에는 제외.
 - [ ] server smoke 결과를 Obsidian evidence로 반영.
 - [ ] GitHub OAuth App 설정 시점에 callback/env/live smoke 연결.
 - [ ] production domain이 생기면 hosted readiness와 `make commercial-readiness` 재실행.

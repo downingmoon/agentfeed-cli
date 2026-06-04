@@ -48,20 +48,22 @@ AGENTFEED_API_BASE_URL=http://<SERVER_IP>:8000/v1 agentfeed login
 
 권장 순서:
 
-1. 서버에 Docker/Compose, Node, git 등 기본 runtime 설치.
-2. 네 디렉터리(3개 제품 레포 + dev orchestration)를 sibling layout으로 배치.
-   - `agentfeed-dev`
-   - `agentfeed-backend`
-   - `agentfeed-frontend`
-   - `AgentFeed-CLI`
-3. `agentfeed-dev/.env.example`을 `.env`로 복사.
-4. `<SERVER_IP>`와 port를 실제 값으로 치환.
-5. DB/password/secret 값을 생성해서 `.env`에 반영.
-6. `make setup`, `make up`, `make wait`로 서버 stack 확인.
-7. 로컬 CLI와 브라우저에서 IP endpoint smoke.
+1. `agentfeed-dev`에서 서버 preflight 실행.
+
+```bash
+make server-preflight
+make server-deploy-dry-run
+```
+
+2. preflight가 생성한 `.env.server`를 확인한다. 현재 서버 scan 기준 충돌 회피 포트는 Frontend `13030`, Backend `18080`, Postgres host port `15432`다.
+3. 실제 sync만 할 때는 `make server-deploy`를 사용한다. 이 단계는 컨테이너를 시작하지 않는다.
+4. 실제 remote compose 시작은 별도 승인 후 `make server-up`으로 실행한다.
+5. 서버에 Docker/Compose, Node, git 등 기본 runtime이 없다면 먼저 설치한다.
+6. 서버 remote layout은 `~/agentfeed/{agentfeed-dev,agentfeed-backend,agentfeed-frontend,AgentFeed-CLI}`다.
+7. 로컬 CLI와 브라우저에서 IP endpoint smoke를 실행한다.
 
 > [!warning]
-> Backend/Frontend production rule은 HTTP/private/local host를 fail-closed할 수 있다. IP-only 단계에서는 production build/deploy 판정이 아니라 dev/server smoke 판정으로 기록한다.
+> Backend/Frontend production rule은 HTTP/private/local host를 fail-closed할 수 있다. IP-only 단계에서는 production build/deploy 판정이 아니라 dev/server smoke 판정으로 기록한다. Backend는 이 용도로만 `ENVIRONMENT=server-test`를 지원한다.
 
 ## Dev orchestration
 

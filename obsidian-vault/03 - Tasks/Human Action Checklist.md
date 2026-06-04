@@ -34,13 +34,20 @@ updated: 2026-06-04
 ### 1. 서버 기본 정보 확정
 
 - [ ] 개인 서버 public IP 확인.
-- [ ] OS/architecture 확인.
-  - 예: Ubuntu 24.04 x86_64, Debian, macOS mini 등.
-- [ ] 구동 방식 결정.
-  - 권장: `agentfeed-dev` Docker Compose 기반.
+- [x] OS/architecture 확인.
+  - 확인: Ubuntu Linux `aarch64`.
+- [x] 구동 방식 결정.
+  - 선택: `agentfeed-dev` Docker Compose 기반.
   - 대안: Backend/Frontend native + Postgres Docker.
-- [ ] 서버에 열 포트 결정.
-  - 기본: Frontend `3000`, Backend `8000`, PostgreSQL은 외부 공개하지 않음.
+- [x] 서버에서 이미 사용 중인 포트 확인.
+  - 감지: `22`, `53`, `111`, `8080`, `8765`.
+  - Docker: trading bot이 `8765` 사용 중.
+- [x] AgentFeed 충돌 회피 포트 후보 생성.
+  - Frontend: `13030`
+  - Backend: `18080`
+  - Postgres host port: `127.0.0.1:15432`
+- [ ] 서버에 열 포트 결정/방화벽 반영.
+  - 후보: Frontend `13030`, Backend `18080`; PostgreSQL은 외부 공개하지 않음.
 - [ ] 방화벽/security group에서 필요한 포트만 허용.
 
 ### 2. IP-only endpoint 계획
@@ -68,12 +75,12 @@ GITHUB_REDIRECT_URI=http://<SERVER_IP>:8000/v1/auth/github/callback  # OAuth 설
 
 1. 서버 OS, Docker/Compose, Node/Python 등 기본 런타임 설치.
 2. `agentfeed-dev`, `agentfeed-backend`, `agentfeed-frontend`, `AgentFeed-CLI` sibling layout 확인.
-3. Postgres 구동 방식 결정 및 DB volume/backup 위치 결정.
-4. 실제 포트/IP가 확정된 뒤 `.env` 작성.
-5. secret 생성.
-6. DB migration 실행.
-7. Backend/Frontend 시작.
-8. CLI에서 `AGENTFEED_API_BASE_URL=http://<SERVER_IP>:8000/v1 agentfeed status` 등으로 smoke.
+3. `agentfeed-dev make server-preflight`로 remote port scan과 `.env.server` 생성을 실행.
+4. `make server-deploy-dry-run`으로 sync 계획 확인.
+5. 필요하면 `make server-deploy`로 파일만 sync.
+6. Postgres volume/backup 위치 결정.
+7. 실제 시작은 별도 단계에서 `make server-up`.
+8. CLI에서 `AGENTFEED_API_BASE_URL=http://<SERVER_IP>:18080/v1 agentfeed status` 등으로 smoke.
 
 Backend 최소 env 후보:
 

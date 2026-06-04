@@ -930,13 +930,21 @@ describe('share CLI command', () => {
       });
 
       const output = JSON.parse(stdout) as {
-        draft?: { worklog?: { user_note?: string | null; summary?: string; model?: string | null } };
+        draft?: { id?: string; worklog?: { user_note?: string | null; summary?: string; model?: string | null }; upload?: Record<string, unknown> };
         upload?: { id?: string };
       };
       expect(output.upload?.id).toBe('worklog_share_json');
       expect(output.draft?.worklog?.user_note).toBe('Smoke author note');
       expect(output.draft?.worklog?.summary).not.toContain('Smoke author note');
       expect(output.draft?.worklog?.model).toBe('gpt-share-json');
+      const savedDraft = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${output.draft?.id}.json`), 'utf8'));
+      expect(output.draft?.upload).toEqual(savedDraft.upload);
+      expect(output.draft?.upload?.payload_hash).toBe(draftUploadPayloadHash(output.draft as Parameters<typeof draftUploadPayloadHash>[0]));
+      expect(output.draft?.upload?.credential_binding_hash).toBe(draftUploadCredentialBindingHash({
+        ingestion_token: 'af_live_test_token',
+        api_base_url: `http://127.0.0.1:${address.port}/v1`,
+        created_at: 'test'
+      }));
       expect((ingestPayload?.worklog as { user_note?: string } | undefined)?.user_note).toBe('Smoke author note');
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));

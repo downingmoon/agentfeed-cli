@@ -7,6 +7,7 @@ import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { initProject } from '../src/config/project-config.js';
 import { readCollectionState } from '../src/config/collection-state.js';
+import { draftUploadCredentialBindingHash, draftUploadPayloadHash } from '../src/api/client.js';
 import { ensureCliBuilt } from './build-cli.js';
 
 const repoRoot = resolve('.');
@@ -346,6 +347,7 @@ describe('collect CLI command', () => {
       });
 
       const savedDraft = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+      expect(draft.upload).toEqual(savedDraft.upload);
       expect(savedDraft.upload).toMatchObject({
         uploaded: true,
         worklog_id: 'worklog_collect_json_upload',
@@ -353,6 +355,12 @@ describe('collect CLI command', () => {
         review_base_url: 'http://localhost:3001',
         uploaded_at: '2026-05-31T00:00:00Z'
       });
+      expect(draft.upload.payload_hash).toBe(draftUploadPayloadHash(draft));
+      expect(draft.upload.credential_binding_hash).toBe(draftUploadCredentialBindingHash({
+        ingestion_token: 'af_live_collect_json_upload',
+        api_base_url: `http://127.0.0.1:${address.port}/v1`,
+        created_at: 'test'
+      }));
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }

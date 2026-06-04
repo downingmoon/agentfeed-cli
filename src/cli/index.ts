@@ -542,14 +542,14 @@ async function cmdCollect(args: string[]) {
   const source = parseAgentSource(option(args, '--source'));
   const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
   const collection = await collectDraftWithStatus({ cwd: process.cwd(), source, sessionFile: option(args, '--session-file') ?? null, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all'), runConfiguredCommands: flag(args, '--run-configured-commands') });
-  const draft = await sanitizeDraftForCliOutput(process.cwd(), collection.draft);
+  let draft = await sanitizeDraftForCliOutput(process.cwd(), collection.draft);
   if (flag(args, '--json')) {
     if (flag(args, '--upload')) {
       const creds = await loadCredentials();
       if (!creds) throw new Error('AgentFeed token is missing. Run: agentfeed login');
       const metadata = await requireUploadPreflight(creds);
       const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds, reviewBaseUrl: metadata.review_base_url });
-      draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, review_base_url: result.review_base_url ?? metadata.review_base_url ?? null, uploaded_at: result.created_at };
+      draft = await sanitizeDraftForCliOutput(process.cwd(), await readDraft(process.cwd(), draft.id));
       if (flag(args, '--open-review')) {
         draft.upload.handoff = await handoffReviewUrl(result.review_url, { copy: false, open: true, apiBaseUrl: creds.api_base_url, reviewBaseUrl: result.review_base_url ?? metadata.review_base_url });
       }
@@ -585,7 +585,7 @@ async function cmdShare(args: string[]) {
 
   const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
   const collection = await collectDraftWithStatus({ cwd: process.cwd(), source: opts.source, sessionFile: opts.sessionFile, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all'), note: opts.note, runConfiguredCommands: opts.runConfiguredCommands, skipConfiguredCommands: opts.dryRun });
-  const draft = await sanitizeDraftForCliOutput(process.cwd(), collection.draft);
+  let draft = await sanitizeDraftForCliOutput(process.cwd(), collection.draft);
 
   if (opts.json) {
     if (opts.dryRun) {
@@ -594,7 +594,7 @@ async function cmdShare(args: string[]) {
     }
     const metadata = await requireUploadPreflight(creds!);
     const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds!, reviewBaseUrl: metadata.review_base_url });
-    draft.upload = { uploaded: true, worklog_id: result.id, review_url: result.review_url, review_base_url: result.review_base_url ?? metadata.review_base_url ?? null, uploaded_at: result.created_at };
+    draft = await sanitizeDraftForCliOutput(process.cwd(), await readDraft(process.cwd(), draft.id));
     await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
     const handoff = await handoffReviewUrl(result.review_url, {
       copy: shouldCopyReviewUrl({ json: true, noClipboard: opts.noClipboard, clipboard: flag(args, '--clipboard') }),

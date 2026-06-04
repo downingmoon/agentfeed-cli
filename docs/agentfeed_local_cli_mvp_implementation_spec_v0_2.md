@@ -1,5 +1,11 @@
 # AgentFeed Local CLI MVP Implementation Spec v0.2
 
+> [!IMPORTANT]
+> This is a historical MVP implementation spec, not the current AgentFeed CLI source of truth.
+> Current CLI behavior uses browser login or stdin-based token input. Literal
+> `agentfeed login --token <token>` argv input is disabled by default because it can
+> leak secrets through shell history/process listings.
+
 ## 0. Purpose of This Document
 
 This document is a **self-contained implementation specification** for building the AgentFeed local CLI MVP.
@@ -72,7 +78,8 @@ The MVP must implement these commands:
 
 ```bash
 agentfeed init
-agentfeed login --token <token>
+agentfeed login
+printf '%s' "$AGENTFEED_TOKEN" | agentfeed login --token-stdin
 agentfeed status
 agentfeed collect
 agentfeed preview
@@ -739,13 +746,13 @@ Visibility: private
 Config: .agentfeed/config.json
 
 Next:
-  agentfeed login --token <token>
+  agentfeed login
   agentfeed hook install claude-code
 ```
 
 ---
 
-## 9.2 agentfeed login --token
+## 9.2 agentfeed login
 
 ### Purpose
 
@@ -754,7 +761,8 @@ Store an ingestion token for API upload.
 ### Usage
 
 ```bash
-agentfeed login --token af_live_xxxxxxxxx
+agentfeed login
+printf '%s' "$AGENTFEED_TOKEN" | agentfeed login --token-stdin
 ```
 
 ### Behavior
@@ -763,6 +771,8 @@ agentfeed login --token af_live_xxxxxxxxx
 2. Write `~/.agentfeed/credentials.json`.
 3. Use `AGENTFEED_API_BASE_URL` if present.
 4. Set file permission to 600 if possible.
+5. Refuse literal argv tokens unless the local development-only escape hatch
+   `AGENTFEED_ALLOW_UNSAFE_ARGV_TOKEN=1` is explicitly set.
 
 ### Success Output
 

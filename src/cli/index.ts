@@ -836,8 +836,52 @@ async function cmdOpen(args: string[]) {
   print(opened ? 'Opened review URL.' : draft.upload.review_url);
 }
 
+const KNOWN_COMMANDS = new Set([
+  'init',
+  'login',
+  'logout',
+  'status',
+  'rotate',
+  'token',
+  'collect',
+  'share',
+  'preview',
+  'publish',
+  'scan',
+  'hook',
+  'doctor',
+  'drafts',
+  'discard',
+  'open'
+]);
+
+function hasHelpFlag(args: string[]): boolean {
+  return args.includes('--help') || args.includes('-h');
+}
+
+function printHelp(): void {
+  print('Usage: agentfeed <init|login|logout|rotate|status|collect|share|preview|publish|scan|hook|doctor|drafts|discard|open>');
+  print(`Version: ${AGENTFEED_CLI_VERSION}`);
+  print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --no-save\n  agentfeed login --browser\n  printf %s "$TOKEN" | agentfeed login --token-stdin\n  printf %s "$TOKEN" | agentfeed login --token - --no-save\n  agentfeed rotate\n  agentfeed rotate --browser\n  unset AGENTFEED_TOKEN && agentfeed rotate --browser\n  agentfeed token rotate');
+  print('\nLogout:\n  agentfeed logout\n  agentfeed logout --json');
+  print('\nCollect:\n  agentfeed collect\n  agentfeed collect --explain\n  agentfeed collect --source codex\n  agentfeed collect --source gemini-cli\n  agentfeed collect --source claude-code --session-file <path>\n  agentfeed collect --since 2026-05-20T01:00:00Z\n  agentfeed collect --all\n  agentfeed collect --run-configured-commands');
+  print('\nShare:\n  agentfeed share\n  agentfeed share --yes\n  agentfeed share --dry\n  agentfeed share --open-review\n  agentfeed share --no-open-review\n  agentfeed share --since 2026-05-20T01:00:00Z\n  agentfeed share --all\n  agentfeed share --note "Fixed auth flow"\n  agentfeed share --no-clipboard\n  agentfeed share --json --clipboard\n  agentfeed share --run-configured-commands');
+  print('\nPublish:\n  agentfeed publish --latest --yes\n  agentfeed publish --id <draft_id> --yes\n  agentfeed publish --json\n  agentfeed publish --json --clipboard\n  agentfeed publish --no-clipboard\n  agentfeed publish --open-review\n  agentfeed publish --no-open-review');
+  print('\nOpen:\n  agentfeed open\n  agentfeed open --latest\n  agentfeed open --id <draft_id>');
+  print('\nScan:\n  agentfeed scan --id <draft_id>\n  agentfeed scan --id <draft_id> --dry-run\n  agentfeed scan --path . --json');
+}
+
 async function main() {
   const [command, ...args] = process.argv.slice(2);
+  if (command === undefined || command === '--help' || command === '-h') {
+    printHelp();
+    return;
+  }
+  if (hasHelpFlag(args)) {
+    if (!KNOWN_COMMANDS.has(command)) throw new Error(`Unknown command: ${command}`);
+    printHelp();
+    return;
+  }
   switch (command) {
     case 'init': return cmdInit(args);
     case 'login': return cmdLogin(args);
@@ -860,19 +904,6 @@ async function main() {
     case '--version':
     case '-v':
       print(AGENTFEED_CLI_VERSION);
-      return;
-    case undefined:
-    case '--help':
-    case '-h':
-      print('Usage: agentfeed <init|login|logout|rotate|status|collect|share|preview|publish|scan|hook|doctor|drafts|discard|open>');
-      print(`Version: ${AGENTFEED_CLI_VERSION}`);
-      print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --no-save\n  agentfeed login --browser\n  printf %s "$TOKEN" | agentfeed login --token-stdin\n  printf %s "$TOKEN" | agentfeed login --token - --no-save\n  agentfeed rotate\n  agentfeed rotate --browser\n  unset AGENTFEED_TOKEN && agentfeed rotate --browser\n  agentfeed token rotate');
-      print('\nLogout:\n  agentfeed logout\n  agentfeed logout --json');
-      print('\nCollect:\n  agentfeed collect\n  agentfeed collect --explain\n  agentfeed collect --source codex\n  agentfeed collect --source gemini-cli\n  agentfeed collect --source claude-code --session-file <path>\n  agentfeed collect --since 2026-05-20T01:00:00Z\n  agentfeed collect --all\n  agentfeed collect --run-configured-commands');
-      print('\nShare:\n  agentfeed share\n  agentfeed share --yes\n  agentfeed share --dry\n  agentfeed share --open-review\n  agentfeed share --no-open-review\n  agentfeed share --since 2026-05-20T01:00:00Z\n  agentfeed share --all\n  agentfeed share --note "Fixed auth flow"\n  agentfeed share --no-clipboard\n  agentfeed share --json --clipboard\n  agentfeed share --run-configured-commands');
-      print('\nPublish:\n  agentfeed publish --latest --yes\n  agentfeed publish --id <draft_id> --yes\n  agentfeed publish --json\n  agentfeed publish --json --clipboard\n  agentfeed publish --no-clipboard\n  agentfeed publish --open-review\n  agentfeed publish --no-open-review');
-      print('\nOpen:\n  agentfeed open\n  agentfeed open --latest\n  agentfeed open --id <draft_id>');
-      print('\nScan:\n  agentfeed scan --id <draft_id>\n  agentfeed scan --id <draft_id> --dry-run\n  agentfeed scan --path . --json');
       return;
     default:
       throw new Error(`Unknown command: ${command}`);

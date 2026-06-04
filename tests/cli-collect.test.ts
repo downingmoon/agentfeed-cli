@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { execFile, execFileSync } from 'node:child_process';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
@@ -101,6 +101,20 @@ async function installFailingBrowserOpener(binDir: string): Promise<void> {
 }
 
 describe('collect CLI command', () => {
+  it('prints subcommand help without collecting or updating local state', async () => {
+    const { stdout, stderr } = await execFileAsync(process.execPath, [cliPath, 'collect', '--help'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    expect(stdout).toContain('Collect:');
+    expect(stdout).toContain('agentfeed collect --source codex');
+    expect(stderr).toBe('');
+    await expect(readdir(join(dir, '.agentfeed', 'drafts'))).resolves.toEqual([]);
+    await expect(readFile(join(dir, '.agentfeed', 'state.json'), 'utf8')).rejects.toThrow();
+  });
+
   it('rejects unsupported source values before creating a draft', async () => {
     let error: unknown = null;
     try {

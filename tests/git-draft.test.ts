@@ -405,6 +405,9 @@ describe('git collector and drafts', () => {
       { name: 'missing worklog', mutate: (value) => ({ ...value, worklog: undefined }), expected: /AgentFeed draft is invalid.*worklog must be an object.*agentfeed collect/is },
       { name: 'missing upload', mutate: (value) => ({ ...value, upload: undefined }), expected: /AgentFeed draft is invalid.*upload must be an object.*agentfeed collect/is },
       { name: 'invalid findings', mutate: (value) => ({ ...value, privacy_scan: { status: 'safe', findings: { id: 'not-array' } } }), expected: /AgentFeed draft is invalid.*privacy_scan\.findings must be an array.*agentfeed collect/is },
+      { name: 'invalid source created_at', mutate: (value) => ({ ...value, source: { ...(value.source as Record<string, unknown>), created_at: 'not-a-date' } }), expected: /AgentFeed draft is invalid.*source\.created_at must be a valid timestamp.*agentfeed collect/is },
+      { name: 'invalid collection window since', mutate: (value) => ({ ...value, source: { ...(value.source as Record<string, unknown>), collection_window: { since: 'not-a-date', until: '2026-06-01T00:00:00.000Z' } } }), expected: /AgentFeed draft is invalid.*source\.collection_window\.since must be a valid timestamp or null.*agentfeed collect/is },
+      { name: 'invalid upload uploaded_at', mutate: (value) => ({ ...value, upload: { ...(value.upload as Record<string, unknown>), uploaded_at: 'not-a-date' } }), expected: /AgentFeed draft is invalid.*upload\.uploaded_at must be a valid timestamp or null.*agentfeed collect/is },
     ];
 
     for (const testCase of cases) {

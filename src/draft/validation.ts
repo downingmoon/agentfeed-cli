@@ -49,6 +49,20 @@ function optionalStringOrNull(value: unknown, field: string, path: string): stri
   return value;
 }
 
+function requireTimestamp(value: unknown, field: string, path: string): string {
+  const timestamp = requireString(value, field, path);
+  if (!Number.isFinite(Date.parse(timestamp))) throw draftError(path, `${field} must be a valid timestamp`);
+  return timestamp;
+}
+
+function optionalTimestampOrNull(value: unknown, field: string, path: string): string | null | undefined {
+  const timestamp = optionalStringOrNull(value, field, path);
+  if (timestamp !== undefined && timestamp !== null && !Number.isFinite(Date.parse(timestamp))) {
+    throw draftError(path, `${field} must be a valid timestamp or null`);
+  }
+  return timestamp;
+}
+
 function optionalNumberOrNull(value: unknown, field: string, path: string): number | null | undefined {
   if (value === undefined || value === null) return value;
   if (typeof value !== 'number' || !Number.isFinite(value)) throw draftError(path, `${field} must be a finite number or null`);
@@ -81,8 +95,8 @@ function validateCollectionWindow(value: unknown, field: string, path: string): 
   if (value === undefined || value === null) return value;
   const window = requireRecord(value, field, path);
   return {
-    since: optionalStringOrNull(window.since, `${field}.since`, path) ?? null,
-    until: optionalStringOrNull(window.until, `${field}.until`, path) ?? null,
+    since: optionalTimestampOrNull(window.since, `${field}.since`, path) ?? null,
+    until: optionalTimestampOrNull(window.until, `${field}.until`, path) ?? null,
   };
 }
 
@@ -209,7 +223,7 @@ export function validateLocalDraft(value: unknown, path: string): LocalDraft {
   optionalStringOrNull(source.session_id, 'source.session_id', path);
   requireString(source.tool_version, 'source.tool_version', path);
   optionalStringOrNull(source.host_label, 'source.host_label', path);
-  requireString(source.created_at, 'source.created_at', path);
+  requireTimestamp(source.created_at, 'source.created_at', path);
   validateCollectionWindow(source.collection_window, 'source.collection_window', path);
   if (source.collection_window_reason !== undefined && source.collection_window_reason !== null) {
     requireEnum<CollectionWindowReason>(source.collection_window_reason, 'source.collection_window_reason', COLLECTION_WINDOW_REASONS, path);
@@ -219,7 +233,7 @@ export function validateLocalDraft(value: unknown, path: string): LocalDraft {
   requireBoolean(upload.uploaded, 'upload.uploaded', path);
   optionalStringOrNull(upload.worklog_id, 'upload.worklog_id', path);
   optionalStringOrNull(upload.review_url, 'upload.review_url', path);
-  optionalStringOrNull(upload.uploaded_at, 'upload.uploaded_at', path);
+  optionalTimestampOrNull(upload.uploaded_at, 'upload.uploaded_at', path);
   optionalStringOrNull(upload.payload_hash, 'upload.payload_hash', path);
   optionalStringOrNull(upload.api_base_url, 'upload.api_base_url', path);
   optionalStringOrNull(upload.review_base_url, 'upload.review_base_url', path);

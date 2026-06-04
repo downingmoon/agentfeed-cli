@@ -23,6 +23,9 @@ created: 2026-05-30
 
 ## P1 후보
 
+- [x] Backend project owner/private stats JSONB row 합산을 DB aggregate query로 이전
+- 관련 노트: [[Commercial Readiness Hardening - Backend Project Owner Stats Aggregation 2026-06-04]]
+
 - [x] Backend dashboard summary today/week metric JSONB row 합산을 DB aggregate query로 이전
 - 관련 노트: [[Commercial Readiness Hardening - Backend Dashboard Metric Aggregation 2026-06-04]]
 

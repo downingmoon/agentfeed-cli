@@ -165,7 +165,16 @@ describe('api client', () => {
     await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
       .rejects.toMatchObject({
         status: 423,
-        code: 'DRAFT_UPLOAD_LOCKED'
+        code: 'DRAFT_UPLOAD_LOCKED',
+        message: expect.stringContaining(draft.id),
+        details: expect.objectContaining({
+          draft_id: draft.id,
+          owner_pid: 999999,
+          lock_path: join(dir, '.agentfeed', 'drafts', `${draft.id}.json.upload.lock`),
+          stale_after_ms: expect.any(Number),
+          waited_ms: expect.any(Number),
+          lock_fingerprint: expect.any(String)
+        })
       });
     expect(fetchMock).not.toHaveBeenCalled();
     await expect(readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json.upload.lock`), 'utf8')).resolves.toContain('active-lock');
@@ -189,11 +198,25 @@ describe('api client', () => {
     }), { status: 200, headers: { 'content-type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: defaultPublishCredentials }))
-      .rejects.toMatchObject({
-        status: 423,
-        code: 'DRAFT_UPLOAD_LOCKED'
+    let error: unknown;
+    await publishDraft({ cwd: dir, id: draft.id, credentials: defaultPublishCredentials }).catch((caught) => {
+      error = caught;
     });
+    expect(error).toMatchObject({
+      status: 423,
+      code: 'DRAFT_UPLOAD_LOCKED',
+      message: expect.stringContaining('Last heartbeat:')
+    });
+    expect(error).toBeInstanceOf(AgentFeedApiError);
+    expect((error as AgentFeedApiError).details).toMatchObject({
+      draft_id: draft.id,
+      owner_pid: process.pid,
+      lock_created_at: now,
+      lock_heartbeat_at: now,
+      heartbeat_age_ms: expect.any(Number),
+      lock_fingerprint: expect.any(String)
+    });
+    expect(JSON.stringify((error as AgentFeedApiError).details)).not.toContain('live-lock-hash');
     expect(fetchMock).not.toHaveBeenCalled();
     await expect(readFile(lockPath, 'utf8')).resolves.toContain('live-lock-hash');
   });

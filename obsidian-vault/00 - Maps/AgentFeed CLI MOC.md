@@ -33,6 +33,8 @@ graph LR
 
 ## 핵심 노트
 
+- [[Commercial Readiness Hardening - Backend Dashboard Metric Aggregation 2026-06-04]] — Backend dashboard metric JSONB row summation moved into DB aggregates
+
 - [[Commercial Readiness Hardening - Backend Dashboard Summary Count Consolidation 2026-06-04]] — Backend dashboard status count query consolidation for authenticated read-path performance
 
 - [[Commercial Readiness Hardening - Backend Notification Actor Batching 2026-06-04]] — Backend notification actor N+1 removal for authenticated read-path scale

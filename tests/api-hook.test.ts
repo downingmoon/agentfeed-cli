@@ -22,6 +22,7 @@ const oldCi = process.env.CI;
 const oldGithubActions = process.env.GITHUB_ACTIONS;
 const oldAgentFeedToken = process.env.AGENTFEED_TOKEN;
 const oldAgentFeedReviewBaseUrl = process.env.AGENTFEED_REVIEW_BASE_URL;
+const oldAgentFeedAllowInsecureApi = process.env.AGENTFEED_ALLOW_INSECURE_API;
 const oldAgentFeedDraftUploadLockTimeoutMs = process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_TIMEOUT_MS;
 const oldAgentFeedDraftUploadLockHeartbeatMs = process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_HEARTBEAT_MS;
 
@@ -87,6 +88,8 @@ afterEach(async () => {
   else process.env.AGENTFEED_TOKEN = oldAgentFeedToken;
   if (oldAgentFeedReviewBaseUrl === undefined) delete process.env.AGENTFEED_REVIEW_BASE_URL;
   else process.env.AGENTFEED_REVIEW_BASE_URL = oldAgentFeedReviewBaseUrl;
+  if (oldAgentFeedAllowInsecureApi === undefined) delete process.env.AGENTFEED_ALLOW_INSECURE_API;
+  else process.env.AGENTFEED_ALLOW_INSECURE_API = oldAgentFeedAllowInsecureApi;
   if (oldAgentFeedDraftUploadLockTimeoutMs === undefined) delete process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_TIMEOUT_MS;
   else process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_TIMEOUT_MS = oldAgentFeedDraftUploadLockTimeoutMs;
   if (oldAgentFeedDraftUploadLockHeartbeatMs === undefined) delete process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_HEARTBEAT_MS;
@@ -900,6 +903,28 @@ describe('api client', () => {
     expect(apiMetadataCompatible({ ...result.data, review_base_url: 'https://review.internal.example/path' })).toBe(false);
   });
 
+  it('accepts public IPv4 HTTP review origins only under the explicit insecure API override', () => {
+    const metadata = {
+      service: 'agentfeed-api',
+      api_version: 'v1',
+      backend_version: '0.1.0',
+      contract_version: '2026-06-03',
+      review_base_url: 'http://161.33.171.81:13030',
+      supported_clients: {
+        cli: { min_version: '0.2.0', contract_version: '2026-06-03' },
+        frontend: { min_version: '0.1.0', contract_version: '2026-06-03' }
+      }
+    };
+
+    delete process.env.AGENTFEED_ALLOW_INSECURE_API;
+    expect(apiMetadataCompatible(metadata)).toBe(false);
+
+    process.env.AGENTFEED_ALLOW_INSECURE_API = '1';
+    expect(apiMetadataCompatible(metadata)).toBe(true);
+    expect(apiMetadataCompatible({ ...metadata, review_base_url: 'http://10.0.0.5:13030' })).toBe(false);
+    expect(apiMetadataCompatible({ ...metadata, review_base_url: 'http://review.internal.example:13030' })).toBe(false);
+  });
+
   it('checks API reachability against the backend readiness endpoint', async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({ status: 'ready', database: { connected: true }, migration: { up_to_date: true } }), { status: 200, headers: { 'content-type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchMock);
@@ -1046,6 +1071,26 @@ describe('api client', () => {
 
     await expect(createCliAuthSession('http://localhost:8001/v1', { verifier: 'verifier-local' }))
       .resolves.toMatchObject({ session_id: 'session-local' });
+  });
+
+  it('accepts public IPv4 HTTP authorize URLs only under the explicit insecure API override', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      data: {
+        session_id: 'session-public-ip',
+        authorize_url: 'http://161.33.171.81:13030/cli/authorize?session_id=session-public-ip&status_token=status-token-for-public-ip',
+        user_code: '123-456',
+        expires_at: '2026-05-20T00:05:00Z',
+        poll_interval_seconds: 1
+      }
+    }), { status: 200, headers: { 'content-type': 'application/json' } })));
+
+    delete process.env.AGENTFEED_ALLOW_INSECURE_API;
+    await expect(createCliAuthSession('http://161.33.171.81:18080/v1', { verifier: 'verifier-public-ip' }))
+      .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
+
+    process.env.AGENTFEED_ALLOW_INSECURE_API = '1';
+    await expect(createCliAuthSession('http://161.33.171.81:18080/v1', { verifier: 'verifier-public-ip' }))
+      .resolves.toMatchObject({ session_id: 'session-public-ip' });
   });
 
   it('rejects fake 127-prefixed authorize hostnames for local API bases', async () => {

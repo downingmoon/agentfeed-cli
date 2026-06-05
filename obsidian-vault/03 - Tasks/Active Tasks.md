@@ -60,13 +60,16 @@ updated: 2026-06-05
 - [x] 개인 서버 IP/OS/architecture 확인: SSH alias `trading-bot`, Ubuntu Linux `aarch64`.
 - [x] Docker Compose 기반 배포 준비 스크립트 생성.
 - [x] 서버 포트 scan 후 충돌 회피 후보 결정: Frontend `13030`, Backend `18080`, Postgres `127.0.0.1:15432`.
-- [ ] 서버 포트/firewall 결정.
-- [ ] sibling repo layout 준비.
+- [x] 서버 포트/firewall smoke 범위 확인: Frontend `13030`, Backend `18080`, Postgres는 loopback `15432`.
+- [x] sibling repo layout 준비.
 - [x] OAuth Client ID/Secret을 `.env.server`에 숨김 입력으로 반영하는 `make server-oauth` helper 준비.
 - [ ] Postgres volume/backup 위치 결정.
 - [x] Backend/Frontend를 서버에서 구동.
 - [x] 로컬 CLI에서 `AGENTFEED_ALLOW_INSECURE_API=1 AGENTFEED_API_BASE_URL=http://161.33.171.81:18080/v1 agentfeed status` smoke.
-- [x] 브라우저에서 `http://161.33.171.81:13030/feed` smoke. Playwright console 0 errors/warnings.
+- [x] 브라우저에서 `http://161.33.171.81:13030/feed` smoke. Signed-out `/v1/auth/me` 401 resource entry는 public page에서 예상되는 상태.
+- [x] CLI login compatibility가 IP-only server-test review/authorize origin을 명시 flag 아래에서 통과하도록 수정.
+- [x] CLI → API → Frontend review → public feed E2E를 임시 user/session으로 검증.
+- [x] 서버 검증 데이터 reset 완료: users/tokens/worklogs/projects/cli_sessions `0`.
 
 ## P1 — 사람이 결정하면 agent가 이어서 할 일
 
@@ -74,7 +77,8 @@ updated: 2026-06-05
 - [x] 서버용 `.env.server`를 실제 IP/port 기준으로 생성하되 git에는 제외.
 - [x] server smoke 결과를 Obsidian evidence로 반영: [[Server IP-only Smoke Evidence 2026-06-05]].
 - [x] GitHub OAuth App Client ID/Secret을 `.env.server`에 반영할 helper 준비.
-- [ ] OAuth live smoke는 서버 구동 후 owner 브라우저 GitHub 승인으로 실행.
+- [x] OAuth 이후 CLI approval/product flow smoke 실행. 단, 실제 GitHub credential 입력 자동화는 Playwright cookie 한계 때문에 임시 browser session으로 대체.
+- [ ] 실제 사용자 브라우저에서 GitHub credential 입력까지 포함한 live login을 한 번 수행.
 - [ ] production domain이 생기면 hosted readiness와 `make commercial-readiness` 재실행.
 - [ ] npm package 이름/license/homepage/trusted publishing 정책이 확정되면 release/publish 절차 준비.
 

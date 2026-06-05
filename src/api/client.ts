@@ -457,6 +457,31 @@ function isLocalHostname(hostname: string): boolean {
   return host === 'localhost' || host.endsWith('.localhost') || host === '::1' || host === '0.0.0.0' || (isIP(host) === 4 && host.startsWith('127.'));
 }
 
+function allowInsecureRemoteApi(): boolean {
+  return process.env.AGENTFEED_ALLOW_INSECURE_API === '1';
+}
+
+function isPublicIpv4Hostname(hostname: string): boolean {
+  const host = hostname.toLowerCase().replace(/^\[(.*)\]$/, '$1');
+  if (isIP(host) !== 4) return false;
+  const parts = host.split('.').map((part) => Number(part));
+  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return false;
+  const [first, second] = parts;
+  if (first === undefined || second === undefined) return false;
+  if (first === 0 || first === 10 || first === 127) return false;
+  if (first === 169 && second === 254) return false;
+  if (first === 172 && second >= 16 && second <= 31) return false;
+  if (first === 192 && second === 168) return false;
+  if (first === 100 && second >= 64 && second <= 127) return false;
+  if (first === 198 && (second === 18 || second === 19)) return false;
+  if (first >= 224) return false;
+  return true;
+}
+
+function allowsInsecureReviewOrigin(url: URL): boolean {
+  return url.protocol === 'http:' && allowInsecureRemoteApi() && isPublicIpv4Hostname(url.hostname);
+}
+
 function isAgentFeedHostname(hostname: string): boolean {
   return hostname === 'agentfeed.dev' || hostname.endsWith('.agentfeed.dev');
 }
@@ -477,7 +502,7 @@ function trustedReviewOrigin(rawBaseUrl: string | null | undefined): string | nu
     if (!['http:', 'https:'].includes(url.protocol)) return null;
     if (url.username || url.password || url.search || url.hash) return null;
     if (url.pathname.replace(/\/+$/, '') !== '') return null;
-    if (!isLocalHostname(url.hostname) && url.protocol !== 'https:') return null;
+    if (!isLocalHostname(url.hostname) && url.protocol !== 'https:' && !allowsInsecureReviewOrigin(url)) return null;
     return url.origin;
   } catch {
     return null;
@@ -492,7 +517,7 @@ function validateReviewUrl(reviewUrl: string, apiBaseUrl: string, reviewBaseUrl?
     if (review.username || review.password) return false;
     if (review.search || review.hash) return false;
     if (!isExpectedReviewPath(review.pathname)) return false;
-    if (!isLocalHostname(review.hostname) && review.protocol !== 'https:') return false;
+    if (!isLocalHostname(review.hostname) && review.protocol !== 'https:' && !allowsInsecureReviewOrigin(review)) return false;
     const metadataReviewOrigin = trustedReviewOrigin(reviewBaseUrl);
     if (metadataReviewOrigin && review.origin === metadataReviewOrigin) return true;
     const configuredReviewOrigin = trustedReviewOrigin(process.env.AGENTFEED_REVIEW_BASE_URL);
@@ -529,7 +554,9 @@ function validateAuthorizeUrl(authorizeUrl: string, apiBaseUrl: string, sessionI
     if (isLocalHostname(api.hostname)) {
       return isLocalHostname(authorize.hostname);
     }
-    if (authorize.protocol !== 'https:') return false;
+    if (authorize.protocol !== 'https:') {
+      return allowsInsecureReviewOrigin(authorize) && authorize.hostname === api.hostname;
+    }
     if (isAgentFeedHostname(api.hostname)) {
       return isAgentFeedReviewHostname(authorize.hostname);
     }

@@ -56,9 +56,9 @@ updated: 2026-06-04
 
 ```bash
 FRONTEND_URL=http://<SERVER_IP>:3000
-NEXT_PUBLIC_API_URL=http://<SERVER_IP>:8000
-AGENTFEED_API_BASE_URL=http://<SERVER_IP>:8000/v1
-GITHUB_REDIRECT_URI=http://<SERVER_IP>:8000/v1/auth/github/callback  # OAuth 설정 시점에만 사용
+NEXT_PUBLIC_API_URL=http://<SERVER_IP>:18080
+AGENTFEED_API_BASE_URL=http://<SERVER_IP>:18080/v1
+GITHUB_REDIRECT_URI=http://<SERVER_IP>:18080/v1/auth/github/callback  # OAuth 설정 시점에만 사용
 ```
 
 - [ ] `<SERVER_IP>`를 실제 서버 IP로 치환한다.
@@ -76,11 +76,12 @@ GITHUB_REDIRECT_URI=http://<SERVER_IP>:8000/v1/auth/github/callback  # OAuth 설
 1. 서버 OS, Docker/Compose, Node/Python 등 기본 런타임 설치.
 2. `agentfeed-dev`, `agentfeed-backend`, `agentfeed-frontend`, `AgentFeed-CLI` sibling layout 확인.
 3. `agentfeed-dev make server-preflight`로 remote port scan과 `.env.server` 생성을 실행.
-4. `make server-deploy-dry-run`으로 sync 계획 확인.
-5. 필요하면 `make server-deploy`로 파일만 sync.
-6. Postgres volume/backup 위치 결정.
-7. 실제 시작은 별도 단계에서 `make server-up`.
-8. CLI에서 `AGENTFEED_API_BASE_URL=http://<SERVER_IP>:18080/v1 agentfeed status` 등으로 smoke.
+4. `make server-oauth`로 GitHub OAuth Client ID/Secret을 `.env.server`에 숨김 입력한다.
+5. `make server-deploy-dry-run`으로 sync 계획 확인.
+6. 필요하면 `make server-deploy`로 파일만 sync.
+7. Postgres volume/backup 위치 결정.
+8. 실제 시작은 별도 단계에서 `make server-up`.
+9. CLI에서 `AGENTFEED_API_BASE_URL=http://<SERVER_IP>:18080/v1 agentfeed status` 등으로 smoke.
 
 Backend 최소 env 후보:
 
@@ -96,7 +97,7 @@ Backend 최소 env 후보:
 
 Frontend 최소 env 후보:
 
-- [ ] `NEXT_PUBLIC_API_URL=http://<SERVER_IP>:8000`
+- [ ] `NEXT_PUBLIC_API_URL=http://<SERVER_IP>:18080`
 - [ ] 필요 시 `AGENTFEED_HOSTED_FRONTEND_URL=http://<SERVER_IP>:3000`
 
 ### 4. GitHub OAuth App 구성 — deferred

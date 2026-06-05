@@ -7,7 +7,7 @@ status: active
 tags:
   - agentfeed/todo
   - project/tasks
-updated: 2026-06-04
+updated: 2026-06-05
 ---
 
 # Active Tasks
@@ -64,17 +64,17 @@ updated: 2026-06-04
 - [ ] sibling repo layout 준비.
 - [x] OAuth Client ID/Secret을 `.env.server`에 숨김 입력으로 반영하는 `make server-oauth` helper 준비.
 - [ ] Postgres volume/backup 위치 결정.
-- [ ] Backend/Frontend를 서버에서 구동.
-- [ ] 로컬 CLI에서 `AGENTFEED_API_BASE_URL=http://<SERVER_IP>:18080/v1 agentfeed status` smoke.
-- [ ] 브라우저에서 `http://<SERVER_IP>:13030/feed` smoke.
+- [x] Backend/Frontend를 서버에서 구동.
+- [x] 로컬 CLI에서 `AGENTFEED_ALLOW_INSECURE_API=1 AGENTFEED_API_BASE_URL=http://161.33.171.81:18080/v1 agentfeed status` smoke.
+- [x] 브라우저에서 `http://161.33.171.81:13030/feed` smoke. Playwright console 0 errors/warnings.
 
 ## P1 — 사람이 결정하면 agent가 이어서 할 일
 
 - [ ] 개인 서버 정보 기준으로 `agentfeed-dev` 서버 runbook 작성.
 - [x] 서버용 `.env.server`를 실제 IP/port 기준으로 생성하되 git에는 제외.
-- [ ] server smoke 결과를 Obsidian evidence로 반영.
+- [x] server smoke 결과를 Obsidian evidence로 반영: [[Server IP-only Smoke Evidence 2026-06-05]].
 - [x] GitHub OAuth App Client ID/Secret을 `.env.server`에 반영할 helper 준비.
-- [ ] OAuth live smoke는 서버 구동 후 실행.
+- [ ] OAuth live smoke는 서버 구동 후 owner 브라우저 GitHub 승인으로 실행.
 - [ ] production domain이 생기면 hosted readiness와 `make commercial-readiness` 재실행.
 - [ ] npm package 이름/license/homepage/trusted publishing 정책이 확정되면 release/publish 절차 준비.
 

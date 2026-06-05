@@ -14,6 +14,28 @@ export interface CollectionSource {
   quality: CollectionQuality;
 }
 
+export interface AgentMetricSummary {
+  agent: AgentType;
+  model?: string | null;
+  session_id?: string | null;
+  tokens_used?: number | null;
+  estimated_cost_usd?: number | null;
+  duration_seconds?: number | null;
+  files_changed?: number | null;
+  lines_added?: number | null;
+  lines_removed?: number | null;
+  tests_run?: number | null;
+  tests_passed?: number | null;
+  failed_commands?: number | null;
+  commands_run?: number | null;
+  tool_calls?: number | null;
+  skills_used?: number | null;
+  subagents_spawned?: number | null;
+  subagents_completed?: number | null;
+  agent_turns?: number | null;
+  agent_modes?: string[] | null;
+}
+
 export interface AgentFeedProjectConfig {
   version: '0.2';
   project: {
@@ -95,6 +117,8 @@ export interface WorklogMetrics {
   subagents_spawned?: number | null;
   subagents_completed?: number | null;
   agent_turns?: number | null;
+  models_used?: string[] | null;
+  agent_metrics?: AgentMetricSummary[] | null;
   agent_modes?: string[] | null;
   collection_quality?: CollectionQuality | null;
   collection_sources?: CollectionSource[] | null;

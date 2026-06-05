@@ -1,4 +1,4 @@
-import type { AgentType, CollectionQuality, CollectionSource, CollectionWindow, CollectionWindowReason, LocalDraft, PrivacyFinding, PrivacyScanResult, PrivacySeverity, PrivacyStatus, ReviewUrlHandoffChannel, WorklogCategory, WorklogMetrics, WorklogTimelineItem } from '../types.js';
+import type { AgentMetricSummary, AgentType, CollectionQuality, CollectionSource, CollectionWindow, CollectionWindowReason, LocalDraft, PrivacyFinding, PrivacyScanResult, PrivacySeverity, PrivacyStatus, ReviewUrlHandoffChannel, WorklogCategory, WorklogMetrics, WorklogTimelineItem } from '../types.js';
 
 const AGENT_TYPES = new Set(['claude_code', 'codex', 'cursor', 'gemini_cli', 'other']);
 const WORKLOG_CATEGORIES = new Set(['web_app', 'bot', 'automation', 'trading', 'devops', 'data', 'ai_tool', 'open_source', 'other']);
@@ -100,12 +100,39 @@ function validateCollectionWindow(value: unknown, field: string, path: string): 
   };
 }
 
+function validateAgentMetricSummary(value: unknown, index: number, path: string): AgentMetricSummary {
+  const field = `worklog.metrics.agent_metrics[${index}]`;
+  const metric = requireRecord(value, field, path);
+  const output: AgentMetricSummary = {
+    agent: requireEnum<AgentType>(metric.agent, `${field}.agent`, AGENT_TYPES, path),
+  };
+  const model = optionalStringOrNull(metric.model, `${field}.model`, path);
+  if (model !== undefined) output.model = model;
+  const sessionId = optionalStringOrNull(metric.session_id, `${field}.session_id`, path);
+  if (sessionId !== undefined) output.session_id = sessionId;
+  for (const key of ['tokens_used', 'estimated_cost_usd', 'duration_seconds', 'files_changed', 'lines_added', 'lines_removed', 'tests_run', 'tests_passed', 'failed_commands', 'commands_run', 'tool_calls', 'skills_used', 'subagents_spawned', 'subagents_completed', 'agent_turns'] as const) {
+    const normalized = optionalNumberOrNull(metric[key], `${field}.${key}`, path);
+    if (normalized !== undefined) output[key] = normalized;
+  }
+  const agentModes = optionalStringArrayOrNull(metric.agent_modes, `${field}.agent_modes`, path);
+  if (agentModes !== undefined) output.agent_modes = agentModes;
+  return output;
+}
+
 function validateMetrics(value: unknown, path: string): WorklogMetrics {
   const metrics = requireRecord(value, 'worklog.metrics', path);
   const output: WorklogMetrics = {};
   for (const field of ['tokens_used', 'estimated_cost_usd', 'duration_seconds', 'files_changed', 'lines_added', 'lines_removed', 'tests_run', 'tests_passed', 'commits_created', 'failed_commands', 'commands_run', 'tool_calls', 'skills_used', 'subagents_spawned', 'subagents_completed', 'agent_turns'] as const) {
     const normalized = optionalNumberOrNull(metrics[field], `worklog.metrics.${field}`, path);
     if (normalized !== undefined) output[field] = normalized;
+  }
+  const modelsUsed = optionalStringArrayOrNull(metrics.models_used, 'worklog.metrics.models_used', path);
+  if (modelsUsed !== undefined) output.models_used = modelsUsed;
+  if (metrics.agent_metrics !== undefined && metrics.agent_metrics !== null) {
+    if (!Array.isArray(metrics.agent_metrics)) throw draftError(path, 'worklog.metrics.agent_metrics must be an array or null');
+    output.agent_metrics = metrics.agent_metrics.map((item, index) => validateAgentMetricSummary(item, index, path));
+  } else if (metrics.agent_metrics === null) {
+    output.agent_metrics = null;
   }
   const agentModes = optionalStringArrayOrNull(metrics.agent_modes, 'worklog.metrics.agent_modes', path);
   if (agentModes !== undefined) output.agent_modes = agentModes;

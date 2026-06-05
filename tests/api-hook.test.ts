@@ -840,22 +840,37 @@ describe('api client', () => {
   it('includes the collected model in the ingest worklog payload', () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
     draft.worklog.model = 'gpt-5.5';
+    draft.worklog.metrics.models_used = ['claude-sonnet', 'gpt-5.5'];
+    draft.worklog.metrics.agent_metrics = [
+      { agent: 'claude_code', model: 'claude-sonnet', session_id: 'claude-session', tokens_used: 15, files_changed: 1, lines_added: 1, tool_calls: 1 },
+      { agent: 'codex', model: 'gpt-5.5', session_id: 'codex-session', tokens_used: 240, files_changed: 1, lines_added: 2, tool_calls: 2 }
+    ];
 
     const payload = draftToIngestRequest(draft);
 
     expect(payload.worklog.model).toBe('gpt-5.5');
+    expect(payload.worklog.metrics.models_used).toEqual(['claude-sonnet', 'gpt-5.5']);
+    expect(payload.worklog.metrics.agent_metrics).toEqual([
+      expect.objectContaining({ agent: 'claude_code', model: 'claude-sonnet', tokens_used: 15, tool_calls: 1 }),
+      expect.objectContaining({ agent: 'codex', model: 'gpt-5.5', tokens_used: 240, tool_calls: 2 })
+    ]);
   });
 
   it('redacts uploaded string metadata outside the summary fields', () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
     const secret = 'sk-123456789012345678901234';
     draft.worklog.model = `model-${secret}`;
+    draft.worklog.metrics.models_used = [`gpt-${secret}`];
+    draft.worklog.metrics.agent_metrics = [{ agent: 'codex', model: `agent-model-${secret}`, session_id: `session-${secret}`, tokens_used: 1 }];
     draft.worklog.metrics.agent_modes = [`agent-mode-${secret}`];
 
     const payload = draftToIngestRequest(draft);
 
     expect(JSON.stringify(payload)).not.toContain(secret);
     expect(payload.worklog.model).toBe('model-[REDACTED_SECRET]');
+    expect(payload.worklog.metrics.models_used).toEqual(['gpt-[REDACTED_SECRET]']);
+    expect(payload.worklog.metrics.agent_metrics?.[0]?.model).toBe('agent-model-[REDACTED_SECRET]');
+    expect(payload.worklog.metrics.agent_metrics?.[0]?.session_id).toBe('session-[REDACTED_SECRET]');
     expect(payload.worklog.metrics.agent_modes).toEqual(['agent-mode-[REDACTED_SECRET]']);
   });
 

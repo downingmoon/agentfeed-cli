@@ -26,7 +26,8 @@ describe('share command helpers', () => {
     expect(output).toContain('Ready to share private review draft');
     expect(output).toContain('Project: agentfeed-cli');
     expect(output).toContain('Title: Add share command');
-    expect(output).toContain('Agent: codex · gpt-5.5');
+    expect(output).toContain('Agent: codex');
+    expect(output).toContain('Models: gpt-5.5');
     expect(output).toContain('Metrics: 3 files · +120 -18 · 7 tool calls · 12K tokens');
     expect(output).toContain('Changed areas: CLI, Documentation');
     expect(output).toContain('Privacy: safe · findings 0');

@@ -702,9 +702,14 @@ describe('agent session collector', () => {
     expect(draft.worklog.agent).toBe('codex');
     expect(draft.source.agent).toBe('codex');
     expect(draft.worklog.model).toBe('gpt-5.5');
+    expect(draft.worklog.metrics.models_used).toEqual(['claude-sonnet', 'gpt-5.5']);
     expect(draft.worklog.metrics.tokens_used).toBe(255);
     expect(draft.worklog.metrics.files_changed).toBe(2);
     expect(draft.worklog.metrics.lines_added).toBe(3);
+    expect(draft.worklog.metrics.agent_metrics).toEqual([
+      expect.objectContaining({ agent: 'claude_code', model: 'claude-sonnet', session_id: 'claude-auto-session', tokens_used: 15, files_changed: 1, lines_added: 1 }),
+      expect.objectContaining({ agent: 'codex', model: 'gpt-5.5', session_id: 'codex-auto-session', tokens_used: 240, files_changed: 1, lines_added: 2 })
+    ]);
     expect(draft.worklog.metrics.collection_sources).toEqual([
       { type: 'agent_session', name: 'claude_code', quality: 'high' },
       { type: 'agent_session', name: 'codex', quality: 'high' }

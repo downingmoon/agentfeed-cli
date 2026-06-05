@@ -1,6 +1,6 @@
 import { hostname } from 'node:os';
 import { isAbsolute, join, relative, resolve } from 'node:path';
-import type { AgentFeedProjectConfig, AgentType, ChangedFileSummary, CollectionQuality, CollectionWindow, CollectionWindowReason, LocalDraft, WorklogMetrics } from '../types.js';
+import type { AgentFeedProjectConfig, AgentMetricSummary, AgentType, ChangedFileSummary, CollectionQuality, CollectionWindow, CollectionWindowReason, LocalDraft, WorklogMetrics } from '../types.js';
 import { loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { collectAgentSessionMetrics, type AgentSessionMetrics } from '../collectors/agent-session.js';
@@ -233,6 +233,76 @@ function mergeAgentModes(candidates: AgentSessionCandidate[]): string[] | null {
   return modes.size ? [...modes].sort() : null;
 }
 
+function sessionModelsUsed(session?: Pick<AgentSessionMetrics, 'model' | 'models_used'> | null): string[] {
+  const models = new Set<string>();
+  for (const model of session?.models_used ?? []) {
+    if (model) models.add(model);
+  }
+  if (session?.model) models.add(session.model);
+  return [...models];
+}
+
+function mergeModelsUsed(candidates: AgentSessionCandidate[]): string[] | null {
+  const models = new Set<string>();
+  for (const candidate of candidates) {
+    for (const model of sessionModelsUsed(candidate.session)) models.add(model);
+  }
+  return models.size ? [...models].sort() : null;
+}
+
+function agentMetricForCandidate(candidate: AgentSessionCandidate): AgentMetricSummary {
+  const session = candidate.session;
+  const filesChanged = session.files_changed ?? session.changed_files.length;
+  return {
+    agent: candidate.source,
+    model: session.model ?? null,
+    session_id: session.session_id ?? null,
+    tokens_used: session.tokens_used ?? null,
+    estimated_cost_usd: session.estimated_cost_usd ?? null,
+    duration_seconds: session.duration_seconds ?? null,
+    files_changed: filesChanged || null,
+    lines_added: session.lines_added ?? null,
+    lines_removed: session.lines_removed ?? null,
+    tests_run: session.tests_run ?? null,
+    tests_passed: session.tests_passed ?? null,
+    failed_commands: session.failed_commands ?? null,
+    commands_run: session.commands_run ?? null,
+    tool_calls: session.tool_calls ?? null,
+    skills_used: session.skills_used ?? null,
+    subagents_spawned: session.subagents_spawned ?? null,
+    subagents_completed: session.subagents_completed ?? null,
+    agent_turns: session.agent_turns ?? null,
+    agent_modes: session.agent_modes ?? null
+  };
+}
+
+function agentMetricsForCandidates(candidates: AgentSessionCandidate[]): AgentMetricSummary[] | null {
+  if (!candidates.length) return null;
+  return candidates
+    .map(agentMetricForCandidate)
+    .sort((a, b) => `${a.agent}:${a.session_id ?? ''}`.localeCompare(`${b.agent}:${b.session_id ?? ''}`));
+}
+
+function agentMetricsForSession(source: AgentType, session?: AgentSessionMetrics | null): AgentMetricSummary[] | null {
+  if (!session) return null;
+  if (session.agent_metrics?.length) return session.agent_metrics;
+  return [agentMetricForCandidate({ source, session })];
+}
+
+function configFilteredAgentMetrics(metrics: AgentMetricSummary[] | null | undefined, config: AgentFeedProjectConfig): AgentMetricSummary[] | null {
+  if (!metrics?.length) return null;
+  return metrics.map((metric) => ({
+    ...metric,
+    tokens_used: config.collection.include_token_usage ? metric.tokens_used ?? null : null,
+    estimated_cost_usd: config.collection.include_estimated_cost ? metric.estimated_cost_usd ?? null : null,
+    files_changed: config.collection.include_file_stats ? metric.files_changed ?? null : null,
+    lines_added: config.collection.include_file_stats ? metric.lines_added ?? null : null,
+    lines_removed: config.collection.include_file_stats ? metric.lines_removed ?? null : null,
+    tests_run: config.collection.include_test_results ? metric.tests_run ?? null : null,
+    tests_passed: config.collection.include_test_results ? metric.tests_passed ?? null : null
+  }));
+}
+
 function mergeSessionWindow(candidates: AgentSessionCandidate[], fallback?: CollectionWindow | null): CollectionWindow | null {
   const windows = candidates.map((candidate) => candidate.session.collection_window).filter((window): window is CollectionWindow => Boolean(window?.since || window?.until));
   if (!windows.length) return fallback?.since || fallback?.until ? fallback : null;
@@ -270,6 +340,7 @@ function mergeAgentSessions(candidates: AgentSessionCandidate[], requestedWindow
   const linesRemoved = sumChangedFileLines(changedFiles, 'lines_removed');
   const collectionSources = mergeCollectionSources(candidates);
   const collectionWindow = mergeSessionWindow(candidates, requestedWindow);
+  const modelsUsed = mergeModelsUsed(candidates);
   const session: AgentSessionMetrics = {
     session_id: primary.session.session_id ?? null,
     model: primary.session.model ?? null,
@@ -289,6 +360,8 @@ function mergeAgentSessions(candidates: AgentSessionCandidate[], requestedWindow
     subagents_spawned: addOptionalCounts(...candidates.map((candidate) => candidate.session.subagents_spawned)),
     subagents_completed: addOptionalCounts(...candidates.map((candidate) => candidate.session.subagents_completed)),
     agent_turns: addOptionalCounts(...candidates.map((candidate) => candidate.session.agent_turns)),
+    models_used: modelsUsed,
+    agent_metrics: agentMetricsForCandidates(candidates),
     agent_modes: mergeAgentModes(candidates),
     collection_quality: mergedCollectionQuality(collectionSources),
     collection_sources: collectionSources.length ? collectionSources : null,
@@ -449,6 +522,8 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
     ? await collectConfiguredCommandMetrics(root, config)
     : null;
   const includeFileStats = config.collection.include_file_stats;
+  const modelsUsed = sessionModelsUsed(session);
+  const agentMetrics = configFilteredAgentMetrics(agentMetricsForSession(source, session), config);
   const metrics: WorklogMetrics = {
     tokens_used: config.collection.include_token_usage ? session?.tokens_used ?? null : null,
     estimated_cost_usd: config.collection.include_estimated_cost ? session?.estimated_cost_usd ?? null : null,
@@ -466,6 +541,8 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
     subagents_spawned: session?.subagents_spawned ?? null,
     subagents_completed: session?.subagents_completed ?? null,
     agent_turns: session?.agent_turns ?? null,
+    models_used: modelsUsed.length ? modelsUsed : null,
+    agent_metrics: agentMetrics,
     agent_modes: session?.agent_modes ?? null,
     collection_quality: session?.collection_quality ?? null,
     collection_sources: session?.collection_sources ?? null

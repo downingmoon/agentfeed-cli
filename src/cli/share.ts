@@ -31,6 +31,32 @@ export function formatMetricsRow(draft: LocalDraft): string {
   return parts.length ? parts.join(' · ') : 'no metrics';
 }
 
+function modelsLabel(draft: LocalDraft): string | null {
+  const models = draft.worklog.metrics.models_used?.length
+    ? draft.worklog.metrics.models_used
+    : draft.worklog.model ? [draft.worklog.model] : [];
+  return models.length ? models.join(', ') : null;
+}
+
+function formatAgentMetricLines(draft: LocalDraft): string[] {
+  const metrics = draft.worklog.metrics.agent_metrics;
+  if (!metrics?.length) return [];
+  return [
+    'Per-agent metrics:',
+    ...metrics.map((metric) => {
+      const parts = [
+        metric.model ?? null,
+        metric.tokens_used != null ? `${Math.round(metric.tokens_used / 1000)}K tokens` : null,
+        metric.files_changed != null ? `${metric.files_changed} files` : null,
+        metric.lines_added != null || metric.lines_removed != null ? `+${metric.lines_added ?? 0} -${metric.lines_removed ?? 0}` : null,
+        metric.tool_calls != null ? `${metric.tool_calls} tools` : null,
+        metric.commands_run != null ? `${metric.commands_run} cmds` : null
+      ].filter((part): part is string => Boolean(part));
+      return `- ${metric.agent}: ${parts.length ? parts.join(' · ') : 'no metrics'}`;
+    })
+  ];
+}
+
 export function privacyPublicPublishBlocked(draft: LocalDraft): boolean {
   return draft.privacy_scan.status === 'danger'
     || draft.privacy_scan.findings.some((finding) => finding.severity === 'high' && !finding.resolved);
@@ -65,7 +91,7 @@ export function formatPrivacyPolicyLines(draft: LocalDraft): string[] {
 
 export function formatSharePreview(draft: LocalDraft): string {
   const m = draft.worklog.metrics;
-  const model = draft.worklog.model ? ` · ${draft.worklog.model}` : '';
+  const models = modelsLabel(draft);
   const changedAreas = draft.worklog.changed_areas.length ? draft.worklog.changed_areas.join(', ') : 'Application code';
   const lines = [
     'Ready to share private review draft',
@@ -74,11 +100,13 @@ export function formatSharePreview(draft: LocalDraft): string {
     `Title: ${draft.worklog.title}`,
     `Summary: ${draft.worklog.summary}`,
     ...(draft.worklog.user_note ? [`Note: ${draft.worklog.user_note}`] : []),
-    `Agent: ${draft.worklog.agent}${model}`,
+    `Agent: ${draft.worklog.agent}`,
+    ...(models ? [`Models: ${models}`] : []),
     `Metrics: ${formatMetricsRow(draft)}`,
     `Changed areas: ${changedAreas}`,
     `Privacy: ${draft.privacy_scan.status} · findings ${draft.privacy_scan.findings.length}`
   ];
+  lines.push(...formatAgentMetricLines(draft));
   lines.push(...formatPrivacyPolicyLines(draft));
 
   lines.push(`Collection quality: ${collectionQualityLabel(m)}`);

@@ -1,9 +1,9 @@
 import { hostname } from 'node:os';
 import { isAbsolute, join, relative, resolve } from 'node:path';
-import type { AgentFeedProjectConfig, AgentType, ChangedFileSummary, CollectionWindow, LocalDraft, WorklogMetrics } from '../types.js';
+import type { AgentFeedProjectConfig, AgentType, ChangedFileSummary, CollectionQuality, CollectionWindow, CollectionWindowReason, LocalDraft, WorklogMetrics } from '../types.js';
 import { loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
 import { collectGitMetrics } from '../collectors/git.js';
-import { collectAgentSessionMetrics } from '../collectors/agent-session.js';
+import { collectAgentSessionMetrics, type AgentSessionMetrics } from '../collectors/agent-session.js';
 import { collectConfiguredCommandMetrics } from '../collectors/test-command.js';
 import { detectAgentSignals } from '../collectors/agent-discovery.js';
 import { shouldIgnoreEvidencePath } from '../collectors/path-filter.js';
@@ -123,6 +123,7 @@ function collectionPolicyForFingerprint(config: AgentFeedProjectConfig): Record<
 function collectionFingerprint(input: {
   source: AgentType;
   sessionId?: string | null;
+  sessionIdentity?: string | null;
   headCommit?: string | null;
   window?: CollectionWindow | null;
   changedFiles?: ChangedFileSummary[];
@@ -137,8 +138,9 @@ function collectionFingerprint(input: {
     configured_command_intent: input.configuredCommandIntent === true,
     collection_policy: input.collectionPolicy ?? null
   };
-  if (input.sessionId) {
-    return shortHash(JSON.stringify({ source: input.source, session_id: input.sessionId, head_commit: input.headCommit, window: input.window ?? null, changed_files: changedFiles, upload_affecting_inputs: uploadAffectingInputs }), 16);
+  const sessionIdentity = input.sessionIdentity ?? input.sessionId ?? null;
+  if (sessionIdentity) {
+    return shortHash(JSON.stringify({ source: input.source, session_identity: sessionIdentity, head_commit: input.headCommit, window: input.window ?? null, changed_files: changedFiles, upload_affecting_inputs: uploadAffectingInputs }), 16);
   }
   if (!changedFiles.length) return null;
   return shortHash(JSON.stringify({ source: input.source, head_commit: input.headCommit, window: input.window ?? null, changed_files: changedFiles, upload_affecting_inputs: uploadAffectingInputs }), 16);
@@ -179,6 +181,125 @@ function addOptionalCounts(...values: Array<number | null | undefined>): number 
     seen = true;
   }
   return seen ? total : null;
+}
+
+interface AgentSessionCandidate {
+  source: AgentType;
+  session: AgentSessionMetrics;
+}
+
+const COLLECTION_QUALITY_RANK: Record<CollectionQuality, number> = { low: 1, medium: 2, high: 3 };
+
+function mergedCollectionQuality(sources: NonNullable<WorklogMetrics['collection_sources']>): CollectionQuality | null {
+  let best: CollectionQuality | null = null;
+  for (const source of sources) {
+    if (!best || COLLECTION_QUALITY_RANK[source.quality] > COLLECTION_QUALITY_RANK[best]) best = source.quality;
+  }
+  return best;
+}
+
+function mergeCollectionSources(candidates: AgentSessionCandidate[]): NonNullable<WorklogMetrics['collection_sources']> {
+  const sources: NonNullable<WorklogMetrics['collection_sources']> = [];
+  for (const candidate of candidates) {
+    for (const source of candidate.session.collection_sources ?? []) {
+      if (!sources.some((row) => row.type === source.type && row.name === source.name)) sources.push(source);
+    }
+  }
+  return sources;
+}
+
+function sessionWorkScore(candidate: AgentSessionCandidate): number {
+  const session = candidate.session;
+  const changedFileCount = session.files_changed ?? session.changed_files.length;
+  const lineCount = (session.lines_added ?? 0) + (session.lines_removed ?? 0);
+  return changedFileCount * 100_000
+    + lineCount * 1_000
+    + (session.tokens_used ?? 0)
+    + (session.tool_calls ?? 0) * 100
+    + (session.commands_run ?? 0) * 80
+    + (session.agent_turns ?? 0) * 50
+    + (session.subagents_spawned ?? 0) * 250;
+}
+
+function primarySessionCandidate(candidates: AgentSessionCandidate[]): AgentSessionCandidate {
+  return candidates.reduce((best, candidate) => sessionWorkScore(candidate) > sessionWorkScore(best) ? candidate : best, candidates[0]);
+}
+
+function mergeAgentModes(candidates: AgentSessionCandidate[]): string[] | null {
+  const modes = new Set<string>();
+  for (const candidate of candidates) {
+    for (const mode of candidate.session.agent_modes ?? []) modes.add(mode);
+  }
+  return modes.size ? [...modes].sort() : null;
+}
+
+function mergeSessionWindow(candidates: AgentSessionCandidate[], fallback?: CollectionWindow | null): CollectionWindow | null {
+  const windows = candidates.map((candidate) => candidate.session.collection_window).filter((window): window is CollectionWindow => Boolean(window?.since || window?.until));
+  if (!windows.length) return fallback?.since || fallback?.until ? fallback : null;
+  const sinceValues = windows.map((window) => window.since).filter((value): value is string => Boolean(value));
+  const untilValues = windows.map((window) => window.until).filter((value): value is string => Boolean(value));
+  return {
+    since: sinceValues.length ? new Date(Math.min(...sinceValues.map((value) => Date.parse(value)))).toISOString() : null,
+    until: untilValues.length ? new Date(Math.max(...untilValues.map((value) => Date.parse(value)))).toISOString() : null
+  };
+}
+
+function mergeSessionWindowReason(candidates: AgentSessionCandidate[]): CollectionWindowReason | null {
+  return candidates.some((candidate) => candidate.session.collection_window_reason === 'idle_gap') ? 'idle_gap' : null;
+}
+
+function aggregateSessionIdentity(candidates: AgentSessionCandidate[]): string | null {
+  if (!candidates.length) return null;
+  const identities = candidates.map((candidate) => ({
+    source: candidate.source,
+    session_id: candidate.session.session_id ?? null,
+    model: candidate.session.model ?? null,
+    window: candidate.session.collection_window ?? null,
+    tokens_used: candidate.session.tokens_used ?? null,
+    files_changed: candidate.session.files_changed ?? candidate.session.changed_files.length,
+    tool_calls: candidate.session.tool_calls ?? null,
+    agent_turns: candidate.session.agent_turns ?? null
+  })).sort((a, b) => `${a.source}:${a.session_id ?? ''}`.localeCompare(`${b.source}:${b.session_id ?? ''}`));
+  return shortHash(JSON.stringify(identities), 16);
+}
+
+function mergeAgentSessions(candidates: AgentSessionCandidate[], requestedWindow?: CollectionWindow | null): { source: AgentType; session: AgentSessionMetrics; fingerprintIdentity: string | null } {
+  const primary = primarySessionCandidate(candidates);
+  const changedFiles = mergeChangedFiles([], candidates.flatMap((candidate) => candidate.session.changed_files));
+  const linesAdded = sumChangedFileLines(changedFiles, 'lines_added');
+  const linesRemoved = sumChangedFileLines(changedFiles, 'lines_removed');
+  const collectionSources = mergeCollectionSources(candidates);
+  const collectionWindow = mergeSessionWindow(candidates, requestedWindow);
+  const session: AgentSessionMetrics = {
+    session_id: primary.session.session_id ?? null,
+    model: primary.session.model ?? null,
+    changed_files: changedFiles,
+    tokens_used: addOptionalCounts(...candidates.map((candidate) => candidate.session.tokens_used)),
+    estimated_cost_usd: addOptionalCounts(...candidates.map((candidate) => candidate.session.estimated_cost_usd)),
+    duration_seconds: addOptionalCounts(...candidates.map((candidate) => candidate.session.duration_seconds)),
+    files_changed: changedFiles.length || null,
+    lines_added: linesAdded || null,
+    lines_removed: linesRemoved || null,
+    tests_run: addOptionalCounts(...candidates.map((candidate) => candidate.session.tests_run)),
+    tests_passed: addOptionalCounts(...candidates.map((candidate) => candidate.session.tests_passed)),
+    failed_commands: addOptionalCounts(...candidates.map((candidate) => candidate.session.failed_commands)),
+    commands_run: addOptionalCounts(...candidates.map((candidate) => candidate.session.commands_run)),
+    tool_calls: addOptionalCounts(...candidates.map((candidate) => candidate.session.tool_calls)),
+    skills_used: addOptionalCounts(...candidates.map((candidate) => candidate.session.skills_used)),
+    subagents_spawned: addOptionalCounts(...candidates.map((candidate) => candidate.session.subagents_spawned)),
+    subagents_completed: addOptionalCounts(...candidates.map((candidate) => candidate.session.subagents_completed)),
+    agent_turns: addOptionalCounts(...candidates.map((candidate) => candidate.session.agent_turns)),
+    agent_modes: mergeAgentModes(candidates),
+    collection_quality: mergedCollectionQuality(collectionSources),
+    collection_sources: collectionSources.length ? collectionSources : null,
+    collection_window: collectionWindow,
+    collection_window_reason: collectionWindow?.since ? mergeSessionWindowReason(candidates) : null
+  };
+  return {
+    source: primary.source,
+    session,
+    fingerprintIdentity: candidates.length > 1 ? aggregateSessionIdentity(candidates) : null
+  };
 }
 
 interface AutoAgentSources {
@@ -264,16 +385,29 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
   const git = await collectGitMetrics(root);
   const window = collectionWindow(options);
   const inferIdleGap = options.inferIdleGap ?? (!options.force && !window?.since);
+  let sessionFingerprintIdentity: string | null = null;
   let session = options.source
     ? await collectAgentSessionMetrics({ cwd: root, source, sessionFile, since: window?.since, until: window?.until, inferIdleGap })
     : null;
   if (!options.source) {
-    for (const candidate of explicitSessionProbeSources(enabledSources, sessionFile)) {
+    const candidates: AgentSessionCandidate[] = [];
+    for (const candidate of enabledSources) {
       const candidateSession = await collectAgentSessionMetrics({ cwd: root, source: candidate, sessionFile, since: window?.since, until: window?.until, inferIdleGap });
       if (!candidateSession) continue;
-      source = candidate;
-      session = candidateSession;
-      break;
+      candidates.push({ source: candidate, session: candidateSession });
+    }
+    if (!candidates.length && sessionFile) {
+      for (const candidate of explicitSessionProbeSources(enabledSources, sessionFile).filter((candidate) => !enabledSources.includes(candidate))) {
+        const candidateSession = await collectAgentSessionMetrics({ cwd: root, source: candidate, sessionFile, since: window?.since, until: window?.until, inferIdleGap });
+        if (!candidateSession) continue;
+        candidates.push({ source: candidate, session: candidateSession });
+      }
+    }
+    if (candidates.length) {
+      const merged = mergeAgentSessions(candidates, window);
+      source = merged.source;
+      session = merged.session;
+      sessionFingerprintIdentity = merged.fingerprintIdentity;
     }
   }
   if (!options.source && !session) {
@@ -299,6 +433,7 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
   const fingerprint = collectionFingerprint({
     source,
     sessionId: session?.session_id,
+    sessionIdentity: sessionFingerprintIdentity,
     headCommit: git.head_commit,
     window: actualWindow,
     changedFiles,

@@ -50,9 +50,13 @@ NEXT_PUBLIC_AGENTFEED_ALLOW_INSECURE_SERVER_TEST_API=1
 
 ## Browser evidence
 
+> [!success] 2026-06-05 compatibility fix
+> `review_base_url=http://161.33.171.81:13030` is now accepted only under the explicit IP-only server-test flag, so the previous `AgentFeed API 계약 불일치` banner no longer appears.
+
+
 - Playwright opened `http://161.33.171.81:13030/feed`.
 - Page title: `Public Feed — AgentFeed`.
-- Console: `0 errors, 0 warnings`.
+- API compatibility/config banners are absent. A signed-out browser may still show the expected `/v1/auth/me` 401 resource entry while rendering public pages.
 - API config banner absent.
 - CSP `connect-src` includes `http://161.33.171.81:18080`.
 

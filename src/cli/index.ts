@@ -294,6 +294,26 @@ function apiCheckFailureDetail(result: Awaited<ReturnType<typeof checkIngestionT
     : result.error ?? 'unknown token check failure';
 }
 
+const SAFE_TOKEN_STDIN_COMMAND = 'printf %s "$TOKEN" | agentfeed login --token-stdin';
+
+function emptyTokenStdinMessage(): string {
+  return [
+    'No token received on stdin.',
+    `Run: ${SAFE_TOKEN_STDIN_COMMAND}`,
+    'Run: agentfeed login'
+  ].join('\n');
+}
+
+function unsafeArgvTokenMessage(): string {
+  return [
+    'Literal token input through --token <token> is disabled.',
+    'Reason: argv can leak through shell history and process listings.',
+    `Run: ${SAFE_TOKEN_STDIN_COMMAND}`,
+    'Run: agentfeed login',
+    'For local throwaway development only: AGENTFEED_ALLOW_UNSAFE_ARGV_TOKEN=1 agentfeed login --token <token>'
+  ].join('\n');
+}
+
 async function requireApiCompatibilityBeforeUpload(apiBaseUrl: string): Promise<ApiMetadata> {
   const result = await checkApiCompatibility(apiBaseUrl);
   if (result.compatible && result.data) return result.data;
@@ -327,7 +347,7 @@ async function readStdinText(): Promise<string> {
 
 async function readTokenFromStdin(): Promise<string> {
   const token = (await readStdinText()).trim();
-  if (!token) throw new Error('No token received on stdin. Pipe a token with: printf %s "$AGENTFEED_TOKEN" | agentfeed login --token-stdin');
+  if (!token) throw new Error(emptyTokenStdinMessage());
   return token;
 }
 
@@ -558,7 +578,7 @@ async function cmdLogin(args: string[]) {
     throw new Error('Use only one token input method: --token -, or --token-stdin.');
   }
   if (tokenOption && tokenOption !== '-' && process.env.AGENTFEED_ALLOW_UNSAFE_ARGV_TOKEN !== '1') {
-    throw new Error('Literal token input through --token <token> is disabled because argv can leak through shell history and process listings. Pipe the token instead: printf %s "$TOKEN" | agentfeed login --token-stdin. For local throwaway development only, set AGENTFEED_ALLOW_UNSAFE_ARGV_TOKEN=1.');
+    throw new Error(unsafeArgvTokenMessage());
   }
   const token = tokenFromStdin ? await readTokenFromStdin() : tokenOption;
   const apiBaseUrl = option(args, '--api-base-url');

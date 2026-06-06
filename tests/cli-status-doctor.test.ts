@@ -518,8 +518,34 @@ describe('status and doctor provenance output', () => {
     }
 
     expect(failure?.stderr).toContain('Literal token input through --token <token> is disabled');
-    expect(failure?.stderr).toContain('agentfeed login --token-stdin');
+    expect(failure?.stderr).toContain('Reason: argv can leak through shell history and process listings.');
+    expect(failure?.stderr).toContain('Run: printf %s "$TOKEN" | agentfeed login --token-stdin');
+    expect(failure?.stderr).toContain('Run: agentfeed login');
+    expect(failure?.stderr).toContain('AGENTFEED_ALLOW_UNSAFE_ARGV_TOKEN=1 agentfeed login --token <token>');
     expect(failure?.stderr).not.toContain(token);
+    expect(failure?.stdout ?? '').toBe('');
+    await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
+  it('rejects empty token stdin with copyable safe-token guidance', async () => {
+    let failure: { stderr?: string; stdout?: string } | undefined;
+    try {
+      await execFileWithInput(['login', '--token-stdin'], '', {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_CREDENTIAL_STORE: 'file'
+        }
+      });
+    } catch (error) {
+      failure = error as { stderr?: string; stdout?: string };
+    }
+
+    expect(failure?.stderr).toContain('No token received on stdin.');
+    expect(failure?.stderr).toContain('Run: printf %s "$TOKEN" | agentfeed login --token-stdin');
+    expect(failure?.stderr).toContain('Run: agentfeed login');
     expect(failure?.stdout ?? '').toBe('');
     await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
   });

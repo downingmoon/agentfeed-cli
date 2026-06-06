@@ -37,6 +37,7 @@ updated: 2026-06-06
 > [!success] 2026-06-06 CLI UX/package smoke evidence
 > - CLI help/status/doctor/preview/share/drafts next-action 출력은 좁은 터미널에서도 읽히도록 wrapping/ordering 보강 완료.
 > - `agentfeed status`가 `Setup progress: n/5 ready · m need attention` 요약을 출력하고, `status --json`도 같은 summary를 제공한다.
+> - `agentfeed doctor`가 Summary 안에서 `Fix first` 우선순위 명령을 보여주고, `doctor --json`도 `priority_actions`를 제공한다.
 > - `npm run build`: 통과.
 > - `npx vitest run tests/release-preflight.test.ts --reporter=verbose`: 15 tests passed.
 > - `npm run release:preflight`: 26 test files, 531 tests passed.
@@ -48,6 +49,7 @@ updated: 2026-06-06
 - [x] CLI 주요 명령 회귀: `release:preflight`로 `login`, `collect`, `share`, `publish`, `open`, `doctor`, `status` 관련 테스트 통과.
 - [x] CLI release preflight가 npm tarball 설치 후 첫 사용자 플로우(`init` → `status` → `share --dry` → `drafts`)를 installed binary로 검증하도록 보강.
 - [x] `agentfeed status`에 setup progress 요약을 추가해 첫 사용자가 준비 상태와 남은 조치를 한눈에 파악하도록 보강.
+- [x] `agentfeed doctor`에 `Fix first` 우선순위 액션을 추가해 여러 진단 실패 시 먼저 고칠 항목을 명확화.
 - [x] Frontend signed-out Header가 `/`와 `/feed`를 혼동하지 않도록 Home/Feed nav와 active state 수정.
 - [x] Frontend landing/feed/review/profile/project 주요 grid가 모바일에서 고정폭 overflow를 만들지 않도록 responsive layout으로 수정.
 - [x] Frontend list response wrapper가 `pagination` 누락/부분 payload에서도 fail-closed 동작하도록 정규화.

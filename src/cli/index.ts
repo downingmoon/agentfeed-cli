@@ -1002,14 +1002,39 @@ function doctorSummary(readiness: DoctorReadinessItem[]): { status: 'ready' | 'a
   };
 }
 
+interface DoctorPriorityAction {
+  name: string;
+  detail: string;
+  command: string;
+}
+
+function doctorPriorityActions(readiness: DoctorReadinessItem[]): DoctorPriorityAction[] {
+  const priorityOrder = ['API', 'Project', 'Git', 'Account', 'Collection', 'Agent signals'];
+  return readiness
+    .filter((item) => item.status === 'attention' && item.next_action)
+    .sort((a, b) => priorityOrder.indexOf(a.name) - priorityOrder.indexOf(b.name))
+    .map((item) => ({ name: item.name, detail: item.detail, command: item.next_action as string }));
+}
+
+function printDoctorPriorityActions(actions: DoctorPriorityAction[]): void {
+  if (!actions.length) return;
+  print('Fix first:');
+  actions.slice(0, 3).forEach((action, index) => {
+    print(`  ${index + 1}. ${action.name}: ${action.detail}`);
+    print(`     Run: ${action.command}`);
+  });
+}
+
 function printDoctorSummary(readiness: DoctorReadinessItem[]): void {
   const summary = doctorSummary(readiness);
+  const priorityActions = doctorPriorityActions(readiness);
   print(ui.section('Summary'));
   print(`Overall: ${summary.status === 'ready' ? 'ready' : 'attention needed'} (${summary.ready} ready, ${summary.attention} attention)`);
   for (const item of readiness) {
     const next = item.next_action ? ` → ${item.next_action}` : '';
     print(`${readinessMarker(item.status)} ${item.name}: ${item.detail}${next}`);
   }
+  printDoctorPriorityActions(priorityActions);
   print();
 }
 
@@ -1901,11 +1926,13 @@ async function cmdDoctor(args: string[] = []) {
     agentSignalLines
   });
   const summary = doctorSummary(readiness);
+  const priorityActions = doctorPriorityActions(readiness);
 
   if (flag(args, '--json')) {
     print(JSON.stringify({
       summary,
       readiness,
+      priority_actions: priorityActions,
       runtime: doctorCheckRows(runtimeChecks),
       account: doctorCheckRows(accountChecks),
       api: doctorCheckRows(apiChecks),

@@ -1355,6 +1355,9 @@ describe('status and doctor provenance output', () => {
 
     expect(stdout).toContain('AgentFeed doctor');
     expect(stdout).toContain('Warnings');
+    expect(stdout).toContain('Fix first:');
+    expect(stdout).toContain('  1. API: invalid API base URL');
+    expect(stdout).toContain('     Run: unset AGENTFEED_API_BASE_URL');
     expect(stdout).toContain('Next');
     expect(stdout).toMatch(/invalid API URL|Invalid AgentFeed API base URL|http is allowed only for localhost/i);
     expect(stdout).toMatch(/AGENTFEED_API_BASE_URL|Use https|AGENTFEED_ALLOW_INSECURE_API=1/i);
@@ -1385,6 +1388,7 @@ describe('status and doctor provenance output', () => {
       collection: Array<{ name: string; value: string }>;
       summary: { status: string; ready: number; attention: number };
       readiness: Array<{ name: string; status: string; detail: string; next_action?: string }>;
+      priority_actions: Array<{ name: string; detail: string; command: string }>;
       warnings: string[];
       agent_signal_summary: {
         detected_count: number;
@@ -1401,6 +1405,11 @@ describe('status and doctor provenance output', () => {
       expect.objectContaining({ name: 'Account', status: 'attention', detail: 'token missing', next_action: 'agentfeed login' }),
       expect.objectContaining({ name: 'API', status: 'attention', detail: 'invalid API base URL', next_action: 'unset AGENTFEED_API_BASE_URL' })
     ]));
+    expect(output.priority_actions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'API', detail: 'invalid API base URL', command: 'unset AGENTFEED_API_BASE_URL' }),
+      expect.objectContaining({ name: 'Account', detail: 'token missing', command: 'agentfeed login' })
+    ]));
+    expect(output.priority_actions[0]).toMatchObject({ name: 'API', command: 'unset AGENTFEED_API_BASE_URL' });
     expect(output.runtime.some((row) => row.name === 'agentfeed version')).toBe(true);
     expect(output.account.some((row) => row.name === 'credential source')).toBe(true);
     expect(output.api.some((row) => row.name === 'API base URL configured')).toBe(true);

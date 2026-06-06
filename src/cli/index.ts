@@ -3366,6 +3366,12 @@ Examples:
   agentfeed completion bash > ~/.local/share/bash-completion/completions/agentfeed
   agentfeed completion fish > ~/.config/fish/completions/agentfeed.fish
 
+Install:
+  mkdir -p ~/.zsh/completions && agentfeed completion zsh > ~/.zsh/completions/_agentfeed
+  mkdir -p ~/.local/share/bash-completion/completions && agentfeed completion bash > ~/.local/share/bash-completion/completions/agentfeed
+  mkdir -p ~/.config/fish/completions && agentfeed completion fish > ~/.config/fish/completions/agentfeed.fish
+  Restart your shell after installing completions.
+
 Options:
   --help, -h                Show this help`
   };

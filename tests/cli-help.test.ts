@@ -606,6 +606,11 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('zsh');
     expect(stdout).toContain('bash');
     expect(stdout).toContain('fish');
+    expect(stdout).toContain('Install:');
+    expect(stdout).toContain('mkdir -p ~/.zsh/completions && agentfeed completion zsh > ~/.zsh/completions/_agentfeed');
+    expect(stdout).toContain('mkdir -p ~/.local/share/bash-completion/completions && agentfeed completion bash > ~/.local/share/bash-completion/completions/agentfeed');
+    expect(stdout).toContain('mkdir -p ~/.config/fish/completions && agentfeed completion fish > ~/.config/fish/completions/agentfeed.fish');
+    expect(stdout).toContain('Restart your shell after installing completions.');
     expect(stderr).toBe('');
   });
 

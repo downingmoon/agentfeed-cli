@@ -271,9 +271,43 @@ describe('status and doctor provenance output', () => {
     expect(stdout).toContain('Project initialized: no');
     expect(stdout).toContain('User/token: missing');
     expect(stdout).toContain('Next');
-    expect(stdout).toContain('agentfeed init');
+    expect(stdout).toContain('git init && agentfeed init');
+    expect(stdout).toContain('agentfeed init --no-git-check');
     expect(stdout).toContain('agentfeed login');
-    expect(stdout.indexOf('agentfeed init')).toBeLessThan(stdout.indexOf('agentfeed login'));
+    expect(stdout.indexOf('git init && agentfeed init')).toBeLessThan(stdout.indexOf('agentfeed login'));
+    expect(stderr).toBe('');
+  });
+
+  it('status keeps local dry-run sharing discoverable when only login is missing', async () => {
+    execFileSync('git', ['init', '-q'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: process.env
+    });
+    execFileSync(process.execPath, [cliPath, 'init', '--project-name', 'status-next'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    const { stdout, stderr } = await execFileAsync(process.execPath, [cliPath, 'status'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: '',
+        AGENTFEED_API_BASE_URL: 'https://api.agentfeed.dev/v1',
+        FORCE_COLOR: undefined
+      }
+    });
+
+    expect(stdout).toContain('Project initialized: yes');
+    expect(stdout).toContain('User/token: missing');
+    expect(stdout).toContain('Next');
+    expect(stdout).toContain('agentfeed login');
+    expect(stdout).toContain('agentfeed share --dry');
+    expect(stdout.indexOf('agentfeed login')).toBeLessThan(stdout.indexOf('agentfeed share --dry'));
     expect(stderr).toBe('');
   });
 

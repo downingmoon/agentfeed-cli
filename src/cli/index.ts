@@ -906,11 +906,16 @@ async function cmdStatus(args: string[] = []) {
     ]);
   } else if (!config) {
     printNextCommands([
-      'agentfeed init',
+      ...(insideGitRepository ? ['agentfeed init'] : ['git init && agentfeed init', 'agentfeed init --no-git-check']),
       ...(!hasToken ? ['agentfeed login'] : [])
     ]);
   } else if (!hasToken) {
-    printNextCommands(['agentfeed login']);
+    printNextCommands([
+      'agentfeed login',
+      ...(pending > 0
+        ? ['agentfeed publish --latest --yes', 'agentfeed discard --latest']
+        : ['agentfeed share --dry'])
+    ]);
   } else if (pending > 0) {
     printNextCommands([
       'agentfeed publish --latest --yes',

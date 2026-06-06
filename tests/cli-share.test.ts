@@ -244,6 +244,32 @@ describe('share CLI command', () => {
     expect(stdout).toContain('agentfeed preview --id');
   });
 
+  it('fails malformed project config with actionable recovery before share dry-run', async () => {
+    await writeFile(join(dir, '.agentfeed', 'config.json'), '{not-json');
+
+    const failure = await runCliFailure(['share', '--dry', '--all']);
+
+    expect(failure.stdout).toBe('');
+    expect(failure.stderr).toContain('AgentFeed config is unreadable or invalid JSON');
+    expect(failure.stderr).toContain('Re-run agentfeed init or restore the file from backup');
+    expect(failure.stderr).not.toContain('Unexpected token');
+  });
+
+  it('fails malformed project config shape before share dry-run collection', async () => {
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.project.tags = 'not-an-array';
+    await writeFile(configPath, JSON.stringify(config, null, 2));
+
+    const failure = await runCliFailure(['share', '--dry', '--all']);
+
+    expect(failure.stdout).toBe('');
+    expect(failure.stderr).toContain('AgentFeed config is invalid');
+    expect(failure.stderr).toContain('project.tags must be an array of strings');
+    expect(failure.stderr).toContain('Re-run agentfeed init or restore the file from backup');
+    expect(failure.stderr).not.toContain('TypeError');
+  });
+
   it('guides login when share or publish needs a token', async () => {
     const share = await runCliFailure(['share', '--yes', '--all']);
     expect(share.stdout).toBe('');

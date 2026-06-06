@@ -42,6 +42,16 @@ async function runCli(args: string[]): Promise<{ stdout: string; stderr: string 
   });
 }
 
+async function runCliFailure(args: string[]): Promise<{ stdout: string; stderr: string }> {
+  try {
+    await runCli(args);
+  } catch (error) {
+    const failure = error as { stdout?: string; stderr?: string };
+    return { stdout: failure.stdout ?? '', stderr: failure.stderr ?? '' };
+  }
+  throw new Error(`Expected agentfeed ${args.join(' ')} to fail`);
+}
+
 async function initProject(): Promise<void> {
   await runCli(['init', '--no-git-check', '--project-name', 'setup-polish']);
 }
@@ -61,6 +71,16 @@ describe('CLI init and hook setup UX', () => {
     expect(stdout).toContain('agentfeed hook install claude-code');
     expect(stdout).toContain('agentfeed share --dry');
     expect(stderr).toBe('');
+  });
+
+  it('guides init before hook install when the project is not initialized', async () => {
+    const failure = await runCliFailure(['hook', 'install', 'claude-code']);
+
+    expect(failure.stdout).toBe('');
+    expect(failure.stderr).toContain('AgentFeed project is not initialized.');
+    expect(failure.stderr).toContain('Run: agentfeed init');
+    expect(failure.stderr).not.toContain('TypeError');
+    expect(existsSync(join(dir, '.claude', 'settings.json'))).toBe(false);
   });
 
   it('explains hook install dry runs without writing Claude settings', async () => {

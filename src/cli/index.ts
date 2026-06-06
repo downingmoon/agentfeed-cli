@@ -1123,6 +1123,7 @@ async function cmdHook(args: string[]) {
   const action = args[0];
   const target = args[1];
   if (target !== 'claude-code') throw new Error(unsupportedHookTargetMessage());
+  await loadProjectConfig(process.cwd());
   const root = await resolveProjectRoot(process.cwd());
   const scope = flag(args, '--global') ? 'global' : 'project';
   const settingsPath = option(args, '--settings-path');

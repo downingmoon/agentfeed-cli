@@ -134,9 +134,28 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('--source <source>');
     expect(stdout).toContain('--session-file <path>');
     expect(stdout).toContain('--no-save-cursor');
+    expect(stdout).toContain('Examples:');
+    expect(stdout).toContain('agentfeed collect --explain');
+    expect(stdout).toContain('agentfeed collect --json --no-save-cursor');
     expect(stdout).not.toContain('Usage: agentfeed <command>');
     expect(stdout).not.toContain('agentfeed login --token-stdin');
     expect(stderr).toBe('');
+  });
+
+  it('prints example-driven help for the main review workflow commands', async () => {
+    const expectations: Array<[string[], string[]]> = [
+      [['share', '--help'], ['Examples:', 'agentfeed share --dry', 'agentfeed share --yes --open-review']],
+      [['publish', '--help'], ['Examples:', 'agentfeed publish --latest --yes', 'agentfeed publish --latest --json --clipboard']],
+      [['scan', '--help'], ['Examples:', 'agentfeed scan --latest --dry-run', 'agentfeed scan --path .']],
+      [['open', '--help'], ['Examples:', 'agentfeed open --latest', 'agentfeed open --id draft_20260606_120000_abcd']],
+    ];
+
+    for (const [args, expectedLines] of expectations) {
+      const { stdout, stderr } = await runCli(args);
+      expect(stderr).toBe('');
+      for (const line of expectedLines) expect(stdout).toContain(line);
+      expect(stdout).not.toContain('Usage: agentfeed <command>');
+    }
   });
 
   it('prints login-specific help for login --help', async () => {

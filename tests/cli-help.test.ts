@@ -73,6 +73,14 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('Global options:');
     expect(stdout).toContain('agentfeed --version');
     expect(stdout).toContain('agentfeed -v');
+    expect(stdout).toContain('Quickstart:');
+    expect(stdout).toContain('agentfeed init');
+    expect(stdout).toContain('agentfeed login');
+    expect(stdout).toContain('agentfeed share --dry');
+    expect(stdout).toContain('agentfeed share --yes --open-review');
+    expect(stdout).toContain('Headless login:');
+    expect(stdout).toContain('agentfeed login --token-stdin');
+    expect(stdout).toContain('agentfeed login --token - --no-save');
     expect(stdout).toContain('Commands:');
     expect(stdout).toContain('Start:');
     expect(stdout).toContain('Share work:');
@@ -135,6 +143,8 @@ describe('CLI help and option validation', () => {
 
     expect(stdout).toContain('Usage: agentfeed collect');
     expect(stdout).toContain('--source <source>');
+    expect(stdout).toContain('Omit --source to auto-detect Claude/Codex/Cursor/Gemini sessions and plugins.');
+    expect(stdout).toContain('Override auto-detected source');
     expect(stdout).toContain('--session-file <path>');
     expect(stdout).toContain('--no-save-cursor');
     expect(stdout).toContain('Examples:');

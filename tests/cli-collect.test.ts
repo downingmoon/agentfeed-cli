@@ -173,7 +173,9 @@ describe('collect CLI command', () => {
     const stderr = String((error as { stderr?: Buffer | string }).stderr ?? '');
     expect(stderr).toContain('Unsupported agent source: gemni-cli');
     expect(stderr).toContain('Supported sources: claude-code, codex, cursor, gemini-cli, other');
+    expect(stderr).toContain('Tip: omit --source to let AgentFeed auto-detect Claude/Codex/Cursor/Gemini sessions.');
     expect(stderr).toContain('Did you mean: --source gemini-cli');
+    expect(stderr).toContain('Run: agentfeed collect --explain');
     expect(stderr).toContain('Run: agentfeed collect --source gemini-cli --explain');
     expect(stderr).toContain('Run: agentfeed collect --help');
   });

@@ -1941,7 +1941,8 @@ function printHelp(): void {
   print(ui.heading('Usage: agentfeed <command> [options]'));
   print(`Version: ${AGENTFEED_CLI_VERSION}`);
   print(`\n${ui.section('Global options')}:\n  agentfeed --help\n  agentfeed --version\n  agentfeed -v`);
-  print(`\n${ui.section('Quickstart')}:\n  agentfeed init\n  agentfeed login\n  printf %s "$TOKEN" | agentfeed login --token-stdin\n  printf %s "$TOKEN" | agentfeed login --token - --no-save\n  agentfeed share --yes --open-review`);
+  print(`\n${ui.section('Quickstart')}:\n  agentfeed init\n  agentfeed login\n  agentfeed share --dry\n  agentfeed share --yes --open-review`);
+  print(`\n${ui.section('Headless login')}:\n  printf %s "$TOKEN" | agentfeed login --token-stdin\n  printf %s "$TOKEN" | agentfeed login --token - --no-save`);
   print(`\n${ui.section('Daily workflow')}:\n  agentfeed share\n  agentfeed share --yes\n  agentfeed share --dry\n  agentfeed share --note "Fixed auth flow"\n  agentfeed status`);
   print(`\n${ui.section('Draft review')}:\n  agentfeed collect --explain\n  agentfeed preview --latest\n  agentfeed publish --latest --yes\n  agentfeed open --latest`);
   print(`\n${ui.section('Advanced and diagnostics')}:\n  agentfeed doctor\n  agentfeed scan --id <draft_id> --dry-run\n  agentfeed hook install claude-code\n  agentfeed drafts\n  agentfeed discard --id <draft_id>\n  agentfeed rotate\n  agentfeed logout`);
@@ -2014,9 +2015,10 @@ Options:
     collect: `Usage: agentfeed collect [options]
 
 Collect local agent work into a private review draft without uploading by default.
+Omit --source to auto-detect Claude/Codex/Cursor/Gemini sessions and plugins.
 
 Common options:
-  --source <source>         Agent source: claude-code, codex, cursor, gemini-cli, other
+  --source <source>         Override auto-detected source: claude-code, codex, cursor, gemini-cli, other
   --session-file <path>     Read an explicit agent session file
   --since <timestamp>       Start collection window (ISO timestamp or last-collect)
   --until <timestamp>       End collection window (ISO timestamp)
@@ -2041,11 +2043,12 @@ Examples:
     share: `Usage: agentfeed share [options]
 
 Collect, preview, and optionally upload a private review draft in one daily workflow.
+Omit --source to auto-detect Claude/Codex/Cursor/Gemini sessions and plugins.
 
 Options:
   --yes, -y                 Upload without interactive confirmation
   --dry, --dry-run          Collect and preview only; do not upload
-  --source <source>         Agent source: claude-code, codex, cursor, gemini-cli, other
+  --source <source>         Override auto-detected source: claude-code, codex, cursor, gemini-cli, other
   --session-file <path>     Read an explicit agent session file
   --since <timestamp>       Start collection window (ISO timestamp or last-collect)
   --until <timestamp>       End collection window (ISO timestamp)

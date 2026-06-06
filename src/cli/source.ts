@@ -55,13 +55,16 @@ function unsupportedSourceMessage(value: string, command?: SourceCommand): strin
   const suggestion = closestSource(value);
   const lines = [
     `Unsupported agent source: ${value}`,
-    `Supported sources: ${SUPPORTED_SOURCES.join(', ')}`
+    `Supported sources: ${SUPPORTED_SOURCES.join(', ')}`,
+    'Tip: omit --source to let AgentFeed auto-detect Claude/Codex/Cursor/Gemini sessions.'
   ];
   if (suggestion) lines.push(`Did you mean: --source ${suggestion}`);
   if (command === 'share') {
+    lines.push('Run: agentfeed share --dry');
     lines.push(`Run: agentfeed share --source ${suggestion ?? '<source>'} --dry`);
     lines.push('Run: agentfeed share --help');
   } else {
+    lines.push('Run: agentfeed collect --explain');
     lines.push(`Run: agentfeed collect --source ${suggestion ?? '<source>'} --explain`);
     lines.push('Run: agentfeed collect --help');
   }

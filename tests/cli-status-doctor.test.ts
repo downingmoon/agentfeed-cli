@@ -666,11 +666,16 @@ describe('status and doctor provenance output', () => {
       credentials_file_deleted: boolean;
       environment_token_active: boolean;
       warnings: string[];
+      security_checklist?: Array<{ name: string; status: string; detail: string; next_action?: string }>;
       next_actions?: string[];
     };
     expect(result.credentials_file_deleted).toBe(true);
     expect(result.environment_token_active).toBe(true);
     expect(result.warnings.join('\n')).toContain('AGENTFEED_TOKEN is still set');
+    expect(result.security_checklist).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'Saved credentials', status: 'done', detail: 'removed from this machine' }),
+      expect.objectContaining({ name: 'Environment token', status: 'attention', detail: 'AGENTFEED_TOKEN is still active in this shell', next_action: 'unset AGENTFEED_TOKEN' })
+    ]));
     expect(result.next_actions).toEqual(['agentfeed status']);
     expect(stdout).not.toContain(token);
     expect(stderr).not.toContain(token);
@@ -700,6 +705,9 @@ describe('status and doctor provenance output', () => {
     expect(stdout).toContain('AgentFeed saved credentials removed.');
     expect(stdout).toContain('Summary');
     expect(stdout).toContain('Credentials file: removed');
+    expect(stdout).toContain('Security checklist');
+    expect(stdout).toContain('Saved credentials: removed from this machine');
+    expect(stdout).toContain('Environment token: not set in this shell');
     expect(stdout).toContain('Next');
     expect(stdout).toContain('agentfeed status');
     expect(stdout).not.toContain(token);

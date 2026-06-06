@@ -1291,9 +1291,45 @@ async function cmdStatus(args: string[] = []) {
   printNextCommands(nextActions);
 }
 
+
+interface LogoutSecurityChecklistItem {
+  name: string;
+  status: 'done' | 'attention';
+  detail: string;
+  next_action?: string;
+}
+
+function logoutSecurityChecklist(options: { credentialsFileDeleted: boolean; envTokenActive: boolean; keychainDeleted?: boolean | null }): LogoutSecurityChecklistItem[] {
+  const items: LogoutSecurityChecklistItem[] = [
+    options.credentialsFileDeleted
+      ? { name: 'Saved credentials', status: 'done', detail: 'removed from this machine' }
+      : { name: 'Saved credentials', status: 'done', detail: 'no saved credentials found' },
+    options.envTokenActive
+      ? { name: 'Environment token', status: 'attention', detail: 'AGENTFEED_TOKEN is still active in this shell', next_action: 'unset AGENTFEED_TOKEN' }
+      : { name: 'Environment token', status: 'done', detail: 'not set in this shell' }
+  ];
+  if (options.keychainDeleted === true) items.splice(1, 0, { name: 'OS keychain token', status: 'done', detail: 'removed' });
+  if (options.keychainDeleted === false) items.splice(1, 0, { name: 'OS keychain token', status: 'attention', detail: 'not removed', next_action: 'agentfeed logout' });
+  return items;
+}
+
+function printLogoutSecurityChecklist(items: LogoutSecurityChecklistItem[]): void {
+  print(ui.section('Security checklist'));
+  for (const item of items) {
+    const marker = item.status === 'done' ? ui.good('✓') : ui.warn('!');
+    const next = item.next_action ? ` → ${item.next_action}` : '';
+    print(`${marker} ${item.name}: ${item.detail}${next}`);
+  }
+}
+
 async function cmdLogout(args: string[]) {
   const result = await deleteSavedCredentials();
   const envTokenActive = Boolean(process.env.AGENTFEED_TOKEN);
+  const securityChecklist = logoutSecurityChecklist({
+    credentialsFileDeleted: result.credentials_file_deleted,
+    envTokenActive,
+    keychainDeleted: result.keychain_deleted
+  });
   if (flag(args, '--json')) {
     print(JSON.stringify({
       credentials_file_deleted: result.credentials_file_deleted,
@@ -1304,6 +1340,7 @@ async function cmdLogout(args: string[]) {
         ...result.warnings,
         ...(envTokenActive ? ['AGENTFEED_TOKEN is still set in this shell; unset it or update your shell/secret manager to finish logout.'] : [])
       ],
+      security_checklist: securityChecklist,
       next_actions: ['agentfeed status']
     }, null, 2));
     return;
@@ -1324,6 +1361,8 @@ async function cmdLogout(args: string[]) {
     print(ui.section('Warnings'));
     for (const warning of warnings) print(`Warning: ${warning}`);
   }
+  print();
+  printLogoutSecurityChecklist(securityChecklist);
   print();
   print(ui.section('Next'));
   print(`  ${ui.command('agentfeed status')}`);

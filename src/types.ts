@@ -210,6 +210,7 @@ export interface ChangedFileSummary {
 }
 
 export interface GitMetrics {
+  repository_root?: string | null;
   repository_url?: string | null;
   branch?: string | null;
   head_commit?: string | null;

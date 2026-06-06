@@ -805,6 +805,7 @@ async function cmdStatus(args: string[] = []) {
   const allWarnings = [...credentialResolution.warnings, ...statusWarnings];
   const apiBaseUrl = credentialResolution.api_base_url ?? creds?.api_base_url ?? await resolveApiBaseUrl();
   const git = await collectGitMetrics(process.cwd());
+  const insideGitRepository = Boolean(git.repository_root);
   const health = diagnostics.invalidApiBaseUrl
     ? 'attention needed'
     : !hasToken
@@ -843,7 +844,7 @@ async function cmdStatus(args: string[] = []) {
         initialized: Boolean(config),
         name: config?.project.name ?? null,
         root: config ? root : null,
-        git_repository: Boolean(git.branch || git.head_commit),
+        git_repository: insideGitRepository,
         claude_code_hook: hook
       },
       collection: {
@@ -883,7 +884,7 @@ async function cmdStatus(args: string[] = []) {
   print(ui.section('Project'));
   print(`Project initialized: ${config ? 'yes' : 'no'}`);
   if (config) print(`Project name: ${config.project.name}`);
-  print(`Git repository: ${git.branch || git.head_commit ? 'yes' : 'no'}`);
+  print(`Git repository: ${insideGitRepository ? 'yes' : 'no'}`);
   print(`Claude Code hook: ${hook}`);
   print();
   print(ui.section('Collection'));
@@ -1318,7 +1319,7 @@ async function cmdDoctor(args: string[] = []) {
   const git = await collectGitMetrics(process.cwd());
   const projectChecks: Array<[string, boolean | string]> = [
     ['project config valid', projectConfigValid ? 'yes' : 'no'],
-    ['current directory is git repository', git.branch || git.head_commit ? 'yes' : 'no']
+    ['current directory is git repository', git.repository_root ? 'yes' : 'no']
   ];
   const collectionChecks: Array<[string, boolean | string]> = [
     ['last collection cursor', collectionStateLabel],

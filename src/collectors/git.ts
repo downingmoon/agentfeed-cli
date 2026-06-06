@@ -50,7 +50,7 @@ function numstatPath(pathRaw?: string): string | null {
 
 export async function collectGitMetrics(cwd: string): Promise<GitMetrics> {
   const root = await findGitRoot(cwd);
-  if (!root) return { dirty: false, files_changed: 0, lines_added: 0, lines_removed: 0, changed_files: [] };
+  if (!root) return { repository_root: null, dirty: false, files_changed: 0, lines_added: 0, lines_removed: 0, changed_files: [] };
 
   const [status, numstat, cachedNumstat, branch, head, remote] = await Promise.all([
     run('git', ['status', '--porcelain', '-uall'], root),
@@ -101,6 +101,7 @@ export async function collectGitMetrics(cwd: string): Promise<GitMetrics> {
   }
 
   return {
+    repository_root: root,
     repository_url: remote.ok ? stripUrlUserInfo(remote.stdout) : null,
     branch: branch.ok ? branch.stdout.trim() || null : null,
     head_commit: head.ok ? head.stdout.trim() || null : null,

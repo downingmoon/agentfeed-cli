@@ -125,6 +125,61 @@ describe('status and doctor provenance output', () => {
     expect(stdout).not.toMatch(ANSI_ESCAPE_PATTERN);
   });
 
+  it('status and doctor report empty git repositories before the first commit', async () => {
+    execFileSync('git', ['init', '-q'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: process.env
+    });
+    execFileSync(process.execPath, [cliPath, 'init', '--project-name', 'empty-git'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    const stdout = execFileSync(process.execPath, [cliPath, 'status'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: '',
+        AGENTFEED_API_BASE_URL: 'https://api.agentfeed.dev/v1',
+        FORCE_COLOR: undefined
+      }
+    });
+    expect(stdout).toContain('Git repository: yes');
+
+    const { stdout: statusJsonStdout } = await execFileAsync(process.execPath, [cliPath, 'status', '--json'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: '',
+        AGENTFEED_API_BASE_URL: 'https://api.agentfeed.dev/v1',
+        FORCE_COLOR: undefined
+      }
+    });
+    const statusJson = JSON.parse(statusJsonStdout) as { project: { git_repository: boolean } };
+    expect(statusJson.project.git_repository).toBe(true);
+
+    const { stdout: doctorJsonStdout } = await execFileAsync(process.execPath, [cliPath, 'doctor', '--json'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: '',
+        AGENTFEED_API_BASE_URL: 'http://161.33.171.81:18080/v1',
+        AGENTFEED_ALLOW_INSECURE_API: '',
+        FORCE_COLOR: undefined
+      }
+    });
+    const doctorJson = JSON.parse(doctorJsonStdout) as { project: Array<{ name: string; value: string }> };
+    expect(doctorJson.project.find((row) => row.name === 'current directory is git repository')?.value).toBe('yes');
+  });
+
   it('status json prints parseable automation output without headings or secrets', async () => {
     const token = 'af_live_status_json_secret';
     execFileSync(process.execPath, [cliPath, 'init', '--no-git-check', '--project-name', 'status-json'], {

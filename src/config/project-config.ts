@@ -175,7 +175,14 @@ async function backupIfExists(path: string, backupDir: string, name: string): Pr
 export async function initProject(options: { cwd?: string; projectName?: string; noGitCheck?: boolean; force?: boolean } = {}) {
   const cwd = options.cwd ?? processCwd();
   const gitRoot = await findGitRoot(cwd);
-  if (!options.noGitCheck && !gitRoot) throw new Error('Not inside a Git repository. Use --no-git-check to initialize anyway.');
+  if (!options.noGitCheck && !gitRoot) {
+    throw new Error([
+      'Not inside a Git repository.',
+      'Run: agentfeed init --no-git-check',
+      'Or create a git repository first:',
+      'Run: git init && agentfeed init'
+    ].join('\n'));
+  }
   const root = gitRoot ?? cwd;
   const afDir = join(root, '.agentfeed');
   const configPath = join(afDir, 'config.json');

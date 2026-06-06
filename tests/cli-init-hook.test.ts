@@ -57,6 +57,15 @@ async function initProject(): Promise<void> {
 }
 
 describe('CLI init and hook setup UX', () => {
+  it('gives copyable recovery when init runs outside a git repository', async () => {
+    const failure = await runCliFailure(['init']);
+
+    expect(failure.stdout).toBe('');
+    expect(failure.stderr).toContain('Not inside a Git repository.');
+    expect(failure.stderr).toContain('Run: agentfeed init --no-git-check');
+    expect(failure.stderr).toContain('Run: git init && agentfeed init');
+  });
+
   it('prints a sectioned initialization summary with setup next actions', async () => {
     const { stdout, stderr } = await runCli(['init', '--no-git-check', '--project-name', 'setup-polish']);
 

@@ -307,7 +307,7 @@ describe('CLI help and option validation', () => {
       [['commands', '--help'], ['Usage: agentfeed commands', 'command catalog', '--json']],
       [['init', '--help'], ['Usage: agentfeed init', '--project-name', '--no-git-check', '--force']],
       [['login', '--help'], ['Usage: agentfeed login', '--token-stdin', '--no-open', '--json', 'Examples:', 'Safety:', 'agentfeed login --no-open']],
-      [['logout', '--help'], ['Usage: agentfeed logout', '--json']],
+      [['logout', '--help'], ['Usage: agentfeed logout', '--json', 'Examples:', 'Safety:', 'agentfeed status']],
       [['status', '--help'], ['Usage: agentfeed status', 'credential, API, project', '--json']],
       [['rotate', '--help'], ['Usage: agentfeed rotate', '--browser', '--api-base-url', 'Examples:', 'Safety:', 'agentfeed rotate --no-open']],
       [['version', '--help'], ['Usage: agentfeed version', 'agentfeed --version', '--json']],
@@ -360,6 +360,19 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('Safety:');
     expect(stdout).toContain('revokes the previous saved token');
     expect(stdout).toContain('AGENTFEED_TOKEN');
+    expect(stderr).toBe('');
+  });
+
+  it('prints logout-specific safety guidance for logout --help', async () => {
+    const { stdout, stderr } = await runCli(['logout', '--help']);
+
+    expect(stdout).toContain('Usage: agentfeed logout');
+    expect(stdout).toContain('Examples:');
+    expect(stdout).toContain('agentfeed logout --json');
+    expect(stdout).toContain('Safety:');
+    expect(stdout).toContain('saved by the CLI');
+    expect(stdout).toContain('AGENTFEED_TOKEN');
+    expect(stdout).toContain('agentfeed status after logout');
     expect(stderr).toBe('');
   });
 

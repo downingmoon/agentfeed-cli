@@ -3208,7 +3208,17 @@ Remove saved AgentFeed credentials from this machine.
 
 Options:
   --json                    Print machine-readable logout status
-  --help, -h                Show this help`,
+  --help, -h                Show this help
+
+Examples:
+  agentfeed logout
+  agentfeed logout --json
+  agentfeed status
+
+Safety:
+  Logout removes AgentFeed credentials saved by the CLI.
+  If AGENTFEED_TOKEN is set in your shell, unset or rotate that secret separately.
+  Run agentfeed status after logout to confirm no active token remains.`,
     status: `Usage: agentfeed status
 
 Show credential, API, project, hook, draft, and collection cursor status.

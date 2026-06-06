@@ -694,6 +694,38 @@ describe('share CLI command', () => {
     }
   });
 
+  it('prints a structured manual review URL fallback when the browser cannot be opened', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.upload = {
+      uploaded: true,
+      worklog_id: 'worklog_manual_open',
+      review_url: 'https://agentfeed.dev/worklogs/worklog_manual_open/review',
+      uploaded_at: '2026-05-31T00:00:00.000Z'
+    };
+    await writeDraft(dir, draft);
+
+    const open = await execFileAsync(process.execPath, [cliPath, 'open', '--id', draft.id], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TEST_DISABLE_REAL_BROWSER: '1',
+        AGENTFEED_TEST_BROWSER_LOG: ''
+      }
+    });
+
+    expect(open.stdout).toContain('AgentFeed review URL');
+    expect(open.stdout).toContain('Browser open failed. Open this URL manually:');
+    expect(open.stdout).toContain('Summary');
+    expect(open.stdout).toContain(`Draft: ${draft.id}`);
+    expect(open.stdout).toContain('Review URL:');
+    expect(open.stdout).toContain('https://agentfeed.dev/worklogs/worklog_manual_open/review');
+    expect(open.stdout).toContain('Next');
+    expect(open.stdout).toContain(`agentfeed preview --id ${draft.id}`);
+    expect(open.stdout).toContain('agentfeed status');
+  });
+
   it('opens a trusted AgentFeed review URL from a saved uploaded draft', async () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
     draft.upload = {

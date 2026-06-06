@@ -955,7 +955,9 @@ async function cmdPreview(args: string[]) {
   const primaryAction = draft.upload.uploaded
     ? `agentfeed open --id ${draft.id}`
     : `agentfeed publish --id ${draft.id} --yes`;
-  print(`Actions:\n  ${primaryAction}\n  agentfeed scan --id ${draft.id}`);
+  print(ui.section('Next'));
+  print(`  ${ui.command(primaryAction)}`);
+  print(`  ${ui.command(`agentfeed scan --id ${draft.id}`)}`);
 }
 
 async function cmdPublish(args: string[]) {
@@ -1317,9 +1319,16 @@ async function cmdOpen(args: string[]) {
   const opened = await openBrowser(draft.upload.review_url);
   if (!opened) {
     print(ui.heading('AgentFeed review URL'));
-    print();
     print('Browser open failed. Open this URL manually:');
-    print(draft.upload.review_url);
+    print();
+    print(ui.section('Summary'));
+    print(`Draft: ${draft.id}`);
+    print(`Review URL:
+${draft.upload.review_url}`);
+    print();
+    print(ui.section('Next'));
+    print(`  ${ui.command(`agentfeed preview --id ${draft.id}`)}`);
+    print(`  ${ui.command('agentfeed status')}`);
     return;
   }
   print(ui.heading('AgentFeed review opened'));

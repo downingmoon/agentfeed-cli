@@ -53,7 +53,8 @@ describe('preview CLI command', () => {
     expect(stdout).toContain(`ID: ${draft.id}`);
     expect(stdout).toContain('Title: Preview actions');
     expect(stdout).toContain('Upload: pending');
-    expect(stdout).toContain('Actions:');
+    expect(stdout).toContain('Next');
+    expect(stdout).not.toContain('Actions:');
     expect(stdout).toContain(`agentfeed publish --id ${draft.id} --yes`);
     expect(stdout).toContain(`agentfeed scan --id ${draft.id}`);
   });

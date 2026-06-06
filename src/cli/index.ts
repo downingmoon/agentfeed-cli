@@ -1517,11 +1517,28 @@ async function draftListRow(row: Awaited<ReturnType<typeof listDrafts>>[number])
   }
 }
 
+function draftListNextActions(rows: DraftListRow[]): string[] {
+  if (!rows.length) {
+    return ['agentfeed collect --explain', 'agentfeed share --dry'];
+  }
+
+  const latest = rows.find((row) => row.valid);
+  if (!latest) {
+    return ['agentfeed collect --explain'];
+  }
+
+  return uniqueNextCommands([
+    `agentfeed preview --id ${latest.id}`,
+    latest.status === 'uploaded' ? `agentfeed open --id ${latest.id}` : `agentfeed publish --id ${latest.id} --yes`
+  ]);
+}
+
 async function cmdDrafts(args: string[]) {
   await loadProjectConfig(process.cwd());
   const rows = await Promise.all((await listDrafts(process.cwd())).map((row) => draftListRow(row)));
+  const nextActions = draftListNextActions(rows);
   if (flag(args, '--json')) {
-    print(JSON.stringify({ drafts: rows }, null, 2));
+    print(JSON.stringify({ drafts: rows, next_actions: nextActions }, null, 2));
     return;
   }
 
@@ -1531,8 +1548,7 @@ async function cmdDrafts(args: string[]) {
     print('No local drafts found.');
     print();
     print(ui.section('Next'));
-    print(`  ${ui.command('agentfeed collect --explain')}`);
-    print(`  ${ui.command('agentfeed share --dry')}`);
+    printNextCommands(nextActions);
     return;
   }
 
@@ -1554,15 +1570,9 @@ async function cmdDrafts(args: string[]) {
     }
   }
 
-  const latest = rows.find((row) => row.valid);
   print();
   print(ui.section('Next'));
-  if (latest) {
-    print(`  ${ui.command(`agentfeed preview --id ${latest.id}`)}`);
-    print(`  ${ui.command(latest.status === 'uploaded' ? `agentfeed open --id ${latest.id}` : `agentfeed publish --id ${latest.id} --yes`)}`);
-  } else {
-    print(`  ${ui.command('agentfeed collect --explain')}`);
-  }
+  printNextCommands(nextActions);
 }
 
 async function cmdDiscard(args: string[]) {

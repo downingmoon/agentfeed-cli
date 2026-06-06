@@ -149,7 +149,18 @@ describe('drafts CLI command', () => {
     expect(stderr).toContain('Run: agentfeed collect --explain');
   });
 
-  it('prints machine-readable draft summaries without human headings', async () => {
+  it('prints machine-readable empty draft next actions without human headings', async () => {
+    const { stdout, stderr } = await runCli(['drafts', '--json']);
+    const output = JSON.parse(stdout) as { drafts?: unknown[]; next_actions?: string[] };
+
+    expect(stderr).toBe('');
+    expect(output.drafts).toEqual([]);
+    expect(output.next_actions).toEqual(['agentfeed collect --explain', 'agentfeed share --dry']);
+    expect(stdout).not.toContain('AgentFeed drafts');
+    expect(stdout).not.toContain('Next');
+  });
+
+  it('prints machine-readable draft summaries with next actions and without human headings', async () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
     draft.worklog.title = 'JSON draft list';
     draft.upload = {
@@ -160,7 +171,7 @@ describe('drafts CLI command', () => {
     await writeDraft(dir, draft);
 
     const { stdout, stderr } = await runCli(['drafts', '--json']);
-    const output = JSON.parse(stdout) as { drafts?: Array<{ id?: string; status?: string; title?: string; review_url?: string | null }> };
+    const output = JSON.parse(stdout) as { drafts?: Array<{ id?: string; status?: string; title?: string; review_url?: string | null }>; next_actions?: string[] };
 
     expect(stderr).toBe('');
     expect(output.drafts).toHaveLength(1);
@@ -170,6 +181,10 @@ describe('drafts CLI command', () => {
       title: 'JSON draft list',
       review_url: 'https://agentfeed.dev/worklogs/worklog_json_list/review'
     });
+    expect(output.next_actions).toEqual([
+      `agentfeed preview --id ${draft.id}`,
+      `agentfeed open --id ${draft.id}`
+    ]);
     expect(stdout).not.toContain('AgentFeed drafts');
     expect(stdout).not.toContain('Next');
   });

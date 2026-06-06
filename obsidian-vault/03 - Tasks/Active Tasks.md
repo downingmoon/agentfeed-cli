@@ -22,12 +22,13 @@ updated: 2026-06-06
 
 
 > [!info] 2026-06-06 활성 Frontend UI/UX polish goal
-> 이전 로컬/CI/contract 상용화 품질 goal은 완료 상태지만, owner가 새로 설정한 목표는 Frontend 디자인/UI/UX 완성도를 한 단계 더 높이는 별도 진행 중 goal이다. 현재 Stage 1~4는 완료/커밋 진행 중이며, 완료 판정 전 Project/Profile, 실제 authenticated visual smoke를 더 확인해야 한다. Worklog detail/review는 Stage 5에서 1차 polish 완료.
+> 이전 로컬/CI/contract 상용화 품질 goal은 완료 상태지만, owner가 새로 설정한 목표는 Frontend 디자인/UI/UX 완성도를 한 단계 더 높이는 별도 진행 중 goal이다. 현재 Stage 1~6은 완료/커밋 진행 중이며, 완료 판정 전 실제 authenticated visual smoke와 screenshot-level QA를 더 확인해야 한다. Worklog detail/review는 Stage 5, Project/Profile은 Stage 6에서 1차 polish 완료.
 > - [[Frontend UI UX Polish Stage 1 2026-06-06]]
 > - [[Frontend UI UX Polish Stage 2 2026-06-06]]
 > - [[Frontend UI UX Polish Stage 3 2026-06-06]]
 > - [[Frontend UI UX Polish Stage 4 2026-06-06]]
 > - [[Frontend UI UX Polish Stage 5 2026-06-06]]
+> - [[Frontend UI UX Polish Stage 6 2026-06-06]]
 
 > [!success] 2026-06-04 로컬 상용화 품질 evidence
 > - CLI `npm run release:preflight`: 통과, 397 tests passed.
@@ -133,8 +134,8 @@ updated: 2026-06-06
 
 ## P2 — 제품 polish backlog
 
-- [~] Settings/Projects 편집 form의 label/id 연결을 더 촘촘하게 보강. Settings select/toggle/token controls는 Stage 4에서 1차 보강 완료. Projects/Profile 후속 필요.
-- [ ] Project/Profile tabs의 `aria-controls`/tabpanel 연결 보강.
+- [x] Settings/Projects/Profile tab/control semantics 1차 보강. Settings는 Stage 4, Worklog는 Stage 5, Project/Profile tabpanel 연결은 Stage 6에서 완료.
+- [x] Project/Profile tabs의 `aria-controls`/tabpanel 연결 보강.
 - [ ] 사용자용 quick-start 문서와 개발자용 runbook 분리.
 - [ ] commercial readiness evidence artifact 위치와 재실행 절차를 운영 runbook으로 분리.
 - [ ] 실제 배포 후 [[Runtime Configuration]]에 production URL/환경 예시 추가.

@@ -607,6 +607,37 @@ function hookNextActions(action: 'install' | 'uninstall', dryRun = false): strin
   return ['agentfeed status'];
 }
 
+
+interface InitChecklistItem {
+  name: string;
+  detail: string;
+  next_action?: string;
+}
+
+function initSetupChecklist(alreadyInitialized: boolean): InitChecklistItem[] {
+  return alreadyInitialized
+    ? [
+      { name: 'Project', detail: 'existing config kept' },
+      { name: 'Status', detail: 'inspect credentials, API, hooks, and drafts', next_action: 'agentfeed status' },
+      { name: 'First draft', detail: 'collect locally without uploading', next_action: 'agentfeed share --dry' },
+      { name: 'Reinitialize', detail: 'backup and recreate config only if needed', next_action: 'agentfeed init --force' }
+    ]
+    : [
+      { name: 'Project', detail: 'config ready' },
+      { name: 'Account', detail: 'connect this terminal to AgentFeed', next_action: 'agentfeed login' },
+      { name: 'Agent hook', detail: 'capture Claude Code sessions automatically', next_action: 'agentfeed hook install claude-code' },
+      { name: 'First draft', detail: 'collect locally without uploading', next_action: 'agentfeed share --dry' }
+    ];
+}
+
+function printInitSetupChecklist(items: InitChecklistItem[]): void {
+  print(ui.section('Setup checklist'));
+  for (const item of items) {
+    const next = item.next_action ? ` → ${item.next_action}` : '';
+    print(`• ${item.name}: ${item.detail}${next}`);
+  }
+}
+
 function initNextActions(alreadyInitialized: boolean): string[] {
   return alreadyInitialized
     ? ['agentfeed status', 'agentfeed share --dry', 'agentfeed init --force']
@@ -942,6 +973,7 @@ async function cmdInit(args: string[]) {
     force: flag(args, '--force')
   });
   const nextActions = initNextActions(result.alreadyInitialized);
+  const setupChecklist = initSetupChecklist(result.alreadyInitialized);
   if (flag(args, '--json')) {
     print(JSON.stringify({
       already_initialized: result.alreadyInitialized,
@@ -953,6 +985,7 @@ async function cmdInit(args: string[]) {
       root: result.root,
       config_path: '.agentfeed/config.json',
       backup_paths: result.backupPaths.map((backupPath) => projectRelativePath(result.root, backupPath)),
+      setup_checklist: setupChecklist,
       next_actions: nextActions
     }, null, 2));
     return;
@@ -973,6 +1006,8 @@ async function cmdInit(args: string[]) {
     print(ui.section('Backups'));
     for (const backupPath of result.backupPaths) print(projectRelativePath(result.root, backupPath));
   }
+  print();
+  printInitSetupChecklist(setupChecklist);
   print();
   print(ui.section('Next'));
   printNextCommands(nextActions);

@@ -76,6 +76,11 @@ describe('CLI init and hook setup UX', () => {
     expect(stdout).toContain('Project: setup-polish');
     expect(stdout).toContain('Visibility: private');
     expect(stdout).toContain('Config: .agentfeed/config.json');
+    expect(stdout).toContain('Setup checklist');
+    expect(stdout).toContain('Project: config ready');
+    expect(stdout).toContain('Account: connect this terminal to AgentFeed');
+    expect(stdout).toContain('Agent hook: capture Claude Code sessions automatically');
+    expect(stdout).toContain('First draft: collect locally without uploading');
     expect(stdout).toContain('Next');
     expect(stdout).toContain('agentfeed login');
     expect(stdout).toContain('agentfeed hook install claude-code');
@@ -91,6 +96,7 @@ describe('CLI init and hook setup UX', () => {
       root?: string;
       config_path?: string;
       backup_paths?: string[];
+      setup_checklist?: Array<{ name: string; detail: string; next_action?: string }>;
       next_actions?: string[];
     };
 
@@ -102,6 +108,11 @@ describe('CLI init and hook setup UX', () => {
       backup_paths: [],
       next_actions: ['agentfeed login', 'agentfeed hook install claude-code', 'agentfeed share --dry']
     });
+    expect(output.setup_checklist).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'Project', detail: 'config ready' }),
+      expect.objectContaining({ name: 'Account', detail: 'connect this terminal to AgentFeed', next_action: 'agentfeed login' }),
+      expect.objectContaining({ name: 'First draft', next_action: 'agentfeed share --dry' })
+    ]));
     expect(output.root).toMatch(/agentfeed-cli-init-hook-/);
     expect(stdout).not.toContain('AgentFeed initialized');
     expect(stdout).not.toMatch(/(^|\n)Next(\n|$)/);
@@ -120,6 +131,10 @@ describe('CLI init and hook setup UX', () => {
     expect(stdout).toContain('AgentFeed already initialized');
     expect(stdout).toContain('Existing AgentFeed config kept.');
     expect(stdout).toContain('Project: setup-polish');
+    expect(stdout).toContain('Setup checklist');
+    expect(stdout).toContain('Project: existing config kept');
+    expect(stdout).toContain('Status: inspect credentials, API, hooks, and drafts');
+    expect(stdout).toContain('Reinitialize: backup and recreate config only if needed');
     expect(stdout).toContain('Next');
     expect(stdout).toContain('agentfeed status');
     expect(stdout).toContain('agentfeed share --dry');

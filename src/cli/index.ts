@@ -1127,10 +1127,10 @@ async function cmdPreview(args: string[]) {
 }
 
 async function cmdPublish(args: string[]) {
-  const creds = await loadCredentials();
-  if (!creds) throw new Error(missingTokenMessage());
   const id = await resolveDraftId(process.cwd(), args);
   const existingDraft = await readDraft(process.cwd(), id);
+  const creds = await loadCredentials();
+  if (!creds) throw new Error(missingTokenMessage());
   const cacheReuseStatus = cachedUploadReuseStatusForCredentials(existingDraft, creds);
   if (!cacheReuseStatus.reusable && shouldRequireUploadConfirmation({ json: flag(args, '--json'), yes: flag(args, '--yes') || flag(args, '-y') })) {
     printUploadConfirmationRequired(existingDraft, `agentfeed publish --id ${id} --yes`, undefined, existingDraft.upload.uploaded ? { cacheReuseReason: cacheReuseStatus.reason } : {});

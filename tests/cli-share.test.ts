@@ -214,6 +214,22 @@ async function writeCodexShareSession(sessionId: string, model: string, exportNa
 }
 
 describe('share CLI command', () => {
+  it('guides draft creation before login when publishing with no local drafts', async () => {
+    const latest = await runCliFailure(['publish', '--latest', '--yes']);
+    expect(latest.stdout).toBe('');
+    expect(latest.stderr).toContain('No local drafts found.');
+    expect(latest.stderr).toContain('Run: agentfeed collect --explain');
+    expect(latest.stderr).toContain('Run: agentfeed share --dry');
+    expect(latest.stderr).not.toContain('AgentFeed token is missing.');
+
+    const missingId = await runCliFailure(['publish', '--id', 'draft_missing', '--yes']);
+    expect(missingId.stdout).toBe('');
+    expect(missingId.stderr).toContain('Draft not found: draft_missing');
+    expect(missingId.stderr).toContain('Run: agentfeed drafts');
+    expect(missingId.stderr).toContain('Run: agentfeed collect --explain');
+    expect(missingId.stderr).not.toContain('AgentFeed token is missing.');
+  });
+
   it('prints polished human-readable dry-run share preview sections and publish guidance', async () => {
     await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = false;\nexport const shareDryPreview = true;\n');
 
@@ -277,7 +293,11 @@ describe('share CLI command', () => {
     expect(share.stderr).toContain('Run: agentfeed login');
     expect(share.stderr).toContain('Run: printf %s "$TOKEN" | agentfeed login --token-stdin');
 
-    const publish = await runCliFailure(['publish', '--latest', '--yes']);
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.worklog.title = 'Publish needs login';
+    await writeDraft(dir, draft);
+
+    const publish = await runCliFailure(['publish', '--id', draft.id, '--yes']);
     expect(publish.stdout).toBe('');
     expect(publish.stderr).toContain('AgentFeed token is missing.');
     expect(publish.stderr).toContain('Run: agentfeed login');

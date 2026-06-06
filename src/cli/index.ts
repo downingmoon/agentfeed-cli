@@ -531,6 +531,30 @@ function privacyScanNextActions(options: { dryRun?: boolean; draftId?: string; p
   return ['agentfeed status'];
 }
 
+function privacyScanJsonOutput(
+  input: PublicScanFields,
+  result: ReturnType<typeof scanAndRedactFields>,
+  options: { dryRun?: boolean; draftId?: string; path?: string } = {}
+): Record<string, unknown> {
+  const target = options.draftId
+    ? { type: 'draft', id: options.draftId }
+    : options.path
+      ? { type: 'path', path: options.path }
+      : { type: 'input' };
+  const mode = options.draftId
+    ? (options.dryRun ? 'dry_run' : 'redact_and_save')
+    : 'inspect_only';
+  return {
+    dry_run: Boolean(options.dryRun),
+    mode,
+    target,
+    saved: Boolean(options.draftId && !options.dryRun),
+    scan: result.scan,
+    redacted_fields: redactedFieldPreviews(input, result.redacted),
+    next_actions: privacyScanNextActions(options)
+  };
+}
+
 function hookNextActions(action: 'install' | 'uninstall', dryRun = false): string[] {
   if (action === 'install' && dryRun) return ['agentfeed hook install claude-code'];
   if (action === 'install') return ['agentfeed status', 'agentfeed share --dry'];
@@ -1301,7 +1325,7 @@ async function cmdScan(args: string[]) {
     const result = scanAndRedactFields(input);
     const scanOptions = { dryRun, path: option(args, '--path')! };
     print(flag(args, '--json')
-      ? JSON.stringify(dryRun ? { dry_run: true, scan: result.scan, redacted_fields: redactedFieldPreviews(input, result.redacted), next_actions: privacyScanNextActions(scanOptions) } : result.scan, null, 2)
+      ? JSON.stringify(privacyScanJsonOutput(input, result, scanOptions), null, 2)
       : formatPrivacyScanReport(input, result.redacted, result.scan, scanOptions));
     return;
   }
@@ -1316,7 +1340,7 @@ async function cmdScan(args: string[]) {
   }
   const scanOptions = { dryRun, draftId: id };
   print(flag(args, '--json')
-    ? JSON.stringify(dryRun ? { dry_run: true, scan: result.scan, redacted_fields: redactedFieldPreviews(input, result.redacted), next_actions: privacyScanNextActions(scanOptions) } : result.scan, null, 2)
+    ? JSON.stringify(privacyScanJsonOutput(input, result, scanOptions), null, 2)
     : formatPrivacyScanReport(input, result.redacted, result.scan, scanOptions));
 }
 

@@ -176,4 +176,83 @@ describe('scan CLI command', () => {
     expect(stdout).not.toContain('AgentFeed privacy scan');
     expect(stdout).not.toMatch(/(^|\n)Next(\n|$)/);
   });
+
+  it('prints machine-readable saved scan results with next actions', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    draft.worklog.summary = `Deploy with ${secret}`;
+    await writeDraft(dir, draft);
+
+    const stdout = execFileSync(process.execPath, [
+      cliPath,
+      'scan',
+      '--id',
+      draft.id,
+      '--json'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    const output = JSON.parse(stdout) as {
+      dry_run?: boolean;
+      mode?: string;
+      target?: { type?: string; id?: string };
+      saved?: boolean;
+      scan?: { status?: string };
+      redacted_fields?: Array<{ field?: string; value?: string }>;
+      next_actions?: string[];
+    };
+    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+
+    expect(output).toMatchObject({
+      dry_run: false,
+      mode: 'redact_and_save',
+      target: { type: 'draft', id: draft.id },
+      saved: true
+    });
+    expect(output.scan?.status).toBe('danger');
+    expect(output.redacted_fields).toEqual([{ field: 'summary', value: 'Deploy with [REDACTED_SECRET]' }]);
+    expect(output.next_actions).toEqual([
+      `agentfeed preview --id ${draft.id}`,
+      `agentfeed publish --id ${draft.id} --yes`
+    ]);
+    expect(saved.worklog.summary).toBe('Deploy with [REDACTED_SECRET]');
+    expect(stdout).not.toContain('AgentFeed privacy scan');
+    expect(stdout).not.toMatch(/(^|\n)Next(\n|$)/);
+  });
+
+  it('prints machine-readable path scan guidance without pretending a draft was saved', async () => {
+    const stdout = execFileSync(process.execPath, [
+      cliPath,
+      'scan',
+      '--path',
+      dir,
+      '--json'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    const output = JSON.parse(stdout) as {
+      dry_run?: boolean;
+      mode?: string;
+      target?: { type?: string; path?: string };
+      saved?: boolean;
+      scan?: { status?: string };
+      next_actions?: string[];
+    };
+
+    expect(output).toMatchObject({
+      dry_run: false,
+      mode: 'inspect_only',
+      target: { type: 'path', path: dir },
+      saved: false
+    });
+    expect(output.scan?.status).toBe('safe');
+    expect(output.next_actions).toEqual(['agentfeed collect --explain']);
+    expect(stdout).not.toContain('AgentFeed privacy scan');
+    expect(stdout).not.toMatch(/(^|\n)Next(\n|$)/);
+  });
 });

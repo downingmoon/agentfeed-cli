@@ -195,6 +195,8 @@ Successful human-readable `share` / `publish` copies the review URL to the clipb
 
 Use `agentfeed open`, `agentfeed open --latest`, or `agentfeed open --id <draft_id>` to reopen a previously uploaded private review draft in your browser. Cached review URLs are opened only when they match the built-in AgentFeed review host, a safe local development host, the Backend-advertised `/v1/metadata` `review_base_url`, or an explicitly configured `AGENTFEED_REVIEW_BASE_URL` exact origin. For self-hosted deployments where the API and review frontend live on different hosts, prefer configuring Backend `FRONTEND_URL` so `/v1/metadata` exposes `review_base_url`; use `AGENTFEED_REVIEW_BASE_URL=https://review.example.com` only as a local override/fallback. Remote review origins must use HTTPS and cannot include credentials, query strings, hashes, or paths.
 
+Use `agentfeed open --json` when another tool needs to hand off the review URL. The command still attempts the browser open, but stdout remains JSON shaped as `{ draft_id, review_url, opened, warnings, next_actions }` so automation can fall back to the URL without parsing human text.
+
 ## Privacy scan dry-run
 
 Run a safe redaction preview before uploading or after manually editing a draft:
@@ -204,6 +206,6 @@ agentfeed scan --id <draft_id> --dry-run
 agentfeed scan --id <draft_id>
 ```
 
-`--dry-run` prints finding severity, field, redaction placeholder, and redacted preview without showing the original secret or modifying the draft. Without `--dry-run`, `scan` updates the draft's uploadable public fields with redacted values and saves the `privacy_scan` result. The scanner redacts common API tokens, secret assignments, private key blocks, authorization headers, credentialed URLs, local/private URLs including IPv6/link-local metadata URLs, emails, and local filesystem paths.
+`--dry-run` prints finding severity, field, redaction placeholder, and redacted preview without showing the original secret or modifying the draft. Without `--dry-run`, `scan` updates the draft's uploadable public fields with redacted values and saves the `privacy_scan` result. Use `--json` for automation; scan JSON is shaped as `{ dry_run, mode, target, saved, scan, redacted_fields, next_actions }` in dry-run, saved-draft, and path-inspection modes. The scanner redacts common API tokens, secret assignments, private key blocks, authorization headers, credentialed URLs, local/private URLs including IPv6/link-local metadata URLs, emails, and local filesystem paths.
 
 `share` and `publish` upload a **private review draft**, not a public worklog. If high-severity findings remain, the CLI now states that public/unlisted publishing is blocked in AgentFeed until those findings are resolved, while the private review upload is still allowed so you can resolve the findings in the web review.

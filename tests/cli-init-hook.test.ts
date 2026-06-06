@@ -70,7 +70,8 @@ describe('CLI init and hook setup UX', () => {
     const { stdout, stderr } = await runCli(['init', '--no-git-check', '--project-name', 'setup-polish']);
 
     expect(stdout).toContain('AgentFeed initialized');
-    expect(stdout).toContain('AgentFeed initialized.');
+    expect(stdout).toContain('Project config created.');
+    expect(stdout).not.toContain('AgentFeed initialized.\n\nSummary');
     expect(stdout).toContain('Summary');
     expect(stdout).toContain('Project: setup-polish');
     expect(stdout).toContain('Visibility: private');

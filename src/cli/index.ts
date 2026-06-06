@@ -631,7 +631,7 @@ async function cmdInit(args: string[]) {
     ? 'Existing AgentFeed config kept.'
     : result.backupPaths.length
       ? 'AgentFeed config recreated after backing up existing files.'
-      : 'AgentFeed initialized.');
+      : 'Project config created.');
   print();
   print(ui.section('Summary'));
   print(`Project: ${result.config.project.name}`);

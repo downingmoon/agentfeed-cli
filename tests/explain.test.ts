@@ -45,6 +45,24 @@ describe('collection explain output', () => {
     expect(output).not.toContain('/Users/');
   });
 
+
+  it('uses compact token units for per-agent metrics', () => {
+    const output = formatCollectionExplain(draftWithMetrics({
+      files_changed: 9,
+      lines_added: 1564,
+      lines_removed: 210,
+      tokens_used: 55_640_583,
+      collection_quality: 'high',
+      agent_metrics: [
+        { agent: 'codex', model: 'gpt-5.5', tokens_used: 2_366_942_496, files_changed: 9, lines_added: 1564, lines_removed: 210, tool_calls: 503, commands_run: 319 }
+      ]
+    }));
+
+    expect(output).toContain('- codex: gpt-5.5 · 2.37B tokens · 9 files · +1564 -210 · 503 tool calls · 319 commands');
+    expect(output).not.toContain('2366942496 tokens');
+    expect(output).not.toContain('2366942K tokens');
+  });
+
   it('prints actionable diagnostics when collection evidence is missing', () => {
     const output = formatCollectionExplain(draftWithMetrics({
       files_changed: 0,

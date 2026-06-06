@@ -1,5 +1,6 @@
 import type { LocalDraft } from '../types.js';
 import { collectionQualityLabel, formatCollectionGuidanceLines, formatCollectionWindowLine } from './collection-diagnostics.js';
+import { formatTokenCount } from '../summary/metric-format.js';
 
 export function formatCollectionExplain(draft: LocalDraft): string {
   const metrics = draft.worklog.metrics;
@@ -11,7 +12,7 @@ export function formatCollectionExplain(draft: LocalDraft): string {
     for (const metric of metrics.agent_metrics) {
       const parts = [
         metric.model ?? null,
-        metric.tokens_used != null ? `${metric.tokens_used} tokens` : null,
+        metric.tokens_used != null ? formatTokenCount(metric.tokens_used) : null,
         metric.files_changed != null ? `${metric.files_changed} files` : null,
         metric.lines_added != null || metric.lines_removed != null ? `+${metric.lines_added ?? 0} -${metric.lines_removed ?? 0}` : null,
         metric.tool_calls != null ? `${metric.tool_calls} tool calls` : null,

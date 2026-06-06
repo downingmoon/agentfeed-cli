@@ -169,11 +169,11 @@ describe('scan CLI command', () => {
       env: { ...process.env, HOME: home }
     });
 
-    const output = JSON.parse(stdout) as { dry_run?: boolean; scan?: { status?: string } };
+    const output = JSON.parse(stdout) as { dry_run?: boolean; scan?: { status?: string }; next_actions?: string[] };
     expect(output.dry_run).toBe(true);
     expect(output.scan?.status).toBe('danger');
+    expect(output.next_actions).toEqual([`agentfeed scan --id ${draft.id}`]);
     expect(stdout).not.toContain('AgentFeed privacy scan');
-    expect(stdout).not.toContain('Next');
-    expect(stdout).not.toContain('agentfeed scan --id');
+    expect(stdout).not.toMatch(/(^|\n)Next(\n|$)/);
   });
 });

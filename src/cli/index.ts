@@ -521,6 +521,16 @@ async function shouldOpenReviewAfterUpload(openFlag: boolean, options: { respect
   }
 }
 
+function privacyScanNextActions(options: { dryRun?: boolean; draftId?: string; path?: string } = {}): string[] {
+  if (options.draftId) {
+    return options.dryRun
+      ? [`agentfeed scan --id ${options.draftId}`]
+      : [`agentfeed preview --id ${options.draftId}`, `agentfeed publish --id ${options.draftId} --yes`];
+  }
+  if (options.path) return ['agentfeed collect --explain'];
+  return ['agentfeed status'];
+}
+
 function formatPrivacyScanReport(input: PublicScanFields, redacted: PublicScanFields, scan: ReturnType<typeof scanAndRedactFields>['scan'], options: { dryRun?: boolean; draftId?: string; path?: string } = {}): string {
   const target = options.draftId ? `draft ${options.draftId}` : options.path ? `path ${options.path}` : 'current input';
   const mode = options.draftId
@@ -567,17 +577,8 @@ function formatPrivacyScanReport(input: PublicScanFields, redacted: PublicScanFi
     lines.push('No redactions needed.');
   }
   lines.push('', ui.section('Next'));
-  if (options.draftId) {
-    if (options.dryRun) {
-      lines.push(`  ${ui.command(`agentfeed scan --id ${options.draftId}`)}`);
-    } else {
-      lines.push(`  ${ui.command(`agentfeed preview --id ${options.draftId}`)}`);
-      lines.push(`  ${ui.command(`agentfeed publish --id ${options.draftId} --yes`)}`);
-    }
-  } else if (options.path) {
-    lines.push(`  ${ui.command('agentfeed collect --explain')}`);
-  } else {
-    lines.push(`  ${ui.command('agentfeed status')}`);
+  for (const command of privacyScanNextActions(options)) {
+    lines.push(`  ${ui.command(command)}`);
   }
   return lines.join('\n');
 }
@@ -1277,9 +1278,10 @@ async function cmdScan(args: string[]) {
     const areas = changedAreas(git.changed_files);
     const input = { changed_areas: areas };
     const result = scanAndRedactFields(input);
+    const scanOptions = { dryRun, path: option(args, '--path')! };
     print(flag(args, '--json')
-      ? JSON.stringify(dryRun ? { dry_run: true, scan: result.scan, redacted_fields: redactedFieldPreviews(input, result.redacted) } : result.scan, null, 2)
-      : formatPrivacyScanReport(input, result.redacted, result.scan, { dryRun, path: option(args, '--path')! }));
+      ? JSON.stringify(dryRun ? { dry_run: true, scan: result.scan, redacted_fields: redactedFieldPreviews(input, result.redacted), next_actions: privacyScanNextActions(scanOptions) } : result.scan, null, 2)
+      : formatPrivacyScanReport(input, result.redacted, result.scan, scanOptions));
     return;
   }
   const id = await resolveDraftId(process.cwd(), args);
@@ -1291,9 +1293,10 @@ async function cmdScan(args: string[]) {
     draft.privacy_scan = result.scan;
     await writeDraft(process.cwd(), draft);
   }
+  const scanOptions = { dryRun, draftId: id };
   print(flag(args, '--json')
-    ? JSON.stringify(dryRun ? { dry_run: true, scan: result.scan, redacted_fields: redactedFieldPreviews(input, result.redacted) } : result.scan, null, 2)
-    : formatPrivacyScanReport(input, result.redacted, result.scan, { dryRun, draftId: id }));
+    ? JSON.stringify(dryRun ? { dry_run: true, scan: result.scan, redacted_fields: redactedFieldPreviews(input, result.redacted), next_actions: privacyScanNextActions(scanOptions) } : result.scan, null, 2)
+    : formatPrivacyScanReport(input, result.redacted, result.scan, scanOptions));
 }
 
 async function cmdHook(args: string[]) {

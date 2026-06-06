@@ -272,6 +272,10 @@ describe('collect CLI command', () => {
     expect(draft.source).toBeTruthy();
     expect(draft.draft).toBeUndefined();
     expect(draft.draft_id).toBeUndefined();
+    expect(draft.next_actions).toEqual([
+      `agentfeed preview --id ${draft.id}`,
+      `agentfeed publish --id ${draft.id} --yes`
+    ]);
     expect(draft.source.collection_window.until).toBe('2026-05-20T02:00:00.000Z');
     await expect(readCollectionState(dir)).resolves.toEqual({ last_collected_at: '2026-05-20T02:00:00.000Z' });
   });
@@ -293,6 +297,10 @@ describe('collect CLI command', () => {
 
     const draft = JSON.parse(stdout);
     expect(draft.id).toMatch(/^draft_/);
+    expect(draft.next_actions).toEqual([
+      `agentfeed preview --id ${draft.id}`,
+      `agentfeed publish --id ${draft.id} --yes`
+    ]);
     expect(stdout).not.toContain('\u001b[');
     expect(stdout).not.toMatch(/(^|\n)(AgentFeed draft|Summary|Signals|Collection|Next|ID:|Preview:|Upload:)/);
   });
@@ -557,6 +565,10 @@ describe('collect CLI command', () => {
         worklog_id: 'worklog_collect_json_upload',
         review_url: 'http://localhost:3001/worklogs/worklog_collect_json_upload/review'
       });
+      expect(draft.next_actions).toEqual([
+        `agentfeed open --id ${draft.id}`,
+        `agentfeed preview --id ${draft.id}`
+      ]);
 
       const savedDraft = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
       expect(draft.upload).toEqual(savedDraft.upload);

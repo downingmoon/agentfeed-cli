@@ -283,6 +283,15 @@ function previewNextActions(draft: LocalDraft): string[] {
   ]);
 }
 
+function collectJsonNextActions(draft: LocalDraft): string[] {
+  return draft.upload.uploaded
+    ? uploadNextActions(draft.id)
+    : uniqueNextCommands([
+      `agentfeed preview --id ${draft.id}`,
+      `agentfeed publish --id ${draft.id} --yes`
+    ]);
+}
+
 function remotePreviewNextActions(draftId: string, valid: boolean): string[] {
   return valid
     ? uniqueNextCommands([`agentfeed publish --id ${draftId} --yes`, `agentfeed scan --id ${draftId}`])
@@ -1140,7 +1149,7 @@ async function cmdCollect(args: string[]) {
       }
     }
     if (!flag(args, '--no-save-cursor')) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
-    print(JSON.stringify(draft, null, 2));
+    print(JSON.stringify({ ...draft, next_actions: collectJsonNextActions(draft) }, null, 2));
     return;
   }
   print(ui.heading(collection.reusedExisting ? 'AgentFeed draft reused' : 'AgentFeed draft ready'));

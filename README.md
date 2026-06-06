@@ -169,7 +169,7 @@ Use `--json` for automation. Dry-run output is shaped as `{ dry_run, reused_exis
 
 ## `collect --json` automation contract
 
-`agentfeed collect --json` prints the local draft object as the JSON root. Automation should read draft fields such as `id`, `source`, `worklog`, `privacy_policy`, and `upload` directly from the root object. When `--upload` is also passed, the same draft-root shape is preserved and `draft.upload` is updated with the upload result (`uploaded`, `worklog_id`, `review_url`, `uploaded_at`). If `--open-review` is requested, `draft.upload.handoff.browser` reports whether the browser handoff succeeded. Unlike `share --json`, `collect --json` is intentionally **not** wrapped in a `{ draft, upload }` envelope; this keeps existing scripts compatible.
+`agentfeed collect --json` prints the local draft object as the JSON root and adds `next_actions`. Automation should read draft fields such as `id`, `source`, `worklog`, `privacy_policy`, and `upload` directly from the root object. Pending drafts point at `preview` and `publish`; when `--upload` is also passed, the same draft-root shape is preserved, `draft.upload` is updated with the upload result (`uploaded`, `worklog_id`, `review_url`, `uploaded_at`), and `next_actions` points at `open` and `preview`. If `--open-review` is requested, `draft.upload.handoff.browser` reports whether the browser handoff succeeded. Unlike `share --json`, `collect --json` is intentionally **not** wrapped in a `{ draft, upload }` envelope; this keeps existing scripts compatible.
 
 ## `preview --json` automation contract
 

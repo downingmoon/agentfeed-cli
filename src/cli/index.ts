@@ -907,9 +907,101 @@ async function cmdDoctor() {
   for (const line of formatAgentSignalLines(await detectAgentSignals({ cwd: process.cwd() }))) print(line);
 }
 
-async function cmdDrafts() {
-  const drafts = await listDrafts(process.cwd());
-  drafts.forEach((d) => print(d.id));
+interface DraftListRow {
+  id: string;
+  path: string;
+  updated_at: string;
+  valid: boolean;
+  project?: string;
+  title?: string;
+  agent?: string;
+  status?: 'pending' | 'uploaded';
+  privacy?: string;
+  findings?: number;
+  metrics?: string;
+  review_url?: string | null;
+  error?: string;
+}
+
+function safeDraftListTitle(draft: LocalDraft): string {
+  const result = scanAndRedactFields({ title: draft.worklog.title });
+  return singleLine(String(result.redacted.title ?? draft.worklog.title));
+}
+
+async function draftListRow(row: Awaited<ReturnType<typeof listDrafts>>[number]): Promise<DraftListRow> {
+  const updatedAt = new Date(row.mtimeMs).toISOString();
+  try {
+    const draft = await readDraft(process.cwd(), row.id);
+    return {
+      id: row.id,
+      path: row.path,
+      updated_at: updatedAt,
+      valid: true,
+      project: draft.project.name,
+      title: safeDraftListTitle(draft),
+      agent: draft.worklog.agent,
+      status: draft.upload.uploaded ? 'uploaded' : 'pending',
+      privacy: draft.privacy_scan.status,
+      findings: draft.privacy_scan.findings.length,
+      metrics: formatMetricsRow(draft),
+      review_url: draft.upload.review_url ?? null
+    };
+  } catch (error) {
+    return {
+      id: row.id,
+      path: row.path,
+      updated_at: updatedAt,
+      valid: false,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+
+async function cmdDrafts(args: string[]) {
+  const rows = await Promise.all((await listDrafts(process.cwd())).map((row) => draftListRow(row)));
+  if (flag(args, '--json')) {
+    print(JSON.stringify({ drafts: rows }, null, 2));
+    return;
+  }
+
+  print(ui.heading(`AgentFeed drafts (${rows.length})`));
+  if (!rows.length) {
+    print();
+    print('No local drafts found.');
+    print();
+    print(ui.section('Next'));
+    print(`  ${ui.command('agentfeed collect --explain')}`);
+    print(`  ${ui.command('agentfeed share --dry')}`);
+    return;
+  }
+
+  print();
+  for (const row of rows) {
+    if (!row.valid) {
+      print(`${row.id}  invalid`);
+      print(`  Error: ${row.error}`);
+      continue;
+    }
+    print(`${row.id}  ${row.status}  ${row.agent}  ${row.privacy} · findings ${row.findings}`);
+    print(`  Project: ${row.project}`);
+    print(`  Title: ${row.title}`);
+    print(`  Metrics: ${row.metrics}`);
+    if (row.status === 'uploaded') {
+      print(`  Open: ${ui.command(`agentfeed open --id ${row.id}`)}`);
+    } else {
+      print(`  Upload: ${ui.command(`agentfeed publish --id ${row.id} --yes`)}`);
+    }
+  }
+
+  const latest = rows.find((row) => row.valid);
+  print();
+  print(ui.section('Next'));
+  if (latest) {
+    print(`  ${ui.command(`agentfeed preview --id ${latest.id}`)}`);
+    print(`  ${ui.command(latest.status === 'uploaded' ? `agentfeed open --id ${latest.id}` : `agentfeed publish --id ${latest.id} --yes`)}`);
+  } else {
+    print(`  ${ui.command('agentfeed collect --explain')}`);
+  }
 }
 
 async function cmdDiscard(args: string[]) {
@@ -1067,7 +1159,7 @@ const COMMAND_DESCRIPTIONS: Record<(typeof PUBLIC_COMMANDS)[number], string> = {
   status: 'Show credentials, project, and draft status',
   doctor: 'Run local diagnostics',
   hook: 'Install or remove agent hooks',
-  drafts: 'List local draft IDs',
+  drafts: 'List local draft summaries',
   discard: 'Delete a local draft',
   rotate: 'Replace the saved ingestion token',
   logout: 'Remove saved credentials',
@@ -1177,6 +1269,7 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     validatePositionals: NO_POSITIONALS('doctor')
   },
   drafts: {
+    flags: ['--json'],
     validatePositionals: NO_POSITIONALS('drafts')
   },
   discard: {
@@ -1467,11 +1560,12 @@ Run local AgentFeed diagnostics for credentials, API reachability, project confi
 
 Options:
   --help, -h                Show this help`,
-    drafts: `Usage: agentfeed drafts
+    drafts: `Usage: agentfeed drafts [options]
 
-List saved local draft IDs.
+List saved local draft summaries and next actions.
 
 Options:
+  --json                    Print machine-readable draft summaries
   --help, -h                Show this help`,
     discard: `Usage: agentfeed discard [options]
 
@@ -1537,7 +1631,7 @@ async function main() {
     case 'scan': return cmdScan(args);
     case 'hook': return cmdHook(args);
     case 'doctor': return cmdDoctor();
-    case 'drafts': return cmdDrafts();
+    case 'drafts': return cmdDrafts(args);
     case 'discard': return cmdDiscard(args);
     case 'open': return cmdOpen(args);
     case 'completion': return cmdCompletion(args);

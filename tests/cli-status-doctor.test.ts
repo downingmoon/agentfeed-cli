@@ -199,6 +199,29 @@ describe('status and doctor provenance output', () => {
     expect(stderr).toBe('');
   });
 
+  it('status recommends project initialization before login when setup has not started', async () => {
+    const { stdout, stderr } = await execFileAsync(process.execPath, [cliPath, 'status'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: '',
+        FORCE_COLOR: undefined
+      }
+    });
+
+    expect(stdout).toContain('AgentFeed status');
+    expect(stdout).toContain('Health: setup needed');
+    expect(stdout).toContain('Project initialized: no');
+    expect(stdout).toContain('User/token: missing');
+    expect(stdout).toContain('Next');
+    expect(stdout).toContain('agentfeed init');
+    expect(stdout).toContain('agentfeed login');
+    expect(stdout.indexOf('agentfeed init')).toBeLessThan(stdout.indexOf('agentfeed login'));
+    expect(stderr).toBe('');
+  });
+
   it('status warns when a repo .env API URL is ignored as unsafe', async () => {
     await writeFile(join(dir, '.env'), 'AGENTFEED_API_BASE_URL=https://evil.example/v1\n');
 
@@ -958,6 +981,33 @@ describe('status and doctor provenance output', () => {
     expect(stdout).toContain('API ready: no');
     expect(stdout).toContain('last collection cursor: 2026-05-20T02:00:00.000Z');
     expect(stdout).toContain('next default collection since: 2026-05-20T02:00:00.000Z');
+  });
+
+  it('doctor lists local setup actions alongside API recheck when multiple checks fail', async () => {
+    const { stdout, stderr } = await execFileAsync(process.execPath, [cliPath, 'doctor'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: '',
+        AGENTFEED_API_BASE_URL: 'http://127.0.0.1:9/v1',
+        AGENTFEED_API_TIMEOUT_MS: '50',
+        FORCE_COLOR: undefined
+      }
+    });
+
+    expect(stdout).toContain('AgentFeed doctor');
+    expect(stdout).toContain('project config valid: no');
+    expect(stdout).toContain('ingestion token exists: no');
+    expect(stdout).toContain('API ready: no');
+    expect(stdout).toContain('Next');
+    expect(stdout).toContain('agentfeed init');
+    expect(stdout).toContain('agentfeed login');
+    expect(stdout).toContain('agentfeed doctor');
+    expect(stdout.indexOf('agentfeed init')).toBeLessThan(stdout.indexOf('agentfeed login'));
+    expect(stdout.indexOf('agentfeed login')).toBeLessThan(stdout.indexOf('agentfeed doctor'));
+    expect(stderr).toBe('');
   });
 
   it('doctor reports remediation instead of failing when environment API URL is remote http', async () => {

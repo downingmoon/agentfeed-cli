@@ -590,6 +590,21 @@ function printDoctorChecks(title: string, checks: Array<[string, boolean | strin
   print();
 }
 
+function uniqueNextCommands(commands: string[]): string[] {
+  const seen = new Set<string>();
+  return commands.filter((command) => {
+    if (seen.has(command)) return false;
+    seen.add(command);
+    return true;
+  });
+}
+
+function printNextCommands(commands: string[]): void {
+  for (const command of uniqueNextCommands(commands)) {
+    print(`  ${ui.command(command)}`);
+  }
+}
+
 async function resolveDraftId(cwd: string, args: string[]): Promise<string> {
   const id = option(args, '--id');
   if (id) return id;
@@ -882,18 +897,25 @@ async function cmdStatus(args: string[] = []) {
   print();
   print(ui.section('Next'));
   if (diagnostics.invalidApiBaseUrl) {
-    print(`  ${ui.command('unset AGENTFEED_API_BASE_URL')}`);
-    print(`  ${ui.command('AGENTFEED_ALLOW_INSECURE_API=1 agentfeed status')}`);
-    print(`  ${ui.command('agentfeed doctor')}`);
-  } else if (!creds) {
-    print(`  ${ui.command('agentfeed login')}`);
+    printNextCommands([
+      'unset AGENTFEED_API_BASE_URL',
+      'AGENTFEED_ALLOW_INSECURE_API=1 agentfeed status',
+      'agentfeed doctor'
+    ]);
   } else if (!config) {
-    print(`  ${ui.command('agentfeed init')}`);
+    printNextCommands([
+      'agentfeed init',
+      ...(!hasToken ? ['agentfeed login'] : [])
+    ]);
+  } else if (!hasToken) {
+    printNextCommands(['agentfeed login']);
   } else if (pending > 0) {
-    print(`  ${ui.command('agentfeed publish --latest --yes')}`);
-    print(`  ${ui.command('agentfeed discard --latest')}`);
+    printNextCommands([
+      'agentfeed publish --latest --yes',
+      'agentfeed discard --latest'
+    ]);
   } else {
-    print(`  ${ui.command('agentfeed share --yes')}`);
+    printNextCommands(['agentfeed share --yes']);
   }
 }
 
@@ -1335,18 +1357,21 @@ async function cmdDoctor(args: string[] = []) {
   print();
   print(ui.section('Next'));
   if (diagnostics.invalidApiBaseUrl) {
-    print(`  ${ui.command('unset AGENTFEED_API_BASE_URL')}`);
-    print(`  ${ui.command('AGENTFEED_ALLOW_INSECURE_API=1 agentfeed doctor')}`);
-  } else if (!apiReachability?.ok || !apiCompatibility?.compatible) {
-    print(`  ${ui.command('agentfeed doctor')}`);
-  } else if (!creds && credentialResolution.token_source === 'missing') {
-    print(`  ${ui.command('agentfeed login')}`);
-  } else if (!projectConfigValid) {
-    print(`  ${ui.command('agentfeed init')}`);
-  } else if (tokenWarnings.length) {
-    print(`  ${ui.command('agentfeed rotate')}`);
+    printNextCommands([
+      'unset AGENTFEED_API_BASE_URL',
+      'AGENTFEED_ALLOW_INSECURE_API=1 agentfeed doctor'
+    ]);
   } else {
-    print(`  ${ui.command('agentfeed share --dry')}`);
+    const missingToken = !creds && credentialResolution.token_source === 'missing';
+    const apiNeedsRecheck = !apiReachability?.ok || !apiCompatibility?.compatible;
+    const commands = [
+      ...(!projectConfigValid ? ['agentfeed init'] : []),
+      ...(missingToken ? ['agentfeed login'] : []),
+      ...(tokenWarnings.length ? ['agentfeed rotate'] : []),
+      ...(apiNeedsRecheck ? ['agentfeed doctor'] : []),
+      ...(projectConfigValid && !missingToken && !tokenWarnings.length && !apiNeedsRecheck ? ['agentfeed share --dry'] : [])
+    ];
+    printNextCommands(commands);
   }
 }
 

@@ -167,9 +167,17 @@ export async function loadProjectConfig(cwd = processCwd()): Promise<AgentFeedPr
 async function projectNotInitializedMessage(cwd: string): Promise<string> {
   const lines = [
     'AgentFeed project is not initialized.',
-    'Run: agentfeed init'
+    '',
+    'Setup',
+    'Run: agentfeed init',
+    '',
+    'Then try',
+    'Run: agentfeed status',
+    'Run: agentfeed share --dry'
   ];
   if (!await findGitRoot(cwd)) {
+    lines.push('');
+    lines.push('No Git repository detected');
     lines.push('Run: git init && agentfeed init');
     lines.push('Run: agentfeed init --no-git-check');
   }

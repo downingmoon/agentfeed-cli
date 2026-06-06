@@ -221,14 +221,21 @@ describe('share CLI command', () => {
 
     expect(failure.stdout).toBe('');
     expect(failure.stderr).toContain('AgentFeed project is not initialized.');
+    expect(failure.stderr).toContain('Setup');
     expect(failure.stderr).toContain('Run: agentfeed init');
+    expect(failure.stderr).toContain('Then try');
+    expect(failure.stderr).toContain('Run: agentfeed status');
+    expect(failure.stderr).toContain('Run: agentfeed share --dry');
     expect(failure.stderr).not.toContain('Run: agentfeed init --no-git-check');
     expect(failure.stderr).not.toContain('AgentFeed token is missing.');
 
     const publish = await runCliFailure(['publish', '--latest', '--yes']);
     expect(publish.stdout).toBe('');
     expect(publish.stderr).toContain('AgentFeed project is not initialized.');
+    expect(publish.stderr).toContain('Setup');
     expect(publish.stderr).toContain('Run: agentfeed init');
+    expect(publish.stderr).toContain('Then try');
+    expect(publish.stderr).toContain('Run: agentfeed status');
     expect(publish.stderr).not.toContain('No local drafts found.');
     expect(publish.stderr).not.toContain('AgentFeed token is missing.');
   });

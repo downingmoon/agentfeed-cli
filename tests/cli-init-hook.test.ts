@@ -137,8 +137,9 @@ describe('CLI init and hook setup UX', () => {
     expect(stdout).toContain('Status: inspect credentials, API, hooks, and drafts');
     expect(stdout).toContain('Reinitialize: backup and recreate config only if needed');
     expect(stdout).toContain('Next');
-    expect(stdout).toContain('agentfeed status');
-    expect(stdout).toContain('agentfeed share --dry');
+    expect(stdout).toContain('Recommended order:');
+    expect(stdout).toContain('  1. agentfeed status');
+    expect(stdout).toContain('  2. agentfeed share --dry');
     expect(stdout).toContain('agentfeed init --force');
     expect(stderr).toBe('');
     expect(saved.project.name).toBe('setup-polish');
@@ -208,6 +209,7 @@ describe('CLI init and hook setup UX', () => {
     expect(stdout).toContain('Action: uninstall');
     expect(stdout).toContain('Next');
     expect(stdout).toContain('agentfeed status');
+    expect(stdout).not.toContain('Recommended order:');
     expect(stderr).toBe('');
     expect(existsSync(join(dir, '.claude', 'settings.json'))).toBe(false);
   });

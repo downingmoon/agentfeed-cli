@@ -385,7 +385,7 @@ function printUploadResult(options: {
 
   print();
   print(ui.section('Next'));
-  printNextCommands(uploadNextActions(options.draftId));
+  printGuidedNextCommands(uploadNextActions(options.draftId));
 }
 
 function apiCompatibilityFailureDetail(result: Awaited<ReturnType<typeof checkApiCompatibility>>): string {
@@ -786,6 +786,15 @@ function printRecommendedCommands(commands: string[]): void {
   unique.forEach((command, index) => {
     print(`  ${index + 1}. ${ui.command(command)}`);
   });
+}
+
+function printGuidedNextCommands(commands: string[]): void {
+  const unique = uniqueNextCommands(commands);
+  if (unique.length > 1) {
+    printRecommendedCommands(unique);
+    return;
+  }
+  printNextCommands(unique);
 }
 
 function printUrlBlock(label: string, url: string): void {
@@ -1607,7 +1616,7 @@ async function cmdPreview(args: string[]) {
       print(`Title: ${singleLine(String(remote.preview.title ?? draft.worklog.title))}`);
       print();
       print(ui.section('Next'));
-      printNextCommands(remotePreviewNextActions(draft.id, remote.valid));
+      printGuidedNextCommands(remotePreviewNextActions(draft.id, remote.valid));
     }
     return;
   }
@@ -1736,7 +1745,7 @@ async function cmdHook(args: string[]) {
     if (result.backupPath) print(`Backup: ${result.backupPath}`);
     print();
     print(ui.section('Next'));
-    printNextCommands(nextActions);
+    printGuidedNextCommands(nextActions);
   } else if (action === 'uninstall') {
     const result = await uninstallClaudeCodeHook({ projectRoot: root, scope, settingsPath });
     const nextActions = hookNextActions('uninstall');
@@ -1762,7 +1771,7 @@ async function cmdHook(args: string[]) {
     if (result.backupPath) print(`Backup: ${result.backupPath}`);
     print();
     print(ui.section('Next'));
-    printNextCommands(nextActions);
+    printGuidedNextCommands(nextActions);
   } else throw new Error(hookUsageMessage());
 }
 
@@ -2151,7 +2160,7 @@ async function cmdDiscard(args: string[]) {
   print(`Markdown: ${hadMarkdown ? 'removed' : 'not found'}`);
   print();
   print(ui.section('Next'));
-  printNextCommands(discardCompleteNextActions());
+  printGuidedNextCommands(discardCompleteNextActions());
 }
 
 function notUploadedDraftMessage(draft: LocalDraft): string {
@@ -2272,7 +2281,7 @@ async function cmdOpen(args: string[]) {
     }
     print();
     print(ui.section('Next'));
-    printNextCommands(openNextActions(draft.id));
+    printGuidedNextCommands(openNextActions(draft.id));
     return;
   }
   print(ui.heading('AgentFeed review opened'));
@@ -2288,7 +2297,7 @@ async function cmdOpen(args: string[]) {
   }
   print();
   print(ui.section('Next'));
-  printNextCommands(openNextActions(draft.id));
+  printGuidedNextCommands(openNextActions(draft.id));
 }
 
 function completionOptionsFor(command: string): string[] {
@@ -2616,7 +2625,7 @@ async function cmdCommands(args: string[]) {
   printCommandCatalog();
   printCommandWorkflows();
   print(`\n${ui.section('Try this')}:`);
-  printNextCommands(nextActions);
+  printGuidedNextCommands(nextActions);
   print(`\nRun ${ui.command('agentfeed help <command>')} for command-specific options.`);
 }
 

@@ -221,8 +221,9 @@ describe('CLI help and option validation', () => {
     expect(human.stdout).toContain('agentfeed share --yes --open-review');
     expect(human.stdout).toContain('Review drafts:');
     expect(human.stdout).toContain('Try this:');
-    expect(human.stdout).toContain('agentfeed init');
-    expect(human.stdout).toContain('agentfeed login');
+    expect(human.stdout).toContain('Recommended order:');
+    expect(human.stdout).toContain('  1. agentfeed init');
+    expect(human.stdout).toContain('  2. agentfeed login');
     expect(human.stdout).toContain('agentfeed share --dry');
     expect(human.stdout).toContain('Run agentfeed help <command>');
 

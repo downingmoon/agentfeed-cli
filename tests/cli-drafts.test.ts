@@ -145,8 +145,9 @@ describe('drafts CLI command', () => {
     expect(stdout).toContain('JSON: removed');
     expect(stdout).toContain('Markdown: removed');
     expect(stdout).toContain('Next');
-    expect(stdout).toContain('agentfeed drafts');
-    expect(stdout).toContain('agentfeed collect --explain');
+    expect(stdout).toContain('Recommended order:');
+    expect(stdout).toContain('  1. agentfeed drafts');
+    expect(stdout).toContain('  2. agentfeed collect --explain');
     expect(existsSync(paths.jsonPath)).toBe(false);
     expect(existsSync(paths.markdownPath)).toBe(false);
   });

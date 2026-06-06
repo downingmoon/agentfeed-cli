@@ -482,8 +482,9 @@ describe('share CLI command', () => {
       expect(stdout).toContain('Review URL:');
       expect(stdout).toContain('http://localhost:3001/worklogs/worklog_share_human_upload/review');
       expect(stdout).toContain('Next');
-      expect(stdout).toMatch(/agentfeed open --id draft_/);
-      expect(stdout).toMatch(/agentfeed preview --id draft_/);
+      expect(stdout).toContain('Recommended order:');
+      expect(stdout).toMatch(/  1\. agentfeed open --id draft_/);
+      expect(stdout).toMatch(/  2\. agentfeed preview --id draft_/);
       expect(stdout).not.toContain('Handoff');
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
@@ -919,8 +920,9 @@ describe('share CLI command', () => {
       expect(publish.stdout).toContain('Review URL:');
       expect(publish.stdout).toContain('http://localhost:3001/worklogs/worklog_publish_confirmed/review');
       expect(publish.stdout).toContain('Next');
-      expect(publish.stdout).toContain(`agentfeed open --id ${draft.id}`);
-      expect(publish.stdout).toContain(`agentfeed preview --id ${draft.id}`);
+      expect(publish.stdout).toContain('Recommended order:');
+      expect(publish.stdout).toContain(`  1. agentfeed open --id ${draft.id}`);
+      expect(publish.stdout).toContain(`  2. agentfeed preview --id ${draft.id}`);
       expect(publish.stdout).not.toContain('Handoff');
       expect(ingestRequestCount).toBe(1);
       await expect(readFile(browserLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });

@@ -1894,12 +1894,10 @@ async function cmdVersion(args: string[]) {
 async function cmdCommands(args: string[]) {
   if (flag(args, '--json')) {
     print(JSON.stringify({
+      next_actions: ['agentfeed init', 'agentfeed login', 'agentfeed share --dry'],
       commands: COMMAND_GROUPS.map((group) => ({
         group: group.title,
-        commands: group.commands.map((command) => ({
-          name: command,
-          description: COMMAND_DESCRIPTIONS[command]
-        }))
+        commands: group.commands.map((command) => commandCatalogEntry(command))
       }))
     }, null, 2));
     return;
@@ -1952,6 +1950,44 @@ const COMMAND_DESCRIPTIONS: Record<(typeof PUBLIC_COMMANDS)[number], string> = {
   logout: 'Remove saved credentials',
   completion: 'Print shell completion script'
 };
+
+const COMMAND_EXAMPLES: Record<(typeof PUBLIC_COMMANDS)[number], string> = {
+  help: 'agentfeed help share',
+  commands: 'agentfeed commands',
+  init: 'agentfeed init',
+  login: 'agentfeed login',
+  share: 'agentfeed share --dry',
+  collect: 'agentfeed collect --explain',
+  preview: 'agentfeed preview --latest',
+  publish: 'agentfeed publish --latest --yes',
+  open: 'agentfeed open --latest',
+  scan: 'agentfeed scan --latest --dry-run',
+  status: 'agentfeed status',
+  doctor: 'agentfeed doctor',
+  version: 'agentfeed version',
+  hook: 'agentfeed hook install claude-code --dry-run',
+  drafts: 'agentfeed drafts',
+  discard: 'agentfeed discard --id <draft_id>',
+  rotate: 'agentfeed rotate',
+  logout: 'agentfeed logout',
+  completion: 'agentfeed completion zsh'
+};
+
+function commandCatalogEntry(command: (typeof PUBLIC_COMMANDS)[number]): {
+  name: string;
+  description: string;
+  usage: string;
+  help_command: string;
+  example_command: string;
+} {
+  return {
+    name: command,
+    description: COMMAND_DESCRIPTIONS[command],
+    usage: `agentfeed ${command} [options]`,
+    help_command: `agentfeed help ${command}`,
+    example_command: COMMAND_EXAMPLES[command]
+  };
+}
 
 const COMMAND_GROUPS: Array<{ title: string; commands: Array<(typeof PUBLIC_COMMANDS)[number]> }> = [
   { title: 'Start', commands: ['help', 'commands', 'init', 'login', 'status'] },

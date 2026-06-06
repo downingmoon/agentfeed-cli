@@ -206,12 +206,31 @@ describe('CLI help and option validation', () => {
 
     const json = await runCli(['commands', '--json']);
     const parsed = JSON.parse(json.stdout) as {
-      commands: Array<{ group: string; commands: Array<{ name: string; description: string }> }>;
+      next_actions?: string[];
+      commands: Array<{
+        group: string;
+        commands: Array<{ name: string; description: string; usage?: string; help_command?: string; example_command?: string }>;
+      }>;
     };
+    const flatCommands = parsed.commands.flatMap((group) => group.commands);
+    const share = flatCommands.find((command) => command.name === 'share');
+    const commands = flatCommands.find((command) => command.name === 'commands');
+
     expect(json.stderr).toBe('');
+    expect(parsed.next_actions).toEqual(['agentfeed init', 'agentfeed login', 'agentfeed share --dry']);
     expect(parsed.commands.some((group) => group.group === 'Start')).toBe(true);
-    expect(parsed.commands.flatMap((group) => group.commands).some((command) => command.name === 'share')).toBe(true);
-    expect(parsed.commands.flatMap((group) => group.commands).some((command) => command.name === 'commands')).toBe(true);
+    expect(share).toMatchObject({
+      description: 'Collect, preview, and optionally upload in one workflow',
+      usage: 'agentfeed share [options]',
+      help_command: 'agentfeed help share',
+      example_command: 'agentfeed share --dry'
+    });
+    expect(commands).toMatchObject({
+      help_command: 'agentfeed help commands',
+      example_command: 'agentfeed commands'
+    });
+    expect(json.stdout).not.toMatch(/^AgentFeed commands$/m);
+    expect(json.stdout).not.toMatch(/(^|\n)Run agentfeed help/);
   });
 
   it('prints example-driven help for the main review workflow commands', async () => {

@@ -738,6 +738,10 @@ describe('share CLI command', () => {
       expect(share.stdout).toContain('Upload confirmation required.');
       expect(share.stdout).toContain('No data was uploaded to AgentFeed.');
       expect(share.stdout).toContain('Summary');
+      expect(share.stdout).toContain('Review before upload');
+      expect(share.stdout).toContain('Preview: agentfeed preview --id');
+      expect(share.stdout).toContain('Target: private AgentFeed review draft');
+      expect(share.stdout).toContain('Safety: no upload happens until you rerun with --yes.');
       expect(share.stdout).toContain('Next');
       expect(share.stdout).toContain('Upload after reviewing this draft:');
       expect(share.stdout).toContain('agentfeed publish --id');
@@ -783,6 +787,9 @@ describe('share CLI command', () => {
 
       expect(publish.stdout).toContain('Upload confirmation required.');
       expect(publish.stdout).toContain('No data was uploaded to AgentFeed.');
+      expect(publish.stdout).toContain('Review before upload');
+      expect(publish.stdout).toContain(`Preview: agentfeed preview --id ${draft.id}`);
+      expect(publish.stdout).toContain('Privacy: no findings detected');
       expect(publish.stdout).toContain(`agentfeed publish --id ${draft.id} --yes`);
       expect(ingestRequestCount).toBe(0);
     } finally {

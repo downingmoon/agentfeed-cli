@@ -478,6 +478,12 @@ function printUploadConfirmationRequired(draft: LocalDraft, command: string, ext
   print(`Title: ${draft.worklog.title}`);
   print(`Privacy: ${draft.privacy_scan.status} · findings ${draft.privacy_scan.findings.length}`);
   print();
+  print(ui.section('Review before upload'));
+  print(`Preview: ${ui.command(`agentfeed preview --id ${draft.id}`)}`);
+  print(`Privacy: ${draft.privacy_scan.findings.length ? 'review findings before public sharing' : 'no findings detected'}`);
+  print('Target: private AgentFeed review draft');
+  print('Safety: no upload happens until you rerun with --yes.');
+  print();
   print(ui.section('Next'));
   print('Upload after reviewing this draft:');
   print(`  ${ui.command(command)}`);

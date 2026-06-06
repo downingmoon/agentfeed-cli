@@ -273,7 +273,7 @@ describe('CLI help and option validation', () => {
       [['hook', '--help'], ['Usage: agentfeed hook', '--settings-path', 'claude-code']],
       [['doctor', '--help'], ['Usage: agentfeed doctor', 'diagnostics', '--json']],
       [['drafts', '--help'], ['Usage: agentfeed drafts', '--json']],
-      [['discard', '--help'], ['Usage: agentfeed discard', '--latest', '--id', '--yes']],
+      [['discard', '--help'], ['Usage: agentfeed discard', '--latest', '--id', '--yes', '--json']],
       [['open', '--help'], ['Usage: agentfeed open', '--latest', '--id']],
       [['completion', '--help'], ['Usage: agentfeed completion <shell>', 'zsh', 'bash', 'fish']],
     ];

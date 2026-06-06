@@ -140,6 +140,68 @@ describe('drafts CLI command', () => {
     expect(existsSync(paths.markdownPath)).toBe(true);
   });
 
+  it('prints machine-readable discard confirmation without deleting draft artifacts', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.worklog.title = 'Keep me in JSON';
+    const paths = await writeDraft(dir, draft);
+
+    const { stdout, stderr } = await runCli(['discard', '--id', draft.id, '--json']);
+    const output = JSON.parse(stdout) as {
+      confirmation_required?: boolean;
+      deleted?: boolean;
+      draft_id?: string;
+      files?: { json?: { existed?: boolean; will_remove?: boolean; removed?: boolean }; markdown?: { existed?: boolean; will_remove?: boolean; removed?: boolean } };
+      next_actions?: string[];
+    };
+
+    expect(stderr).toBe('');
+    expect(output).toMatchObject({
+      confirmation_required: true,
+      deleted: false,
+      draft_id: draft.id,
+      files: {
+        json: { existed: true, will_remove: true, removed: false },
+        markdown: { existed: true, will_remove: true, removed: false }
+      },
+      next_actions: [`agentfeed discard --id ${draft.id} --yes`, `agentfeed preview --id ${draft.id}`]
+    });
+    expect(stdout).not.toContain('AgentFeed discard paused');
+    expect(stdout).not.toMatch(/(^|\n)Next(\n|$)/);
+    expect(existsSync(paths.jsonPath)).toBe(true);
+    expect(existsSync(paths.markdownPath)).toBe(true);
+  });
+
+  it('prints machine-readable discard result and removes local draft artifacts', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.worklog.title = 'Discard me in JSON';
+    const paths = await writeDraft(dir, draft);
+
+    const { stdout, stderr } = await runCli(['discard', '--id', draft.id, '--yes', '--json']);
+    const output = JSON.parse(stdout) as {
+      confirmation_required?: boolean;
+      deleted?: boolean;
+      draft_id?: string;
+      files?: { json?: { existed?: boolean; removed?: boolean }; markdown?: { existed?: boolean; removed?: boolean } };
+      next_actions?: string[];
+    };
+
+    expect(stderr).toBe('');
+    expect(output).toMatchObject({
+      confirmation_required: false,
+      deleted: true,
+      draft_id: draft.id,
+      files: {
+        json: { existed: true, removed: true },
+        markdown: { existed: true, removed: true }
+      },
+      next_actions: ['agentfeed drafts', 'agentfeed collect --explain']
+    });
+    expect(stdout).not.toContain('AgentFeed draft discarded');
+    expect(stdout).not.toMatch(/(^|\n)Next(\n|$)/);
+    expect(existsSync(paths.jsonPath)).toBe(false);
+    expect(existsSync(paths.markdownPath)).toBe(false);
+  });
+
   it('guides users back to drafts and collect when discarding a missing draft', async () => {
     const { stdout, stderr } = await runCliFailure(['discard', '--id', 'draft_missing']);
 

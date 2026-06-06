@@ -1568,6 +1568,14 @@ async function draftListRow(row: Awaited<ReturnType<typeof listDrafts>>[number])
   }
 }
 
+function discardConfirmationNextActions(id: string): string[] {
+  return [`agentfeed discard --id ${id} --yes`, `agentfeed preview --id ${id}`];
+}
+
+function discardCompleteNextActions(): string[] {
+  return ['agentfeed drafts', 'agentfeed collect --explain'];
+}
+
 function draftListNextActions(rows: DraftListRow[]): string[] {
   if (!rows.length) {
     return ['agentfeed collect --explain', 'agentfeed share --dry'];
@@ -1640,11 +1648,37 @@ async function cmdDiscard(args: string[]) {
     ].join('\n'));
   }
   if (!flag(args, '--yes') && !flag(args, '-y')) {
+    if (flag(args, '--json')) {
+      print(JSON.stringify({
+        confirmation_required: true,
+        deleted: false,
+        draft_id: id,
+        files: {
+          json: { existed: hadJson, will_remove: hadJson, removed: false },
+          markdown: { existed: hadMarkdown, will_remove: hadMarkdown, removed: false }
+        },
+        next_actions: discardConfirmationNextActions(id)
+      }, null, 2));
+      return;
+    }
     printDiscardConfirmationRequired(id, { hadJson, hadMarkdown });
     return;
   }
   await rm(jsonPath, { force: true });
   await rm(markdownPath, { force: true });
+  if (flag(args, '--json')) {
+    print(JSON.stringify({
+      confirmation_required: false,
+      deleted: true,
+      draft_id: id,
+      files: {
+        json: { existed: hadJson, removed: hadJson },
+        markdown: { existed: hadMarkdown, removed: hadMarkdown }
+      },
+      next_actions: discardCompleteNextActions()
+    }, null, 2));
+    return;
+  }
   print(ui.heading('AgentFeed draft discarded'));
   print(`Discarded draft: ${id}`);
   print();
@@ -1654,8 +1688,7 @@ async function cmdDiscard(args: string[]) {
   print(`Markdown: ${hadMarkdown ? 'removed' : 'not found'}`);
   print();
   print(ui.section('Next'));
-  print(`  ${ui.command('agentfeed drafts')}`);
-  print(`  ${ui.command('agentfeed collect --explain')}`);
+  printNextCommands(discardCompleteNextActions());
 }
 
 function notUploadedDraftMessage(draft: LocalDraft): string {
@@ -2234,7 +2267,7 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     validatePositionals: NO_POSITIONALS('drafts')
   },
   discard: {
-    flags: ['--latest', '--yes', '-y'],
+    flags: ['--latest', '--yes', '-y', '--json'],
     valueOptions: ['--id'],
     conflicts: [['--id', '--latest']],
     validatePositionals: NO_POSITIONALS('discard')
@@ -2677,6 +2710,7 @@ Options:
   --latest                  Discard the newest local draft (default)
   --id <draft_id>           Discard a specific draft
   --yes, -y                 Delete without the confirmation preview
+  --json                    Print machine-readable discard status
   --help, -h                Show this help`,
     open: `Usage: agentfeed open [options]
 

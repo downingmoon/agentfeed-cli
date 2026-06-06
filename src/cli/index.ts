@@ -191,15 +191,57 @@ async function handoffReviewUrl(reviewUrl: string, options: { copy: boolean; ope
   return handoff;
 }
 
-function printReviewUrlHandoff(handoff: ReviewUrlHandoff, reviewUrl: string): void {
+function reviewUrlHandoffLines(handoff: ReviewUrlHandoff, reviewUrl: string): string[] {
+  const lines: string[] = [];
   if (handoff.clipboard.requested) {
-    if (handoff.clipboard.ok) print('Review URL copied to clipboard.');
-    else print(`Warning: ${handoff.clipboard.warning ?? 'Review URL was not copied to clipboard. Copy it manually.'}`);
+    if (handoff.clipboard.ok) lines.push('Review URL copied to clipboard.');
+    else lines.push(`Warning: ${handoff.clipboard.warning ?? 'Review URL was not copied to clipboard. Copy it manually.'}`);
   }
-  if (handoff.browser.requested && !handoff.browser.ok) {
-    print(`Warning: ${handoff.browser.warning ?? 'Review URL could not be opened automatically. Open it manually.'}`);
-    print(reviewUrl);
+  if (handoff.browser.requested) {
+    if (handoff.browser.ok) lines.push('Review URL opened in browser.');
+    else {
+      lines.push(`Warning: ${handoff.browser.warning ?? 'Review URL could not be opened automatically. Open it manually.'}`);
+      lines.push(reviewUrl);
+    }
   }
+  return lines;
+}
+
+function printUploadResult(options: {
+  heading: string;
+  message: string;
+  draftId: string;
+  result: Awaited<ReturnType<typeof publishDraft>>;
+  handoff: ReviewUrlHandoff;
+  privacyPolicyLines?: string[];
+}): void {
+  print(ui.heading(options.heading));
+  print(options.message);
+  const privacyPolicyLines = options.privacyPolicyLines ?? [];
+  if (privacyPolicyLines.length) {
+    print();
+    print(ui.section('Policy'));
+    for (const line of privacyPolicyLines) print(line);
+  }
+
+  print();
+  print(ui.section('Summary'));
+  print(`Draft: ${options.draftId}`);
+  print(`Status: ${options.result.status}`);
+  print(`Review URL:
+${options.result.review_url}`);
+
+  const handoffLines = reviewUrlHandoffLines(options.handoff, options.result.review_url);
+  if (handoffLines.length) {
+    print();
+    print(ui.section('Handoff'));
+    for (const line of handoffLines) print(line);
+  }
+
+  print();
+  print(ui.section('Next'));
+  print(`  ${ui.command(`agentfeed open --id ${options.draftId}`)}`);
+  print(`  ${ui.command(`agentfeed preview --id ${options.draftId}`)}`);
 }
 
 function apiCompatibilityFailureDetail(result: Awaited<ReturnType<typeof checkApiCompatibility>>): string {
@@ -732,16 +774,19 @@ async function cmdShare(args: string[]) {
   const metadata = await requireUploadPreflight(creds!);
   const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds!, reviewBaseUrl: metadata.review_base_url });
   await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
-  print(result.reused_existing ? 'Worklog already uploaded; reusing existing review URL.' : 'Worklog uploaded.');
-  print(`Status: ${result.status}`);
-  print(`Review URL:
-${result.review_url}`);
-  printReviewUrlHandoff(await handoffReviewUrl(result.review_url, {
+  const handoff = await handoffReviewUrl(result.review_url, {
     copy: shouldCopyReviewUrl({ noClipboard: opts.noClipboard }),
     open: await shouldOpenReviewAfterUpload(opts.openReview, { noOpen: opts.noOpenReview }),
     apiBaseUrl: creds!.api_base_url,
     reviewBaseUrl: result.review_base_url ?? metadata.review_base_url
-  }), result.review_url);
+  });
+  printUploadResult({
+    heading: result.reused_existing ? 'AgentFeed upload reused' : 'AgentFeed upload complete',
+    message: result.reused_existing ? 'Worklog already uploaded; reusing existing review URL.' : 'Worklog uploaded.',
+    draftId: draft.id,
+    result,
+    handoff
+  });
 }
 
 async function cmdPreview(args: string[]) {
@@ -814,18 +859,21 @@ async function cmdPublish(args: string[]) {
     print(JSON.stringify({ draft_id: id, upload: result, privacy_policy: privacyPolicySummary(savedDraft), handoff }, null, 2));
     return;
   }
-  print(result.reused_existing ? 'Private review draft already uploaded; reusing existing review URL.\n' : 'Private review draft uploaded.\n');
   const privacyPolicyLines = formatPrivacyPolicyLines(savedDraft);
-  for (const line of privacyPolicyLines) print(line);
-  if (privacyPolicyLines.length) print();
-  print(`Status: ${result.status}`);
-  print(`Review URL:\n${result.review_url}`);
-  printReviewUrlHandoff(await handoffReviewUrl(result.review_url, {
+  const handoff = await handoffReviewUrl(result.review_url, {
     copy: shouldCopyReviewUrl({ noClipboard: flag(args, '--no-clipboard') }),
     open: await shouldOpenReviewAfterUpload(flag(args, '--open-review'), { noOpen: flag(args, '--no-open-review') }),
     apiBaseUrl: creds.api_base_url,
     reviewBaseUrl: result.review_base_url ?? metadata?.review_base_url
-  }), result.review_url);
+  });
+  printUploadResult({
+    heading: result.reused_existing ? 'AgentFeed upload reused' : 'AgentFeed upload complete',
+    message: result.reused_existing ? 'Private review draft already uploaded; reusing existing review URL.' : 'Private review draft uploaded.',
+    draftId: id,
+    result,
+    handoff,
+    privacyPolicyLines
+  });
 }
 
 async function cmdScan(args: string[]) {
@@ -1065,7 +1113,24 @@ async function cmdOpen(args: string[]) {
     throw new Error('Saved draft review URL is invalid. Run agentfeed share again to upload a fresh private review draft.');
   }
   const opened = await openBrowser(draft.upload.review_url);
-  print(opened ? 'Opened review URL.' : draft.upload.review_url);
+  if (!opened) {
+    print(ui.heading('AgentFeed review URL'));
+    print();
+    print('Browser open failed. Open this URL manually:');
+    print(draft.upload.review_url);
+    return;
+  }
+  print(ui.heading('AgentFeed review opened'));
+  print('Opened review URL.');
+  print();
+  print(ui.section('Summary'));
+  print(`Draft: ${draft.id}`);
+  print(`Review URL:
+${draft.upload.review_url}`);
+  print();
+  print(ui.section('Next'));
+  print(`  ${ui.command(`agentfeed preview --id ${draft.id}`)}`);
+  print(`  ${ui.command('agentfeed status')}`);
 }
 
 function completionOptionsFor(command: string): string[] {

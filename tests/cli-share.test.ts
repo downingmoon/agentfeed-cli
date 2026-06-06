@@ -233,6 +233,71 @@ describe('share CLI command', () => {
     expect(stdout).not.toMatch(/(^|\n)(AgentFeed share preview|Ready to share private review draft|Summary|Collection quality|Next|Publish later)/);
   });
 
+  it('prints structured upload completion for human-readable share uploads', async () => {
+    const server = createServer(async (req, res) => {
+      if (handleUploadPreflight(req, res)) return;
+      if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
+        res.writeHead(404).end();
+        return;
+      }
+      await readRequestBody(req);
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({
+        data: {
+          id: 'worklog_share_human_upload',
+          status: 'needs_review',
+          visibility: 'private',
+          review_url: 'http://localhost:3001/worklogs/worklog_share_human_upload/review',
+          created_at: '2026-06-06T00:00:00.000Z'
+        }
+      }));
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    try {
+      const sessionFile = await writeCodexShareSession('share-human-upload', 'gpt-share-human', 'shareHumanUpload');
+      const { stdout, stderr } = await execFileAsync(process.execPath, [
+        cliPath,
+        'share',
+        '--yes',
+        '--source',
+        'codex',
+        '--session-file',
+        sessionFile,
+        '--all',
+        '--no-clipboard',
+        '--no-open-review'
+      ], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: 'af_live_share_human',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`,
+          AGENTFEED_CI: '1'
+        }
+      });
+
+      expect(stderr).toBe('');
+      expect(stdout).toContain('AgentFeed upload complete');
+      expect(stdout).toContain('Worklog uploaded.');
+      expect(stdout).toContain('Summary');
+      expect(stdout).toMatch(/Draft: draft_/);
+      expect(stdout).toContain('Status: needs_review');
+      expect(stdout).toContain('Review URL:');
+      expect(stdout).toContain('http://localhost:3001/worklogs/worklog_share_human_upload/review');
+      expect(stdout).toContain('Next');
+      expect(stdout).toMatch(/agentfeed open --id draft_/);
+      expect(stdout).toMatch(/agentfeed preview --id draft_/);
+      expect(stdout).not.toContain('Handoff');
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
   it('refuses share upload before ingest when API metadata is incompatible', async () => {
     let ingestRequestCount = 0;
     const server = createServer(async (req, res) => {
@@ -567,7 +632,16 @@ describe('share CLI command', () => {
       });
 
       expect(publish.stdout).toContain('Private review draft uploaded.');
+      expect(publish.stdout).toContain('AgentFeed upload complete');
+      expect(publish.stdout).toContain('Summary');
+      expect(publish.stdout).toContain(`Draft: ${draft.id}`);
+      expect(publish.stdout).toContain('Status: needs_review');
+      expect(publish.stdout).toContain('Review URL:');
       expect(publish.stdout).toContain('http://localhost:3001/worklogs/worklog_publish_confirmed/review');
+      expect(publish.stdout).toContain('Next');
+      expect(publish.stdout).toContain(`agentfeed open --id ${draft.id}`);
+      expect(publish.stdout).toContain(`agentfeed preview --id ${draft.id}`);
+      expect(publish.stdout).not.toContain('Handoff');
       expect(ingestRequestCount).toBe(1);
       await expect(readFile(browserLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
     } finally {
@@ -632,6 +706,12 @@ describe('share CLI command', () => {
       });
 
       expect(open.stdout).toContain('Opened review URL.');
+      expect(open.stdout).toContain('AgentFeed review opened');
+      expect(open.stdout).toContain('Summary');
+      expect(open.stdout).toContain(`Draft: ${draft.id}`);
+      expect(open.stdout).toContain('Review URL:');
+      expect(open.stdout).toContain('Next');
+      expect(open.stdout).toContain(`agentfeed preview --id ${draft.id}`);
       await expect(readFile(browserLog, 'utf8')).resolves.toBe('https://agentfeed.dev/worklogs/worklog_trusted_open/review\n');
     } finally {
       await rm(binDir, { recursive: true, force: true });
@@ -1452,6 +1532,8 @@ describe('share CLI command', () => {
       });
 
       expect(publish.stdout).toContain('Review URL:');
+      expect(publish.stdout).toContain('Handoff');
+      expect(publish.stdout).toContain('Review URL opened in browser.');
       await expect(readFile(browserLog, 'utf8')).resolves.toBe('http://localhost:3001/worklogs/worklog_auto_open/review\n');
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));

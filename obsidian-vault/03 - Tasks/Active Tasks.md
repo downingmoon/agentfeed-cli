@@ -14,7 +14,7 @@ updated: 2026-06-06
 
 ## 현재 결론
 
-로컬/CI/contract/UI/UX 기준 상용화 품질 goal은 **완료**됐다. owner가 새로 정한 다음 방향은 **개인 서버에서 Frontend/Backend를 IP-only로 테스트 구동**하는 것이다.
+로컬/CI/contract/UI/UX 기준 상용화 품질 goal은 **완료**됐다. CLI UX goal도 [[CLI UX Completion Audit 2026-06-06]] 기준으로 완료 판정한다. owner가 새로 정한 다음 방향은 **개인 서버에서 Frontend/Backend를 IP-only로 테스트 구동/운영 준비**하는 것이다.
 
 - 사람이 직접 해야 할 일: [[Human Action Checklist]]
 - 서버/env 기준: [[Runtime Configuration]]
@@ -48,6 +48,9 @@ updated: 2026-06-06
 > - `npx vitest run tests/release-preflight.test.ts --reporter=verbose`: 15 tests passed.
 > - `npm run release:preflight`: 26 test files, 533 tests passed.
 > - release preflight가 npm tarball 설치 후 실제 installed `agentfeed` binary로 `--help`, `--version`, `init`, `status`, `share --dry`, `drafts` 첫 사용자 플로우를 검증한다.
+> - 2026-06-06 최종 CLI UX completion audit: [[CLI UX Completion Audit 2026-06-06]].
+> - `npx vitest run tests/cli-help.test.ts tests/cli-status-doctor.test.ts tests/cli-share.test.ts --reporter=verbose`: 3 test files, 128 tests passed.
+> - 개인 서버 IP-only `doctor --json`: API ready `yes (200)`, compatibility `v1 / 2026-06-03`, ingestion token valid `yes (200)`.
 
 ## 완료됨 — 로컬/CI/contract/UI 품질
 

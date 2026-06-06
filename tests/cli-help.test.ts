@@ -388,6 +388,27 @@ describe('CLI help and option validation', () => {
     expect(failure.stdout).toBe('');
   });
 
+
+  it('suggests concrete workflows when a global-looking option is missing its command', async () => {
+    const dry = await runCliFailure(['--dry']);
+    expect(dry.stderr).toContain('Option appears before command: --dry');
+    expect(dry.stderr).toContain('Try: agentfeed share --dry');
+    expect(dry.stderr).toContain('Try: agentfeed collect --dry-run --explain');
+    expect(dry.stderr).toContain('Run: agentfeed --help');
+    expect(dry.stdout).toBe('');
+
+    const json = await runCliFailure(['--json']);
+    expect(json.stderr).toContain('Option appears before command: --json');
+    expect(json.stderr).toContain('Try: agentfeed status --json');
+    expect(json.stderr).toContain('Try: agentfeed commands --json');
+    expect(json.stdout).toBe('');
+
+    const apiBase = await runCliFailure(['--api-base-url', 'http://localhost:8001/v1']);
+    expect(apiBase.stderr).toContain('Option appears before command: --api-base-url');
+    expect(apiBase.stderr).toContain('Try: agentfeed login --api-base-url http://localhost:8001/v1');
+    expect(apiBase.stdout).toBe('');
+  });
+
   it('explains command-first syntax when options are placed before the command', async () => {
     const json = await runCliFailure(['--json', 'status']);
     expect(json.stderr).toContain('Option appears before command: --json');

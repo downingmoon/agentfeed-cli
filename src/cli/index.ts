@@ -2882,6 +2882,44 @@ function unknownCommandError(command: string): Error {
   ].join('\n'));
 }
 
+
+function leadingOptionExamples(optionName: string, rawOption: string, args: string[]): string[] {
+  const inlineValue = rawOption.includes('=') ? rawOption.slice(rawOption.indexOf('=') + 1) : null;
+  const nextValue = !rawOption.includes('=') && args[0] && !args[0].startsWith('-') && !KNOWN_COMMANDS.has(args[0])
+    ? args[0]
+    : null;
+  const optionWithValue = inlineValue !== null || nextValue
+    ? `${optionName} ${inlineValue ?? nextValue}`
+    : optionName;
+  switch (optionName) {
+    case '--dry':
+    case '--dry-run':
+      return [
+        'Try: agentfeed share --dry',
+        'Try: agentfeed collect --dry-run --explain'
+      ];
+    case '--json':
+      return [
+        'Try: agentfeed status --json',
+        'Try: agentfeed commands --json'
+      ];
+    case '--api-base-url':
+      return [`Try: agentfeed login ${optionWithValue}`];
+    case '--source':
+      return [`Try: agentfeed collect ${optionWithValue} --explain`];
+    case '--session-file':
+      return [`Try: agentfeed collect ${optionWithValue} --explain`];
+    case '--token-stdin':
+      return ['Try: printf %s "$TOKEN" | agentfeed login --token-stdin'];
+    case '--no-open':
+      return ['Try: agentfeed login --no-open'];
+    case '--open-review':
+      return ['Try: agentfeed share --yes --open-review'];
+    default:
+      return [];
+  }
+}
+
 function leadingOptionError(option: string, args: string[]): Error {
   const optionName = option.includes('=') ? option.slice(0, option.indexOf('=')) : option;
   const commandIndex = args.findIndex((arg) => KNOWN_COMMANDS.has(arg));
@@ -2900,7 +2938,7 @@ function leadingOptionError(option: string, args: string[]): Error {
   return new Error([
     `Option appears before command: ${optionName}`,
     'AgentFeed uses command-first syntax: agentfeed <command> [options].',
-    ...(reordered ? [`Use: ${reordered}`] : []),
+    ...(reordered ? [`Use: ${reordered}`] : leadingOptionExamples(optionName, option, args)),
     ...(command ? [commandHelpHint(command)] : ['Run: agentfeed --help'])
   ].join('\n'));
 }

@@ -3228,7 +3228,7 @@ Compatibility alias for:
 
 Options:
   --browser                 Force browser-based token replacement
-  --no-open                 Print the authorization URL instead of opening a browser
+  --no-open                 Print the auth URL instead of opening a browser
   --no-save                 Do not persist the replacement token
   --api-base-url <url>      Override the AgentFeed API base URL
   --help, -h                Show this help`);
@@ -3286,10 +3286,11 @@ Options:
   --help, -h                Show this help`,
     login: `Usage: agentfeed login [options]
 
-Connect this machine to AgentFeed. Without token input, login starts the safe browser approval flow.
+Connect this machine to AgentFeed.
+Without token input, login starts safe browser approval.
 
 Options:
-  --no-open                 Print the authorization URL instead of opening a browser
+  --no-open                 Print the auth URL instead of opening a browser
   --browser                 Allow browser login even in CI-like environments
   --no-save                 Do not persist credentials
   --api-base-url <url>      Override the AgentFeed API base URL
@@ -3306,8 +3307,9 @@ Examples:
   agentfeed login --api-base-url http://localhost:8001/v1
 
 Safety:
-  Prefer --token-stdin for headless setup so tokens do not appear in shell history.
-  Remote http API URLs require AGENTFEED_ALLOW_INSECURE_API=1 and are development-only.`,
+  Prefer --token-stdin so tokens do not appear in shell history.
+  Remote http API URLs need AGENTFEED_ALLOW_INSECURE_API=1.
+  Use that override only for development.`,
     logout: `Usage: agentfeed logout [options]
 
 Remove saved AgentFeed credentials from this machine.
@@ -3323,7 +3325,8 @@ Examples:
 
 Safety:
   Logout removes AgentFeed credentials saved by the CLI.
-  If AGENTFEED_TOKEN is set in your shell, unset or rotate that secret separately.
+  If AGENTFEED_TOKEN is set in your shell, unset it separately.
+  Rotate that environment secret if needed.
   Run agentfeed status after logout to confirm no active token remains.`,
     status: `Usage: agentfeed status
 
@@ -3338,7 +3341,7 @@ Replace the saved ingestion token through browser approval.
 
 Options:
   --browser                 Force browser-based token replacement
-  --no-open                 Print the authorization URL instead of opening a browser
+  --no-open                 Print the auth URL instead of opening a browser
   --no-save                 Do not persist the replacement token
   --api-base-url <url>      Override the AgentFeed API base URL
   --help, -h                Show this help
@@ -3350,20 +3353,23 @@ Examples:
 
 Safety:
   Rotation revokes the previous saved token when AgentFeed can verify it.
-  If AGENTFEED_TOKEN is set in your shell, update or unset that secret after rotating.`,
+  If AGENTFEED_TOKEN is set in your shell, update it separately.
+  Unset the environment token if you want the saved token to apply.`,
     collect: `Usage: agentfeed collect [options]
 
-Collect local agent work into a private review draft without uploading by default.
+Collect local agent work into a private review draft.
+By default, collect saves locally and does not upload.
 Omit --source to auto-detect Claude/Codex/Cursor/Gemini sessions and plugins.
 
 Common options:
-  --source <source>         Override auto-detected source: claude-code, codex, cursor, gemini-cli, other
+  --source <source>         Override source (auto-detect is default)
+      Values: claude-code, codex, cursor, gemini-cli, other
   --session-file <path>     Read an explicit agent session file
-  --since <timestamp>       Start collection window (ISO timestamp or last-collect)
+  --since <timestamp>       Start window (ISO timestamp or last-collect)
   --until <timestamp>       End collection window (ISO timestamp)
   --all                     Ignore the saved collection cursor
   --force                   Recollect even if a matching draft already exists
-  --dry, --dry-run          Explicitly keep the draft local; collect never uploads unless --upload
+  --dry, --dry-run          Keep draft local; collect uploads only with --upload
   --explain                 Include collection source/quality diagnostics
   --run-configured-commands Run configured local evidence commands
 
@@ -3383,15 +3389,17 @@ Examples:
   agentfeed collect --json --no-save-cursor`,
     share: `Usage: agentfeed share [options]
 
-Collect, preview, and optionally upload a private review draft in one daily workflow.
+Collect, preview, and optionally upload a private review draft.
+Use this as the daily one-command workflow.
 Omit --source to auto-detect Claude/Codex/Cursor/Gemini sessions and plugins.
 
 Options:
   --yes, -y                 Upload without interactive confirmation
   --dry, --dry-run          Collect and preview only; do not upload
-  --source <source>         Override auto-detected source: claude-code, codex, cursor, gemini-cli, other
+  --source <source>         Override source (auto-detect is default)
+      Values: claude-code, codex, cursor, gemini-cli, other
   --session-file <path>     Read an explicit agent session file
-  --since <timestamp>       Start collection window (ISO timestamp or last-collect)
+  --since <timestamp>       Start window (ISO timestamp or last-collect)
   --until <timestamp>       End collection window (ISO timestamp)
   --all                     Ignore the saved collection cursor
   --force                   Recollect even if a matching draft already exists
@@ -3475,7 +3483,8 @@ Examples:
   agentfeed hook uninstall claude-code`,
     doctor: `Usage: agentfeed doctor
 
-Run local AgentFeed diagnostics for credentials, API reachability, project config, git, and agent signals.
+Run local AgentFeed diagnostics for credentials, API reachability,
+project config, git, and agent signals.
 
 Options:
   --json                    Print machine-readable diagnostics
@@ -3512,19 +3521,20 @@ Examples:
   agentfeed open --id draft_20260606_120000_abcd`,
     completion: `Usage: agentfeed completion <shell>
 
-Print a shell completion script for AgentFeed commands and command-specific options.
+Print a shell completion script for AgentFeed commands and options.
 
 Supported shells: zsh, bash, fish
 
 Examples:
   agentfeed completion zsh > ~/.zsh/completions/_agentfeed
-  agentfeed completion bash > ~/.local/share/bash-completion/completions/agentfeed
-  agentfeed completion fish > ~/.config/fish/completions/agentfeed.fish
+  agentfeed completion bash > agentfeed.bash
+  agentfeed completion fish > agentfeed.fish
 
 Install:
-  mkdir -p ~/.zsh/completions && agentfeed completion zsh > ~/.zsh/completions/_agentfeed
-  mkdir -p ~/.local/share/bash-completion/completions && agentfeed completion bash > ~/.local/share/bash-completion/completions/agentfeed
-  mkdir -p ~/.config/fish/completions && agentfeed completion fish > ~/.config/fish/completions/agentfeed.fish
+  agentfeed completion zsh > _agentfeed
+  agentfeed completion bash > agentfeed.bash
+  agentfeed completion fish > agentfeed.fish
+  Move the generated file into your shell completion directory.
   Restart your shell after installing completions.
 
 Options:

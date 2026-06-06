@@ -167,7 +167,8 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('Usage: agentfeed collect');
     expect(stdout).toContain('--source <source>');
     expect(stdout).toContain('Omit --source to auto-detect Claude/Codex/Cursor/Gemini sessions and plugins.');
-    expect(stdout).toContain('Override auto-detected source');
+    expect(stdout).toContain('Override source (auto-detect is default)');
+    expect(stdout).toContain('Values: claude-code, codex, cursor, gemini-cli, other');
     expect(stdout).toContain('--session-file <path>');
     expect(stdout).toContain('--no-save-cursor');
     expect(stdout).toContain('Examples:');
@@ -309,6 +310,42 @@ describe('CLI help and option validation', () => {
       expect(stderr).toBe('');
       for (const line of expectedLines) expect(stdout).toContain(line);
       expect(stdout).not.toContain('Usage: agentfeed <command>');
+    }
+  });
+
+  it('keeps every public help surface readable in narrow terminals', async () => {
+    const helpSurfaces: string[][] = [
+      ['--help'],
+      ['help', '--help'],
+      ['commands', '--help'],
+      ['init', '--help'],
+      ['login', '--help'],
+      ['logout', '--help'],
+      ['status', '--help'],
+      ['rotate', '--help'],
+      ['version', '--help'],
+      ['token', 'rotate', '--help'],
+      ['collect', '--help'],
+      ['share', '--help'],
+      ['preview', '--help'],
+      ['publish', '--help'],
+      ['scan', '--help'],
+      ['hook', '--help'],
+      ['doctor', '--help'],
+      ['drafts', '--help'],
+      ['discard', '--help'],
+      ['open', '--help'],
+      ['completion', '--help']
+    ];
+
+    for (const args of helpSurfaces) {
+      const { stdout, stderr } = await runCliWithEnv(args, { COLUMNS: '56', AGENTFEED_PLAIN: '1' });
+      expect(stderr).toBe('');
+      const longLines = stdout
+        .split(/\r?\n/)
+        .filter((line) => line.length > 80)
+        .map((line) => `${line.length}:${line}`);
+      expect(longLines, `agentfeed ${args.join(' ')}`).toEqual([]);
     }
   });
 
@@ -650,9 +687,10 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('bash');
     expect(stdout).toContain('fish');
     expect(stdout).toContain('Install:');
-    expect(stdout).toContain('mkdir -p ~/.zsh/completions && agentfeed completion zsh > ~/.zsh/completions/_agentfeed');
-    expect(stdout).toContain('mkdir -p ~/.local/share/bash-completion/completions && agentfeed completion bash > ~/.local/share/bash-completion/completions/agentfeed');
-    expect(stdout).toContain('mkdir -p ~/.config/fish/completions && agentfeed completion fish > ~/.config/fish/completions/agentfeed.fish');
+    expect(stdout).toContain('agentfeed completion zsh > _agentfeed');
+    expect(stdout).toContain('agentfeed completion bash > agentfeed.bash');
+    expect(stdout).toContain('agentfeed completion fish > agentfeed.fish');
+    expect(stdout).toContain('Move the generated file into your shell completion directory.');
     expect(stdout).toContain('Restart your shell after installing completions.');
     expect(stderr).toBe('');
   });

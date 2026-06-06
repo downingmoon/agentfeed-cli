@@ -173,15 +173,77 @@ describe('preview CLI command', () => {
       });
 
       expect(stderr).toBe('');
-      const output = JSON.parse(stdout) as { valid: boolean; preview: { title?: string }; warnings: string[] };
+      const output = JSON.parse(stdout) as { draft_id?: string; valid: boolean; preview: { title?: string }; warnings: string[]; next_actions?: string[] };
+      expect(output.draft_id).toBe(draft.id);
       expect(output.valid).toBe(true);
       expect(output.preview.title).toBe('Remote JSON preview');
       expect(output.warnings).toEqual(['check privacy wording']);
+      expect(output.next_actions).toEqual([
+        `agentfeed publish --id ${draft.id} --yes`,
+        `agentfeed scan --id ${draft.id}`
+      ]);
       expect(metadataCount).toBe(1);
       expect(previewCount).toBe(1);
       expect(stdout).not.toContain('AgentFeed remote preview');
       expect(stdout).not.toContain('\u001b[');
       expect(stdout).not.toContain('af_live_preview_json');
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('guides scan and retry when remote preview JSON is invalid', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.worklog.title = 'Remote invalid preview';
+    await writeDraft(dir, draft);
+    const server = createServer(async (req, res) => {
+      if (handleCompatibleMetadata(req, res)) return;
+      if (req.method === 'POST' && req.url === '/v1/ingest/worklogs/preview') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({
+          data: {
+            valid: false,
+            preview: { title: 'Remote invalid preview' },
+            warnings: ['summary is too short']
+          }
+        }));
+        return;
+      }
+      res.writeHead(404).end();
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    try {
+      const { stdout, stderr } = await execFileAsync(process.execPath, [
+        cliPath,
+        'preview',
+        '--id',
+        draft.id,
+        '--remote',
+        '--json'
+      ], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: 'af_live_preview_invalid_json',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+        }
+      });
+
+      expect(stderr).toBe('');
+      const output = JSON.parse(stdout) as { draft_id?: string; valid?: boolean; warnings?: string[]; next_actions?: string[] };
+      expect(output.draft_id).toBe(draft.id);
+      expect(output.valid).toBe(false);
+      expect(output.warnings).toEqual(['summary is too short']);
+      expect(output.next_actions).toEqual([
+        `agentfeed scan --id ${draft.id}`,
+        `agentfeed preview --id ${draft.id} --remote`
+      ]);
+      expect(stdout).not.toContain('AgentFeed remote preview');
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
@@ -322,11 +384,48 @@ describe('preview CLI command', () => {
     });
 
     expect(stdout).not.toContain('sk-abcdefghijklmnopqrstuvwxyz1234567890');
-    const rendered = JSON.parse(stdout);
+    const rendered = JSON.parse(stdout) as { worklog: { summary?: string }; privacy_scan: { status?: string }; next_actions?: string[] };
     expect(rendered.worklog.summary).toBe('Preview should hide [REDACTED_SECRET]');
     expect(rendered.privacy_scan.status).toBe('danger');
+    expect(rendered.next_actions).toEqual([
+      `agentfeed publish --id ${draft.id} --yes`,
+      `agentfeed scan --id ${draft.id}`
+    ]);
 
     const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
     expect(saved.worklog.summary).toBe('Preview should hide [REDACTED_SECRET]');
+  });
+
+  it('points uploaded draft preview JSON at the trusted open workflow first', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.worklog.title = 'Uploaded preview JSON actions';
+    draft.upload = {
+      uploaded: true,
+      worklog_id: 'worklog_uploaded_preview_json',
+      review_url: 'https://agentfeed.dev/worklogs/worklog_uploaded_preview_json/review'
+    };
+    await writeDraft(dir, draft);
+
+    const stdout = execFileSync(process.execPath, [
+      cliPath,
+      'preview',
+      '--id',
+      draft.id,
+      '--json'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    const rendered = JSON.parse(stdout) as { id?: string; upload?: { uploaded?: boolean }; next_actions?: string[] };
+    expect(rendered.id).toBe(draft.id);
+    expect(rendered.upload?.uploaded).toBe(true);
+    expect(rendered.next_actions).toEqual([
+      `agentfeed open --id ${draft.id}`,
+      `agentfeed scan --id ${draft.id}`
+    ]);
+    expect(stdout).not.toContain('AgentFeed preview');
+    expect(stdout).not.toMatch(/(^|\n)Next(\n|$)/);
   });
 });

@@ -258,6 +258,19 @@ function uploadNextActions(draftId: string): string[] {
   ]);
 }
 
+function previewNextActions(draft: LocalDraft): string[] {
+  return uniqueNextCommands([
+    draft.upload.uploaded ? `agentfeed open --id ${draft.id}` : `agentfeed publish --id ${draft.id} --yes`,
+    `agentfeed scan --id ${draft.id}`
+  ]);
+}
+
+function remotePreviewNextActions(draftId: string, valid: boolean): string[] {
+  return valid
+    ? uniqueNextCommands([`agentfeed publish --id ${draftId} --yes`, `agentfeed scan --id ${draftId}`])
+    : uniqueNextCommands([`agentfeed scan --id ${draftId}`, `agentfeed preview --id ${draftId} --remote`]);
+}
+
 function printUploadResult(options: {
   heading: string;
   message: string;
@@ -1236,7 +1249,7 @@ async function cmdPreview(args: string[]) {
     await requireApiCompatibilityBeforeUpload(creds.api_base_url);
     const remote = await previewDraftRemote(draft, creds);
     if (flag(args, '--json')) {
-      print(JSON.stringify(remote, null, 2));
+      print(JSON.stringify({ draft_id: draft.id, ...remote, next_actions: remotePreviewNextActions(draft.id, remote.valid) }, null, 2));
     } else {
       print(ui.heading('AgentFeed remote preview'));
       print();
@@ -1246,12 +1259,11 @@ async function cmdPreview(args: string[]) {
       print(`Title: ${singleLine(String(remote.preview.title ?? draft.worklog.title))}`);
       print();
       print(ui.section('Next'));
-      print(`  ${ui.command(`agentfeed publish --id ${draft.id} --yes`)}`);
-      print(`  ${ui.command(`agentfeed scan --id ${draft.id}`)}`);
+      printNextCommands(remotePreviewNextActions(draft.id, remote.valid));
     }
     return;
   }
-  if (flag(args, '--json')) { print(JSON.stringify(draft, null, 2)); return; }
+  if (flag(args, '--json')) { print(JSON.stringify({ ...draft, next_actions: previewNextActions(draft) }, null, 2)); return; }
   const uploadStatus = draft.upload.uploaded ? 'uploaded' : 'pending';
   print(ui.heading('AgentFeed preview'));
   print();
@@ -1268,12 +1280,8 @@ async function cmdPreview(args: string[]) {
   print(`Upload: ${uploadStatus}`);
   if (draft.upload.review_url) print(`Review URL: ${draft.upload.review_url}`);
   print();
-  const primaryAction = draft.upload.uploaded
-    ? `agentfeed open --id ${draft.id}`
-    : `agentfeed publish --id ${draft.id} --yes`;
   print(ui.section('Next'));
-  print(`  ${ui.command(primaryAction)}`);
-  print(`  ${ui.command(`agentfeed scan --id ${draft.id}`)}`);
+  printNextCommands(previewNextActions(draft));
 }
 
 async function cmdPublish(args: string[]) {
@@ -2677,7 +2685,7 @@ Render a saved local draft preview.
 Options:
   --latest                  Preview the newest local draft (default)
   --id <draft_id>           Preview a specific draft
-  --json                    Print the local draft JSON
+  --json                    Print the local draft JSON with next actions
   --remote                  Validate/render preview through the API
   --help, -h                Show this help`,
     publish: `Usage: agentfeed publish [options]

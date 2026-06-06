@@ -166,6 +166,10 @@ Use `--json` for automation. Dry-run output is shaped as `{ dry_run, reused_exis
 
 `agentfeed collect --json` prints the local draft object as the JSON root. Automation should read draft fields such as `id`, `source`, `worklog`, `privacy_policy`, and `upload` directly from the root object. When `--upload` is also passed, the same draft-root shape is preserved and `draft.upload` is updated with the upload result (`uploaded`, `worklog_id`, `review_url`, `uploaded_at`). If `--open-review` is requested, `draft.upload.handoff.browser` reports whether the browser handoff succeeded. Unlike `share --json`, `collect --json` is intentionally **not** wrapped in a `{ draft, upload }` envelope; this keeps existing scripts compatible.
 
+## `preview --json` automation contract
+
+`agentfeed preview --json` prints the sanitized local draft as the JSON root and adds `next_actions` so tools can continue without parsing human preview text. Pending drafts point at `publish` and `scan`; already-uploaded drafts point at the trusted `open` flow and `scan`. `agentfeed preview --remote --json` includes the Backend preview result plus `draft_id` and `next_actions`; invalid remote previews guide tools to scan and retry the remote preview before publishing.
+
 ## Scoped and incremental collection
 
 By default, successful `collect` and non-dry `share` runs save `.agentfeed/state.json` with the last collection timestamp. Later runs use that timestamp as the default lower bound so long-lived agent sessions do not get counted repeatedly.

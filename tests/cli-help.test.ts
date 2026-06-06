@@ -244,7 +244,7 @@ describe('CLI help and option validation', () => {
           options?: {
             flags?: string[];
             value_options?: string[];
-            option_details?: Array<{ name: string; description: string; requires_value: boolean; value_hint?: string }>;
+            option_details?: Array<{ name: string; description: string; requires_value: boolean; value_hint?: string; value_choices?: string[] }>;
             conflicts?: Array<[string, string]>;
             completion_words?: string[];
           };
@@ -275,7 +275,7 @@ describe('CLI help and option validation', () => {
       flags: expect.arrayContaining(['--dry', '--yes', '--json', '--clipboard', '--open-review', '--no-save-cursor']),
       value_options: expect.arrayContaining(['--source', '--session-file', '--note']),
       option_details: expect.arrayContaining([
-        expect.objectContaining({ name: '--source', description: 'Select agent source', requires_value: true, value_hint: 'source' }),
+        expect.objectContaining({ name: '--source', description: 'Select agent source', requires_value: true, value_hint: 'source', value_choices: ['claude-code', 'codex', 'cursor', 'gemini-cli', 'other'] }),
         expect.objectContaining({ name: '--no-save-cursor', description: 'Do not advance the collection cursor', requires_value: false })
       ]),
       conflicts: expect.arrayContaining([['--dry', '--yes'], ['--clipboard', '--no-clipboard']]),
@@ -744,7 +744,8 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('_arguments');
     expect(stdout).toContain("'--json[Print machine-readable login status]'");
     expect(stdout).toContain("'--api-base-url[Override AgentFeed API base URL]:API URL:'");
-    expect(stdout).toContain("'--source[Select agent source]:source:'");
+    expect(stdout).toContain("'--source[Select agent source]:source:(claude-code codex cursor gemini-cli other)'");
+    expect(stdout).toContain("'--session-file[Read agent session metadata from a file]:path:_files'");
     expect(stdout).not.toContain('_arguments \\n');
     expect(stdout).not.toContain('Option for agentfeed');
     expect(stderr).toBe('');
@@ -756,6 +757,8 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('_agentfeed()');
     expect(stdout).toContain('complete -F _agentfeed agentfeed');
     expect(stdout).toContain('completion) options="zsh bash fish --help"');
+    expect(stdout).toContain('--source) COMPREPLY=( $(compgen -W "claude-code codex cursor gemini-cli other" -- "$cur") ); return 0 ;;');
+    expect(stdout).toContain('--path|--session-file|--settings-path) COMPREPLY=( $(compgen -f -- "$cur") ); return 0 ;;');
     expect(stdout).toContain('help) options="help commands init login');
     expect(stdout).toContain('completion token --help"');
     expect(stderr).toBe('');
@@ -771,7 +774,8 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('completion token" -d "Help topic"');
     expect(stdout).toContain('complete -c agentfeed -n "__fish_seen_subcommand_from login" -l json -d "Print machine-readable login status"');
     expect(stdout).toContain('complete -c agentfeed -n "__fish_seen_subcommand_from login" -l api-base-url -r -d "Override AgentFeed API base URL"');
-    expect(stdout).toContain('complete -c agentfeed -n "__fish_seen_subcommand_from collect" -l source -r -d "Select agent source"');
+    expect(stdout).toContain('complete -c agentfeed -n "__fish_seen_subcommand_from collect" -l source -r -a "claude-code codex cursor gemini-cli other" -d "Select agent source"');
+    expect(stdout).toContain('complete -c agentfeed -n "__fish_seen_subcommand_from share" -l session-file -r -F -d "Read agent session metadata from a file"');
     expect(stdout).toContain('complete -c agentfeed -n "__fish_seen_subcommand_from share" -l note -r -d "Attach a public-safe author note"');
     expect(stdout).toContain('complete -c agentfeed -n "__fish_seen_subcommand_from publish" -s y -d "Upload without an interactive confirmation"');
     expect(stdout).not.toContain('Option for agentfeed');

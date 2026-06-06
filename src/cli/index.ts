@@ -21,7 +21,7 @@ import { changedAreas } from '../summary/changed-areas.js';
 import { hasAgentFeedHook, installClaudeCodeHook, uninstallClaudeCodeHook, resolveClaudeSettingsPath } from '../hooks/claude-code-settings.js';
 import { flag, option } from './args.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
-import { parseAgentSource } from './source.js';
+import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
 import { openBrowser } from '../utils/open-browser.js';
 import { copyToClipboard } from '../utils/clipboard.js';
@@ -2524,8 +2524,19 @@ const COMPLETION_VALUE_PLACEHOLDERS: Record<string, string> = {
   '--until': 'timestamp'
 };
 
+const COMPLETION_VALUE_CHOICES: Record<string, readonly string[]> = {
+  '--source': SUPPORTED_SOURCES,
+  '--token': ['-']
+};
+
+const COMPLETION_FILE_VALUE_OPTIONS = new Set(['--path', '--session-file', '--settings-path']);
+
 function completionValuePlaceholder(optionName: string): string {
   return COMPLETION_VALUE_PLACEHOLDERS[optionName] ?? 'value';
+}
+
+function completionValueChoices(optionName: string): readonly string[] {
+  return COMPLETION_VALUE_CHOICES[optionName] ?? [];
 }
 
 function zshQuote(value: string): string {
@@ -2535,9 +2546,12 @@ function zshQuote(value: string): string {
 function zshOptionArgument(command: string, optionName: string): string {
   const description = completionOptionDescription(command, optionName).replace(/]/g, '\\]');
   const base = `${optionName}[${description}]`;
-  return completionOptionRequiresValue(command, optionName)
-    ? `${base}:${completionValuePlaceholder(optionName)}:`
-    : base;
+  if (!completionOptionRequiresValue(command, optionName)) return base;
+  const placeholder = completionValuePlaceholder(optionName);
+  const choices = completionValueChoices(optionName);
+  if (choices.length) return `${base}:${placeholder}:(${choices.join(' ')})`;
+  if (COMPLETION_FILE_VALUE_OPTIONS.has(optionName)) return `${base}:${placeholder}:_files`;
+  return `${base}:${placeholder}:`;
 }
 
 function zshArgumentsCase(command: string): string {
@@ -2594,10 +2608,12 @@ function bashCompletionScript(): string {
   const optionCases = PUBLIC_COMMANDS
     .map((command) => `    ${command}) options="${completionWordsFor(command).join(' ')}" ;;`)
     .join('\n');
+  const sourceValues = SUPPORTED_SOURCES.join(' ');
   return `_agentfeed() {
-  local cur command commands options
+  local cur prev command commands options
   COMPREPLY=()
   cur="\${COMP_WORDS[COMP_CWORD]}"
+  prev="\${COMP_WORDS[COMP_CWORD-1]}"
   command="\${COMP_WORDS[1]}"
   commands="${commands}"
 
@@ -2605,6 +2621,12 @@ function bashCompletionScript(): string {
     COMPREPLY=( $(compgen -W "$commands" -- "$cur") )
     return 0
   fi
+
+  case "$prev" in
+    --source) COMPREPLY=( $(compgen -W "${sourceValues}" -- "$cur") ); return 0 ;;
+    --token) COMPREPLY=( $(compgen -W "-" -- "$cur") ); return 0 ;;
+    --path|--session-file|--settings-path) COMPREPLY=( $(compgen -f -- "$cur") ); return 0 ;;
+  esac
 
   case "$command" in
 ${optionCases}
@@ -2628,12 +2650,15 @@ function fishCompletionScript(): string {
     `complete -c agentfeed -n "__fish_seen_subcommand_from help" -a "${helpTopics}" -d "Help topic"`,
     ...PUBLIC_COMMANDS.flatMap((command) => completionOptionsFor(command).map((optionName) => {
       const description = fishQuote(completionOptionDescription(command, optionName));
+      const choices = completionValueChoices(optionName);
       const valueHint = completionOptionRequiresValue(command, optionName) ? ' -r' : '';
+      const choiceHint = choices.length ? ` -a ${fishQuote(choices.join(' '))}` : '';
+      const fileHint = COMPLETION_FILE_VALUE_OPTIONS.has(optionName) ? ' -F' : '';
       if (optionName.startsWith('--')) {
-        return `complete -c agentfeed -n "__fish_seen_subcommand_from ${command}" -l ${optionName.slice(2)}${valueHint} -d ${description}`;
+        return `complete -c agentfeed -n "__fish_seen_subcommand_from ${command}" -l ${optionName.slice(2)}${valueHint}${choiceHint}${fileHint} -d ${description}`;
       }
       if (optionName.startsWith('-') && optionName.length === 2) {
-        return `complete -c agentfeed -n "__fish_seen_subcommand_from ${command}" -s ${optionName.slice(1)}${valueHint} -d ${description}`;
+        return `complete -c agentfeed -n "__fish_seen_subcommand_from ${command}" -s ${optionName.slice(1)}${valueHint}${choiceHint}${fileHint} -d ${description}`;
       }
       return '';
     }).filter(Boolean))
@@ -2808,6 +2833,7 @@ interface CommandOptionDetail {
   description: string;
   requires_value: boolean;
   value_hint?: string;
+  value_choices?: readonly string[];
 }
 
 function commandOptionDetails(command: string): CommandOptionDetail[] {
@@ -2817,7 +2843,8 @@ function commandOptionDetails(command: string): CommandOptionDetail[] {
       name: optionName,
       description: completionOptionDescription(command, optionName),
       requires_value: requiresValue,
-      ...(requiresValue ? { value_hint: completionValuePlaceholder(optionName) } : {})
+      ...(requiresValue ? { value_hint: completionValuePlaceholder(optionName) } : {}),
+      ...(completionValueChoices(optionName).length ? { value_choices: [...completionValueChoices(optionName)] } : {})
     };
   });
 }

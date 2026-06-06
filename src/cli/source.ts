@@ -12,7 +12,7 @@ const SOURCE_ALIASES: Record<string, AgentType> = {
   other: 'other'
 };
 
-const SUPPORTED_SOURCES = ['claude-code', 'codex', 'cursor', 'gemini-cli', 'other'] as const;
+export const SUPPORTED_SOURCES = ['claude-code', 'codex', 'cursor', 'gemini-cli', 'other'] as const;
 type SourceCommand = 'collect' | 'share';
 
 function editDistance(a: string, b: string): number {

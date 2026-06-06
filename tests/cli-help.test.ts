@@ -70,6 +70,9 @@ describe('CLI help and option validation', () => {
     const { stdout, stderr } = await runCli(['--help']);
 
     expect(stdout).toContain('Usage: agentfeed <command>');
+    expect(stdout).toContain('Global options:');
+    expect(stdout).toContain('agentfeed --version');
+    expect(stdout).toContain('agentfeed -v');
     expect(stdout).toContain('Commands:');
     expect(stdout).toContain('Start:');
     expect(stdout).toContain('Share work:');
@@ -159,6 +162,35 @@ describe('CLI help and option validation', () => {
     }
   });
 
+  it('prints command-specific help for every public command surface', async () => {
+    const expectations: Array<[string[], string[]]> = [
+      [['init', '--help'], ['Usage: agentfeed init', '--project-name', '--no-git-check']],
+      [['login', '--help'], ['Usage: agentfeed login', '--token-stdin', '--no-open']],
+      [['logout', '--help'], ['Usage: agentfeed logout', '--json']],
+      [['status', '--help'], ['Usage: agentfeed status', 'credential, API, project']],
+      [['rotate', '--help'], ['Usage: agentfeed rotate', '--browser', '--api-base-url']],
+      [['token', 'rotate', '--help'], ['Usage: agentfeed token rotate', 'Compatibility alias for:', 'agentfeed rotate']],
+      [['collect', '--help'], ['Usage: agentfeed collect', '--source <source>', '--no-save-cursor']],
+      [['share', '--help'], ['Usage: agentfeed share', '--note <text>', '--run-configured-commands']],
+      [['preview', '--help'], ['Usage: agentfeed preview', '--remote', '--json']],
+      [['publish', '--help'], ['Usage: agentfeed publish', '--open-review', '--json']],
+      [['scan', '--help'], ['Usage: agentfeed scan', '--path <path>', '--dry-run']],
+      [['hook', '--help'], ['Usage: agentfeed hook', '--settings-path', 'claude-code']],
+      [['doctor', '--help'], ['Usage: agentfeed doctor', 'diagnostics']],
+      [['drafts', '--help'], ['Usage: agentfeed drafts', '--json']],
+      [['discard', '--help'], ['Usage: agentfeed discard', '--latest', '--id']],
+      [['open', '--help'], ['Usage: agentfeed open', '--latest', '--id']],
+      [['completion', '--help'], ['Usage: agentfeed completion <shell>', 'zsh', 'bash', 'fish']],
+    ];
+
+    for (const [args, expectedLines] of expectations) {
+      const { stdout, stderr } = await runCli(args);
+      expect(stderr).toBe('');
+      for (const line of expectedLines) expect(stdout).toContain(line);
+      expect(stdout).not.toContain('Usage: agentfeed <command>');
+    }
+  });
+
   it('prints login-specific help for login --help', async () => {
     const { stdout, stderr } = await runCli(['login', '--help']);
 
@@ -228,6 +260,7 @@ describe('CLI help and option validation', () => {
     const failure = await runCliFailure(['collect', '--source']);
 
     expect(failure.stderr).toContain('--source requires a value');
+    expect(failure.stderr).toContain('Run: agentfeed collect --help');
     expect(failure.stdout).toBe('');
   });
 
@@ -235,7 +268,61 @@ describe('CLI help and option validation', () => {
     const failure = await runCliFailure(['login', '--api-base-url']);
 
     expect(failure.stderr).toContain('--api-base-url requires a value');
+    expect(failure.stderr).toContain('Run: agentfeed login --help');
     expect(failure.stdout).toBe('');
+  });
+
+  it('prints command help hints for unexpected positional arguments', async () => {
+    const expectations: Array<[string[], string, string]> = [
+      [['status', 'extra'], 'Unexpected argument for status: extra', 'Run: agentfeed status --help'],
+      [['doctor', 'extra'], 'Unexpected argument for doctor: extra', 'Run: agentfeed doctor --help'],
+      [['drafts', 'extra'], 'Unexpected argument for drafts: extra', 'Run: agentfeed drafts --help'],
+      [['open', 'draft_123'], 'Unexpected argument for open: draft_123', 'Run: agentfeed open --help'],
+      [['publish', 'draft_123'], 'Unexpected argument for publish: draft_123', 'Run: agentfeed publish --help'],
+    ];
+
+    for (const [args, message, hint] of expectations) {
+      const failure = await runCliFailure(args);
+      expect(failure.stderr).toContain(message);
+      expect(failure.stderr).toContain(hint);
+      expect(failure.stdout).toBe('');
+    }
+  });
+
+  it('prints actionable recovery for token alias and completion subcommand mistakes', async () => {
+    const token = await runCliFailure(['token', 'rotat']);
+    expect(token.stderr).toContain('Unknown token subcommand: rotat');
+    expect(token.stderr).toContain('Run: agentfeed token rotate --help');
+    expect(token.stdout).toBe('');
+
+    const completion = await runCliFailure(['completion', 'powershell']);
+    expect(completion.stderr).toContain('Unsupported completion shell: powershell');
+    expect(completion.stderr).toContain('Supported shells: zsh, bash, fish');
+    expect(completion.stderr).toContain('Run: agentfeed completion --help');
+    expect(completion.stdout).toBe('');
+  });
+
+  it('rejects conflicting flags with command-specific recovery hints', async () => {
+    const expectations: Array<[string[], string, string]> = [
+      [['share', '--dry', '--yes'], 'Conflicting options for share: --dry and --yes', 'Run: agentfeed share --help'],
+      [['share', '--clipboard', '--no-clip'], 'Conflicting options for share: --clipboard and --no-clip', 'Run: agentfeed share --help'],
+      [['collect', '--upload', '--no-upload'], 'Conflicting options for collect: --upload and --no-upload', 'Run: agentfeed collect --help'],
+      [['preview', '--id', 'draft_123', '--latest'], 'Conflicting options for preview: --id and --latest', 'Run: agentfeed preview --help'],
+      [['publish', '--id', 'draft_123', '--latest'], 'Conflicting options for publish: --id and --latest', 'Run: agentfeed publish --help'],
+      [['publish', '--open-review', '--no-open-review'], 'Conflicting options for publish: --open-review and --no-open-review', 'Run: agentfeed publish --help'],
+      [['scan', '--path', '.', '--latest'], 'Conflicting options for scan: --latest and --path', 'Run: agentfeed scan --help'],
+      [['hook', 'install', 'claude-code', '--global', '--project'], 'Conflicting options for hook: --global and --project', 'Run: agentfeed hook --help'],
+      [['discard', '--id', 'draft_123', '--latest'], 'Conflicting options for discard: --id and --latest', 'Run: agentfeed discard --help'],
+      [['open', '--id', 'draft_123', '--latest'], 'Conflicting options for open: --id and --latest', 'Run: agentfeed open --help'],
+    ];
+
+    for (const [args, message, hint] of expectations) {
+      const failure = await runCliFailure(args);
+      expect(failure.stderr).toContain(message);
+      expect(failure.stderr).toContain('Use only one of');
+      expect(failure.stderr).toContain(hint);
+      expect(failure.stdout).toBe('');
+    }
   });
 
   it('prints completion-specific help for completion --help', async () => {
@@ -254,6 +341,7 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('#compdef agentfeed');
     expect(stdout).toContain('_agentfeed');
     expect(stdout).toContain('agentfeed');
+    expect(stdout).toContain('completion) compadd -- zsh bash fish --help');
     expect(stderr).toBe('');
   });
 
@@ -262,6 +350,7 @@ describe('CLI help and option validation', () => {
 
     expect(stdout).toContain('_agentfeed()');
     expect(stdout).toContain('complete -F _agentfeed agentfeed');
+    expect(stdout).toContain('completion) options="zsh bash fish --help"');
     expect(stderr).toBe('');
   });
 
@@ -270,6 +359,7 @@ describe('CLI help and option validation', () => {
 
     expect(stdout).toContain('complete -c agentfeed');
     expect(stdout).toContain('completion');
+    expect(stdout).toContain('complete -c agentfeed -n "__fish_seen_subcommand_from completion" -a "zsh bash fish"');
     expect(stderr).toBe('');
   });
 });

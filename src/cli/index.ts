@@ -1394,12 +1394,18 @@ function completionOptionsFor(command: string): string[] {
   return [...new Set([...(spec.flags ?? []), ...(spec.valueOptions ?? []), '--help'])].sort();
 }
 
+function completionWordsFor(command: string): string[] {
+  return command === 'completion'
+    ? ['zsh', 'bash', 'fish', ...completionOptionsFor(command)]
+    : completionOptionsFor(command);
+}
+
 function zshCompletionScript(): string {
   const commandEntries = PUBLIC_COMMANDS
     .map((command) => `    '${command}:${COMMAND_DESCRIPTIONS[command]}'`)
     .join('\n');
   const optionCases = PUBLIC_COMMANDS
-    .map((command) => `    ${command}) compadd -- ${completionOptionsFor(command).join(' ')} ;;`)
+    .map((command) => `    ${command}) compadd -- ${completionWordsFor(command).join(' ')} ;;`)
     .join('\n');
   return `#compdef agentfeed
 
@@ -1427,7 +1433,7 @@ _agentfeed "$@"
 function bashCompletionScript(): string {
   const commands = PUBLIC_COMMANDS.join(' ');
   const optionCases = PUBLIC_COMMANDS
-    .map((command) => `    ${command}) options="${completionOptionsFor(command).join(' ')}" ;;`)
+    .map((command) => `    ${command}) options="${completionWordsFor(command).join(' ')}" ;;`)
     .join('\n');
   return `_agentfeed() {
   local cur command commands options
@@ -1458,6 +1464,7 @@ function fishCompletionScript(): string {
   const lines = [
     'complete -c agentfeed -f',
     ...PUBLIC_COMMANDS.map((command) => `complete -c agentfeed -n "not __fish_seen_subcommand_from ${commandList}" -a "${command}" -d "${COMMAND_DESCRIPTIONS[command]}"`),
+    'complete -c agentfeed -n "__fish_seen_subcommand_from completion" -a "zsh bash fish" -d "Completion shell"',
     ...PUBLIC_COMMANDS.flatMap((command) => completionOptionsFor(command).map((optionName) => {
       if (optionName.startsWith('--')) {
         return `complete -c agentfeed -n "__fish_seen_subcommand_from ${command}" -l ${optionName.slice(2)} -d "Option for agentfeed ${command}"`;
@@ -1476,7 +1483,11 @@ function completionScript(shell: string): string {
     case 'zsh': return zshCompletionScript();
     case 'bash': return bashCompletionScript();
     case 'fish': return fishCompletionScript();
-    default: throw new Error(`Unsupported completion shell: ${shell}\nSupported shells: zsh, bash, fish`);
+    default: throw new Error([
+      `Unsupported completion shell: ${shell}`,
+      'Supported shells: zsh, bash, fish',
+      'Run: agentfeed completion --help'
+    ].join('\n'));
   }
 }
 
@@ -1558,11 +1569,27 @@ const KNOWN_COMMANDS = new Set([
 interface CommandArgSpec {
   flags?: readonly string[];
   valueOptions?: readonly string[];
+  conflicts?: readonly (readonly [string, string])[];
   validatePositionals?: (positionals: string[]) => string | null;
 }
 
+function commandUsageError(message: string, command: string): string {
+  return [
+    message,
+    commandHelpHint(command)
+  ].join('\n');
+}
+
+function conflictingOptionsError(command: string, first: string, second: string): string {
+  return [
+    `Conflicting options for ${command}: ${first} and ${second}`,
+    `Use only one of ${first} or ${second}.`,
+    commandHelpHint(command)
+  ].join('\n');
+}
+
 const NO_POSITIONALS = (command: string) => (positionals: string[]) =>
-  positionals.length ? `Unexpected argument for ${command}: ${positionals[0]}` : null;
+  positionals.length ? commandUsageError(`Unexpected argument for ${command}: ${positionals[0]}`, command) : null;
 
 function hookUsageMessage(): string {
   return [
@@ -1606,43 +1633,57 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     flags: ['--browser', '--no-save', '--no-open'],
     valueOptions: ['--api-base-url'],
     validatePositionals: (positionals) => {
-      if (positionals.length === 0) return 'Usage: agentfeed token rotate';
-      if (positionals[0] !== 'rotate') return `Unknown token subcommand: ${positionals[0]}`;
-      if (positionals.length > 1) return `Unexpected argument for token rotate: ${positionals[1]}`;
+      if (positionals.length === 0) return commandUsageError('Usage: agentfeed token rotate', 'token');
+      if (positionals[0] !== 'rotate') return commandUsageError(`Unknown token subcommand: ${positionals[0]}`, 'token');
+      if (positionals.length > 1) return commandUsageError(`Unexpected argument for token rotate: ${positionals[1]}`, 'token');
       return null;
     }
   },
   collect: {
     flags: ['--all', '--force', '--run-configured-commands', '--explain', '--json', '--upload', '--open-review', '--no-open-review', '--no-save-cursor', '--no-upload'],
     valueOptions: ['--source', '--session-file', '--since', '--until'],
+    conflicts: [['--upload', '--no-upload'], ['--open-review', '--no-open-review']],
     validatePositionals: NO_POSITIONALS('collect')
   },
   share: {
     flags: ['--dry', '--dry-run', '--yes', '-y', '--open-review', '--no-open-review', '--all', '--force', '--run-configured-commands', '--no-clipboard', '--no-clip', '--json', '--clipboard'],
     valueOptions: ['--source', '--session-file', '--since', '--until', '--note'],
+    conflicts: [
+      ['--dry', '--yes'],
+      ['--dry', '-y'],
+      ['--dry-run', '--yes'],
+      ['--dry-run', '-y'],
+      ['--open-review', '--no-open-review'],
+      ['--clipboard', '--no-clipboard'],
+      ['--clipboard', '--no-clip']
+    ],
     validatePositionals: NO_POSITIONALS('share')
   },
   preview: {
     flags: ['--latest', '--remote', '--json'],
     valueOptions: ['--id'],
+    conflicts: [['--id', '--latest']],
     validatePositionals: NO_POSITIONALS('preview')
   },
   publish: {
     flags: ['--latest', '--yes', '-y', '--json', '--clipboard', '--no-clipboard', '--open-review', '--no-open-review'],
     valueOptions: ['--id'],
+    conflicts: [['--id', '--latest'], ['--clipboard', '--no-clipboard'], ['--open-review', '--no-open-review']],
     validatePositionals: NO_POSITIONALS('publish')
   },
   scan: {
     flags: ['--latest', '--dry-run', '--dry', '--json'],
     valueOptions: ['--id', '--path'],
+    conflicts: [['--id', '--latest'], ['--id', '--path'], ['--latest', '--path']],
     validatePositionals: NO_POSITIONALS('scan')
   },
   hook: {
     flags: ['--global', '--project', '--dry-run'],
     valueOptions: ['--settings-path'],
+    conflicts: [['--global', '--project']],
     validatePositionals: (positionals) => {
       if (positionals.length < 2) return hookUsageMessage();
-      if (positionals.length > 2) return `Unexpected argument for hook: ${positionals[2]}`;
+      if (positionals.length > 2) return commandUsageError(`Unexpected argument for hook: ${positionals[2]}`, 'hook');
       const [action, target] = positionals;
       if (action !== 'install' && action !== 'uninstall') return hookUsageMessage();
       if (target !== 'claude-code') return unsupportedHookTargetMessage();
@@ -1659,20 +1700,26 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
   discard: {
     flags: ['--latest'],
     valueOptions: ['--id'],
+    conflicts: [['--id', '--latest']],
     validatePositionals: NO_POSITIONALS('discard')
   },
   open: {
     flags: ['--latest'],
     valueOptions: ['--id'],
+    conflicts: [['--id', '--latest']],
     validatePositionals: NO_POSITIONALS('open')
   },
   completion: {
     validatePositionals: (positionals) => {
       if (positionals.length === 0) return null;
-      if (positionals.length > 1) return `Unexpected argument for completion: ${positionals[1]}`;
+      if (positionals.length > 1) return commandUsageError(`Unexpected argument for completion: ${positionals[1]}`, 'completion');
       return ['zsh', 'bash', 'fish'].includes(positionals[0])
         ? null
-        : `Unsupported completion shell: ${positionals[0]}\nSupported shells: zsh, bash, fish`;
+        : [
+          `Unsupported completion shell: ${positionals[0]}`,
+          'Supported shells: zsh, bash, fish',
+          'Run: agentfeed completion --help'
+        ].join('\n');
     }
   }
 };
@@ -1756,33 +1803,39 @@ function validateCommandArgs(command: string, args: string[]): void {
   const flags = new Set([...(spec.flags ?? []), '--help', '-h']);
   const valueOptions = new Set(spec.valueOptions ?? []);
   const positionals: string[] = [];
+  const seenOptions = new Set<string>();
 
   for (let i = 0; i < args.length; i += 1) {
     const raw = args[i];
     if (raw === '--') {
-      throw new Error(`Unexpected argument for ${command}: --`);
+      throw new Error(commandUsageError(`Unexpected argument for ${command}: --`, command));
     }
     if (raw.startsWith('--')) {
       const equalsIndex = raw.indexOf('=');
       const name = equalsIndex >= 0 ? raw.slice(0, equalsIndex) : raw;
       if (valueOptions.has(name)) {
+        seenOptions.add(name);
         if (equalsIndex >= 0) {
-          if (raw.slice(equalsIndex + 1).length === 0) throw new Error(`${name} requires a value.`);
+          if (raw.slice(equalsIndex + 1).length === 0) throw new Error(commandUsageError(`${name} requires a value.`, command));
         } else {
           const value = args[i + 1];
-          if (!value || value.startsWith('--')) throw new Error(`${name} requires a value.`);
+          if (!value || value.startsWith('--')) throw new Error(commandUsageError(`${name} requires a value.`, command));
           i += 1;
         }
         continue;
       }
       if (flags.has(name)) {
-        if (equalsIndex >= 0) throw new Error(`${name} does not accept a value.`);
+        seenOptions.add(name);
+        if (equalsIndex >= 0) throw new Error(commandUsageError(`${name} does not accept a value.`, command));
         continue;
       }
       throw unknownOptionError(command, name, spec);
     }
     if (raw.startsWith('-')) {
-      if (flags.has(raw)) continue;
+      if (flags.has(raw)) {
+        seenOptions.add(raw);
+        continue;
+      }
       throw unknownOptionError(command, raw, spec);
     }
     positionals.push(raw);
@@ -1790,6 +1843,12 @@ function validateCommandArgs(command: string, args: string[]): void {
 
   const positionalError = spec.validatePositionals?.(positionals);
   if (positionalError) throw new Error(positionalError);
+
+  for (const [first, second] of spec.conflicts ?? []) {
+    if (seenOptions.has(first) && seenOptions.has(second)) {
+      throw new Error(conflictingOptionsError(command, first, second));
+    }
+  }
 }
 
 function printCommandCatalog(): void {
@@ -1805,6 +1864,7 @@ function printCommandCatalog(): void {
 function printHelp(): void {
   print(ui.heading('Usage: agentfeed <command> [options]'));
   print(`Version: ${AGENTFEED_CLI_VERSION}`);
+  print(`\n${ui.section('Global options')}:\n  agentfeed --help\n  agentfeed --version\n  agentfeed -v`);
   print(`\n${ui.section('Quickstart')}:\n  agentfeed init\n  agentfeed login\n  printf %s "$TOKEN" | agentfeed login --token-stdin\n  printf %s "$TOKEN" | agentfeed login --token - --no-save\n  agentfeed share --yes --open-review`);
   print(`\n${ui.section('Daily workflow')}:\n  agentfeed share\n  agentfeed share --yes\n  agentfeed share --dry\n  agentfeed share --note "Fixed auth flow"\n  agentfeed status`);
   print(`\n${ui.section('Draft review')}:\n  agentfeed collect --explain\n  agentfeed preview --latest\n  agentfeed publish --latest --yes\n  agentfeed open --latest`);

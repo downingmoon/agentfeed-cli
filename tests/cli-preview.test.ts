@@ -20,7 +20,13 @@ function runPreviewFailure(args: string[]): { stdout: string; stderr: string } {
       cwd: dir,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, HOME: home }
+      env: {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: '',
+        AGENTFEED_API_BASE_URL: undefined,
+        AGENTFEED_ALLOW_INSECURE_API: undefined
+      }
     });
   } catch (error) {
     const failure = error as { stdout?: string | Buffer; stderr?: string | Buffer };
@@ -64,6 +70,19 @@ describe('preview CLI command', () => {
     expect(stderr).toContain('Draft not found: draft_missing');
     expect(stderr).toContain('Run: agentfeed drafts');
     expect(stderr).toContain('Run: agentfeed collect --explain');
+  });
+
+  it('guides login before remote preview when no token is configured', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.worklog.title = 'Remote preview needs login';
+    await writeDraft(dir, draft);
+
+    const { stdout, stderr } = runPreviewFailure(['preview', '--id', draft.id, '--remote']);
+
+    expect(stdout).toBe('');
+    expect(stderr).toContain('AgentFeed token is missing.');
+    expect(stderr).toContain('Run: agentfeed login');
+    expect(stderr).toContain('Run: printf %s "$TOKEN" | agentfeed login --token-stdin');
   });
 
   it('keeps action guidance in human-readable preview output', async () => {

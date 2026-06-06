@@ -295,6 +295,39 @@ describe('collect CLI command', () => {
     expect(stdout).not.toMatch(/(^|\n)(AgentFeed draft|Summary|Signals|Collection|Next|ID:|Preview:|Upload:)/);
   });
 
+  it('guides login before collect JSON upload when no token is configured', async () => {
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = "json-upload-needs-login";\n');
+
+    let failure: { stdout?: string; stderr?: string } | undefined;
+    try {
+      await execFileAsync(process.execPath, [
+        cliPath,
+        'collect',
+        '--json',
+        '--upload',
+        '--all',
+        '--no-save-cursor'
+      ], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: '',
+          AGENTFEED_API_BASE_URL: undefined,
+          AGENTFEED_ALLOW_INSECURE_API: undefined
+        }
+      });
+    } catch (error) {
+      failure = error as { stdout?: string; stderr?: string };
+    }
+
+    expect(failure?.stdout ?? '').toBe('');
+    expect(failure?.stderr ?? '').toContain('AgentFeed token is missing.');
+    expect(failure?.stderr ?? '').toContain('Run: agentfeed login');
+    expect(failure?.stderr ?? '').toContain('Run: printf %s "$TOKEN" | agentfeed login --token-stdin');
+  });
+
   it('auto-slices default collect windows after an idle gap', async () => {
     const sessionFile = join(home, 'codex-idle-gap-session.jsonl');
     await writeFile(sessionFile, [

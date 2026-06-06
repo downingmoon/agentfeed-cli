@@ -314,6 +314,14 @@ function unsafeArgvTokenMessage(): string {
   ].join('\n');
 }
 
+function missingTokenMessage(): string {
+  return [
+    'AgentFeed token is missing.',
+    'Run: agentfeed login',
+    `Run: ${SAFE_TOKEN_STDIN_COMMAND}`
+  ].join('\n');
+}
+
 async function requireApiCompatibilityBeforeUpload(apiBaseUrl: string): Promise<ApiMetadata> {
   const result = await checkApiCompatibility(apiBaseUrl);
   if (result.compatible && result.data) return result.data;
@@ -828,7 +836,7 @@ async function cmdCollect(args: string[]) {
   if (flag(args, '--json')) {
     if (flag(args, '--upload')) {
       const creds = await loadCredentials();
-      if (!creds) throw new Error('AgentFeed token is missing. Run: agentfeed login');
+      if (!creds) throw new Error(missingTokenMessage());
       const metadata = await requireUploadPreflight(creds);
       const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds, reviewBaseUrl: metadata.review_base_url });
       draft = await sanitizeDraftForCliOutput(process.cwd(), await readDraft(process.cwd(), draft.id));
@@ -880,7 +888,7 @@ async function cmdCollect(args: string[]) {
 async function cmdShare(args: string[]) {
   const opts = parseShareArgs(args);
   const creds = opts.dryRun ? null : await loadCredentials();
-  if (!opts.dryRun && !creds) throw new Error('AgentFeed token is missing. Run: agentfeed login');
+  if (!opts.dryRun && !creds) throw new Error(missingTokenMessage());
 
   const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
   const collection = await collectDraftWithStatus({ cwd: process.cwd(), source: opts.source, sessionFile: opts.sessionFile, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all'), note: opts.note, runConfiguredCommands: opts.runConfiguredCommands, skipConfiguredCommands: opts.dryRun });
@@ -946,7 +954,7 @@ async function cmdPreview(args: string[]) {
   const draft = await sanitizeDraftForCliOutput(process.cwd(), await readDraft(process.cwd(), id));
   if (flag(args, '--remote')) {
     const creds = await loadCredentials();
-    if (!creds) throw new Error('AgentFeed token is missing. Run: agentfeed login, or pipe a token with: printf %s "$TOKEN" | agentfeed login --token-stdin');
+    if (!creds) throw new Error(missingTokenMessage());
     await requireApiCompatibilityBeforeUpload(creds.api_base_url);
     const remote = await previewDraftRemote(draft, creds);
     if (flag(args, '--json')) {
@@ -992,7 +1000,7 @@ async function cmdPreview(args: string[]) {
 
 async function cmdPublish(args: string[]) {
   const creds = await loadCredentials();
-  if (!creds) throw new Error('AgentFeed token is missing. Run: agentfeed login, or pipe a token with: printf %s "$TOKEN" | agentfeed login --token-stdin');
+  if (!creds) throw new Error(missingTokenMessage());
   const id = await resolveDraftId(process.cwd(), args);
   const existingDraft = await readDraft(process.cwd(), id);
   const cacheReuseStatus = cachedUploadReuseStatusForCredentials(existingDraft, creds);

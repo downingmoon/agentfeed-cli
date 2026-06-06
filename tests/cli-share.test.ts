@@ -89,6 +89,31 @@ async function installFailingReviewUrlHandoff(binDir: string): Promise<void> {
   }));
 }
 
+function isolatedCliEnv(extra: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
+  return {
+    ...process.env,
+    HOME: home,
+    AGENTFEED_TOKEN: '',
+    AGENTFEED_API_BASE_URL: undefined,
+    AGENTFEED_ALLOW_INSECURE_API: undefined,
+    ...extra
+  };
+}
+
+async function runCliFailure(args: string[], env: NodeJS.ProcessEnv = {}): Promise<{ stdout: string; stderr: string }> {
+  try {
+    await execFileAsync(process.execPath, [cliPath, ...args], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: isolatedCliEnv(env)
+    });
+  } catch (error) {
+    const failure = error as { stdout?: string; stderr?: string };
+    return { stdout: failure.stdout ?? '', stderr: failure.stderr ?? '' };
+  }
+  throw new Error(`Expected agentfeed ${args.join(' ')} to fail`);
+}
+
 
 function compatibleMetadataPayload() {
   return {
@@ -217,6 +242,20 @@ describe('share CLI command', () => {
     expect(stdout).toContain('Publish later:');
     expect(stdout).toContain('agentfeed publish --id');
     expect(stdout).toContain('agentfeed preview --id');
+  });
+
+  it('guides login when share or publish needs a token', async () => {
+    const share = await runCliFailure(['share', '--yes', '--all']);
+    expect(share.stdout).toBe('');
+    expect(share.stderr).toContain('AgentFeed token is missing.');
+    expect(share.stderr).toContain('Run: agentfeed login');
+    expect(share.stderr).toContain('Run: printf %s "$TOKEN" | agentfeed login --token-stdin');
+
+    const publish = await runCliFailure(['publish', '--latest', '--yes']);
+    expect(publish.stdout).toBe('');
+    expect(publish.stderr).toContain('AgentFeed token is missing.');
+    expect(publish.stderr).toContain('Run: agentfeed login');
+    expect(publish.stderr).toContain('Run: printf %s "$TOKEN" | agentfeed login --token-stdin');
   });
 
   it('prints parseable share JSON without human UX headings or ANSI styling', async () => {

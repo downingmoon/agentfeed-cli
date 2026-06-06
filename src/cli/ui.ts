@@ -63,7 +63,7 @@ export function formatCliError(message: string): string {
     .map((line, index) => {
       if (index === 0) return color(line, 'red', process.stderr);
       if (line.startsWith('Did you mean:')) return color(line, 'cyan', process.stderr);
-      if (line.startsWith('Run:')) return color(line, 'gray', process.stderr);
+      if (/^(Run|Try|Use|Command):/.test(line)) return color(line, 'gray', process.stderr);
       return line;
     })
     .join('\n');

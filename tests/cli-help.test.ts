@@ -143,6 +143,17 @@ describe('CLI help and option validation', () => {
     expect(failure.stdout).not.toMatch(ANSI_ESCAPE_PATTERN);
   });
 
+  it('colors recovery command lines when color output is forced', async () => {
+    const leading = await runCliFailureWithEnv(['--dry'], { FORCE_COLOR: '1', NO_COLOR: undefined });
+    expect(leading.stderr).toContain('\u001B[31mOption appears before command: --dry');
+    expect(leading.stderr).toMatch(/\u001B\[90mTry: agentfeed share --dry\u001B\[39m/);
+    expect(leading.stderr).toMatch(/\u001B\[90mRun: agentfeed --help\u001B\[39m/);
+
+    const option = await runCliFailureWithEnv(['status', '--bogus'], { FORCE_COLOR: '1', NO_COLOR: undefined });
+    expect(option.stderr).toMatch(/\u001B\[90mCommand: agentfeed status\u001B\[39m/);
+    expect(option.stderr).toMatch(/\u001B\[90mRun: agentfeed status --help\u001B\[39m/);
+  });
+
   it('prints help without ANSI escapes when stdout is not a TTY', async () => {
     const { stdout, stderr } = await runCliWithEnv(['--help'], { NO_COLOR: '' });
 

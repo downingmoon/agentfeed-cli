@@ -128,6 +128,18 @@ AGENTFEED_CREDENTIAL_STORE=file agentfeed login
 `AGENTFEED_CREDENTIAL_STORE=auto` does **not** silently downgrade to file storage when the keychain is unavailable or locked. If you need a break-glass fallback for one login, make it explicit with `AGENTFEED_ALLOW_INSECURE_CREDENTIAL_STORE=1`; otherwise choose `AGENTFEED_CREDENTIAL_STORE=file` or use `AGENTFEED_TOKEN` from your secret manager.
 
 
+## Shell completion
+
+Install command and option completion after building or installing the CLI:
+
+```bash
+agentfeed completion zsh > ~/.zsh/completions/_agentfeed
+agentfeed completion bash > ~/.local/share/bash-completion/completions/agentfeed
+agentfeed completion fish > ~/.config/fish/completions/agentfeed.fish
+```
+
+Completion scripts are generated from the same command metadata used by help and option validation, so command-specific flags stay aligned.
+
 ## One-command sharing
 
 `agentfeed share` is the recommended daily command. It creates a local draft, prints the public-safe preview that will be uploaded, and requires explicit upload intent before creating a private AgentFeed review draft. Use `--yes` for human-readable uploads, or `--json` when a machine will inspect the returned upload/handoff object; CI/non-interactive runs are not exempt from this private-review upload gate.

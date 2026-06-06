@@ -836,6 +836,145 @@ async function cmdOpen(args: string[]) {
   print(opened ? 'Opened review URL.' : draft.upload.review_url);
 }
 
+function completionOptionsFor(command: string): string[] {
+  const spec = COMMAND_ARG_SPECS[command];
+  if (!spec) return ['--help'];
+  return [...new Set([...(spec.flags ?? []), ...(spec.valueOptions ?? []), '--help'])].sort();
+}
+
+function zshCompletionScript(): string {
+  const commandEntries = PUBLIC_COMMANDS
+    .map((command) => `    '${command}:${COMMAND_DESCRIPTIONS[command]}'`)
+    .join('\n');
+  const optionCases = PUBLIC_COMMANDS
+    .map((command) => `    ${command}) compadd -- ${completionOptionsFor(command).join(' ')} ;;`)
+    .join('\n');
+  return `#compdef agentfeed
+
+_agentfeed() {
+  local -a commands
+  commands=(
+${commandEntries}
+  )
+
+  if (( CURRENT == 2 )); then
+    _describe 'agentfeed command' commands
+    return
+  fi
+
+  case "$words[2]" in
+${optionCases}
+    *) compadd -- --help ;;
+  esac
+}
+
+_agentfeed "$@"
+`;
+}
+
+function bashCompletionScript(): string {
+  const commands = PUBLIC_COMMANDS.join(' ');
+  const optionCases = PUBLIC_COMMANDS
+    .map((command) => `    ${command}) options="${completionOptionsFor(command).join(' ')}" ;;`)
+    .join('\n');
+  return `_agentfeed() {
+  local cur command commands options
+  COMPREPLY=()
+  cur="\${COMP_WORDS[COMP_CWORD]}"
+  command="\${COMP_WORDS[1]}"
+  commands="${commands}"
+
+  if [[ COMP_CWORD -eq 1 ]]; then
+    COMPREPLY=( $(compgen -W "$commands" -- "$cur") )
+    return 0
+  fi
+
+  case "$command" in
+${optionCases}
+    *) options="--help" ;;
+  esac
+
+  COMPREPLY=( $(compgen -W "$options" -- "$cur") )
+}
+
+complete -F _agentfeed agentfeed
+`;
+}
+
+function fishCompletionScript(): string {
+  const commandList = PUBLIC_COMMANDS.join(' ');
+  const lines = [
+    'complete -c agentfeed -f',
+    ...PUBLIC_COMMANDS.map((command) => `complete -c agentfeed -n "not __fish_seen_subcommand_from ${commandList}" -a "${command}" -d "${COMMAND_DESCRIPTIONS[command]}"`),
+    ...PUBLIC_COMMANDS.flatMap((command) => completionOptionsFor(command).map((optionName) => {
+      if (optionName.startsWith('--')) {
+        return `complete -c agentfeed -n "__fish_seen_subcommand_from ${command}" -l ${optionName.slice(2)} -d "Option for agentfeed ${command}"`;
+      }
+      if (optionName.startsWith('-') && optionName.length === 2) {
+        return `complete -c agentfeed -n "__fish_seen_subcommand_from ${command}" -s ${optionName.slice(1)} -d "Option for agentfeed ${command}"`;
+      }
+      return '';
+    }).filter(Boolean))
+  ];
+  return `${lines.join('\n')}\n`;
+}
+
+function completionScript(shell: string): string {
+  switch (shell) {
+    case 'zsh': return zshCompletionScript();
+    case 'bash': return bashCompletionScript();
+    case 'fish': return fishCompletionScript();
+    default: throw new Error(`Unsupported completion shell: ${shell}\nSupported shells: zsh, bash, fish`);
+  }
+}
+
+async function cmdCompletion(args: string[]) {
+  const shell = args[0];
+  if (!shell) {
+    printCommandHelp('completion');
+    return;
+  }
+  print(completionScript(shell));
+}
+
+const PUBLIC_COMMANDS = [
+  'init',
+  'login',
+  'share',
+  'collect',
+  'preview',
+  'publish',
+  'open',
+  'scan',
+  'status',
+  'doctor',
+  'hook',
+  'drafts',
+  'discard',
+  'rotate',
+  'logout',
+  'completion'
+] as const;
+
+const COMMAND_DESCRIPTIONS: Record<(typeof PUBLIC_COMMANDS)[number], string> = {
+  init: 'Initialize AgentFeed in the current project',
+  login: 'Connect this machine through browser approval',
+  share: 'Collect, preview, and optionally upload in one workflow',
+  collect: 'Collect local agent work into a private review draft',
+  preview: 'Preview a saved local draft',
+  publish: 'Upload a saved draft as a private review draft',
+  open: 'Open a trusted review URL from an uploaded draft',
+  scan: 'Scan and redact public draft fields',
+  status: 'Show credentials, project, and draft status',
+  doctor: 'Run local diagnostics',
+  hook: 'Install or remove agent hooks',
+  drafts: 'List local draft IDs',
+  discard: 'Delete a local draft',
+  rotate: 'Replace the saved ingestion token',
+  logout: 'Remove saved credentials',
+  completion: 'Print shell completion script'
+};
+
 const KNOWN_COMMANDS = new Set([
   'init',
   'login',
@@ -852,7 +991,8 @@ const KNOWN_COMMANDS = new Set([
   'doctor',
   'drafts',
   'discard',
-  'open'
+  'open',
+  'completion'
 ]);
 
 interface CommandArgSpec {
@@ -949,11 +1089,49 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     flags: ['--latest'],
     valueOptions: ['--id'],
     validatePositionals: NO_POSITIONALS('open')
+  },
+  completion: {
+    validatePositionals: (positionals) => {
+      if (positionals.length === 0) return null;
+      if (positionals.length > 1) return `Unexpected argument for completion: ${positionals[1]}`;
+      return ['zsh', 'bash', 'fish'].includes(positionals[0])
+        ? null
+        : `Unsupported completion shell: ${positionals[0]}\nSupported shells: zsh, bash, fish`;
+    }
   }
 };
 
 function hasHelpFlag(args: string[]): boolean {
   return args.includes('--help') || args.includes('-h');
+}
+
+function editDistance(a: string, b: string): number {
+  const previous = Array.from({ length: b.length + 1 }, (_, i) => i);
+  const current = Array.from({ length: b.length + 1 }, () => 0);
+  for (let i = 1; i <= a.length; i += 1) {
+    current[0] = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      current[j] = Math.min(
+        previous[j] + 1,
+        current[j - 1] + 1,
+        previous[j - 1] + cost
+      );
+    }
+    for (let j = 0; j < previous.length; j += 1) previous[j] = current[j];
+  }
+  return previous[b.length];
+}
+
+function closestMatch(input: string, candidates: readonly string[]): string | null {
+  let best: { candidate: string; distance: number } | null = null;
+  for (const candidate of candidates) {
+    const distance = editDistance(input, candidate);
+    if (!best || distance < best.distance) best = { candidate, distance };
+  }
+  if (!best) return null;
+  const threshold = Math.max(2, Math.floor(Math.max(input.length, best.candidate.length) / 3));
+  return best.distance <= threshold ? best.candidate : null;
 }
 
 function commandHelpHint(command: string): string {
@@ -962,9 +1140,29 @@ function commandHelpHint(command: string): string {
     : `Run: agentfeed ${command} --help`;
 }
 
+function unknownCommandError(command: string): Error {
+  const suggestion = closestMatch(command, PUBLIC_COMMANDS);
+  return new Error([
+    `Unknown command: ${command}`,
+    ...(suggestion ? [`Did you mean: agentfeed ${suggestion}`] : []),
+    'Run: agentfeed --help'
+  ].join('\n'));
+}
+
+function unknownOptionError(command: string, optionName: string, spec: CommandArgSpec): Error {
+  const candidates = [...(spec.flags ?? []), ...(spec.valueOptions ?? []), '--help', '-h'];
+  const suggestion = closestMatch(optionName, candidates);
+  return new Error([
+    `Unknown option: ${optionName}`,
+    `Command: agentfeed ${command}`,
+    ...(suggestion ? [`Did you mean: ${suggestion}`] : []),
+    commandHelpHint(command)
+  ].join('\n'));
+}
+
 function validateCommandArgs(command: string, args: string[]): void {
   const spec = COMMAND_ARG_SPECS[command];
-  if (!spec) throw new Error(`Unknown command: ${command}`);
+  if (!spec) throw unknownCommandError(command);
   const flags = new Set([...(spec.flags ?? []), '--help', '-h']);
   const valueOptions = new Set(spec.valueOptions ?? []);
   const positionals: string[] = [];
@@ -991,11 +1189,11 @@ function validateCommandArgs(command: string, args: string[]): void {
         if (equalsIndex >= 0) throw new Error(`${name} does not accept a value.`);
         continue;
       }
-      throw new Error(`Unknown option: ${name}\nCommand: agentfeed ${command}\n${commandHelpHint(command)}`);
+      throw unknownOptionError(command, name, spec);
     }
     if (raw.startsWith('-')) {
       if (flags.has(raw)) continue;
-      throw new Error(`Unknown option: ${raw}\nCommand: agentfeed ${command}\n${commandHelpHint(command)}`);
+      throw unknownOptionError(command, raw, spec);
     }
     positionals.push(raw);
   }
@@ -1011,7 +1209,8 @@ function printHelp(): void {
   print('\nDaily workflow:\n  agentfeed share\n  agentfeed share --yes\n  agentfeed share --dry\n  agentfeed share --note "Fixed auth flow"\n  agentfeed status');
   print('\nDraft review:\n  agentfeed collect --explain\n  agentfeed preview --latest\n  agentfeed publish --latest --yes\n  agentfeed open --latest');
   print('\nAdvanced and diagnostics:\n  agentfeed doctor\n  agentfeed scan --id <draft_id> --dry-run\n  agentfeed hook install claude-code\n  agentfeed drafts\n  agentfeed discard --id <draft_id>\n  agentfeed rotate\n  agentfeed logout');
-  print('\nCommands:\n  init, login, share, collect, preview, publish, open, scan, status, doctor, hook, drafts, discard, rotate, logout');
+  print('\nShell completion:\n  agentfeed completion zsh\n  agentfeed completion bash\n  agentfeed completion fish');
+  print(`\nCommands:\n  ${PUBLIC_COMMANDS.join(', ')}`);
   print('\nRun `agentfeed <command> --help` for command-specific options.');
 }
 
@@ -1190,6 +1389,19 @@ Reopen a trusted review URL from a previously uploaded draft.
 Options:
   --latest                  Open the newest uploaded draft (default)
   --id <draft_id>           Open a specific draft's review URL
+  --help, -h                Show this help`,
+    completion: `Usage: agentfeed completion <shell>
+
+Print a shell completion script for AgentFeed commands and command-specific options.
+
+Supported shells: zsh, bash, fish
+
+Examples:
+  agentfeed completion zsh > ~/.zsh/completions/_agentfeed
+  agentfeed completion bash > ~/.local/share/bash-completion/completions/agentfeed
+  agentfeed completion fish > ~/.config/fish/completions/agentfeed.fish
+
+Options:
   --help, -h                Show this help`
   };
 
@@ -1205,7 +1417,7 @@ async function main() {
     return;
   }
   if (hasHelpFlag(args)) {
-    if (!KNOWN_COMMANDS.has(command)) throw new Error(`Unknown command: ${command}`);
+    if (!KNOWN_COMMANDS.has(command)) throw unknownCommandError(command);
     printCommandHelp(command);
     return;
   }
@@ -1229,12 +1441,13 @@ async function main() {
     case 'drafts': return cmdDrafts();
     case 'discard': return cmdDiscard(args);
     case 'open': return cmdOpen(args);
+    case 'completion': return cmdCompletion(args);
     case '--version':
     case '-v':
       print(AGENTFEED_CLI_VERSION);
       return;
     default:
-      throw new Error(`Unknown command: ${command}`);
+      throw unknownCommandError(command);
   }
 }
 

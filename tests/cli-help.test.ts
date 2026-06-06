@@ -55,6 +55,7 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('collect');
     expect(stdout).toContain('share');
     expect(stdout).toContain('doctor');
+    expect(stdout).toContain('completion');
     expect(stdout).not.toContain('agentfeed collect --source codex');
     expect(stdout).not.toContain('agentfeed publish --id <draft_id> --yes');
     expect(stdout).not.toContain('agentfeed token rotate');
@@ -94,6 +95,22 @@ describe('CLI help and option validation', () => {
     expect(failure.stdout).toBe('');
   });
 
+  it('suggests status when an unknown command is a close typo', async () => {
+    const failure = await runCliFailure(['statsu']);
+
+    expect(failure.stderr).toContain('Unknown command: statsu');
+    expect(failure.stderr).toContain('Did you mean: agentfeed status');
+    expect(failure.stdout).toBe('');
+  });
+
+  it('suggests --open-review when share receives a close option typo', async () => {
+    const failure = await runCliFailure(['share', '--opne-review']);
+
+    expect(failure.stderr).toContain('Unknown option: --opne-review');
+    expect(failure.stderr).toContain('Did you mean: --open-review');
+    expect(failure.stdout).toBe('');
+  });
+
   it('rejects collect when --source is missing a value', async () => {
     const failure = await runCliFailure(['collect', '--source']);
 
@@ -106,5 +123,40 @@ describe('CLI help and option validation', () => {
 
     expect(failure.stderr).toContain('--api-base-url requires a value');
     expect(failure.stdout).toBe('');
+  });
+
+  it('prints completion-specific help for completion --help', async () => {
+    const { stdout, stderr } = await runCli(['completion', '--help']);
+
+    expect(stdout).toContain('Usage: agentfeed completion <shell>');
+    expect(stdout).toContain('zsh');
+    expect(stdout).toContain('bash');
+    expect(stdout).toContain('fish');
+    expect(stderr).toBe('');
+  });
+
+  it('prints a zsh completion script for completion zsh', async () => {
+    const { stdout, stderr } = await runCli(['completion', 'zsh']);
+
+    expect(stdout).toContain('#compdef agentfeed');
+    expect(stdout).toContain('_agentfeed');
+    expect(stdout).toContain('agentfeed');
+    expect(stderr).toBe('');
+  });
+
+  it('prints a bash completion script for completion bash', async () => {
+    const { stdout, stderr } = await runCli(['completion', 'bash']);
+
+    expect(stdout).toContain('_agentfeed()');
+    expect(stdout).toContain('complete -F _agentfeed agentfeed');
+    expect(stderr).toBe('');
+  });
+
+  it('prints a fish completion script for completion fish', async () => {
+    const { stdout, stderr } = await runCli(['completion', 'fish']);
+
+    expect(stdout).toContain('complete -c agentfeed');
+    expect(stdout).toContain('completion');
+    expect(stderr).toBe('');
   });
 });

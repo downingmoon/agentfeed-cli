@@ -76,6 +76,7 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('agentfeed version');
     expect(stdout).toContain('Help:');
     expect(stdout).toContain('agentfeed help');
+    expect(stdout).toContain('agentfeed commands');
     expect(stdout).toContain('agentfeed help <command>');
     expect(stdout).toContain('agentfeed <command> help');
     expect(stdout).toContain('Quickstart:');
@@ -90,6 +91,8 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('Start:');
     expect(stdout).toContain('help');
     expect(stdout).toContain('Show root or command-specific help');
+    expect(stdout).toContain('commands');
+    expect(stdout).toContain('List available AgentFeed commands');
     expect(stdout).toContain('Share work:');
     expect(stdout).toContain('Privacy and drafts:');
     expect(stdout).toContain('Automation:');
@@ -185,6 +188,30 @@ describe('CLI help and option validation', () => {
     expect(tokenHelp.stderr).toBe('');
     expect(tokenHelp.stdout).toContain('Usage: agentfeed token rotate');
     expect(tokenHelp.stdout).toContain('Compatibility alias for:');
+
+    const commandsHelp = await runCli(['help', 'commands']);
+    expect(commandsHelp.stderr).toBe('');
+    expect(commandsHelp.stdout).toContain('Usage: agentfeed commands');
+    expect(commandsHelp.stdout).toContain('--json');
+  });
+
+  it('prints command catalog through commands command and JSON output', async () => {
+    const human = await runCli(['commands']);
+    expect(human.stderr).toBe('');
+    expect(human.stdout).toContain('AgentFeed commands');
+    expect(human.stdout).toContain('Start:');
+    expect(human.stdout).toContain('commands');
+    expect(human.stdout).toContain('List available AgentFeed commands');
+    expect(human.stdout).toContain('Run agentfeed help <command>');
+
+    const json = await runCli(['commands', '--json']);
+    const parsed = JSON.parse(json.stdout) as {
+      commands: Array<{ group: string; commands: Array<{ name: string; description: string }> }>;
+    };
+    expect(json.stderr).toBe('');
+    expect(parsed.commands.some((group) => group.group === 'Start')).toBe(true);
+    expect(parsed.commands.flatMap((group) => group.commands).some((command) => command.name === 'share')).toBe(true);
+    expect(parsed.commands.flatMap((group) => group.commands).some((command) => command.name === 'commands')).toBe(true);
   });
 
   it('prints example-driven help for the main review workflow commands', async () => {
@@ -207,6 +234,7 @@ describe('CLI help and option validation', () => {
   it('prints command-specific help for every public command surface', async () => {
     const expectations: Array<[string[], string[]]> = [
       [['help', '--help'], ['Usage: agentfeed help', 'agentfeed help collect', 'agentfeed <command> --help']],
+      [['commands', '--help'], ['Usage: agentfeed commands', 'command catalog', '--json']],
       [['init', '--help'], ['Usage: agentfeed init', '--project-name', '--no-git-check', '--force']],
       [['login', '--help'], ['Usage: agentfeed login', '--token-stdin', '--no-open']],
       [['logout', '--help'], ['Usage: agentfeed logout', '--json']],

@@ -1733,8 +1733,27 @@ async function cmdVersion(args: string[]) {
   print(AGENTFEED_CLI_VERSION);
 }
 
+async function cmdCommands(args: string[]) {
+  if (flag(args, '--json')) {
+    print(JSON.stringify({
+      commands: COMMAND_GROUPS.map((group) => ({
+        group: group.title,
+        commands: group.commands.map((command) => ({
+          name: command,
+          description: COMMAND_DESCRIPTIONS[command]
+        }))
+      }))
+    }, null, 2));
+    return;
+  }
+  print(ui.heading('AgentFeed commands'));
+  printCommandCatalog();
+  print(`\nRun ${ui.command('agentfeed help <command>')} for command-specific options.`);
+}
+
 const PUBLIC_COMMANDS = [
   'help',
+  'commands',
   'init',
   'login',
   'share',
@@ -1756,6 +1775,7 @@ const PUBLIC_COMMANDS = [
 
 const COMMAND_DESCRIPTIONS: Record<(typeof PUBLIC_COMMANDS)[number], string> = {
   help: 'Show root or command-specific help',
+  commands: 'List available AgentFeed commands',
   init: 'Initialize AgentFeed in the current project',
   login: 'Connect this machine through browser approval',
   share: 'Collect, preview, and optionally upload in one workflow',
@@ -1776,7 +1796,7 @@ const COMMAND_DESCRIPTIONS: Record<(typeof PUBLIC_COMMANDS)[number], string> = {
 };
 
 const COMMAND_GROUPS: Array<{ title: string; commands: Array<(typeof PUBLIC_COMMANDS)[number]> }> = [
-  { title: 'Start', commands: ['help', 'init', 'login', 'status'] },
+  { title: 'Start', commands: ['help', 'commands', 'init', 'login', 'status'] },
   { title: 'Share work', commands: ['share', 'collect', 'preview', 'publish', 'open'] },
   { title: 'Privacy and drafts', commands: ['scan', 'drafts', 'discard'] },
   { title: 'Automation', commands: ['hook', 'completion'] },
@@ -1785,6 +1805,7 @@ const COMMAND_GROUPS: Array<{ title: string; commands: Array<(typeof PUBLIC_COMM
 
 const KNOWN_COMMANDS = new Set([
   'help',
+  'commands',
   'init',
   'login',
   'logout',
@@ -1899,6 +1920,10 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
       if (positionals.length > 1) return commandUsageError(`Unexpected argument for help: ${positionals[1]}`, 'help');
       return KNOWN_COMMANDS.has(positionals[0]) ? null : helpTopicError(positionals[0]);
     }
+  },
+  commands: {
+    flags: ['--json'],
+    validatePositionals: NO_POSITIONALS('commands')
   },
   init: {
     flags: ['--no-git-check', '--force'],
@@ -2199,7 +2224,7 @@ function printHelp(): void {
   print(ui.heading('Usage: agentfeed <command> [options]'));
   print(`Version: ${AGENTFEED_CLI_VERSION}`);
   print(`\n${ui.section('Global options')}:\n  agentfeed --help\n  agentfeed --version\n  agentfeed -v\n  agentfeed version`);
-  print(`\n${ui.section('Help')}:\n  agentfeed help\n  agentfeed help <command>\n  agentfeed <command> help`);
+  print(`\n${ui.section('Help')}:\n  agentfeed help\n  agentfeed commands\n  agentfeed help <command>\n  agentfeed <command> help`);
   print(`\n${ui.section('Quickstart')}:\n  agentfeed init\n  agentfeed login\n  agentfeed share --dry\n  agentfeed share --yes --open-review`);
   print(`\n${ui.section('Headless login')}:\n  printf %s "$TOKEN" | agentfeed login --token-stdin\n  printf %s "$TOKEN" | agentfeed login --token - --no-save`);
   print(`\n${ui.section('Daily workflow')}:\n  agentfeed share\n  agentfeed share --yes\n  agentfeed share --dry\n  agentfeed share --note "Fixed auth flow"\n  agentfeed status`);
@@ -2242,6 +2267,17 @@ Equivalent forms:
   agentfeed <command> --help
 
 Options:
+  --help, -h                Show this help`,
+    commands: `Usage: agentfeed commands [options]
+
+List available AgentFeed commands grouped by workflow area.
+
+Equivalent forms:
+  agentfeed help
+  agentfeed --help
+
+Options:
+  --json                    Print machine-readable command catalog
   --help, -h                Show this help`,
     version: `Usage: agentfeed version [options]
 
@@ -2527,6 +2563,7 @@ async function main() {
     case 'scan': return cmdScan(args);
     case 'hook': return cmdHook(args);
     case 'doctor': return cmdDoctor(args);
+    case 'commands': return cmdCommands(args);
     case 'version': return cmdVersion(args);
     case 'drafts': return cmdDrafts(args);
     case 'discard': return cmdDiscard(args);

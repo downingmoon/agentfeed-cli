@@ -61,29 +61,36 @@ posture before overriding the package-level provenance setting. See:
 - https://docs.npmjs.com/trusted-publishers
 - https://docs.npmjs.com/cli/v11/commands/npm-publish/
 
+## Quickstart
+
+First setup:
+
 ```bash
 agentfeed init
 agentfeed login
-agentfeed rotate
-agentfeed hook install claude-code
-agentfeed collect
+agentfeed status
+```
+
+Daily sharing:
+
+```bash
+agentfeed share --dry                  # collect + preview locally
+agentfeed preview --latest             # inspect the newest local draft
+agentfeed publish --latest --yes       # upload as a private review draft
+agentfeed open --latest                # reopen the trusted review URL
+```
+
+Troubleshooting and discovery:
+
+```bash
+agentfeed doctor
+agentfeed commands
+agentfeed help share
 agentfeed collect --explain
 agentfeed collect --source codex
 agentfeed collect --source gemini-cli
 agentfeed collect --source claude-code --session-file "$CLAUDE_SESSION_FILE"
-agentfeed collect --run-configured-commands
-agentfeed share --yes
-agentfeed share --dry
-agentfeed share --open-review
-agentfeed share --no-open-review
-agentfeed share --run-configured-commands
-agentfeed collect --since 2026-05-20T01:00:00Z
-agentfeed collect --all
-agentfeed preview
-agentfeed scan --id <draft_id> --dry-run
-agentfeed publish --latest --yes --open-review
-agentfeed publish --latest --yes --no-open-review
-agentfeed open --latest
+agentfeed hook install claude-code
 ```
 
 The CLI creates `.agentfeed/drafts/*.json` first and uploads only reviewable private drafts. It does not upload raw diffs, raw transcripts, `.env` contents, or secrets.
@@ -166,6 +173,36 @@ agentfeed share --run-configured-commands
 `--note` is stored as a separate public-safe author note, not folded into the generated worklog summary.
 
 Use `--json` for automation. Dry-run output is shaped as `{ dry_run, reused_existing_draft, draft, privacy_policy }`; upload output is shaped as `{ dry_run, reused_existing_draft, draft_id, draft, upload, privacy_policy, handoff }` so scripts can verify the exact public-safe draft that was uploaded alongside the review URL. JSON mode has no clipboard/browser side effects unless `--clipboard` or `--open-review` is passed explicitly; when either handoff is requested, `handoff.clipboard` / `handoff.browser` reports `{ requested, ok, warning? }` without adding non-JSON text to stdout.
+
+### JSON failure contract
+
+Commands that receive `--json` keep stdout parseable even when they fail. They
+exit non-zero and print a structured error object to stdout instead of mixing
+human-readable recovery text into stderr:
+
+```json
+{
+  "error": {
+    "code": "no_local_drafts_found",
+    "message": "No local drafts found.",
+    "details": [
+      "Create a draft:",
+      "Run: agentfeed collect --explain",
+      "Run: agentfeed share --dry"
+    ]
+  },
+  "next_actions": [
+    "agentfeed collect --explain",
+    "agentfeed share --dry"
+  ],
+  "suggestions": []
+}
+```
+
+`next_actions` is extracted from `Run:`, `Try:`, and `Use:` recovery lines so
+automation can offer or execute the next safe command without parsing prose.
+`suggestions` contains command/option typo suggestions from `Did you mean:`
+lines. Non-JSON failures continue to use human-readable stderr.
 
 ## `collect --json` automation contract
 

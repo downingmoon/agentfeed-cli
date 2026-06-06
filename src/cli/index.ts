@@ -120,6 +120,37 @@ function formatTokenExpiry(expiresAt: string): string {
   return `${new Date(expires).toISOString()} (${relative})`;
 }
 
+function printCredentialResult(options: {
+  heading: string;
+  message: string;
+  apiBaseUrl?: string | null;
+  tokenExpiresAt?: string | null;
+  saved: boolean;
+  warnings?: string[];
+  next?: string[];
+}): void {
+  print(ui.heading(options.heading));
+  print(options.message);
+  print();
+  print(ui.section('Summary'));
+  print(`Credentials: ${options.saved ? 'saved' : 'not saved'}`);
+  if (options.apiBaseUrl) print(`API: ${options.apiBaseUrl}`);
+  if (options.tokenExpiresAt) print(`Token expires at: ${formatTokenExpiry(options.tokenExpiresAt)}`);
+  if (options.warnings?.length) {
+    print();
+    print(ui.section('Warnings'));
+    for (const warning of options.warnings) print(`Warning: ${warning}`);
+  }
+  print();
+  print(ui.section('Next'));
+  if (options.saved) {
+    for (const command of options.next?.length ? options.next : ['agentfeed status']) print(`  ${ui.command(command)}`);
+  } else {
+    print('No credentials file was written. Future commands need AGENTFEED_TOKEN or a saved login.');
+    for (const command of options.next ?? ['agentfeed status']) print(`  ${ui.command(command)}`);
+  }
+}
+
 function formatCollectionCursor(value?: string | null): string {
   if (!value) return 'none';
   const parsed = Date.parse(value);
@@ -475,16 +506,20 @@ async function cmdLogin(args: string[]) {
   if (!token) {
     const existing = await loadCredentialsWithMetadata({ cwd: process.cwd() });
     const creds = await browserLogin({ apiBaseUrl, noOpen: flag(args, '--no-open'), save: !noSave, cwd: process.cwd(), storedApiBaseUrl: existing.credentials?.api_base_url, allowCiBrowser: flag(args, '--browser') });
-    print(noSave ? '\nAgentFeed browser login complete (not saved).\n' : '\nAgentFeed browser login complete.\n');
-    print(`API: ${creds.api_base_url}`);
-    if (creds.token_expires_at) print(`Token expires at: ${formatTokenExpiry(creds.token_expires_at)}`);
+    const warnings: string[] = [];
     if (!noSave) {
       const saved = await loadCredentialsWithMetadata({ cwd: process.cwd() });
-      for (const warning of saved.warnings) print(`Warning: ${warning}`);
+      warnings.push(...saved.warnings);
     }
-    print(noSave
-      ? 'No credentials file was written. Future commands need AGENTFEED_TOKEN or a saved login.'
-      : 'Next:\n  agentfeed status');
+    printCredentialResult({
+      heading: noSave ? 'AgentFeed login complete (not saved)' : 'AgentFeed login complete',
+      message: noSave ? 'AgentFeed browser login complete (not saved).' : 'AgentFeed browser login complete.',
+      apiBaseUrl: creds.api_base_url,
+      tokenExpiresAt: creds.token_expires_at,
+      saved: !noSave,
+      warnings,
+      next: noSave ? ['agentfeed login', 'agentfeed status'] : ['agentfeed status', 'agentfeed share --dry']
+    });
     return;
   }
   const loginApiOptions = { apiBaseUrl, cwd: process.cwd(), trustRepoDiscoveredApiBase: process.env.AGENTFEED_TRUST_REPO_API_BASE === '1' };
@@ -495,16 +530,20 @@ async function cmdLogin(args: string[]) {
       await requireApiCompatibilityBeforeCredentialSave(tokenCredentials.api_base_url);
       return saveCredentials(token, { ...loginApiOptions, apiBaseUrl: tokenCredentials.api_base_url });
     })();
-  print(noSave ? 'AgentFeed token loaded for this command only (not saved).\n' : 'AgentFeed credentials saved.\n');
-  print(`API: ${creds.api_base_url}`);
-  if (creds.token_expires_at) print(`Token expires at: ${formatTokenExpiry(creds.token_expires_at)}`);
+  const warnings: string[] = [];
   if (!noSave) {
     const saved = await loadCredentialsWithMetadata({ cwd: process.cwd() });
-    for (const warning of saved.warnings) print(`Warning: ${warning}`);
+    warnings.push(...saved.warnings);
   }
-  print(noSave
-    ? 'No credentials file was written. Future commands need AGENTFEED_TOKEN or a saved login.'
-    : 'Next:\n  agentfeed status');
+  printCredentialResult({
+    heading: noSave ? 'AgentFeed token loaded (not saved)' : 'AgentFeed credentials saved',
+    message: noSave ? 'AgentFeed token loaded for this command only (not saved).' : 'AgentFeed credentials saved.',
+    apiBaseUrl: creds.api_base_url,
+    tokenExpiresAt: creds.token_expires_at,
+    saved: !noSave,
+    warnings,
+    next: noSave ? ['agentfeed status'] : ['agentfeed status', 'agentfeed share --dry']
+  });
 }
 
 async function replacementTokenIdForSavedCredentials(creds: NonNullable<Awaited<ReturnType<typeof loadCredentialsWithMetadata>>['credentials']>): Promise<string | undefined> {
@@ -520,12 +559,14 @@ async function rotateViaBrowserLogin(args: string[], message: string, replaceTok
   const noSave = flag(args, '--no-save');
   const existing = await loadCredentialsWithMetadata({ cwd: process.cwd() });
   const creds = await browserLogin({ apiBaseUrl, noOpen: flag(args, '--no-open'), save: !noSave, cwd: process.cwd(), storedApiBaseUrl: existing.credentials?.api_base_url, allowCiBrowser: flag(args, '--browser'), replaceTokenId: noSave ? undefined : replaceTokenId });
-  print(`${message}\n`);
-  print(`API: ${creds.api_base_url}`);
-  if (creds.token_expires_at) print(`Token expires at: ${formatTokenExpiry(creds.token_expires_at)}`);
-  print(noSave
-    ? 'No credentials file was written. Future commands need AGENTFEED_TOKEN or a saved login.'
-    : 'Saved replacement token. Next:\n  agentfeed status');
+  printCredentialResult({
+    heading: noSave ? 'AgentFeed token replacement complete (not saved)' : 'AgentFeed token replacement complete',
+    message: noSave ? message : `${message}\nSaved replacement token.`,
+    apiBaseUrl: creds.api_base_url,
+    tokenExpiresAt: creds.token_expires_at,
+    saved: !noSave,
+    next: noSave ? ['agentfeed status'] : ['agentfeed status', 'agentfeed share --dry']
+  });
 }
 
 async function cmdRotate(args: string[]) {
@@ -674,14 +715,25 @@ async function cmdLogout(args: string[]) {
     }, null, 2));
     return;
   }
+  print(ui.heading('AgentFeed logout complete'));
   print(result.credentials_file_deleted ? 'AgentFeed saved credentials removed.' : 'No saved AgentFeed credentials were found.');
+  print();
+  print(ui.section('Summary'));
+  print(`Credentials file: ${result.credentials_file_deleted ? 'removed' : 'not found'}`);
   if (result.keychain_deleted === true) print('OS keychain token removed.');
-  if (result.keychain_deleted === false) print('Warning: OS keychain token could not be removed automatically.');
-  for (const warning of result.warnings) print(`Warning: ${warning}`);
+  if (result.keychain_deleted === false) print('OS keychain token: not removed');
+  const warnings = [...result.warnings];
   if (envTokenActive) {
-    print('Warning: AGENTFEED_TOKEN is still set in this shell; unset it or update your shell/secret manager to finish logout.');
+    warnings.push('AGENTFEED_TOKEN is still set in this shell; unset it or update your shell/secret manager to finish logout.');
   }
-  print('Next:\n  agentfeed status');
+  if (warnings.length) {
+    print();
+    print(ui.section('Warnings'));
+    for (const warning of warnings) print(`Warning: ${warning}`);
+  }
+  print();
+  print(ui.section('Next'));
+  print(`  ${ui.command('agentfeed status')}`);
 }
 
 async function cmdCollect(args: string[]) {

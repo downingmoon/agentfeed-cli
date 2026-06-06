@@ -265,8 +265,16 @@ describe('status and doctor provenance output', () => {
       expect(stdout).toContain('Approval code: 123-456');
       expect(stdout).toContain('Enter this code in the browser before approving the CLI session.');
       expect(stdout).toContain('Waiting for browser approval. This terminal will finish automatically after approval.');
+      expect(stdout).toContain('AgentFeed login complete (not saved)');
       expect(stdout).toContain('AgentFeed browser login complete (not saved).');
+      expect(stdout).toContain('Summary');
+      expect(stdout).toContain('Credentials: not saved');
+      expect(stdout).toContain(`API: http://127.0.0.1:${address.port}/v1`);
+      expect(stdout).toContain('Token expires at: 2026-06-15T00:00:00.000Z');
+      expect(stdout).toContain('Next');
       expect(stdout).toContain('No credentials file was written. Future commands need AGENTFEED_TOKEN or a saved login.');
+      expect(stdout).toContain('agentfeed login');
+      expect(stdout).toContain('agentfeed status');
       expect(stdout).not.toContain('af_live_cli_ux_secret');
       await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
     } finally {
@@ -306,7 +314,13 @@ describe('status and doctor provenance output', () => {
       );
 
       expect(stdout).toContain('AgentFeed credentials saved.');
+      expect(stdout).toContain('AgentFeed credentials saved');
+      expect(stdout).toContain('Summary');
+      expect(stdout).toContain('Credentials: saved');
       expect(stdout).toContain(`API: http://127.0.0.1:${address.port}/v1`);
+      expect(stdout).toContain('Next');
+      expect(stdout).toContain('agentfeed status');
+      expect(stdout).toContain('agentfeed share --dry');
       expect(stdout).not.toContain(token);
       expect(stderr).not.toContain(token);
       const saved = JSON.parse(await readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8'));
@@ -390,6 +404,36 @@ describe('status and doctor provenance output', () => {
     expect(result.credentials_file_deleted).toBe(true);
     expect(result.environment_token_active).toBe(true);
     expect(result.warnings.join('\n')).toContain('AGENTFEED_TOKEN is still set');
+    expect(stdout).not.toContain(token);
+    expect(stderr).not.toContain(token);
+    await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
+  it('logout human output summarizes removed credentials and next action without leaking secrets', async () => {
+    const token = 'af_live_logout_human_secret';
+    await mkdir(join(home, '.agentfeed'), { recursive: true });
+    await writeFile(join(home, '.agentfeed', 'credentials.json'), JSON.stringify({
+      api_base_url: 'http://127.0.0.1:9/v1',
+      ingestion_token: token,
+      created_at: '2026-05-30T00:00:00Z'
+    }));
+
+    const { stdout, stderr } = await execFileAsync(process.execPath, [cliPath, 'logout'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: ''
+      }
+    });
+
+    expect(stdout).toContain('AgentFeed logout complete');
+    expect(stdout).toContain('AgentFeed saved credentials removed.');
+    expect(stdout).toContain('Summary');
+    expect(stdout).toContain('Credentials file: removed');
+    expect(stdout).toContain('Next');
+    expect(stdout).toContain('agentfeed status');
     expect(stdout).not.toContain(token);
     expect(stderr).not.toContain(token);
     await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
@@ -663,6 +707,15 @@ describe('status and doctor provenance output', () => {
 
       expect(stdout).toContain('AgentFeed token rotated after browser approval.');
       expect(stdout).toContain('Previous saved token was revoked.');
+      expect(stdout).toContain('AgentFeed token replacement complete');
+      expect(stdout).toContain('Saved replacement token.');
+      expect(stdout).toContain('Summary');
+      expect(stdout).toContain('Credentials: saved');
+      expect(stdout).toContain(`API: http://127.0.0.1:${address.port}/v1`);
+      expect(stdout).toContain('Token expires at:');
+      expect(stdout).toContain('Next');
+      expect(stdout).toContain('agentfeed status');
+      expect(stdout).toContain('agentfeed share --dry');
       expect(stdout).not.toContain('af_live_old_secret');
       expect(stdout).not.toContain('af_live_new_secret');
       const saved = JSON.parse(await readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8'));

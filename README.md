@@ -141,7 +141,7 @@ agentfeed completion bash > ~/.local/share/bash-completion/completions/agentfeed
 agentfeed completion fish > ~/.config/fish/completions/agentfeed.fish
 ```
 
-Completion scripts are generated from the same command metadata used by help and option validation, so command-specific flags stay aligned.
+Completion scripts are generated from the same command metadata used by help and option validation, so command-specific flags stay aligned. Fish completion also includes human-readable option descriptions and value hints for options that require parameters.
 
 `agentfeed commands --json` exposes the same command catalog for tools: each command includes description, usage, help/example commands, flags, value-taking options, conflicting option pairs, and completion words. Use it when another agent or script needs to discover the CLI safely instead of hard-coding command syntax.
 

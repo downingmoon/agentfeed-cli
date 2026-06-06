@@ -585,6 +585,12 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('complete -c agentfeed -n "__fish_seen_subcommand_from completion" -a "zsh bash fish"');
     expect(stdout).toContain('complete -c agentfeed -n "__fish_seen_subcommand_from help" -a "help commands init login');
     expect(stdout).toContain('completion token" -d "Help topic"');
+    expect(stdout).toContain('complete -c agentfeed -n "__fish_seen_subcommand_from login" -l json -d "Print machine-readable login status"');
+    expect(stdout).toContain('complete -c agentfeed -n "__fish_seen_subcommand_from login" -l api-base-url -r -d "Override AgentFeed API base URL"');
+    expect(stdout).toContain('complete -c agentfeed -n "__fish_seen_subcommand_from collect" -l source -r -d "Select agent source"');
+    expect(stdout).toContain('complete -c agentfeed -n "__fish_seen_subcommand_from share" -l note -r -d "Attach a public-safe author note"');
+    expect(stdout).toContain('complete -c agentfeed -n "__fish_seen_subcommand_from publish" -s y -d "Upload without an interactive confirmation"');
+    expect(stdout).not.toContain('Option for agentfeed');
     expect(stderr).toBe('');
   });
 });

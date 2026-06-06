@@ -328,6 +328,73 @@ describe('collect CLI command', () => {
     expect(failure?.stderr ?? '').toContain('Run: printf %s "$TOKEN" | agentfeed login --token-stdin');
   });
 
+  it('refuses collect JSON upload before token check or ingest when API metadata is incompatible', async () => {
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = "json-upload-incompatible-api";\n');
+    let metadataCount = 0;
+    let tokenStatusCount = 0;
+    let ingestRequestCount = 0;
+    const server = createServer(async (req, res) => {
+      if (req.method === 'GET' && req.url === '/v1/metadata') {
+        metadataCount += 1;
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ data: { service: 'unexpected-api' } }));
+        return;
+      }
+      if (req.method === 'GET' && req.url === '/v1/ingest/status') {
+        tokenStatusCount += 1;
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ data: { ok: true } }));
+        return;
+      }
+      if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
+        ingestRequestCount += 1;
+        await readRequestBody(req);
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ data: {} }));
+        return;
+      }
+      res.writeHead(404).end();
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    try {
+      let failure: { stdout?: string; stderr?: string } | undefined;
+      try {
+        await execFileAsync(process.execPath, [
+          cliPath,
+          'collect',
+          '--json',
+          '--upload',
+          '--all',
+          '--no-save-cursor'
+        ], {
+          cwd: dir,
+          encoding: 'utf8',
+          env: {
+            ...process.env,
+            HOME: home,
+            AGENTFEED_TOKEN: 'af_live_collect_incompatible_api',
+            AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+          }
+        });
+      } catch (error) {
+        failure = error as { stdout?: string; stderr?: string };
+      }
+      expect(failure?.stdout ?? '').toBe('');
+      expect(failure?.stderr ?? '').toContain('API compatibility check failed');
+      expect(failure?.stderr ?? '').toContain('before uploading drafts');
+      expect(failure?.stderr ?? '').toContain('Run: agentfeed doctor');
+      expect(failure?.stderr ?? '').not.toContain('af_live_collect_incompatible_api');
+      expect(metadataCount).toBe(1);
+      expect(tokenStatusCount).toBe(0);
+      expect(ingestRequestCount).toBe(0);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
   it('auto-slices default collect windows after an idle gap', async () => {
     const sessionFile = join(home, 'codex-idle-gap-session.jsonl');
     await writeFile(sessionFile, [

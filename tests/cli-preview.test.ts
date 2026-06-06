@@ -1,8 +1,10 @@
 import { beforeAll, beforeEach, afterEach, describe, expect, it } from 'vitest';
-import { execFileSync } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
+import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { promisify } from 'node:util';
 import { initProject } from '../src/config/project-config.js';
 import { createEmptyDraft } from '../src/draft/create.js';
 import { writeDraft } from '../src/draft/write.js';
@@ -10,9 +12,33 @@ import { ensureCliBuilt } from './build-cli.js';
 
 const repoRoot = resolve('.');
 const cliPath = join(repoRoot, 'dist', 'cli', 'index.js');
+const execFileAsync = promisify(execFile);
 
 let dir: string;
 let home: string;
+
+function compatibleMetadataPayload() {
+  return {
+    data: {
+      service: 'agentfeed-api',
+      api_version: 'v1',
+      backend_version: '0.1.0',
+      contract_version: '2026-06-03',
+      review_base_url: 'http://localhost:3001',
+      supported_clients: {
+        cli: { min_version: '0.2.0', contract_version: '2026-06-03' },
+        frontend: { min_version: '0.1.0', contract_version: '2026-06-03' }
+      }
+    }
+  };
+}
+
+function handleCompatibleMetadata(req: IncomingMessage, res: ServerResponse): boolean {
+  if (req.method !== 'GET' || req.url !== '/v1/metadata') return false;
+  res.writeHead(200, { 'content-type': 'application/json' });
+  res.end(JSON.stringify(compatibleMetadataPayload()));
+  return true;
+}
 
 function runPreviewFailure(args: string[]): { stdout: string; stderr: string } {
   try {
@@ -83,6 +109,132 @@ describe('preview CLI command', () => {
     expect(stderr).toContain('AgentFeed token is missing.');
     expect(stderr).toContain('Run: agentfeed login');
     expect(stderr).toContain('Run: printf %s "$TOKEN" | agentfeed login --token-stdin');
+  });
+
+  it('prints parseable remote preview JSON without human UX headings', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.worklog.title = 'Remote JSON preview';
+    await writeDraft(dir, draft);
+    let metadataCount = 0;
+    let previewCount = 0;
+    const server = createServer(async (req, res) => {
+      if (req.method === 'GET' && req.url === '/v1/metadata') {
+        metadataCount += 1;
+        handleCompatibleMetadata(req, res);
+        return;
+      }
+      if (req.method === 'POST' && req.url === '/v1/ingest/worklogs/preview') {
+        previewCount += 1;
+        expect(req.headers.authorization).toBe('Bearer af_live_preview_json');
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({
+          data: {
+            valid: true,
+            preview: { title: 'Remote JSON preview', metrics_row: '1 file' },
+            warnings: ['check privacy wording']
+          }
+        }));
+        return;
+      }
+      res.writeHead(404).end();
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    try {
+      const { stdout, stderr } = await execFileAsync(process.execPath, [
+        cliPath,
+        'preview',
+        '--id',
+        draft.id,
+        '--remote',
+        '--json'
+      ], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: 'af_live_preview_json',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+        }
+      });
+
+      expect(stderr).toBe('');
+      const output = JSON.parse(stdout) as { valid: boolean; preview: { title?: string }; warnings: string[] };
+      expect(output.valid).toBe(true);
+      expect(output.preview.title).toBe('Remote JSON preview');
+      expect(output.warnings).toEqual(['check privacy wording']);
+      expect(metadataCount).toBe(1);
+      expect(previewCount).toBe(1);
+      expect(stdout).not.toContain('AgentFeed remote preview');
+      expect(stdout).not.toContain('\u001b[');
+      expect(stdout).not.toContain('af_live_preview_json');
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('refuses remote preview before posting when API metadata is incompatible', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.worklog.title = 'Remote preview incompatible API';
+    await writeDraft(dir, draft);
+    let metadataCount = 0;
+    let previewCount = 0;
+    const server = createServer(async (req, res) => {
+      if (req.method === 'GET' && req.url === '/v1/metadata') {
+        metadataCount += 1;
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ data: { service: 'unexpected-api' } }));
+        return;
+      }
+      if (req.method === 'POST' && req.url === '/v1/ingest/worklogs/preview') {
+        previewCount += 1;
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ data: { valid: true, preview: {}, warnings: [] } }));
+        return;
+      }
+      res.writeHead(404).end();
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    try {
+      let failure: { stdout?: string | Buffer; stderr?: string | Buffer } | undefined;
+      try {
+        await execFileAsync(process.execPath, [
+          cliPath,
+          'preview',
+          '--id',
+          draft.id,
+          '--remote',
+          '--json'
+        ], {
+          cwd: dir,
+          encoding: 'utf8',
+          env: {
+            ...process.env,
+            HOME: home,
+            AGENTFEED_TOKEN: 'af_live_preview_incompatible',
+            AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+          }
+        });
+      } catch (error) {
+        failure = error as { stdout?: string | Buffer; stderr?: string | Buffer };
+      }
+
+      expect(String(failure?.stdout ?? '')).toBe('');
+      expect(String(failure?.stderr ?? '')).toContain('API compatibility check failed');
+      expect(String(failure?.stderr ?? '')).toContain('before uploading drafts');
+      expect(String(failure?.stderr ?? '')).toContain('Run: agentfeed doctor');
+      expect(String(failure?.stderr ?? '')).not.toContain('af_live_preview_incompatible');
+      expect(metadataCount).toBe(1);
+      expect(previewCount).toBe(0);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
   });
 
   it('keeps action guidance in human-readable preview output', async () => {

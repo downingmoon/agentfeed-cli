@@ -497,6 +497,70 @@ describe('share CLI command', () => {
     }
   });
 
+  it('refuses direct publish before token check or ingest when API metadata is incompatible', async () => {
+    let metadataCount = 0;
+    let tokenStatusCount = 0;
+    let ingestRequestCount = 0;
+    const server = createServer(async (req, res) => {
+      if (req.method === 'GET' && req.url === '/v1/metadata') {
+        metadataCount += 1;
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ data: { service: 'unexpected-api' } }));
+        return;
+      }
+      if (req.method === 'GET' && req.url === '/v1/ingest/status') {
+        tokenStatusCount += 1;
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ data: { ok: true } }));
+        return;
+      }
+      if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
+        ingestRequestCount += 1;
+        await readRequestBody(req);
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ data: {} }));
+        return;
+      }
+      res.writeHead(404).end();
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    try {
+      const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+      draft.worklog.title = 'Incompatible API publish';
+      await writeDraft(dir, draft);
+
+      let failure: { stdout?: string; stderr?: string } | undefined;
+      try {
+        await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id, '--yes'], {
+          cwd: dir,
+          encoding: 'utf8',
+          env: {
+            ...process.env,
+            HOME: home,
+            AGENTFEED_TOKEN: 'af_live_publish_incompatible_api',
+            AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+          }
+        });
+      } catch (error) {
+        failure = error as { stdout?: string; stderr?: string };
+      }
+
+      expect(failure?.stdout ?? '').toBe('');
+      expect(failure?.stderr ?? '').toContain('API compatibility check failed');
+      expect(failure?.stderr ?? '').toContain('before uploading drafts');
+      expect(failure?.stderr ?? '').toContain('Run: agentfeed doctor');
+      expect(failure?.stderr ?? '').not.toContain('af_live_publish_incompatible_api');
+      expect(metadataCount).toBe(1);
+      expect(tokenStatusCount).toBe(0);
+      expect(ingestRequestCount).toBe(0);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
   it('requires explicit confirmation before interactive share uploads', async () => {
     let ingestRequestCount = 0;
     const server = createServer(async (req, res) => {

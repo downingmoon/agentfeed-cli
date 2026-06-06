@@ -83,7 +83,10 @@ async function requireApiCompatibilityBeforeCredentialSave(apiBaseUrl: string): 
   const detail = result.status != null
     ? `HTTP ${result.status}`
     : result.error ?? 'unknown compatibility failure';
-  throw new Error(`API compatibility check failed for ${result.url}: ${detail}. Run agentfeed doctor for details before saving credentials.`);
+  throw new Error([
+    `API compatibility check failed for ${result.url}: ${detail} before saving credentials.`,
+    'Run: agentfeed doctor'
+  ].join('\n'));
 }
 
 export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: boolean; waitMs?: number; save?: boolean; cwd?: string; storedApiBaseUrl?: string; allowCiBrowser?: boolean; replaceTokenId?: string } = {}) {

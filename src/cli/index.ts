@@ -325,13 +325,20 @@ function missingTokenMessage(): string {
 async function requireApiCompatibilityBeforeUpload(apiBaseUrl: string): Promise<ApiMetadata> {
   const result = await checkApiCompatibility(apiBaseUrl);
   if (result.compatible && result.data) return result.data;
-  throw new Error(`API compatibility check failed for ${result.url}: ${apiCompatibilityFailureDetail(result)}. Run agentfeed doctor for details before uploading drafts.`);
+  throw new Error([
+    `API compatibility check failed for ${result.url}: ${apiCompatibilityFailureDetail(result)} before uploading drafts.`,
+    'Run: agentfeed doctor'
+  ].join('\n'));
 }
 
 async function requireIngestionTokenBeforeUpload(credentials: AgentFeedCredentials): Promise<void> {
   const result = await checkIngestionToken(credentials);
   if (result.ok) return;
-  throw new Error(`Ingestion token check failed for ${result.url}: ${apiCheckFailureDetail(result)}. Run agentfeed login or agentfeed rotate before uploading drafts.`);
+  throw new Error([
+    `Ingestion token check failed for ${result.url}: ${apiCheckFailureDetail(result)} before uploading drafts.`,
+    'Run: agentfeed login',
+    'Run: agentfeed rotate'
+  ].join('\n'));
 }
 
 async function requireUploadPreflight(credentials: AgentFeedCredentials): Promise<ApiMetadata> {
@@ -343,7 +350,10 @@ async function requireUploadPreflight(credentials: AgentFeedCredentials): Promis
 async function requireApiCompatibilityBeforeCredentialSave(apiBaseUrl: string): Promise<void> {
   const result = await checkApiCompatibility(apiBaseUrl);
   if (result.compatible) return;
-  throw new Error(`API compatibility check failed for ${result.url}: ${apiCompatibilityFailureDetail(result)}. Run agentfeed doctor for details before saving credentials.`);
+  throw new Error([
+    `API compatibility check failed for ${result.url}: ${apiCompatibilityFailureDetail(result)} before saving credentials.`,
+    'Run: agentfeed doctor'
+  ].join('\n'));
 }
 
 async function readStdinText(): Promise<string> {

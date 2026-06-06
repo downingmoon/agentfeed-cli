@@ -1406,8 +1406,11 @@ async function cmdDoctor(args: string[] = []) {
     const missingToken = !creds && credentialResolution.token_source === 'missing';
     const apiNeedsRecheck = !apiReachability?.ok || !apiCompatibility?.compatible;
     const commands = [
-      ...(!projectConfigValid ? ['agentfeed init'] : []),
+      ...(!projectConfigValid
+        ? (git.repository_root ? ['agentfeed init'] : ['git init && agentfeed init', 'agentfeed init --no-git-check'])
+        : []),
       ...(missingToken ? ['agentfeed login'] : []),
+      ...(projectConfigValid && missingToken ? ['agentfeed share --dry'] : []),
       ...(tokenWarnings.length ? ['agentfeed rotate'] : []),
       ...(apiNeedsRecheck ? ['agentfeed doctor'] : []),
       ...(projectConfigValid && !missingToken && !tokenWarnings.length && !apiNeedsRecheck ? ['agentfeed share --dry'] : [])

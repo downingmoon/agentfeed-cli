@@ -1141,12 +1141,67 @@ describe('status and doctor provenance output', () => {
     expect(stdout).toContain('ingestion token exists: no');
     expect(stdout).toContain('API ready: no');
     expect(stdout).toContain('Next');
-    expect(stdout).toContain('agentfeed init');
+    expect(stdout).toContain('git init && agentfeed init');
+    expect(stdout).toContain('agentfeed init --no-git-check');
     expect(stdout).toContain('agentfeed login');
     expect(stdout).toContain('agentfeed doctor');
-    expect(stdout.indexOf('agentfeed init')).toBeLessThan(stdout.indexOf('agentfeed login'));
+    expect(stdout.indexOf('git init && agentfeed init')).toBeLessThan(stdout.indexOf('agentfeed login'));
     expect(stdout.indexOf('agentfeed login')).toBeLessThan(stdout.indexOf('agentfeed doctor'));
     expect(stderr).toBe('');
+  });
+
+  it('doctor keeps local dry-run sharing discoverable when an initialized project only lacks login', async () => {
+    execFileSync('git', ['init', '-q'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: process.env
+    });
+    execFileSync(process.execPath, [cliPath, 'init', '--project-name', 'doctor-next'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+    const server = await import('node:http').then(({ createServer }) => createServer((req, res) => {
+      if (req.url === '/health/ready') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ status: 'ready' }));
+        return;
+      }
+      if (req.url === '/v1/metadata') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify(compatibleMetadata()));
+        return;
+      }
+      res.writeHead(404).end();
+    }));
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind');
+
+    try {
+      const { stdout, stderr } = await execFileAsync(process.execPath, [cliPath, 'doctor'], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: '',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`,
+          FORCE_COLOR: undefined
+        }
+      });
+
+      expect(stdout).toContain('project config valid: yes');
+      expect(stdout).toContain('ingestion token exists: no');
+      expect(stdout).toContain('API ready: yes');
+      expect(stdout).toContain('Next');
+      expect(stdout).toContain('agentfeed login');
+      expect(stdout).toContain('agentfeed share --dry');
+      expect(stdout.indexOf('agentfeed login')).toBeLessThan(stdout.indexOf('agentfeed share --dry'));
+      expect(stderr).toBe('');
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
   });
 
   it('doctor reports remediation instead of failing when environment API URL is remote http', async () => {

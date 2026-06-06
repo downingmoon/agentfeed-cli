@@ -229,6 +229,9 @@ describe('release preflight guardrails', () => {
     const buildIndex = ciWorkflow.indexOf('npm run build');
     const preflightIndex = ciWorkflow.indexOf('npm run release:preflight');
 
+    expect(ciWorkflow).toContain('pull_request:');
+    expect(ciWorkflow).toContain('workflow_dispatch:');
+    expect(ciWorkflow).not.toContain('\n  push:');
     expect(ciWorkflow).toContain('node-version: 22.14.0');
     expect(installNpmIndex).toBeGreaterThan(-1);
     expect(installDependenciesIndex).toBeGreaterThan(-1);

@@ -45,7 +45,7 @@ npm link
 agentfeed --version
 ```
 
-For release verification, build and inspect the npm tarball from this repository:
+For release verification, build and inspect the npm tarball from this repository. Run this before direct pushes to `main`; GitHub CI is intentionally PR/manual scoped while this private repository is under Actions usage limits.
 
 ```bash
 npm ci

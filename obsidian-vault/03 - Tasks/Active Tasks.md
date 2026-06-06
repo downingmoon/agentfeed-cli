@@ -51,6 +51,7 @@ updated: 2026-06-06
 > - 2026-06-06 최종 CLI UX completion audit: [[CLI UX Completion Audit 2026-06-06]].
 > - `npx vitest run tests/cli-help.test.ts tests/cli-status-doctor.test.ts tests/cli-share.test.ts --reporter=verbose`: 3 test files, 128 tests passed.
 > - 개인 서버 IP-only `doctor --json`: API ready `yes (200)`, compatibility `v1 / 2026-06-03`, ingestion token valid `yes (200)`.
+> - GitHub Actions usage limit 때문에 `main` direct push CI는 quota failure로 step/log 없이 실패할 수 있다. 현재는 CI를 PR/manual scope로 제한하고 direct push 전 로컬 `npm run release:preflight`를 필수 evidence로 본다.
 
 ## 완료됨 — 로컬/CI/contract/UI 품질
 
@@ -135,5 +136,6 @@ updated: 2026-06-06
 - [ ] `license: UNLICENSED` 유지 여부 결정. public npm 배포 전 owner가 정책을 확정해야 한다.
 - [ ] npm package 이름/README/install command 최종 확인.
 - [x] npm tarball 설치 후 첫 사용자 CLI UX smoke를 release preflight에 포함.
+- [x] GitHub Actions usage limit 동안 CI는 PR/manual trigger로 제한하고, direct `main` push는 로컬 `npm run release:preflight` evidence로 대체.
 - [x] Frontend landing copy의 `agentfeed preview --remote` 문구 점검. 현재 CLI에 `preview --remote`가 존재하므로 유지 가능.
 - [ ] Backend integration guide의 예시 command가 현재 CLI 명령과 일치하는지 점검.

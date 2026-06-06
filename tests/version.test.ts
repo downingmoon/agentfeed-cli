@@ -86,6 +86,8 @@ describe('CLI version metadata', () => {
     expect(releaseScript).toContain('npmCommand');
     expect(releaseScript).toContain("['install', '--prefix'");
     expect(readme).toContain('npm run release:preflight');
+    expect(readme).toContain('Run this before direct pushes to `main`');
+    expect(readme).toContain('GitHub CI is intentionally PR/manual scoped');
     expect(readme).toContain('installs that tarball into a temporary project');
     expect(readme).toContain('first-run');
     expect(readme).toContain('share --dry');

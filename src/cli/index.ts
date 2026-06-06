@@ -916,8 +916,13 @@ async function resolveDraftId(cwd: string, args: string[]): Promise<string> {
   if (!latest) {
     throw new Error([
       'No local drafts found.',
+      '',
+      'Create a draft:',
       'Run: agentfeed collect --explain',
-      'Run: agentfeed share --dry'
+      'Run: agentfeed share --dry',
+      '',
+      'Inspect saved drafts:',
+      'Run: agentfeed drafts'
     ].join('\n'));
   }
   return latest.id;
@@ -1922,7 +1927,11 @@ async function cmdDiscard(args: string[]) {
   if (!hadJson && !hadMarkdown) {
     throw new Error([
       `Draft not found: ${id}`,
+      '',
+      'Inspect saved drafts:',
       'Run: agentfeed drafts',
+      '',
+      'Create a fresh draft:',
       'Run: agentfeed collect --explain'
     ].join('\n'));
   }

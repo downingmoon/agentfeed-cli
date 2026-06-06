@@ -9,7 +9,11 @@ import { draftPaths, isSafeDraftId } from './paths.js';
 function draftNotFoundMessage(id: string): string {
   return [
     `Draft not found: ${id}`,
+    '',
+    'Inspect saved drafts:',
     'Run: agentfeed drafts',
+    '',
+    'Create a fresh draft:',
     'Run: agentfeed collect --explain'
   ].join('\n');
 }
@@ -17,8 +21,13 @@ function draftNotFoundMessage(id: string): string {
 function noDraftsMessage(): string {
   return [
     'No local drafts found.',
+    '',
+    'Create a draft:',
     'Run: agentfeed collect --explain',
-    'Run: agentfeed share --dry'
+    'Run: agentfeed share --dry',
+    '',
+    'Inspect saved drafts:',
+    'Run: agentfeed drafts'
   ].join('\n');
 }
 

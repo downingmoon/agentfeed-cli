@@ -211,7 +211,9 @@ describe('drafts CLI command', () => {
 
     expect(stdout).toBe('');
     expect(stderr).toContain('Draft not found: draft_missing');
+    expect(stderr).toContain('Inspect saved drafts:');
     expect(stderr).toContain('Run: agentfeed drafts');
+    expect(stderr).toContain('Create a fresh draft:');
     expect(stderr).toContain('Run: agentfeed collect --explain');
   });
 

@@ -96,8 +96,11 @@ describe('preview CLI command', () => {
 
     expect(stdout).toBe('');
     expect(stderr).toContain('No local drafts found.');
+    expect(stderr).toContain('Create a draft:');
     expect(stderr).toContain('Run: agentfeed collect --explain');
     expect(stderr).toContain('Run: agentfeed share --dry');
+    expect(stderr).toContain('Inspect saved drafts:');
+    expect(stderr).toContain('Run: agentfeed drafts');
   });
 
   it('guides users back to drafts and collect when previewing a missing draft id', async () => {
@@ -105,7 +108,9 @@ describe('preview CLI command', () => {
 
     expect(stdout).toBe('');
     expect(stderr).toContain('Draft not found: draft_missing');
+    expect(stderr).toContain('Inspect saved drafts:');
     expect(stderr).toContain('Run: agentfeed drafts');
+    expect(stderr).toContain('Create a fresh draft:');
     expect(stderr).toContain('Run: agentfeed collect --explain');
   });
 

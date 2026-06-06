@@ -237,14 +237,19 @@ describe('share CLI command', () => {
     const latest = await runCliFailure(['publish', '--latest', '--yes']);
     expect(latest.stdout).toBe('');
     expect(latest.stderr).toContain('No local drafts found.');
+    expect(latest.stderr).toContain('Create a draft:');
     expect(latest.stderr).toContain('Run: agentfeed collect --explain');
     expect(latest.stderr).toContain('Run: agentfeed share --dry');
+    expect(latest.stderr).toContain('Inspect saved drafts:');
+    expect(latest.stderr).toContain('Run: agentfeed drafts');
     expect(latest.stderr).not.toContain('AgentFeed token is missing.');
 
     const missingId = await runCliFailure(['publish', '--id', 'draft_missing', '--yes']);
     expect(missingId.stdout).toBe('');
     expect(missingId.stderr).toContain('Draft not found: draft_missing');
+    expect(missingId.stderr).toContain('Inspect saved drafts:');
     expect(missingId.stderr).toContain('Run: agentfeed drafts');
+    expect(missingId.stderr).toContain('Create a fresh draft:');
     expect(missingId.stderr).toContain('Run: agentfeed collect --explain');
     expect(missingId.stderr).not.toContain('AgentFeed token is missing.');
   });

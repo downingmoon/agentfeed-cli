@@ -7,7 +7,7 @@ status: active
 tags:
   - agentfeed/todo
   - project/tasks
-updated: 2026-06-05
+updated: 2026-06-06
 ---
 
 # Active Tasks
@@ -34,10 +34,18 @@ updated: 2026-06-05
 > [!warning] 도메인 상태
 > `agentfeed.dev`는 아직 준비된 도메인이 아니다. 현재 문서/코드의 `agentfeed.dev` 값은 예시 또는 계약 테스트용 placeholder로만 취급한다. 개발 단계에서는 DNS 없이 개인 서버 IP로 테스트한다.
 
+> [!success] 2026-06-06 CLI UX/package smoke evidence
+> - CLI help/status/doctor/preview/share/drafts next-action 출력은 좁은 터미널에서도 읽히도록 wrapping/ordering 보강 완료.
+> - `npm run build`: 통과.
+> - `npx vitest run tests/release-preflight.test.ts --reporter=verbose`: 15 tests passed.
+> - `npm run release:preflight`: 26 test files, 531 tests passed.
+> - release preflight가 npm tarball 설치 후 실제 installed `agentfeed` binary로 `--help`, `--version`, `init`, `status`, `share --dry`, `drafts` 첫 사용자 플로우를 검증한다.
+
 ## 완료됨 — 로컬/CI/contract/UI 품질
 
 - [x] CLI subcommand `--help`가 수집/상태파일 작성 side effect 없이 종료되도록 수정.
 - [x] CLI 주요 명령 회귀: `release:preflight`로 `login`, `collect`, `share`, `publish`, `open`, `doctor`, `status` 관련 테스트 통과.
+- [x] CLI release preflight가 npm tarball 설치 후 첫 사용자 플로우(`init` → `status` → `share --dry` → `drafts`)를 installed binary로 검증하도록 보강.
 - [x] Frontend signed-out Header가 `/`와 `/feed`를 혼동하지 않도록 Home/Feed nav와 active state 수정.
 - [x] Frontend landing/feed/review/profile/project 주요 grid가 모바일에서 고정폭 overflow를 만들지 않도록 responsive layout으로 수정.
 - [x] Frontend list response wrapper가 `pagination` 누락/부분 payload에서도 fail-closed 동작하도록 정규화.
@@ -81,6 +89,7 @@ updated: 2026-06-05
 - [ ] 실제 사용자 브라우저에서 GitHub credential 입력까지 포함한 live login을 한 번 수행.
 - [ ] production domain이 생기면 hosted readiness와 `make commercial-readiness` 재실행.
 - [ ] npm package 이름/license/homepage/trusted publishing 정책이 확정되면 release/publish 절차 준비.
+- [ ] npm trusted publishing을 실제 public repo/environment와 연결한 뒤, tag 기반 dry release 절차 점검.
 
 ## Deferred — 지금은 스킵/대기
 
@@ -106,5 +115,6 @@ updated: 2026-06-05
 - [ ] CLI `package.json.homepage`가 실제 domain 또는 GitHub/docs URL을 가리키도록 정리.
 - [ ] `license: UNLICENSED` 유지 여부 결정. public npm 배포 전 owner가 정책을 확정해야 한다.
 - [ ] npm package 이름/README/install command 최종 확인.
+- [x] npm tarball 설치 후 첫 사용자 CLI UX smoke를 release preflight에 포함.
 - [x] Frontend landing copy의 `agentfeed preview --remote` 문구 점검. 현재 CLI에 `preview --remote`가 존재하므로 유지 가능.
 - [ ] Backend integration guide의 예시 command가 현재 CLI 명령과 일치하는지 점검.

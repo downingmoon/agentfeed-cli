@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -177,6 +177,26 @@ export function validateInstalledPackageSmokeResult(result, pkg) {
   validateCliVersionOutput(result.versionOutput ?? '', pkg);
 }
 
+export function validateInstalledPackageWorkflowSmokeResult(result) {
+  assert(result?.command === 'agentfeed', 'release preflight must execute the installed agentfeed binary for first-run workflow smoke.');
+  const initOutput = result.initOutput ?? '';
+  const statusOutput = result.statusOutput ?? '';
+  const shareDryOutput = result.shareDryOutput ?? '';
+  const draftsOutput = result.draftsOutput ?? '';
+
+  assert(initOutput.includes('AgentFeed initialized'), 'installed package workflow smoke must initialize a project.');
+  assert(initOutput.includes('Recommended order:'), 'installed package init output must include ordered next steps.');
+  assert(initOutput.includes('agentfeed login'), 'installed package init output must guide login.');
+  assert(statusOutput.includes('AgentFeed status'), 'installed package workflow smoke must render status.');
+  assert(statusOutput.includes('Health:'), 'installed package status output must include health summary.');
+  assert(statusOutput.includes('Project initialized: yes'), 'installed package status output must report the initialized project.');
+  assert(shareDryOutput.includes('AgentFeed share preview'), 'installed package workflow smoke must render share --dry preview.');
+  assert(shareDryOutput.includes('Dry run complete. Local draft kept:'), 'installed package share --dry smoke must keep a local draft.');
+  assert(shareDryOutput.includes('Recommended order:'), 'installed package share --dry smoke must include ordered next steps.');
+  assert(draftsOutput.includes('AgentFeed drafts (1)'), 'installed package workflow smoke must list the created draft.');
+  assert(draftsOutput.includes('Recommended order:'), 'installed package drafts smoke must include ordered next steps.');
+}
+
 export function validateReleaseGitRef(pkg, env = process.env) {
   if (env.GITHUB_ACTIONS !== 'true') return;
   const workflowRef = env.GITHUB_WORKFLOW_REF ?? '';
@@ -271,11 +291,12 @@ export function installedBinExecOptions(platform = process.platform) {
   return commandShimExecOptions(platform);
 }
 
-function runInstalledBin(commandPath, args, cwd) {
+function runInstalledBin(commandPath, args, cwd, env = {}) {
   return execFileSync(commandPath, args, {
     cwd,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env, ...env },
     ...installedBinExecOptions(),
   });
 }
@@ -301,6 +322,26 @@ function runInstalledPackageSmoke(pkg) {
     const helpOutput = runInstalledBin(commandPath, ['--help'], installRoot);
     const versionOutput = runInstalledBin(commandPath, ['--version'], installRoot);
     validateInstalledPackageSmokeResult({ command: 'agentfeed', helpOutput, versionOutput }, pkg);
+
+    const projectRoot = join(tmpRoot, 'first-run-project');
+    const homeRoot = join(tmpRoot, 'home');
+    mkdirSync(projectRoot, { recursive: true });
+    mkdirSync(homeRoot, { recursive: true });
+    writeFileSync(join(projectRoot, 'README.md'), '# AgentFeed release smoke\n');
+
+    const workflowEnv = {
+      HOME: homeRoot,
+      AGENTFEED_TOKEN: '',
+      AGENTFEED_CI: '1',
+      AGENTFEED_PLAIN: '1',
+      COLUMNS: '80',
+      AGENTFEED_TEST_DISABLE_REAL_BROWSER: '1',
+    };
+    const initOutput = runInstalledBin(commandPath, ['init', '--no-git-check', '--project-name', 'release-smoke'], projectRoot, workflowEnv);
+    const statusOutput = runInstalledBin(commandPath, ['status'], projectRoot, workflowEnv);
+    const shareDryOutput = runInstalledBin(commandPath, ['share', '--dry', '--no-save-cursor'], projectRoot, workflowEnv);
+    const draftsOutput = runInstalledBin(commandPath, ['drafts'], projectRoot, workflowEnv);
+    validateInstalledPackageWorkflowSmokeResult({ command: 'agentfeed', initOutput, statusOutput, shareDryOutput, draftsOutput });
   } finally {
     rmSync(tmpRoot, { recursive: true, force: true });
   }
@@ -321,7 +362,7 @@ function main() {
   console.log('- Trusted publishing: release workflow OIDC/toolchain contract validated');
   console.log('- Tarball: npm pack --dry-run --json --ignore-scripts validated');
   console.log('- CLI smoke: built agentfeed --help and --version validated');
-  console.log('- Installed package smoke: npm tarball installs and exposes agentfeed --help/--version');
+  console.log('- Installed package smoke: npm tarball installs and runs help/version plus first-run init/status/share/drafts workflow');
   if (pkg.license === 'UNLICENSED') console.log('- License: UNLICENSED (proprietary/no open-source grant; change only after owner approval).');
   console.log('- Next: configure npm trusted publishing for the Release workflow from a public GitHub repository before production publish.');
 }

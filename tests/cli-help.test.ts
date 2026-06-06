@@ -214,12 +214,14 @@ describe('CLI help and option validation', () => {
     expect(human.stdout).toContain('Start:');
     expect(human.stdout).toContain('commands');
     expect(human.stdout).toContain('List available AgentFeed commands');
-    expect(human.stdout).toContain('Common workflows:');
-    expect(human.stdout).toContain('First setup:');
+    expect(human.stdout).toContain('Guided workflows:');
+    expect(human.stdout).toContain('Beginner setup: Connect one project and confirm the CLI is ready.');
     expect(human.stdout).toContain('agentfeed init');
     expect(human.stdout).toContain('Daily share:');
     expect(human.stdout).toContain('agentfeed share --yes --open-review');
-    expect(human.stdout).toContain('Review drafts:');
+    expect(human.stdout).toContain('Draft review: Inspect pending drafts and publish the one you trust.');
+    expect(human.stdout).toContain('Power user: Control source, window, and evidence before publishing.');
+    expect(human.stdout).toContain('Recovery: Diagnose setup, token, API, or agent-detection problems.');
     expect(human.stdout).toContain('Try this:');
     expect(human.stdout).toContain('Recommended order:');
     expect(human.stdout).toContain('  1. agentfeed init');
@@ -230,7 +232,7 @@ describe('CLI help and option validation', () => {
     const json = await runCli(['commands', '--json']);
     const parsed = JSON.parse(json.stdout) as {
       next_actions?: string[];
-      workflows?: Array<{ name: string; commands: string[] }>;
+      workflows?: Array<{ name: string; description: string; commands: string[] }>;
       commands: Array<{
         group: string;
         commands: Array<{
@@ -257,8 +259,10 @@ describe('CLI help and option validation', () => {
     expect(json.stderr).toBe('');
     expect(parsed.next_actions).toEqual(['agentfeed init', 'agentfeed login', 'agentfeed share --dry']);
     expect(parsed.workflows).toEqual(expect.arrayContaining([
-      expect.objectContaining({ name: 'First setup', commands: ['agentfeed init', 'agentfeed login', 'agentfeed status'] }),
-      expect.objectContaining({ name: 'Daily share', commands: expect.arrayContaining(['agentfeed share --dry', 'agentfeed share --yes --open-review']) })
+      expect.objectContaining({ name: 'Beginner setup', description: 'Connect one project and confirm the CLI is ready.', commands: ['agentfeed init', 'agentfeed login', 'agentfeed status'] }),
+      expect.objectContaining({ name: 'Daily share', description: 'Preview work first, then upload and open the private review.', commands: expect.arrayContaining(['agentfeed share --dry', 'agentfeed share --yes --open-review']) }),
+      expect.objectContaining({ name: 'Power user', commands: expect.arrayContaining(['agentfeed collect --source codex --all']) }),
+      expect.objectContaining({ name: 'Recovery', commands: expect.arrayContaining(['agentfeed doctor', 'agentfeed status']) })
     ]));
     expect(parsed.commands.some((group) => group.group === 'Start')).toBe(true);
     expect(share).toMatchObject({

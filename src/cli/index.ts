@@ -2641,17 +2641,38 @@ function commandCatalogNextActions(): string[] {
   return ['agentfeed init', 'agentfeed login', 'agentfeed share --dry'];
 }
 
-const COMMAND_WORKFLOWS: Array<{ name: string; commands: string[] }> = [
-  { name: 'First setup', commands: ['agentfeed init', 'agentfeed login', 'agentfeed status'] },
-  { name: 'Daily share', commands: ['agentfeed share --dry', 'agentfeed share --yes --open-review'] },
-  { name: 'Review drafts', commands: ['agentfeed drafts', 'agentfeed preview --latest', 'agentfeed publish --latest --yes'] },
-  { name: 'Troubleshoot', commands: ['agentfeed doctor', 'agentfeed collect --explain', 'agentfeed status'] }
+const COMMAND_WORKFLOWS: Array<{ name: string; description: string; commands: string[] }> = [
+  {
+    name: 'Beginner setup',
+    description: 'Connect one project and confirm the CLI is ready.',
+    commands: ['agentfeed init', 'agentfeed login', 'agentfeed status']
+  },
+  {
+    name: 'Daily share',
+    description: 'Preview work first, then upload and open the private review.',
+    commands: ['agentfeed share --dry', 'agentfeed share --yes --open-review']
+  },
+  {
+    name: 'Draft review',
+    description: 'Inspect pending drafts and publish the one you trust.',
+    commands: ['agentfeed drafts', 'agentfeed preview --latest', 'agentfeed publish --latest --yes']
+  },
+  {
+    name: 'Power user',
+    description: 'Control source, window, and evidence before publishing.',
+    commands: ['agentfeed collect --explain', 'agentfeed collect --source codex --all', 'agentfeed publish --latest --yes']
+  },
+  {
+    name: 'Recovery',
+    description: 'Diagnose setup, token, API, or agent-detection problems.',
+    commands: ['agentfeed doctor', 'agentfeed status', 'agentfeed share --dry']
+  }
 ];
 
 function printCommandWorkflows(): void {
-  print(`\n${ui.section('Common workflows')}:`);
+  print(`\n${ui.section('Guided workflows')}:`);
   for (const workflow of COMMAND_WORKFLOWS) {
-    print(`  ${workflow.name}:`);
+    print(`  ${workflow.name}: ${workflow.description}`);
     for (const command of workflow.commands) print(`    ${ui.command(command)}`);
   }
 }

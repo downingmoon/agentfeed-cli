@@ -859,9 +859,11 @@ async function cmdShare(args: string[]) {
   print();
 
   if (opts.dryRun) {
+    print(ui.section('Next'));
     print(`Dry run complete. Local draft kept: ${draft.id}`);
-    print(`Publish later:
-  agentfeed publish --id ${draft.id} --yes`);
+    print('Publish later:');
+    print(`  ${ui.command(`agentfeed publish --id ${draft.id} --yes`)}`);
+    print(`  ${ui.command(`agentfeed preview --id ${draft.id}`)}`);
     return;
   }
 

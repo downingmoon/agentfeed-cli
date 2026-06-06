@@ -2,6 +2,7 @@ import type { AgentType, LocalDraft } from '../types.js';
 import { collectionQualityLabel, formatCollectionGuidanceLines, formatCollectionWindowLine } from '../draft/collection-diagnostics.js';
 import { flag, option } from './args.js';
 import { parseAgentSource } from './source.js';
+import * as ui from './ui.js';
 
 export interface ShareOptions {
   dryRun: boolean;
@@ -94,22 +95,37 @@ export function formatSharePreview(draft: LocalDraft): string {
   const models = modelsLabel(draft);
   const changedAreas = draft.worklog.changed_areas.length ? draft.worklog.changed_areas.join(', ') : 'Application code';
   const lines = [
-    'Ready to share private review draft',
+    ui.heading('AgentFeed share preview'),
+    'Ready to share private review draft.',
     '',
+    ui.section('Summary'),
+    `Draft: ${draft.id}`,
     `Project: ${draft.project.name}`,
     `Title: ${draft.worklog.title}`,
     `Summary: ${draft.worklog.summary}`,
     ...(draft.worklog.user_note ? [`Note: ${draft.worklog.user_note}`] : []),
+    '',
+    ui.section('Signals'),
     `Agent: ${draft.worklog.agent}`,
     ...(models ? [`Models: ${models}`] : []),
     `Metrics: ${formatMetricsRow(draft)}`,
     `Changed areas: ${changedAreas}`,
     `Privacy: ${draft.privacy_scan.status} · findings ${draft.privacy_scan.findings.length}`
   ];
-  lines.push(...formatAgentMetricLines(draft));
-  lines.push(...formatPrivacyPolicyLines(draft));
+  const agentMetricLines = formatAgentMetricLines(draft);
+  if (agentMetricLines.length) {
+    lines.push('', ui.section('Per-agent metrics'), ...agentMetricLines.slice(1));
+  }
+  const privacyPolicyLines = formatPrivacyPolicyLines(draft);
+  if (privacyPolicyLines.length) {
+    lines.push('', ui.section('Policy'), ...privacyPolicyLines);
+  }
 
-  lines.push(`Collection quality: ${collectionQualityLabel(m)}`);
+  lines.push(
+    '',
+    ui.section('Collection'),
+    `Collection quality: ${collectionQualityLabel(m)}`
+  );
   const windowLine = formatCollectionWindowLine(draft.source.collection_window, draft.source.collection_window_reason);
   if (windowLine) lines.push(windowLine);
   if (m.collection_sources?.length) {
@@ -120,7 +136,7 @@ export function formatSharePreview(draft: LocalDraft): string {
   }
   lines.push(...formatCollectionGuidanceLines(m));
 
-  lines.push('', 'Upload target: private AgentFeed review draft');
+  lines.push('', ui.section('Target'), 'Upload target: private AgentFeed review draft');
   return lines.join('\n');
 }
 

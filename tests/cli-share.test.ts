@@ -204,10 +204,19 @@ describe('share CLI command', () => {
     });
 
     expect(stderr).toBe('');
-    expect(stdout).toMatch(/AgentFeed share preview|Ready to share private review draft/);
+    expect(stdout).toContain('AgentFeed share preview');
+    expect(stdout).toContain('Ready to share private review draft.');
     expect(stdout).toContain('Summary');
+    expect(stdout).toContain('Signals');
+    expect(stdout).toContain('Collection');
     expect(stdout).toContain('Collection quality');
-    expect(stdout).toMatch(/Next|Publish later/);
+    expect(stdout).toContain('Target');
+    expect(stdout).toContain('Upload target: private AgentFeed review draft');
+    expect(stdout).toContain('Next');
+    expect(stdout).toContain('Dry run complete. Local draft kept:');
+    expect(stdout).toContain('Publish later:');
+    expect(stdout).toContain('agentfeed publish --id');
+    expect(stdout).toContain('agentfeed preview --id');
   });
 
   it('prints parseable share JSON without human UX headings or ANSI styling', async () => {

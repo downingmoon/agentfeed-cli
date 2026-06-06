@@ -213,6 +213,7 @@ describe('status and doctor provenance output', () => {
       project: { initialized: boolean; name: string | null };
       collection: { local_drafts_count: number; pending_upload_count: number };
       warnings: string[];
+      next_actions: string[];
     };
     expect(stderr).toBe('');
     expect(output.health).toBeTruthy();
@@ -223,6 +224,7 @@ describe('status and doctor provenance output', () => {
     expect(output.collection.local_drafts_count).toBe(0);
     expect(output.collection.pending_upload_count).toBe(0);
     expect(Array.isArray(output.warnings)).toBe(true);
+    expect(output.next_actions).toEqual(['agentfeed share --yes']);
     expect(stdout).not.toContain('AgentFeed status');
     expect(stdout).not.toMatch(ANSI_ESCAPE_PATTERN);
     expect(stdout).not.toContain(token);
@@ -1251,6 +1253,7 @@ describe('status and doctor provenance output', () => {
       collection: Array<{ name: string; value: string }>;
       warnings: string[];
       agent_signals: string[];
+      next_actions: string[];
     };
     expect(stderr).toBe('');
     expect(output.runtime.some((row) => row.name === 'agentfeed version')).toBe(true);
@@ -1260,6 +1263,10 @@ describe('status and doctor provenance output', () => {
     expect(output.collection.some((row) => row.name === 'last collection cursor')).toBe(true);
     expect(output.warnings.join('\n')).toContain('invalid AgentFeed API URL setting ignored for diagnostics');
     expect(Array.isArray(output.agent_signals)).toBe(true);
+    expect(output.next_actions).toEqual([
+      'unset AGENTFEED_API_BASE_URL',
+      'AGENTFEED_ALLOW_INSECURE_API=1 agentfeed doctor'
+    ]);
     expect(stdout).not.toContain('AgentFeed doctor');
     expect(stdout).not.toMatch(ANSI_ESCAPE_PATTERN);
     expect(stdout).not.toContain('af_live');

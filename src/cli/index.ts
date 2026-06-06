@@ -605,6 +605,69 @@ function printNextCommands(commands: string[]): void {
   }
 }
 
+function statusNextActions(options: {
+  invalidApiBaseUrl: boolean;
+  projectInitialized: boolean;
+  hasToken: boolean;
+  insideGitRepository: boolean;
+  pendingUploads: number;
+}): string[] {
+  if (options.invalidApiBaseUrl) {
+    return uniqueNextCommands([
+      'unset AGENTFEED_API_BASE_URL',
+      'AGENTFEED_ALLOW_INSECURE_API=1 agentfeed status',
+      'agentfeed doctor'
+    ]);
+  }
+  if (!options.projectInitialized) {
+    return uniqueNextCommands([
+      ...(options.insideGitRepository ? ['agentfeed init'] : ['git init && agentfeed init', 'agentfeed init --no-git-check']),
+      ...(!options.hasToken ? ['agentfeed login'] : [])
+    ]);
+  }
+  if (!options.hasToken) {
+    return uniqueNextCommands([
+      'agentfeed login',
+      ...(options.pendingUploads > 0
+        ? ['agentfeed publish --latest --yes', 'agentfeed discard --latest']
+        : ['agentfeed share --dry'])
+    ]);
+  }
+  if (options.pendingUploads > 0) {
+    return uniqueNextCommands([
+      'agentfeed publish --latest --yes',
+      'agentfeed discard --latest'
+    ]);
+  }
+  return ['agentfeed share --yes'];
+}
+
+function doctorNextActions(options: {
+  invalidApiBaseUrl: boolean;
+  projectConfigValid: boolean;
+  missingToken: boolean;
+  insideGitRepository: boolean;
+  tokenWarnings: string[];
+  apiNeedsRecheck: boolean;
+}): string[] {
+  if (options.invalidApiBaseUrl) {
+    return uniqueNextCommands([
+      'unset AGENTFEED_API_BASE_URL',
+      'AGENTFEED_ALLOW_INSECURE_API=1 agentfeed doctor'
+    ]);
+  }
+  return uniqueNextCommands([
+    ...(!options.projectConfigValid
+      ? (options.insideGitRepository ? ['agentfeed init'] : ['git init && agentfeed init', 'agentfeed init --no-git-check'])
+      : []),
+    ...(options.missingToken ? ['agentfeed login'] : []),
+    ...(options.projectConfigValid && options.missingToken ? ['agentfeed share --dry'] : []),
+    ...(options.tokenWarnings.length ? ['agentfeed rotate'] : []),
+    ...(options.apiNeedsRecheck ? ['agentfeed doctor'] : []),
+    ...(options.projectConfigValid && !options.missingToken && !options.tokenWarnings.length && !options.apiNeedsRecheck ? ['agentfeed share --dry'] : [])
+  ]);
+}
+
 async function resolveDraftId(cwd: string, args: string[]): Promise<string> {
   await loadProjectConfig(cwd);
   const id = option(args, '--id');
@@ -816,6 +879,13 @@ async function cmdStatus(args: string[] = []) {
       : allWarnings.length || pending > 0
         ? 'attention needed'
         : 'ready';
+  const nextActions = statusNextActions({
+    invalidApiBaseUrl: diagnostics.invalidApiBaseUrl,
+    projectInitialized: Boolean(config),
+    hasToken,
+    insideGitRepository,
+    pendingUploads: pending
+  });
 
   if (flag(args, '--json')) {
     print(JSON.stringify({
@@ -856,7 +926,8 @@ async function cmdStatus(args: string[] = []) {
         next_default_collection_since: collectionState.last_collected_at ?? null,
         next_default_collection_since_label: nextDefaultCollectionSince(collectionState.last_collected_at)
       },
-      warnings: allWarnings
+      warnings: allWarnings,
+      next_actions: nextActions
     }, null, 2));
     return;
   }
@@ -898,32 +969,7 @@ async function cmdStatus(args: string[] = []) {
   }
   print();
   print(ui.section('Next'));
-  if (diagnostics.invalidApiBaseUrl) {
-    printNextCommands([
-      'unset AGENTFEED_API_BASE_URL',
-      'AGENTFEED_ALLOW_INSECURE_API=1 agentfeed status',
-      'agentfeed doctor'
-    ]);
-  } else if (!config) {
-    printNextCommands([
-      ...(insideGitRepository ? ['agentfeed init'] : ['git init && agentfeed init', 'agentfeed init --no-git-check']),
-      ...(!hasToken ? ['agentfeed login'] : [])
-    ]);
-  } else if (!hasToken) {
-    printNextCommands([
-      'agentfeed login',
-      ...(pending > 0
-        ? ['agentfeed publish --latest --yes', 'agentfeed discard --latest']
-        : ['agentfeed share --dry'])
-    ]);
-  } else if (pending > 0) {
-    printNextCommands([
-      'agentfeed publish --latest --yes',
-      'agentfeed discard --latest'
-    ]);
-  } else {
-    printNextCommands(['agentfeed share --yes']);
-  }
+  printNextCommands(nextActions);
 }
 
 async function cmdLogout(args: string[]) {
@@ -1364,6 +1410,16 @@ async function cmdDoctor(args: string[] = []) {
   ];
   const warnings = [...credentialResolution.warnings, ...(apiResolution?.warnings ?? []), ...tokenWarnings];
   const agentSignalLines = formatAgentSignalLines(await detectAgentSignals({ cwd: process.cwd() }));
+  const missingToken = !creds && credentialResolution.token_source === 'missing';
+  const apiNeedsRecheck = !apiReachability?.ok || !apiCompatibility?.compatible;
+  const nextActions = doctorNextActions({
+    invalidApiBaseUrl: diagnostics.invalidApiBaseUrl,
+    projectConfigValid,
+    missingToken,
+    insideGitRepository: Boolean(git.repository_root),
+    tokenWarnings,
+    apiNeedsRecheck
+  });
 
   if (flag(args, '--json')) {
     print(JSON.stringify({
@@ -1373,7 +1429,8 @@ async function cmdDoctor(args: string[] = []) {
       project: doctorCheckRows(projectChecks),
       collection: doctorCheckRows(collectionChecks),
       warnings,
-      agent_signals: agentSignalLines
+      agent_signals: agentSignalLines,
+      next_actions: nextActions
     }, null, 2));
     return;
   }
@@ -1397,26 +1454,7 @@ async function cmdDoctor(args: string[] = []) {
   for (const line of agentSignalLines) print(line);
   print();
   print(ui.section('Next'));
-  if (diagnostics.invalidApiBaseUrl) {
-    printNextCommands([
-      'unset AGENTFEED_API_BASE_URL',
-      'AGENTFEED_ALLOW_INSECURE_API=1 agentfeed doctor'
-    ]);
-  } else {
-    const missingToken = !creds && credentialResolution.token_source === 'missing';
-    const apiNeedsRecheck = !apiReachability?.ok || !apiCompatibility?.compatible;
-    const commands = [
-      ...(!projectConfigValid
-        ? (git.repository_root ? ['agentfeed init'] : ['git init && agentfeed init', 'agentfeed init --no-git-check'])
-        : []),
-      ...(missingToken ? ['agentfeed login'] : []),
-      ...(projectConfigValid && missingToken ? ['agentfeed share --dry'] : []),
-      ...(tokenWarnings.length ? ['agentfeed rotate'] : []),
-      ...(apiNeedsRecheck ? ['agentfeed doctor'] : []),
-      ...(projectConfigValid && !missingToken && !tokenWarnings.length && !apiNeedsRecheck ? ['agentfeed share --dry'] : [])
-    ];
-    printNextCommands(commands);
-  }
+  printNextCommands(nextActions);
 }
 
 interface DraftListRow {

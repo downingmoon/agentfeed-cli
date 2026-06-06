@@ -21,8 +21,8 @@ updated: 2026-06-06
 - 완료된 대량 hardening 요약: [[Commercial Readiness Completed Summary 2026-06-04]]
 
 
-> [!info] 2026-06-06 활성 Frontend UI/UX polish goal
-> 이전 로컬/CI/contract 상용화 품질 goal은 완료 상태지만, owner가 새로 설정한 목표는 Frontend 디자인/UI/UX 완성도를 한 단계 더 높이는 별도 진행 중 goal이다. 현재 Stage 1~17은 완료/커밋 진행 중이며, 완료 판정 전 실제 authenticated success-state visual smoke를 더 확인해야 한다. Worklog detail/review는 Stage 5, Project/Profile은 Stage 6, Explore/Leaderboard는 Stage 7, Dashboard/Notifications/Moderation은 Stage 8, static/utility pages는 Stage 9, browser visual landmark QA는 Stage 10, Settings token lifecycle UI는 Stage 11, Worklog review publish gate는 Stage 12에서 1차 polish 완료, Profile follow/action feedback은 Stage 13에서 1차 polish 완료, Project detail owner action/edit/delete feedback은 Stage 14에서 1차 polish 완료, Search input/results/empty/loading states는 Stage 15에서 1차 polish 완료, CLI browser approval states는 Stage 16에서 1차 polish 완료, cross-page production visual/DOM QA와 discovery page landmark/production start 회귀는 Stage 17에서 보강 완료.
+> [!success] 2026-06-06 Frontend UI/UX polish goal 완료
+> 이전 로컬/CI/contract 상용화 품질 goal은 완료 상태지만, owner가 새로 설정한 Frontend 디자인/UI/UX 완성도 향상 goal은 Stage 1~18 evidence 기준으로 완료 판정한다. Stage 18에서 실제 개인 서버 production stack의 authenticated success-state visual smoke까지 확인했다. Worklog detail/review는 Stage 5, Project/Profile은 Stage 6, Explore/Leaderboard는 Stage 7, Dashboard/Notifications/Moderation은 Stage 8, static/utility pages는 Stage 9, browser visual landmark QA는 Stage 10, Settings token lifecycle UI는 Stage 11, Worklog review publish gate는 Stage 12에서 1차 polish 완료, Profile follow/action feedback은 Stage 13에서 1차 polish 완료, Project detail owner action/edit/delete feedback은 Stage 14에서 1차 polish 완료, Search input/results/empty/loading states는 Stage 15에서 1차 polish 완료, CLI browser approval states는 Stage 16에서 1차 polish 완료, cross-page production visual/DOM QA와 discovery page landmark/production start 회귀는 Stage 17에서 보강 완료, authenticated server production success-state visual smoke와 legacy worklog detail contract 보강은 Stage 18에서 완료. 최종 검증은 backend pytest/ruff, frontend test/lint/build, server production visual smoke 13/13, 서버 fixture cleanup 0건, AgentFeed 잔여 브라우저/Playwright 프로세스 없음으로 닫았다.
 > - [[Frontend UI UX Polish Stage 1 2026-06-06]]
 > - [[Frontend UI UX Polish Stage 2 2026-06-06]]
 > - [[Frontend UI UX Polish Stage 3 2026-06-06]]
@@ -40,6 +40,7 @@ updated: 2026-06-06
 > - [[Frontend UI UX Polish Stage 15 2026-06-06]]
 > - [[Frontend UI UX Polish Stage 16 2026-06-06]]
 > - [[Frontend UI UX Polish Stage 17 2026-06-06]]
+> - [[Frontend UI UX Polish Stage 18 2026-06-06]]
 
 > [!success] 2026-06-04 로컬 상용화 품질 evidence
 > - CLI `npm run release:preflight`: 통과, 397 tests passed.
@@ -158,6 +159,8 @@ updated: 2026-06-06
 - [x] Search input/results/empty/loading polish. Stage 15에서 search form label/helper, active filter affordance, skeleton loading, composed empty states, result summary, load-more alert를 보강하고 `/search` route smoke 완료.
 - [x] CLI browser approval polish. Stage 16에서 `/cli/authorize` loading/login/ready/approved/error state panel, trust notes, live success/alert feedback을 보강하고 route smoke 완료.
 - [x] Cross-page production visual/DOM QA. Stage 17에서 desktop/mobile 28 route checks로 overflow/crash/main landmarks를 확인하고 Explore/Leaderboard/Projects main landmark 누락과 `next start` production regression을 수정.
+- [x] Authenticated success-state visual smoke. Stage 18에서 개인 서버 production stack으로 CLI approval, Settings token lifecycle, Profile follow, Project create/edit/delete, Worklog review publish/detail, mobile spot checks를 screenshot+DOM 기준으로 검증.
+- [x] Worklog detail multi-model evidence polish. Stage 18에서 Session metrics의 Models/Modes/Sources/Window 값을 truncate 대신 wrap 처리하고 hover title을 추가.
 - [ ] 사용자용 quick-start 문서와 개발자용 runbook 분리.
 - [ ] commercial readiness evidence artifact 위치와 재실행 절차를 운영 runbook으로 분리.
 - [ ] 실제 배포 후 [[Runtime Configuration]]에 production URL/환경 예시 추가.

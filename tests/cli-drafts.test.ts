@@ -55,6 +55,17 @@ async function waitForMtimeTick(): Promise<void> {
 }
 
 describe('drafts CLI command', () => {
+  it('guides project initialization before listing local drafts outside a project', async () => {
+    await rm(join(dir, '.agentfeed'), { recursive: true, force: true });
+
+    const failure = await runCliFailure(['drafts']);
+
+    expect(failure.stdout).toBe('');
+    expect(failure.stderr).toContain('AgentFeed project is not initialized.');
+    expect(failure.stderr).toContain('Run: agentfeed init');
+    expect(failure.stderr).not.toContain('No local drafts found.');
+  });
+
   it('prints a helpful empty state with next actions', async () => {
     const { stdout, stderr } = await runCli(['drafts']);
 

@@ -606,6 +606,7 @@ function printNextCommands(commands: string[]): void {
 }
 
 async function resolveDraftId(cwd: string, args: string[]): Promise<string> {
+  await loadProjectConfig(cwd);
   const id = option(args, '--id');
   if (id) return id;
   const latest = await findLatestDraft(cwd);
@@ -1461,6 +1462,7 @@ async function draftListRow(row: Awaited<ReturnType<typeof listDrafts>>[number])
 }
 
 async function cmdDrafts(args: string[]) {
+  await loadProjectConfig(process.cwd());
   const rows = await Promise.all((await listDrafts(process.cwd())).map((row) => draftListRow(row)));
   if (flag(args, '--json')) {
     print(JSON.stringify({ drafts: rows }, null, 2));
@@ -1559,6 +1561,7 @@ function noUploadedDraftsMessage(latestDraft: LocalDraft): string {
 }
 
 async function resolveOpenDraft(args: string[]): Promise<LocalDraft> {
+  await loadProjectConfig(process.cwd());
   const id = option(args, '--id');
   if (id && !flag(args, '--latest')) {
     const draft = await readDraft(process.cwd(), id);

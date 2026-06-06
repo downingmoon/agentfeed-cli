@@ -80,6 +80,17 @@ afterEach(async () => {
 });
 
 describe('preview CLI command', () => {
+  it('guides project initialization before latest preview outside a project', async () => {
+    await rm(join(dir, '.agentfeed'), { recursive: true, force: true });
+
+    const { stdout, stderr } = runPreviewFailure(['preview', '--latest']);
+
+    expect(stdout).toBe('');
+    expect(stderr).toContain('AgentFeed project is not initialized.');
+    expect(stderr).toContain('Run: agentfeed init');
+    expect(stderr).not.toContain('No local drafts found.');
+  });
+
   it('guides users when no local draft exists for latest preview', async () => {
     const { stdout, stderr } = runPreviewFailure(['preview', '--latest']);
 

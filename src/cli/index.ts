@@ -531,6 +531,12 @@ function privacyScanNextActions(options: { dryRun?: boolean; draftId?: string; p
   return ['agentfeed status'];
 }
 
+function hookNextActions(action: 'install' | 'uninstall', dryRun = false): string[] {
+  if (action === 'install' && dryRun) return ['agentfeed hook install claude-code'];
+  if (action === 'install') return ['agentfeed status', 'agentfeed share --dry'];
+  return ['agentfeed status'];
+}
+
 function formatPrivacyScanReport(input: PublicScanFields, redacted: PublicScanFields, scan: ReturnType<typeof scanAndRedactFields>['scan'], options: { dryRun?: boolean; draftId?: string; path?: string } = {}): string {
   const target = options.draftId ? `draft ${options.draftId}` : options.path ? `path ${options.path}` : 'current input';
   const mode = options.draftId
@@ -1311,6 +1317,19 @@ async function cmdHook(args: string[]) {
     await loadProjectConfig(process.cwd());
     const dryRun = flag(args, '--dry-run');
     const result = await installClaudeCodeHook({ projectRoot: root, scope, settingsPath, dryRun });
+    const nextActions = hookNextActions('install', dryRun);
+    if (flag(args, '--json')) {
+      print(JSON.stringify({
+        target: 'claude-code',
+        action: 'install',
+        scope,
+        dry_run: dryRun,
+        settings_path: result.path,
+        backup_path: result.backupPath ?? null,
+        next_actions: nextActions
+      }, null, 2));
+      return;
+    }
     print(ui.heading(dryRun ? 'AgentFeed hook dry run' : 'AgentFeed hook installed'));
     print(`${dryRun ? 'Would install' : 'Installed'} AgentFeed Claude Code hook.`);
     print();
@@ -1323,14 +1342,21 @@ async function cmdHook(args: string[]) {
     if (result.backupPath) print(`Backup: ${result.backupPath}`);
     print();
     print(ui.section('Next'));
-    if (dryRun) {
-      print(`  ${ui.command('agentfeed hook install claude-code')}`);
-    } else {
-      print(`  ${ui.command('agentfeed status')}`);
-      print(`  ${ui.command('agentfeed share --dry')}`);
-    }
+    printNextCommands(nextActions);
   } else if (action === 'uninstall') {
     const result = await uninstallClaudeCodeHook({ projectRoot: root, scope, settingsPath });
+    const nextActions = hookNextActions('uninstall');
+    if (flag(args, '--json')) {
+      print(JSON.stringify({
+        target: 'claude-code',
+        action: 'uninstall',
+        scope,
+        settings_path: result.path,
+        backup_path: result.backupPath ?? null,
+        next_actions: nextActions
+      }, null, 2));
+      return;
+    }
     print(ui.heading('AgentFeed hook removed'));
     print('Uninstalled AgentFeed Claude Code hook.');
     print();
@@ -1342,7 +1368,7 @@ async function cmdHook(args: string[]) {
     if (result.backupPath) print(`Backup: ${result.backupPath}`);
     print();
     print(ui.section('Next'));
-    print(`  ${ui.command('agentfeed status')}`);
+    printNextCommands(nextActions);
   } else throw new Error(hookUsageMessage());
 }
 
@@ -2119,7 +2145,7 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     validatePositionals: NO_POSITIONALS('scan')
   },
   hook: {
-    flags: ['--global', '--project', '--dry-run'],
+    flags: ['--global', '--project', '--dry-run', '--json'],
     valueOptions: ['--settings-path'],
     conflicts: [['--global', '--project']],
     validatePositionals: (positionals) => {
@@ -2564,6 +2590,7 @@ Options:
   --project                 Use project settings (default)
   --settings-path <path>    Override the Claude Code settings path
   --dry-run                 Print intended install changes without writing
+  --json                    Print machine-readable hook result
   --help, -h                Show this help
 
 Examples:

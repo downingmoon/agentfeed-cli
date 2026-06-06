@@ -171,6 +171,35 @@ describe('CLI init and hook setup UX', () => {
     expect(existsSync(join(dir, '.claude', 'settings.json'))).toBe(false);
   });
 
+  it('prints machine-readable hook install dry-run next actions without human headings', async () => {
+    await initProject();
+
+    const { stdout, stderr } = await runCli(['hook', 'install', 'claude-code', '--dry-run', '--json']);
+    const output = JSON.parse(stdout) as {
+      target?: string;
+      action?: string;
+      scope?: string;
+      dry_run?: boolean;
+      settings_path?: string;
+      backup_path?: string | null;
+      next_actions?: string[];
+    };
+
+    expect(stderr).toBe('');
+    expect(output).toMatchObject({
+      target: 'claude-code',
+      action: 'install',
+      scope: 'project',
+      dry_run: true,
+      backup_path: null
+    });
+    expect(output.settings_path).toMatch(/\.claude\/settings\.json$/);
+    expect(output.next_actions).toEqual(['agentfeed hook install claude-code']);
+    expect(stdout).not.toContain('AgentFeed hook dry run');
+    expect(stdout).not.toMatch(/(^|\n)Next(\n|$)/);
+    expect(existsSync(join(dir, '.claude', 'settings.json'))).toBe(false);
+  });
+
   it('prints hook install next actions and writes the AgentFeed hook once', async () => {
     await initProject();
 
@@ -209,6 +238,29 @@ describe('CLI init and hook setup UX', () => {
     expect(stdout).toContain('Next');
     expect(stdout).toContain('agentfeed status');
     expect(stderr).toBe('');
+
+    const settings = JSON.parse(await readFile(join(dir, '.claude', 'settings.json'), 'utf8')) as Record<string, unknown>;
+    expect(JSON.stringify(settings)).not.toContain('agentfeed collect --source claude-code');
+  });
+
+
+  it('prints machine-readable hook uninstall next actions without human headings', async () => {
+    await initProject();
+    await runCli(['hook', 'install', 'claude-code']);
+
+    const { stdout, stderr } = await runCli(['hook', 'uninstall', 'claude-code', '--json']);
+    const output = JSON.parse(stdout) as { action?: string; target?: string; scope?: string; settings_path?: string; next_actions?: string[] };
+
+    expect(stderr).toBe('');
+    expect(output).toMatchObject({
+      target: 'claude-code',
+      action: 'uninstall',
+      scope: 'project',
+      next_actions: ['agentfeed status']
+    });
+    expect(output.settings_path).toMatch(/\.claude\/settings\.json$/);
+    expect(stdout).not.toContain('AgentFeed hook removed');
+    expect(stdout).not.toMatch(/(^|\n)Next(\n|$)/);
 
     const settings = JSON.parse(await readFile(join(dir, '.claude', 'settings.json'), 'utf8')) as Record<string, unknown>;
     expect(JSON.stringify(settings)).not.toContain('agentfeed collect --source claude-code');

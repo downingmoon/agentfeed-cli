@@ -22,11 +22,12 @@ updated: 2026-06-06
 
 
 > [!info] 2026-06-06 활성 Frontend UI/UX polish goal
-> 이전 로컬/CI/contract 상용화 품질 goal은 완료 상태지만, owner가 새로 설정한 목표는 Frontend 디자인/UI/UX 완성도를 한 단계 더 높이는 별도 진행 중 goal이다. 현재 Stage 1~4는 완료/커밋 진행 중이며, 완료 판정 전 Worklog detail/review, Project/Profile, 실제 authenticated visual smoke를 더 확인해야 한다.
+> 이전 로컬/CI/contract 상용화 품질 goal은 완료 상태지만, owner가 새로 설정한 목표는 Frontend 디자인/UI/UX 완성도를 한 단계 더 높이는 별도 진행 중 goal이다. 현재 Stage 1~4는 완료/커밋 진행 중이며, 완료 판정 전 Project/Profile, 실제 authenticated visual smoke를 더 확인해야 한다. Worklog detail/review는 Stage 5에서 1차 polish 완료.
 > - [[Frontend UI UX Polish Stage 1 2026-06-06]]
 > - [[Frontend UI UX Polish Stage 2 2026-06-06]]
 > - [[Frontend UI UX Polish Stage 3 2026-06-06]]
 > - [[Frontend UI UX Polish Stage 4 2026-06-06]]
+> - [[Frontend UI UX Polish Stage 5 2026-06-06]]
 
 > [!success] 2026-06-04 로컬 상용화 품질 evidence
 > - CLI `npm run release:preflight`: 통과, 397 tests passed.

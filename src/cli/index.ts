@@ -958,13 +958,16 @@ async function cmdLogout(args: string[]) {
 
 async function cmdCollect(args: string[]) {
   const source = parseAgentSource(option(args, '--source'), 'collect');
+  const config = await loadProjectConfig(process.cwd());
   const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
+  const uploadRequested = flag(args, '--upload');
+  const uploadCredentials = uploadRequested ? await loadCredentials() : null;
+  if (uploadRequested && !uploadCredentials) throw new Error(missingTokenMessage());
   const collection = await collectDraftWithStatus({ cwd: process.cwd(), source, sessionFile: option(args, '--session-file') ?? null, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all'), runConfiguredCommands: flag(args, '--run-configured-commands') });
   let draft = await sanitizeDraftForCliOutput(process.cwd(), collection.draft);
   if (flag(args, '--json')) {
-    if (flag(args, '--upload')) {
-      const creds = await loadCredentials();
-      if (!creds) throw new Error(missingTokenMessage());
+    if (uploadRequested && uploadCredentials) {
+      const creds = uploadCredentials;
       const metadata = await requireUploadPreflight(creds);
       const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds, reviewBaseUrl: metadata.review_base_url });
       draft = await sanitizeDraftForCliOutput(process.cwd(), await readDraft(process.cwd(), draft.id));
@@ -1000,10 +1003,9 @@ async function cmdCollect(args: string[]) {
   print(`  ${ui.command(`agentfeed preview --id ${draft.id}`)}`);
   print('Upload:');
   print(`  ${ui.command(`agentfeed publish --id ${draft.id} --yes`)}`);
-  if (flag(args, '--upload')) {
+  if (uploadRequested) {
     await cmdPublish(['--id', draft.id, '--yes', ...(flag(args, '--open-review') ? ['--open-review'] : []), ...(flag(args, '--no-open-review') ? ['--no-open-review'] : [])]);
   } else {
-    const config = await loadProjectConfig(process.cwd());
     if (!flag(args, '--no-upload') && config.collection.auto_upload) {
       print();
       print(ui.section('Warnings'));
@@ -1015,10 +1017,11 @@ async function cmdCollect(args: string[]) {
 
 async function cmdShare(args: string[]) {
   const opts = parseShareArgs(args);
+  await loadProjectConfig(process.cwd());
+  const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
   const creds = opts.dryRun ? null : await loadCredentials();
   if (!opts.dryRun && !creds) throw new Error(missingTokenMessage());
 
-  const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
   const collection = await collectDraftWithStatus({ cwd: process.cwd(), source: opts.source, sessionFile: opts.sessionFile, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all'), note: opts.note, runConfiguredCommands: opts.runConfiguredCommands, skipConfiguredCommands: opts.dryRun });
   let draft = await sanitizeDraftForCliOutput(process.cwd(), collection.draft);
 

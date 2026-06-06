@@ -214,6 +214,16 @@ async function writeCodexShareSession(sessionId: string, model: string, exportNa
 }
 
 describe('share CLI command', () => {
+  it('guides project initialization before login when share upload runs outside an initialized project', async () => {
+    await rm(join(dir, '.agentfeed'), { recursive: true, force: true });
+
+    const failure = await runCliFailure(['share', '--yes']);
+
+    expect(failure.stdout).toBe('');
+    expect(failure.stderr).toContain('AgentFeed project is not initialized. Run: agentfeed init');
+    expect(failure.stderr).not.toContain('AgentFeed token is missing.');
+  });
+
   it('guides draft creation before login when publishing with no local drafts', async () => {
     const latest = await runCliFailure(['publish', '--latest', '--yes']);
     expect(latest.stdout).toBe('');

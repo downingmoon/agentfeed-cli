@@ -328,6 +328,42 @@ describe('collect CLI command', () => {
     expect(failure?.stderr ?? '').toContain('AgentFeed token is missing.');
     expect(failure?.stderr ?? '').toContain('Run: agentfeed login');
     expect(failure?.stderr ?? '').toContain('Run: printf %s "$TOKEN" | agentfeed login --token-stdin');
+    const draftFiles = await readdir(join(dir, '.agentfeed', 'drafts')).catch(() => []);
+    expect(draftFiles.filter((file) => file.endsWith('.json'))).toHaveLength(0);
+  });
+
+  it('guides login before human collect upload without creating a draft', async () => {
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = "human-upload-needs-login";\n');
+
+    let failure: { stdout?: string; stderr?: string } | undefined;
+    try {
+      await execFileAsync(process.execPath, [
+        cliPath,
+        'collect',
+        '--upload',
+        '--all',
+        '--no-save-cursor'
+      ], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: '',
+          AGENTFEED_API_BASE_URL: undefined,
+          AGENTFEED_ALLOW_INSECURE_API: undefined
+        }
+      });
+    } catch (error) {
+      failure = error as { stdout?: string; stderr?: string };
+    }
+
+    expect(failure?.stdout ?? '').toBe('');
+    expect(failure?.stderr ?? '').toContain('AgentFeed token is missing.');
+    expect(failure?.stderr ?? '').toContain('Run: agentfeed login');
+    expect(failure?.stderr ?? '').toContain('Run: printf %s "$TOKEN" | agentfeed login --token-stdin');
+    const draftFiles = await readdir(join(dir, '.agentfeed', 'drafts')).catch(() => []);
+    expect(draftFiles.filter((file) => file.endsWith('.json'))).toHaveLength(0);
   });
 
   it('refuses collect JSON upload before token check or ingest when API metadata is incompatible', async () => {

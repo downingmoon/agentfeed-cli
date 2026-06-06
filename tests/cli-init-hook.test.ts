@@ -83,6 +83,19 @@ describe('CLI init and hook setup UX', () => {
     expect(existsSync(join(dir, '.claude', 'settings.json'))).toBe(false);
   });
 
+  it('lets hook uninstall clean up from an uninitialized directory without creating settings', async () => {
+    const { stdout, stderr } = await runCli(['hook', 'uninstall', 'claude-code']);
+
+    expect(stdout).toContain('AgentFeed hook removed');
+    expect(stdout).toContain('Uninstalled AgentFeed Claude Code hook.');
+    expect(stdout).toContain('Summary');
+    expect(stdout).toContain('Action: uninstall');
+    expect(stdout).toContain('Next');
+    expect(stdout).toContain('agentfeed status');
+    expect(stderr).toBe('');
+    expect(existsSync(join(dir, '.claude', 'settings.json'))).toBe(false);
+  });
+
   it('explains hook install dry runs without writing Claude settings', async () => {
     await initProject();
 

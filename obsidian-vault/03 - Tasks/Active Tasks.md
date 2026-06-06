@@ -22,7 +22,7 @@ updated: 2026-06-06
 
 
 > [!info] 2026-06-06 활성 Frontend UI/UX polish goal
-> 이전 로컬/CI/contract 상용화 품질 goal은 완료 상태지만, owner가 새로 설정한 목표는 Frontend 디자인/UI/UX 완성도를 한 단계 더 높이는 별도 진행 중 goal이다. 현재 Stage 1~10은 완료/커밋 진행 중이며, 완료 판정 전 실제 authenticated success-state visual smoke를 더 확인해야 한다. Worklog detail/review는 Stage 5, Project/Profile은 Stage 6, Explore/Leaderboard는 Stage 7, Dashboard/Notifications/Moderation은 Stage 8, static/utility pages는 Stage 9, browser visual landmark QA는 Stage 10에서 1차 polish 완료.
+> 이전 로컬/CI/contract 상용화 품질 goal은 완료 상태지만, owner가 새로 설정한 목표는 Frontend 디자인/UI/UX 완성도를 한 단계 더 높이는 별도 진행 중 goal이다. 현재 Stage 1~11은 완료/커밋 진행 중이며, 완료 판정 전 실제 authenticated success-state visual smoke를 더 확인해야 한다. Worklog detail/review는 Stage 5, Project/Profile은 Stage 6, Explore/Leaderboard는 Stage 7, Dashboard/Notifications/Moderation은 Stage 8, static/utility pages는 Stage 9, browser visual landmark QA는 Stage 10, Settings token lifecycle UI는 Stage 11에서 1차 polish 완료.
 > - [[Frontend UI UX Polish Stage 1 2026-06-06]]
 > - [[Frontend UI UX Polish Stage 2 2026-06-06]]
 > - [[Frontend UI UX Polish Stage 3 2026-06-06]]
@@ -33,6 +33,7 @@ updated: 2026-06-06
 > - [[Frontend UI UX Polish Stage 8 2026-06-06]]
 > - [[Frontend UI UX Polish Stage 9 2026-06-06]]
 > - [[Frontend UI UX Polish Stage 10 2026-06-06]]
+> - [[Frontend UI UX Polish Stage 11 2026-06-06]]
 
 > [!success] 2026-06-04 로컬 상용화 품질 evidence
 > - CLI `npm run release:preflight`: 통과, 397 tests passed.
@@ -144,6 +145,7 @@ updated: 2026-06-06
 - [x] Dashboard/Notifications/Moderation authenticated loading, empty, retry, load-more failure states 1차 보강. Stage 8에서 skeleton/empty panel/data-loading guard 처리 완료.
 - [x] Static InfoPage, Header profile affordance, custom 404 1차 보강. Stage 9에서 branded utility shell/recovery links/accessibility contract 처리 완료.
 - [x] Browser visual QA로 Landing/Feed/Docs/404/Dashboard/Notifications desktop/mobile landmark, heading, overflow 확인. Stage 10에서 `main`/`h1` 누락과 anonymous auth skeleton 보강 완료.
+- [x] Settings token lifecycle UI polish. Stage 11에서 Settings skeleton/main landmark, one-time secret panel, token card, rotate/revoke feedback banner를 보강하고 desktop/mobile `/settings` browser smoke 완료.
 - [ ] 사용자용 quick-start 문서와 개발자용 runbook 분리.
 - [ ] commercial readiness evidence artifact 위치와 재실행 절차를 운영 runbook으로 분리.
 - [ ] 실제 배포 후 [[Runtime Configuration]]에 production URL/환경 예시 추가.

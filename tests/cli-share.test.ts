@@ -286,8 +286,8 @@ describe('share CLI command', () => {
     expect(stdout).toContain('Upload target: private AgentFeed review draft');
     expect(stdout).toContain('Next');
     expect(stdout).toContain('Dry run complete. Local draft kept:');
-    expect(stdout).toContain('Review locally:');
-    expect(stdout).toContain('Publish later:');
+    expect(stdout).toContain('Recommended order:');
+    expect(stdout).toContain('  1. agentfeed preview --id');
     expect(stdout).toContain('agentfeed login');
     expect(stdout).toContain('agentfeed publish --id');
     expect(stdout).toContain('agentfeed preview --id');
@@ -345,7 +345,8 @@ describe('share CLI command', () => {
 
     expect(stderr).toBe('');
     expect(stdout).toContain('Dry run complete. Local draft kept:');
-    expect(stdout).toContain('Publish later:');
+    expect(stdout).toContain('Recommended order:');
+    expect(stdout).toContain('  1. agentfeed preview --id');
     expect(stdout).toContain('agentfeed publish --id');
     expect(stdout).not.toContain('agentfeed login');
     expect(stdout).not.toContain('af_live_share_dry_guidance');

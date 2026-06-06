@@ -127,10 +127,9 @@ describe('collect CLI command', () => {
     expect(stdout).toContain('Metrics:');
     expect(stdout).toContain('Collection');
     expect(stdout).toContain('Collection quality');
-    expect(stdout).toContain('Preview:');
-    expect(stdout).toContain('agentfeed preview --id');
-    expect(stdout).toContain('Upload:');
-    expect(stdout).toContain('agentfeed publish --id');
+    expect(stdout).toContain('Recommended order:');
+    expect(stdout).toContain('  1. agentfeed preview --id');
+    expect(stdout).toContain('  2. agentfeed publish --id');
   });
 
   it('prints subcommand help without collecting or updating local state', async () => {
@@ -172,7 +171,7 @@ describe('collect CLI command', () => {
     expect(stderr).toBe('');
     expect(stdout).toContain('Mode: dry run (local draft only; no upload attempted)');
     expect(stdout).toContain('Collection quality');
-    expect(stdout).toContain('Upload:');
+    expect(stdout).toContain('Recommended order:');
     expect(stdout).toContain('agentfeed publish --id');
   });
 

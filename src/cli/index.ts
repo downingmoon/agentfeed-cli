@@ -1478,10 +1478,7 @@ async function cmdCollect(args: string[]) {
   }
   print();
   print(ui.section('Next'));
-  print('Preview:');
-  print(`  ${ui.command(`agentfeed preview --id ${draft.id}`)}`);
-  print('Upload:');
-  print(`  ${ui.command(`agentfeed publish --id ${draft.id} --yes`)}`);
+  printRecommendedCommands(collectJsonNextActions(draft));
   if (uploadRequested) {
     await cmdPublish(['--id', draft.id, '--yes', ...(flag(args, '--open-review') ? ['--open-review'] : []), ...(flag(args, '--no-open-review') ? ['--no-open-review'] : [])]);
   } else {
@@ -1552,13 +1549,9 @@ async function cmdShare(args: string[]) {
 
   if (opts.dryRun) {
     const nextActions = shareDryRunNextActions(draft.id, await hasCredentialsForPublishGuidance());
-    const [previewAction, ...publishActions] = nextActions;
     print(ui.section('Next'));
     print(`Dry run complete. Local draft kept: ${draft.id}`);
-    print('Review locally:');
-    print(`  ${ui.command(previewAction)}`);
-    print('Publish later:');
-    printNextCommands(publishActions);
+    printRecommendedCommands(nextActions);
     return;
   }
 

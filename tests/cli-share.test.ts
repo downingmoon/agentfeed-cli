@@ -393,13 +393,19 @@ describe('share CLI command', () => {
     ], {
       cwd: dir,
       encoding: 'utf8',
-      env: { ...process.env, HOME: home }
+      env: { ...process.env, HOME: home, AGENTFEED_TOKEN: '' }
     });
 
-    const output = JSON.parse(stdout) as { dry_run?: boolean; draft?: { id?: string } };
+    const output = JSON.parse(stdout) as { dry_run?: boolean; draft?: { id?: string }; next_actions?: string[] };
+    const draftId = output.draft?.id;
     expect(stderr).toBe('');
     expect(output.dry_run).toBe(true);
-    expect(output.draft?.id).toMatch(/^draft_/);
+    expect(draftId).toMatch(/^draft_/);
+    expect(output.next_actions).toEqual([
+      `agentfeed preview --id ${draftId}`,
+      'agentfeed login',
+      `agentfeed publish --id ${draftId} --yes`
+    ]);
     expect(stdout).not.toContain('\u001b[');
     expect(stdout).not.toMatch(/(^|\n)(AgentFeed share preview|Ready to share private review draft|Summary|Collection quality|Next|Publish later)/);
   });

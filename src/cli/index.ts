@@ -605,6 +605,14 @@ function printNextCommands(commands: string[]): void {
   }
 }
 
+function shareDryRunNextActions(draftId: string, hasCredentials: boolean): string[] {
+  return uniqueNextCommands([
+    `agentfeed preview --id ${draftId}`,
+    ...(!hasCredentials ? ['agentfeed login'] : []),
+    `agentfeed publish --id ${draftId} --yes`
+  ]);
+}
+
 function statusNextActions(options: {
   invalidApiBaseUrl: boolean;
   projectInitialized: boolean;
@@ -1080,11 +1088,13 @@ async function cmdShare(args: string[]) {
 
   if (opts.json) {
     if (opts.dryRun) {
+      const hasCredentials = await hasCredentialsForPublishGuidance();
       print(JSON.stringify({
         dry_run: true,
         reused_existing_draft: collection.reusedExisting,
         draft,
         privacy_policy: privacyPolicySummary(draft),
+        next_actions: shareDryRunNextActions(draft.id, hasCredentials),
         ...(opts.explain ? { collection_explain: formatCollectionExplain(draft) } : {})
       }, null, 2));
       return;
@@ -1122,14 +1132,14 @@ async function cmdShare(args: string[]) {
   }
 
   if (opts.dryRun) {
-    const hasCredentials = await hasCredentialsForPublishGuidance();
+    const nextActions = shareDryRunNextActions(draft.id, await hasCredentialsForPublishGuidance());
+    const [previewAction, ...publishActions] = nextActions;
     print(ui.section('Next'));
     print(`Dry run complete. Local draft kept: ${draft.id}`);
     print('Review locally:');
-    print(`  ${ui.command(`agentfeed preview --id ${draft.id}`)}`);
+    print(`  ${ui.command(previewAction)}`);
     print('Publish later:');
-    if (!hasCredentials) print(`  ${ui.command('agentfeed login')}`);
-    print(`  ${ui.command(`agentfeed publish --id ${draft.id} --yes`)}`);
+    printNextCommands(publishActions);
     return;
   }
 

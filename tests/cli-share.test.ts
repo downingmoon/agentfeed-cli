@@ -1403,9 +1403,14 @@ describe('share CLI command', () => {
         }
       });
 
-      const output = JSON.parse(stdout) as { upload?: { id?: string; review_url?: string } };
+      const output = JSON.parse(stdout) as { draft_id?: string; draft?: { id?: string }; upload?: { id?: string; review_url?: string }; next_actions?: string[] };
+      const draftId = output.draft_id ?? output.draft?.id;
       expect(output.upload?.id).toBe('worklog_share_json_default_side_effects');
       expect(output.upload?.review_url).toBe('http://localhost:3001/worklogs/worklog_share_json_default_side_effects/review');
+      expect(output.next_actions).toEqual([
+        `agentfeed open --id ${draftId}`,
+        `agentfeed preview --id ${draftId}`
+      ]);
       await expect(readFile(clipboardLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
       await expect(readFile(browserLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
     } finally {
@@ -2200,10 +2205,14 @@ describe('share CLI command', () => {
         }
       });
 
-      const output = JSON.parse(publish.stdout) as { draft_id: string; upload: { id: string; review_url: string }; privacy_policy?: { private_review_upload?: string; public_publish_blocked?: boolean; review_required?: boolean } };
+      const output = JSON.parse(publish.stdout) as { draft_id: string; upload: { id: string; review_url: string }; privacy_policy?: { private_review_upload?: string; public_publish_blocked?: boolean; review_required?: boolean }; next_actions?: string[] };
       expect(output.draft_id).toBe(draft.id);
       expect(output.upload.id).toBe('worklog_publish_json');
       expect(output.upload.review_url).toBe('http://localhost:3001/worklogs/worklog_publish_json/review');
+      expect(output.next_actions).toEqual([
+        `agentfeed open --id ${draft.id}`,
+        `agentfeed preview --id ${draft.id}`
+      ]);
       expect(output.privacy_policy).toEqual({
         private_review_upload: 'allowed',
         public_publish_blocked: false,
@@ -2263,14 +2272,20 @@ describe('share CLI command', () => {
       });
 
       const output = JSON.parse(publish.stdout) as {
+        draft_id?: string;
         upload?: { id?: string; review_url?: string };
         handoff?: {
           clipboard?: { requested?: boolean; ok?: boolean | null };
           browser?: { requested?: boolean; ok?: boolean | null };
         };
+        next_actions?: string[];
       };
       expect(output.upload?.id).toBe('worklog_publish_json_default_side_effects');
       expect(output.upload?.review_url).toBe('http://localhost:3001/worklogs/worklog_publish_json_default_side_effects/review');
+      expect(output.next_actions).toEqual([
+        `agentfeed open --id ${output.draft_id}`,
+        `agentfeed preview --id ${output.draft_id}`
+      ]);
       expect(output.handoff?.clipboard).toMatchObject({ requested: false, ok: null });
       expect(output.handoff?.browser).toMatchObject({ requested: false, ok: null });
       await expect(readFile(clipboardLog, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
@@ -2333,6 +2348,7 @@ describe('share CLI command', () => {
       });
 
       const output = JSON.parse(publish.stdout) as {
+        draft_id?: string;
         upload?: { id?: string; review_url?: string };
         handoff?: {
           clipboard?: { requested?: boolean; ok?: boolean; warning?: string };

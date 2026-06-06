@@ -251,6 +251,13 @@ function reviewUrlHandoffLines(handoff: ReviewUrlHandoff, reviewUrl: string): st
   return lines;
 }
 
+function uploadNextActions(draftId: string): string[] {
+  return uniqueNextCommands([
+    `agentfeed open --id ${draftId}`,
+    `agentfeed preview --id ${draftId}`
+  ]);
+}
+
 function printUploadResult(options: {
   heading: string;
   message: string;
@@ -284,8 +291,7 @@ ${options.result.review_url}`);
 
   print();
   print(ui.section('Next'));
-  print(`  ${ui.command(`agentfeed open --id ${options.draftId}`)}`);
-  print(`  ${ui.command(`agentfeed preview --id ${options.draftId}`)}`);
+  printNextCommands(uploadNextActions(options.draftId));
 }
 
 function apiCompatibilityFailureDetail(result: Awaited<ReturnType<typeof checkApiCompatibility>>): string {
@@ -1117,6 +1123,7 @@ async function cmdShare(args: string[]) {
       upload: result,
       privacy_policy: privacyPolicySummary(draft),
       handoff,
+      next_actions: uploadNextActions(draft.id),
       ...(opts.explain ? { collection_explain: formatCollectionExplain(draft) } : {})
     }, null, 2));
     return;
@@ -1243,7 +1250,7 @@ async function cmdPublish(args: string[]) {
       apiBaseUrl: creds.api_base_url,
       reviewBaseUrl: result.review_base_url ?? metadata?.review_base_url
     });
-    print(JSON.stringify({ draft_id: id, upload: result, privacy_policy: privacyPolicySummary(savedDraft), handoff }, null, 2));
+    print(JSON.stringify({ draft_id: id, upload: result, privacy_policy: privacyPolicySummary(savedDraft), handoff, next_actions: uploadNextActions(id) }, null, 2));
     return;
   }
   const privacyPolicyLines = formatPrivacyPolicyLines(savedDraft);

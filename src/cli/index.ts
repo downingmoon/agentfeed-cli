@@ -1472,7 +1472,7 @@ async function cmdCollect(args: string[]) {
   print(`Agent: ${draft.worklog.agent}`);
   const models = draftModelsLabel(draft);
   if (models) print(`Models: ${models}`);
-  print(`Metrics: ${formatMetricsRow(draft)}`);
+  for (const line of ui.wrapKeyValue('Metrics', formatMetricsRow(draft))) print(line);
   if (flag(args, '--explain')) {
     print();
     print(ui.section('Collection'));
@@ -1620,16 +1620,16 @@ async function cmdPreview(args: string[]) {
   print(ui.section('Summary'));
   print(`ID: ${draft.id}`);
   print(`Title: ${singleLine(draft.worklog.title)}`);
-  print(`Summary: ${singleLine(draft.worklog.summary)}`);
+  for (const line of ui.wrapKeyValue('Summary', singleLine(draft.worklog.summary))) print(line);
   print();
   print(ui.section('Details'));
-  print(`Metrics: ${formatMetricsRow(draft)}`);
+  for (const line of ui.wrapKeyValue('Metrics', formatMetricsRow(draft))) print(line);
   print(`Privacy: ${draft.privacy_scan.status} · findings ${draft.privacy_scan.findings.length}`);
   print(`Upload: ${uploadStatus}`);
   if (draft.upload.review_url) printUrlBlock('Review URL', draft.upload.review_url);
   print();
   print(ui.section('Next'));
-  printNextCommands(previewNextActions(draft));
+  printRecommendedCommands(previewNextActions(draft));
 }
 
 async function cmdPublish(args: string[]) {

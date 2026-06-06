@@ -360,9 +360,58 @@ describe('preview CLI command', () => {
     expect(stdout).toContain('Title: Preview actions');
     expect(stdout).toContain('Upload: pending');
     expect(stdout).toContain('Next');
+    expect(stdout).toContain('Recommended order:');
     expect(stdout).not.toContain('Actions:');
-    expect(stdout).toContain(`agentfeed publish --id ${draft.id} --yes`);
+    expect(stdout).toContain(`  1. agentfeed publish --id ${draft.id} --yes`);
     expect(stdout).toContain(`agentfeed scan --id ${draft.id}`);
+  });
+
+  it('wraps long summary and metrics in narrow preview output', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.worklog.title = 'Narrow preview';
+    draft.worklog.summary = [
+      'This preview summarizes a multi agent implementation pass with enough words to wrap cleanly in narrow terminals.',
+      'It should remain readable without producing a single oversized key value line.'
+    ].join(' ');
+    draft.worklog.metrics = {
+      ...draft.worklog.metrics,
+      files_changed: 42,
+      lines_added: 1234,
+      lines_removed: 567,
+      tests_run: 999,
+      tool_calls: 321,
+      tokens_used: 987654
+    };
+    await writeDraft(dir, draft);
+
+    const stdout = execFileSync(process.execPath, [
+      cliPath,
+      'preview',
+      '--id',
+      draft.id
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home, COLUMNS: '56', AGENTFEED_PLAIN: '1' }
+    });
+
+    const lines = stdout.split(/\r?\n/);
+    const summaryIndex = lines.findIndex((line) => line.startsWith('Summary:'));
+    expect(summaryIndex).toBeGreaterThanOrEqual(0);
+    const summaryEnd = lines.findIndex((line, index) => index > summaryIndex && line === '');
+    const summaryLines = lines.slice(summaryIndex, summaryEnd);
+    expect(summaryLines.length).toBeGreaterThan(1);
+    expect(summaryLines.every((line) => line.length <= 56)).toBe(true);
+    expect(summaryLines.slice(1).every((line) => line.startsWith('         '))).toBe(true);
+
+    const metricsIndex = lines.findIndex((line) => line.startsWith('Metrics:'));
+    expect(metricsIndex).toBeGreaterThanOrEqual(0);
+    const privacyIndex = lines.findIndex((line) => line.startsWith('Privacy:'));
+    const metricsLines = lines.slice(metricsIndex, privacyIndex);
+    expect(metricsLines.length).toBeGreaterThan(1);
+    expect(metricsLines.every((line) => line.length <= 56)).toBe(true);
+    expect(metricsLines.slice(1).every((line) => line.startsWith('         '))).toBe(true);
+    expect(stdout).toContain('Recommended order:');
   });
 
   it('points uploaded draft previews at the trusted open workflow first', async () => {

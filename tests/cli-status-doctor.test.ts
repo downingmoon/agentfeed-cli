@@ -125,6 +125,54 @@ describe('status and doctor provenance output', () => {
     expect(stdout).not.toMatch(ANSI_ESCAPE_PATTERN);
   });
 
+  it('status json prints parseable automation output without headings or secrets', async () => {
+    const token = 'af_live_status_json_secret';
+    execFileSync(process.execPath, [cliPath, 'init', '--no-git-check', '--project-name', 'status-json'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+    await mkdir(join(home, '.agentfeed'), { recursive: true });
+    await writeFile(join(home, '.agentfeed', 'credentials.json'), JSON.stringify({
+      api_base_url: 'http://127.0.0.1:9/v1',
+      ingestion_token: token,
+      token_expires_at: '2026-06-15T00:00:00Z',
+      created_at: '2026-05-30T00:00:00Z'
+    }));
+
+    const { stdout, stderr } = await execFileAsync(process.execPath, [cliPath, 'status', '--json'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: '',
+        FORCE_COLOR: undefined
+      }
+    });
+
+    const output = JSON.parse(stdout) as {
+      health: string;
+      account: { token_configured: boolean; token_expires_at: string | null };
+      api: { base_url: string };
+      project: { initialized: boolean; name: string | null };
+      collection: { local_drafts_count: number; pending_upload_count: number };
+      warnings: string[];
+    };
+    expect(stderr).toBe('');
+    expect(output.health).toBeTruthy();
+    expect(output.account.token_configured).toBe(true);
+    expect(output.account.token_expires_at).toBe('2026-06-15T00:00:00Z');
+    expect(output.api.base_url).toBe('http://127.0.0.1:9/v1');
+    expect(output.project).toMatchObject({ initialized: true, name: 'status-json' });
+    expect(output.collection.local_drafts_count).toBe(0);
+    expect(output.collection.pending_upload_count).toBe(0);
+    expect(Array.isArray(output.warnings)).toBe(true);
+    expect(stdout).not.toContain('AgentFeed status');
+    expect(stdout).not.toMatch(ANSI_ESCAPE_PATTERN);
+    expect(stdout).not.toContain(token);
+  });
+
   it('status reports remediation instead of failing when environment API URL is remote http', async () => {
     const { stdout, stderr } = await execFileAsync(process.execPath, [cliPath, 'status'], {
       cwd: dir,
@@ -935,6 +983,42 @@ describe('status and doctor provenance output', () => {
     expect(stdout).toContain('unset AGENTFEED_API_BASE_URL');
     expect(stdout).not.toContain('af_live');
     expect(stderr).toBe('');
+  });
+
+  it('doctor json prints parseable diagnostics without human headings', async () => {
+    const { stdout, stderr } = await execFileAsync(process.execPath, [cliPath, 'doctor', '--json'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: '',
+        AGENTFEED_API_BASE_URL: 'http://161.33.171.81:18080/v1',
+        AGENTFEED_ALLOW_INSECURE_API: '',
+        FORCE_COLOR: undefined
+      }
+    });
+
+    const output = JSON.parse(stdout) as {
+      runtime: Array<{ name: string; value: string }>;
+      account: Array<{ name: string; value: string }>;
+      api: Array<{ name: string; value: string }>;
+      project: Array<{ name: string; value: string }>;
+      collection: Array<{ name: string; value: string }>;
+      warnings: string[];
+      agent_signals: string[];
+    };
+    expect(stderr).toBe('');
+    expect(output.runtime.some((row) => row.name === 'agentfeed version')).toBe(true);
+    expect(output.account.some((row) => row.name === 'credential source')).toBe(true);
+    expect(output.api.some((row) => row.name === 'API base URL configured')).toBe(true);
+    expect(output.project.some((row) => row.name === 'project config valid')).toBe(true);
+    expect(output.collection.some((row) => row.name === 'last collection cursor')).toBe(true);
+    expect(output.warnings.join('\n')).toContain('invalid AgentFeed API URL setting ignored for diagnostics');
+    expect(Array.isArray(output.agent_signals)).toBe(true);
+    expect(stdout).not.toContain('AgentFeed doctor');
+    expect(stdout).not.toMatch(ANSI_ESCAPE_PATTERN);
+    expect(stdout).not.toContain('af_live');
   });
 
   it('doctor classifies API DNS failures with host and API base remediation', () => {

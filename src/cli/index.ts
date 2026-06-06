@@ -705,7 +705,7 @@ async function draftUploadPendingForStatus(path: string): Promise<boolean> {
   }
 }
 
-async function cmdStatus() {
+async function cmdStatus(args: string[] = []) {
   const diagnostics = await loadDiagnosticCredentialsWithMetadata({ cwd: process.cwd() });
   const credentialResolution = diagnostics.metadata;
   const creds = credentialResolution.credentials;
@@ -727,6 +727,8 @@ async function cmdStatus() {
     }
   }
   const allWarnings = [...credentialResolution.warnings, ...statusWarnings];
+  const apiBaseUrl = credentialResolution.api_base_url ?? creds?.api_base_url ?? await resolveApiBaseUrl();
+  const git = await collectGitMetrics(process.cwd());
   const health = diagnostics.invalidApiBaseUrl
     ? 'attention needed'
     : !hasToken
@@ -736,6 +738,50 @@ async function cmdStatus() {
       : allWarnings.length || pending > 0
         ? 'attention needed'
         : 'ready';
+
+  if (flag(args, '--json')) {
+    print(JSON.stringify({
+      health,
+      account: {
+        token_configured: hasToken,
+        token_source: credentialResolution.token_source,
+        token_source_label: credentialSourceLabel(credentialResolution.token_source),
+        credential_store: credentialResolution.credential_store,
+        credential_store_label: credentialStoreLabel(credentialResolution.credential_store),
+        credentials_file: {
+          exists: credentialResolution.credentials_file_exists,
+          path: credentialResolution.credentials_file_path
+        },
+        token_expires_at: creds?.token_expires_at ?? null
+      },
+      api: {
+        base_url: apiBaseUrl,
+        source: credentialResolution.api_base_url_source ?? null,
+        source_label: credentialResolution.api_base_url_source
+          ? apiBaseSourceLabel(credentialResolution.api_base_url_source, credentialResolution.api_base_url_source_detail)
+          : null,
+        source_detail: credentialResolution.api_base_url_source_detail ?? null,
+        invalid: diagnostics.invalidApiBaseUrl
+      },
+      project: {
+        initialized: Boolean(config),
+        name: config?.project.name ?? null,
+        root: config ? root : null,
+        git_repository: Boolean(git.branch || git.head_commit),
+        claude_code_hook: hook
+      },
+      collection: {
+        local_drafts_count: drafts.length,
+        pending_upload_count: pending,
+        last_collection_cursor: collectionState.last_collected_at ?? null,
+        last_collection_cursor_label: formatCollectionCursor(collectionState.last_collected_at),
+        next_default_collection_since: collectionState.last_collected_at ?? null,
+        next_default_collection_since_label: nextDefaultCollectionSince(collectionState.last_collected_at)
+      },
+      warnings: allWarnings
+    }, null, 2));
+    return;
+  }
 
   print(ui.heading('AgentFeed status'));
   print(`Health: ${health === 'ready' ? ui.good(health) : ui.warn(health)}`);
@@ -752,7 +798,7 @@ async function cmdStatus() {
   }
   print();
   print(ui.section('API'));
-  print(`API base URL: ${credentialResolution.api_base_url ?? creds?.api_base_url ?? await resolveApiBaseUrl()}`);
+  print(`API base URL: ${apiBaseUrl}`);
   if (credentialResolution.api_base_url_source) {
     print(`API base URL source: ${apiBaseSourceLabel(credentialResolution.api_base_url_source, credentialResolution.api_base_url_source_detail)}`);
   }
@@ -761,7 +807,6 @@ async function cmdStatus() {
   print(ui.section('Project'));
   print(`Project initialized: ${config ? 'yes' : 'no'}`);
   if (config) print(`Project name: ${config.project.name}`);
-  const git = await collectGitMetrics(process.cwd());
   print(`Git repository: ${git.branch || git.head_commit ? 'yes' : 'no'}`);
   print(`Claude Code hook: ${hook}`);
   print();
@@ -1109,9 +1154,11 @@ async function cmdHook(args: string[]) {
   } else throw new Error(hookUsageMessage());
 }
 
-async function cmdDoctor() {
-  print(ui.heading('AgentFeed doctor'));
-  print();
+function doctorCheckRows(checks: Array<[string, boolean | string]>): Array<{ name: string; value: boolean | string }> {
+  return checks.map(([name, value]) => ({ name, value }));
+}
+
+async function cmdDoctor(args: string[] = []) {
   const runtimeChecks: Array<[string, boolean | string]> = [
     ['Node version', process.versions.node],
     ['agentfeed version', AGENTFEED_CLI_VERSION]
@@ -1191,6 +1238,23 @@ async function cmdDoctor() {
     ['next default collection since', nextCollectionSinceLabel]
   ];
   const warnings = [...credentialResolution.warnings, ...(apiResolution?.warnings ?? []), ...tokenWarnings];
+  const agentSignalLines = formatAgentSignalLines(await detectAgentSignals({ cwd: process.cwd() }));
+
+  if (flag(args, '--json')) {
+    print(JSON.stringify({
+      runtime: doctorCheckRows(runtimeChecks),
+      account: doctorCheckRows(accountChecks),
+      api: doctorCheckRows(apiChecks),
+      project: doctorCheckRows(projectChecks),
+      collection: doctorCheckRows(collectionChecks),
+      warnings,
+      agent_signals: agentSignalLines
+    }, null, 2));
+    return;
+  }
+
+  print(ui.heading('AgentFeed doctor'));
+  print();
 
   printDoctorChecks('Runtime', runtimeChecks);
   printDoctorChecks('Account', accountChecks);
@@ -1204,7 +1268,6 @@ async function cmdDoctor() {
     print();
   }
 
-  const agentSignalLines = formatAgentSignalLines(await detectAgentSignals({ cwd: process.cwd() }));
   print(ui.section('Agent signals'));
   for (const line of agentSignalLines) print(line);
   print();
@@ -1622,6 +1685,7 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     validatePositionals: NO_POSITIONALS('logout')
   },
   status: {
+    flags: ['--json'],
     validatePositionals: NO_POSITIONALS('status')
   },
   rotate: {
@@ -1691,6 +1755,7 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     }
   },
   doctor: {
+    flags: ['--json'],
     validatePositionals: NO_POSITIONALS('doctor')
   },
   drafts: {
@@ -1923,6 +1988,7 @@ Options:
 Show credential, API, project, hook, draft, and collection cursor status.
 
 Options:
+  --json                    Print machine-readable status
   --help, -h                Show this help`,
     rotate: `Usage: agentfeed rotate [options]
 
@@ -2052,6 +2118,7 @@ Examples:
 Run local AgentFeed diagnostics for credentials, API reachability, project config, git, and agent signals.
 
 Options:
+  --json                    Print machine-readable diagnostics
   --help, -h                Show this help`,
     drafts: `Usage: agentfeed drafts [options]
 
@@ -2116,7 +2183,7 @@ async function main() {
     case 'init': return cmdInit(args);
     case 'login': return cmdLogin(args);
     case 'logout': return cmdLogout(args);
-    case 'status': return cmdStatus();
+    case 'status': return cmdStatus(args);
     case 'rotate': return cmdRotate(args);
     case 'token':
       if (args[0] === 'rotate') return cmdRotate(args.slice(1));
@@ -2127,7 +2194,7 @@ async function main() {
     case 'publish': return cmdPublish(args);
     case 'scan': return cmdScan(args);
     case 'hook': return cmdHook(args);
-    case 'doctor': return cmdDoctor();
+    case 'doctor': return cmdDoctor(args);
     case 'drafts': return cmdDrafts(args);
     case 'discard': return cmdDiscard(args);
     case 'open': return cmdOpen(args);

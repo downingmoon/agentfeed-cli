@@ -239,6 +239,23 @@ describe('release preflight guardrails', () => {
     expect(ciWorkflow).not.toContain('npm audit --omit=dev');
   });
 
+  it('documents polished CLI onboarding and current command flow', () => {
+    const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
+
+    expect(readme).toContain('terminal-first feel as modern agent CLIs');
+    expect(readme).toContain('agentfeed share --dry');
+    expect(readme).toContain('agentfeed share --yes --open-review');
+    expect(readme).toContain('agentfeed collect --explain');
+    expect(readme).toContain('agentfeed preview --latest');
+    expect(readme).toContain('agentfeed publish --latest --yes');
+    expect(readme).toContain('AGENTFEED_ALLOW_INSECURE_API=1');
+    expect(readme).toContain('AGENTFEED_API_BASE_URL=http://161.33.171.81:18080/v1');
+    expect(readme).toContain('agentfeed completion zsh > _agentfeed');
+    expect(readme).toContain('Move the generated file into your shell completion directory');
+    expect(readme).not.toContain('Local CLI MVP');
+    expect(readme).not.toContain('agentfeed completion bash > ~/.local/share/bash-completion/completions/agentfeed');
+  });
+
   it('documents Windows DPAPI credential storage policy', () => {
     const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
     const credentialStorageSection = readme.slice(readme.indexOf('### Credential storage policy'));

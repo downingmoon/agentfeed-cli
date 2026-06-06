@@ -1,10 +1,22 @@
 # AgentFeed CLI
 
-Local CLI MVP for creating public-safe AgentFeed worklog drafts from AI-assisted development sessions.
+AgentFeed CLI turns local AI-agent work into reviewable, public-safe worklog drafts. It is designed for the same terminal-first feel as modern agent CLIs: command-first help, browser login, local draft review, explicit upload, copyable review URLs, JSON automation contracts, and clear recovery hints when something is missing.
+
+What it collects locally:
+
+- Git change metrics and changed areas
+- Claude Code, Codex CLI, Gemini CLI, Cursor, OMC, OMX, and Superpowers aggregate session signals
+- Safe metrics such as models, tokens, tool calls, commands, tests, subagents, skills, and collection quality
+
+What it does **not** upload:
+
+- Raw transcripts
+- Raw diffs or file contents
+- `.env` files, credentials, private keys, or local secret values
 
 ## Install
 
-Requires Node.js 20+. The npm package name is `agentfeed-cli` and it exposes the `agentfeed` command after publishing:
+Requires Node.js 20+. The npm package is configured as `agentfeed-cli` and exposes the `agentfeed` command:
 
 ```bash
 npm install -g agentfeed-cli
@@ -12,7 +24,16 @@ agentfeed --version
 agentfeed --help
 ```
 
-For local release verification before the package is published, build and inspect the npm tarball from this repository:
+For local development before an npm release, link the checked-out repository:
+
+```bash
+npm ci
+npm run build
+npm link
+agentfeed --version
+```
+
+For release verification, build and inspect the npm tarball from this repository:
 
 ```bash
 npm ci
@@ -71,25 +92,35 @@ agentfeed login
 agentfeed status
 ```
 
-Daily sharing:
+Daily one-command workflow:
 
 ```bash
-agentfeed share --dry                  # collect + preview locally
-agentfeed preview --latest             # inspect the newest local draft
-agentfeed publish --latest --yes       # upload as a private review draft
-agentfeed open --latest                # reopen the trusted review URL
+agentfeed share --dry
+agentfeed share --yes --open-review
 ```
 
-Troubleshooting and discovery:
+`share --dry` collects and previews locally. `share --yes --open-review` collects, previews, uploads a private review draft, then opens the review URL.
+
+Draft-by-draft review workflow:
+
+```bash
+agentfeed collect --explain
+agentfeed preview --latest
+agentfeed publish --latest --yes
+agentfeed open --latest
+```
+
+Use the draft-by-draft flow when you want to inspect collection diagnostics or run `agentfeed scan` before uploading.
+
+Discovery and troubleshooting:
 
 ```bash
 agentfeed doctor
 agentfeed commands
 agentfeed help share
-agentfeed collect --explain
-agentfeed collect --source codex
-agentfeed collect --source gemini-cli
-agentfeed collect --source claude-code --session-file "$CLAUDE_SESSION_FILE"
+agentfeed collect --source codex --explain
+agentfeed collect --source gemini-cli --explain
+agentfeed collect --source claude-code --session-file "$CLAUDE_SESSION_FILE" --explain
 agentfeed hook install claude-code
 ```
 
@@ -109,6 +140,24 @@ printf '%s' "$AGENTFEED_TOKEN" | agentfeed login --token-stdin --json
 Literal `agentfeed login --token <token>` input is disabled by default because raw secrets can leak through shell history and process listings. Use stdin (`--token-stdin` or `--token -`) for existing tokens; a local throwaway development escape hatch exists only when `AGENTFEED_ALLOW_UNSAFE_ARGV_TOKEN=1` is set.
 
 Use `login --token-stdin --json` for headless setup. Browser login remains human-readable because it must show the authorization URL and approval code; `login --json` without token input exits with a recovery command instead of mixing browser prompts into JSON stdout.
+
+### Self-hosted or local development API
+
+For localhost development, set the API base URL before login or any upload command:
+
+```bash
+AGENTFEED_API_BASE_URL=http://localhost:8001/v1 agentfeed login
+```
+
+For a private server reachable by IP over plain HTTP, make the development-only override explicit:
+
+```bash
+AGENTFEED_ALLOW_INSECURE_API=1 \
+AGENTFEED_API_BASE_URL=http://161.33.171.81:18080/v1 \
+agentfeed login
+```
+
+Production API URLs should use HTTPS. Run `agentfeed doctor` after changing `AGENTFEED_API_BASE_URL` so the CLI can verify metadata, token validity, and review URL handoff settings.
 
 When a saved device token is near expiry or compromised, run:
 
@@ -140,15 +189,21 @@ AGENTFEED_CREDENTIAL_STORE=file agentfeed login
 
 ## Shell completion
 
-Install command and option completion after building or installing the CLI:
+Generate completion scripts from the same command metadata used by help and option validation:
 
 ```bash
-agentfeed completion zsh > ~/.zsh/completions/_agentfeed
-agentfeed completion bash > ~/.local/share/bash-completion/completions/agentfeed
-agentfeed completion fish > ~/.config/fish/completions/agentfeed.fish
+agentfeed completion zsh > _agentfeed
+agentfeed completion bash > agentfeed.bash
+agentfeed completion fish > agentfeed.fish
 ```
 
-Completion scripts are generated from the same command metadata used by help and option validation, so command-specific flags stay aligned. Zsh and fish completions also include human-readable option descriptions and value hints for options that require parameters.
+Move the generated file into your shell completion directory, then restart the shell. Common destinations are:
+
+- `~/.zsh/completions/_agentfeed`
+- `~/.local/share/bash-completion/completions/agentfeed`
+- `~/.config/fish/completions/agentfeed.fish`
+
+Zsh and fish completions include human-readable option descriptions and value hints for options that require parameters.
 
 `agentfeed commands --json` exposes the same command catalog for tools: each command includes description, usage, help/example commands, flags, value-taking options, conflicting option pairs, and completion words. Use it when another agent or script needs to discover the CLI safely instead of hard-coding command syntax.
 

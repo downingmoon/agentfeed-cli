@@ -2024,12 +2024,61 @@ function fishQuote(value: string): string {
   return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
+const COMPLETION_VALUE_PLACEHOLDERS: Record<string, string> = {
+  '--api-base-url': 'API URL',
+  '--id': 'draft ID',
+  '--note': 'note',
+  '--path': 'path',
+  '--project-name': 'project name',
+  '--session-file': 'path',
+  '--settings-path': 'path',
+  '--since': 'timestamp',
+  '--source': 'source',
+  '--token': 'token',
+  '--until': 'timestamp'
+};
+
+function completionValuePlaceholder(optionName: string): string {
+  return COMPLETION_VALUE_PLACEHOLDERS[optionName] ?? 'value';
+}
+
+function zshQuote(value: string): string {
+  return `'${value.replace(/'/g, "'\\''")}'`;
+}
+
+function zshOptionArgument(command: string, optionName: string): string {
+  const description = completionOptionDescription(command, optionName).replace(/]/g, '\\]');
+  const base = `${optionName}[${description}]`;
+  return completionOptionRequiresValue(command, optionName)
+    ? `${base}:${completionValuePlaceholder(optionName)}:`
+    : base;
+}
+
+function zshArgumentsCase(command: string): string {
+  if (command === 'completion' || command === 'help') {
+    return `    ${command}) compadd -- ${completionWordsFor(command).join(' ')} ;;`;
+  }
+  const options = completionOptionsFor(command);
+  const entries = options
+    .map((optionName, index) => {
+      const suffix = index === options.length - 1 ? '' : ' \\';
+      return `        ${zshQuote(zshOptionArgument(command, optionName))}${suffix}`;
+    })
+    .join('\n');
+  return [
+    `    ${command})`,
+    '      _arguments \\',
+    entries,
+    '      ;;'
+  ].join('\n');
+}
+
 function zshCompletionScript(): string {
   const commandEntries = PUBLIC_COMMANDS
     .map((command) => `    '${command}:${COMMAND_DESCRIPTIONS[command]}'`)
     .join('\n');
   const optionCases = PUBLIC_COMMANDS
-    .map((command) => `    ${command}) compadd -- ${completionWordsFor(command).join(' ')} ;;`)
+    .map((command) => zshArgumentsCase(command))
     .join('\n');
   return `#compdef agentfeed
 

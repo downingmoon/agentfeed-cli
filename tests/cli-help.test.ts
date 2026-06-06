@@ -563,6 +563,12 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('completion) compadd -- zsh bash fish --help');
     expect(stdout).toContain('help) compadd -- help commands init login');
     expect(stdout).toContain('completion token --help');
+    expect(stdout).toContain('_arguments');
+    expect(stdout).toContain("'--json[Print machine-readable login status]'");
+    expect(stdout).toContain("'--api-base-url[Override AgentFeed API base URL]:API URL:'");
+    expect(stdout).toContain("'--source[Select agent source]:source:'");
+    expect(stdout).not.toContain('_arguments \\n');
+    expect(stdout).not.toContain('Option for agentfeed');
     expect(stderr).toBe('');
   });
 

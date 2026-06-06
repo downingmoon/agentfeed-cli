@@ -6,6 +6,7 @@ import { resolveApiBaseUrlWithMetadata } from '../config/api-base.js';
 import { credentialsFromToken, saveCredentials } from '../config/credentials.js';
 import { openBrowser } from '../utils/open-browser.js';
 import type { CliAuthExchangeResult, CliAuthSession } from '../types.js';
+import * as ui from '../cli/ui.js';
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -96,7 +97,12 @@ export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: bool
     trustRepoDiscoveredApiBase: process.env.AGENTFEED_TRUST_REPO_API_BASE === '1',
   });
   const apiBaseUrl = apiResolution.value;
-  for (const warning of apiResolution.warnings) output.write(`Warning: ${warning}\n`);
+  output.write(`${ui.heading('AgentFeed browser authorization')}\n`);
+  if (apiResolution.warnings.length) {
+    output.write(`\n${ui.section('Warnings')}\n`);
+    for (const warning of apiResolution.warnings) output.write(`Warning: ${warning}\n`);
+  }
+  output.write(`\n${ui.section('Connection')}\n`);
   output.write(`Using AgentFeed API: ${apiBaseUrl}\n`);
   if (options.save !== false || options.replaceTokenId) {
     await requireApiCompatibilityBeforeCredentialSave(apiBaseUrl);
@@ -108,7 +114,8 @@ export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: bool
     replaceTokenId: options.replaceTokenId,
   });
 
-  output.write(`\nOpen this URL to authorize AgentFeed CLI:\n${session.authorize_url}\n`);
+  output.write(`\n${ui.section('Authorize')}\n`);
+  output.write(`Open this URL to authorize AgentFeed CLI:\n${session.authorize_url}\n`);
   output.write(`Approval code: ${session.user_code}\n`);
   output.write('Enter this code in the browser before approving the CLI session.\n\n');
   if (!options.noOpen) {
@@ -118,6 +125,7 @@ export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: bool
     }
   }
 
+  output.write(`${ui.section('Next')}\n`);
   output.write('Waiting for browser approval. This terminal will finish automatically after approval.\n');
   if (input.isTTY) output.write('Keep this command running; no Enter key is required.\n');
 

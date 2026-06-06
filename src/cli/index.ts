@@ -2881,7 +2881,18 @@ Options:
   --token-stdin             Read an ingestion token from stdin
   --token -                 Read an ingestion token from stdin
   --json                    Print machine-readable token-input login result
-  --help, -h                Show this help`,
+  --help, -h                Show this help
+
+Examples:
+  agentfeed login
+  agentfeed login --no-open
+  printf %s "$TOKEN" | agentfeed login --token-stdin
+  printf %s "$TOKEN" | agentfeed login --token-stdin --json
+  agentfeed login --api-base-url http://localhost:8001/v1
+
+Safety:
+  Prefer --token-stdin for headless setup so tokens do not appear in shell history.
+  Remote http API URLs require AGENTFEED_ALLOW_INSECURE_API=1 and are development-only.`,
     logout: `Usage: agentfeed logout [options]
 
 Remove saved AgentFeed credentials from this machine.
@@ -2905,7 +2916,16 @@ Options:
   --no-open                 Print the authorization URL instead of opening a browser
   --no-save                 Do not persist the replacement token
   --api-base-url <url>      Override the AgentFeed API base URL
-  --help, -h                Show this help`,
+  --help, -h                Show this help
+
+Examples:
+  agentfeed rotate
+  agentfeed rotate --no-open
+  agentfeed rotate --browser
+
+Safety:
+  Rotation revokes the previous saved token when AgentFeed can verify it.
+  If AGENTFEED_TOKEN is set in your shell, update or unset that secret after rotating.`,
     collect: `Usage: agentfeed collect [options]
 
 Collect local agent work into a private review draft without uploading by default.

@@ -290,10 +290,10 @@ describe('CLI help and option validation', () => {
       [['help', '--help'], ['Usage: agentfeed help', 'agentfeed help collect', 'agentfeed <command> --help']],
       [['commands', '--help'], ['Usage: agentfeed commands', 'command catalog', '--json']],
       [['init', '--help'], ['Usage: agentfeed init', '--project-name', '--no-git-check', '--force']],
-      [['login', '--help'], ['Usage: agentfeed login', '--token-stdin', '--no-open', '--json']],
+      [['login', '--help'], ['Usage: agentfeed login', '--token-stdin', '--no-open', '--json', 'Examples:', 'Safety:', 'agentfeed login --no-open']],
       [['logout', '--help'], ['Usage: agentfeed logout', '--json']],
       [['status', '--help'], ['Usage: agentfeed status', 'credential, API, project', '--json']],
-      [['rotate', '--help'], ['Usage: agentfeed rotate', '--browser', '--api-base-url']],
+      [['rotate', '--help'], ['Usage: agentfeed rotate', '--browser', '--api-base-url', 'Examples:', 'Safety:', 'agentfeed rotate --no-open']],
       [['version', '--help'], ['Usage: agentfeed version', 'agentfeed --version', '--json']],
       [['token', 'rotate', '--help'], ['Usage: agentfeed token rotate', 'Compatibility alias for:', 'agentfeed rotate']],
       [['collect', '--help'], ['Usage: agentfeed collect', '--source <source>', '--no-save-cursor']],
@@ -324,8 +324,26 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('--token-stdin');
     expect(stdout).toContain('--no-open');
     expect(stdout).toContain('--no-save');
+    expect(stdout).toContain('Examples:');
+    expect(stdout).toContain('agentfeed login --no-open');
+    expect(stdout).toContain('printf %s "$TOKEN" | agentfeed login --token-stdin');
+    expect(stdout).toContain('Safety:');
+    expect(stdout).toContain('tokens do not appear in shell history');
     expect(stdout).not.toContain('Usage: agentfeed <command>');
     expect(stdout).not.toContain('agentfeed collect --source codex');
+    expect(stderr).toBe('');
+  });
+
+  it('prints rotate-specific safety examples for rotate --help', async () => {
+    const { stdout, stderr } = await runCli(['rotate', '--help']);
+
+    expect(stdout).toContain('Usage: agentfeed rotate');
+    expect(stdout).toContain('Examples:');
+    expect(stdout).toContain('agentfeed rotate --no-open');
+    expect(stdout).toContain('agentfeed rotate --browser');
+    expect(stdout).toContain('Safety:');
+    expect(stdout).toContain('revokes the previous saved token');
+    expect(stdout).toContain('AGENTFEED_TOKEN');
     expect(stderr).toBe('');
   });
 

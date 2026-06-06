@@ -283,6 +283,25 @@ describe('CLI help and option validation', () => {
     expect(failure.stdout).toBe('');
   });
 
+  it('suggests dashed flags when users type option names as arguments', async () => {
+    const expectations: Array<[string[], string, string]> = [
+      [['preview', 'latest'], 'Unexpected argument for preview: latest', 'Did you mean: agentfeed preview --latest'],
+      [['publish', 'latest', 'yes'], 'Unexpected argument for publish: latest', 'Did you mean: agentfeed publish --latest --yes'],
+      [['discard', 'latest', 'yes'], 'Unexpected argument for discard: latest', 'Did you mean: agentfeed discard --latest --yes'],
+      [['scan', 'latest', 'dry-run'], 'Unexpected argument for scan: latest', 'Did you mean: agentfeed scan --latest --dry-run'],
+      [['share', 'yes', 'open-review'], 'Unexpected argument for share: yes', 'Did you mean: agentfeed share --yes --open-review'],
+      [['collect', 'explain'], 'Unexpected argument for collect: explain', 'Did you mean: agentfeed collect --explain'],
+    ];
+
+    for (const [args, message, suggestion] of expectations) {
+      const failure = await runCliFailure(args);
+      expect(failure.stderr).toContain(message);
+      expect(failure.stderr).toContain(suggestion);
+      expect(failure.stderr).toContain(`Run: agentfeed ${args[0]} --help`);
+      expect(failure.stdout).toBe('');
+    }
+  });
+
   it('rejects collect when --source is missing a value', async () => {
     const failure = await runCliFailure(['collect', '--source']);
 
@@ -322,11 +341,37 @@ describe('CLI help and option validation', () => {
     expect(token.stderr).toContain('Run: agentfeed token rotate --help');
     expect(token.stdout).toBe('');
 
+    const tokenFlag = await runCliFailure(['token', 'rotate', 'browser']);
+    expect(tokenFlag.stderr).toContain('Unexpected argument for token rotate: browser');
+    expect(tokenFlag.stderr).toContain('Did you mean: agentfeed token rotate --browser');
+    expect(tokenFlag.stderr).toContain('Run: agentfeed token rotate --help');
+    expect(tokenFlag.stdout).toBe('');
+
     const completion = await runCliFailure(['completion', 'powershell']);
     expect(completion.stderr).toContain('Unsupported completion shell: powershell');
     expect(completion.stderr).toContain('Supported shells: zsh, bash, fish');
     expect(completion.stderr).toContain('Run: agentfeed completion --help');
     expect(completion.stdout).toBe('');
+
+    const completionTypo = await runCliFailure(['completion', 'zhs']);
+    expect(completionTypo.stderr).toContain('Unsupported completion shell: zhs');
+    expect(completionTypo.stderr).toContain('Did you mean: agentfeed completion zsh');
+    expect(completionTypo.stderr).toContain('Run: agentfeed completion --help');
+    expect(completionTypo.stdout).toBe('');
+  });
+
+  it('suggests hook action and target corrections', async () => {
+    const action = await runCliFailure(['hook', 'instal', 'claude-code']);
+    expect(action.stderr).toContain('Unknown hook action: instal');
+    expect(action.stderr).toContain('Did you mean: agentfeed hook install claude-code');
+    expect(action.stderr).toContain('Usage: agentfeed hook install|uninstall claude-code');
+    expect(action.stdout).toBe('');
+
+    const target = await runCliFailure(['hook', 'install', 'claude']);
+    expect(target.stderr).toContain('Only claude-code hooks are supported.');
+    expect(target.stderr).toContain('Did you mean: agentfeed hook install claude-code');
+    expect(target.stderr).toContain('Run: agentfeed hook install claude-code --help');
+    expect(target.stdout).toBe('');
   });
 
   it('rejects conflicting flags with command-specific recovery hints', async () => {

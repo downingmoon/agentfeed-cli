@@ -1795,9 +1795,10 @@ interface CommandArgSpec {
   validatePositionals?: (positionals: string[]) => string | null;
 }
 
-function commandUsageError(message: string, command: string): string {
+function commandUsageError(message: string, command: string, suggestions: string[] = []): string {
   return [
     message,
+    ...suggestions,
     commandHelpHint(command)
   ].join('\n');
 }
@@ -1810,8 +1811,36 @@ function conflictingOptionsError(command: string, first: string, second: string)
   ].join('\n');
 }
 
+function flaglessOptionCommandSuggestion(command: string, positionals: string[], prefixPositionals: string[] = []): string | null {
+  const spec = COMMAND_ARG_SPECS[command];
+  if (!spec || positionals.length === 0) return null;
+  const flagByBareName = new Map(
+    (spec.flags ?? [])
+      .filter((candidate) => candidate.startsWith('--'))
+      .map((candidate) => [candidate.slice(2), candidate])
+  );
+  const suggestedFlags: string[] = [];
+  for (const positional of positionals) {
+    const flag = flagByBareName.get(positional);
+    if (!flag) return null;
+    suggestedFlags.push(flag);
+  }
+  return `agentfeed ${[command, ...prefixPositionals, ...suggestedFlags].join(' ')}`;
+}
+
+function flaglessOptionSuggestionLine(command: string, positionals: string[], prefixPositionals: string[] = []): string[] {
+  const suggestion = flaglessOptionCommandSuggestion(command, positionals, prefixPositionals);
+  return suggestion ? [`Did you mean: ${suggestion}`] : [];
+}
+
 const NO_POSITIONALS = (command: string) => (positionals: string[]) =>
-  positionals.length ? commandUsageError(`Unexpected argument for ${command}: ${positionals[0]}`, command) : null;
+  positionals.length
+    ? commandUsageError(
+      `Unexpected argument for ${command}: ${positionals[0]}`,
+      command,
+      flaglessOptionSuggestionLine(command, positionals)
+    )
+    : null;
 
 function hookUsageMessage(): string {
   return [
@@ -1821,9 +1850,13 @@ function hookUsageMessage(): string {
   ].join('\n');
 }
 
-function unsupportedHookTargetMessage(): string {
+function unsupportedHookTargetMessage(action = 'install', target?: string): string {
+  const suggestion = target && (target === 'claude' || target.startsWith('claude-'))
+    ? `Did you mean: agentfeed hook ${action} claude-code`
+    : null;
   return [
     'Only claude-code hooks are supported.',
+    ...(suggestion ? [suggestion] : []),
     'Run: agentfeed hook install claude-code --help'
   ].join('\n');
 }
@@ -1858,7 +1891,11 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     validatePositionals: (positionals) => {
       if (positionals.length === 0) return commandUsageError('Usage: agentfeed token rotate', 'token');
       if (positionals[0] !== 'rotate') return commandUsageError(`Unknown token subcommand: ${positionals[0]}`, 'token');
-      if (positionals.length > 1) return commandUsageError(`Unexpected argument for token rotate: ${positionals[1]}`, 'token');
+      if (positionals.length > 1) return commandUsageError(
+        `Unexpected argument for token rotate: ${positionals[1]}`,
+        'token',
+        flaglessOptionSuggestionLine('token', positionals.slice(1), ['rotate'])
+      );
       return null;
     }
   },
@@ -1908,8 +1945,15 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
       if (positionals.length < 2) return hookUsageMessage();
       if (positionals.length > 2) return commandUsageError(`Unexpected argument for hook: ${positionals[2]}`, 'hook');
       const [action, target] = positionals;
-      if (action !== 'install' && action !== 'uninstall') return hookUsageMessage();
-      if (target !== 'claude-code') return unsupportedHookTargetMessage();
+      if (action !== 'install' && action !== 'uninstall') {
+        const suggestion = closestMatch(action, ['install', 'uninstall']);
+        return [
+          `Unknown hook action: ${action}`,
+          ...(suggestion ? [`Did you mean: agentfeed hook ${suggestion} claude-code`] : []),
+          hookUsageMessage()
+        ].join('\n');
+      }
+      if (target !== 'claude-code') return unsupportedHookTargetMessage(action, target);
       return null;
     }
   },
@@ -1937,11 +1981,13 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     validatePositionals: (positionals) => {
       if (positionals.length === 0) return null;
       if (positionals.length > 1) return commandUsageError(`Unexpected argument for completion: ${positionals[1]}`, 'completion');
-      return ['zsh', 'bash', 'fish'].includes(positionals[0])
-        ? null
-        : [
+      const supportedShells = ['zsh', 'bash', 'fish'];
+      if (supportedShells.includes(positionals[0])) return null;
+      const suggestion = closestMatch(positionals[0], supportedShells);
+      return [
           `Unsupported completion shell: ${positionals[0]}`,
           'Supported shells: zsh, bash, fish',
+          ...(suggestion ? [`Did you mean: agentfeed completion ${suggestion}`] : []),
           'Run: agentfeed completion --help'
         ].join('\n');
     }
@@ -1969,7 +2015,6 @@ function editDistance(a: string, b: string): number {
   }
   return previous[b.length];
 }
-
 function commonPrefixLength(a: string, b: string): number {
   const length = Math.min(a.length, b.length);
   let index = 0;

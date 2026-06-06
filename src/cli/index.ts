@@ -32,6 +32,43 @@ import * as ui from './ui.js';
 function print(text = '') { process.stdout.write(`${text}\n`); }
 function err(text = '') { process.stderr.write(`${text}\n`); }
 
+function jsonModeRequested(argv = process.argv.slice(2)): boolean {
+  return argv.some((arg) => arg === '--json');
+}
+
+function errorCodeFromMessage(message: string): string {
+  const firstLine = message.split(/\r?\n/, 1)[0] ?? 'AgentFeed command failed.';
+  return firstLine
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 80) || 'agentfeed_error';
+}
+
+function jsonErrorFromMessage(message: string): {
+  error: { code: string; message: string; details: string[] };
+  next_actions: string[];
+  suggestions: string[];
+} {
+  const lines = message.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const details = lines.slice(1);
+  const nextActions = lines
+    .filter((line) => /^Run:\s+/i.test(line) || /^Use:\s+/i.test(line) || /^Try:\s+/i.test(line))
+    .map((line) => line.replace(/^(Run|Use|Try):\s+/i, ''));
+  const suggestions = lines
+    .filter((line) => /^Did you mean:\s+/i.test(line))
+    .map((line) => line.replace(/^Did you mean:\s+/i, ''));
+  return {
+    error: {
+      code: errorCodeFromMessage(message),
+      message: lines[0] ?? 'AgentFeed command failed.',
+      details
+    },
+    next_actions: [...new Set(nextActions)],
+    suggestions: [...new Set(suggestions)]
+  };
+}
+
 function projectRelativePath(projectRoot: string, path: string): string {
   const rel = relative(projectRoot, path);
   return rel && !rel.startsWith('..') ? rel : path;
@@ -3520,6 +3557,11 @@ async function main() {
 }
 
 main().catch((error) => {
-  err(ui.formatCliError(error instanceof Error ? error.message : String(error)));
+  const message = error instanceof Error ? error.message : String(error);
+  if (jsonModeRequested()) {
+    print(JSON.stringify(jsonErrorFromMessage(message), null, 2));
+  } else {
+    err(ui.formatCliError(message));
+  }
   process.exitCode = 1;
 });

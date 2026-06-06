@@ -590,10 +590,17 @@ describe('status and doctor provenance output', () => {
       failure = error as { stdout?: string; stderr?: string };
     }
 
-    expect(failure?.stdout ?? '').toBe('');
-    expect(failure?.stderr ?? '').toContain('login --json requires token input');
-    expect(failure?.stderr ?? '').toContain('Run: printf %s "$TOKEN" | agentfeed login --token-stdin --json');
-    expect(failure?.stderr ?? '').not.toContain('AgentFeed browser authorization');
+    const output = JSON.parse(failure?.stdout ?? '{}') as {
+      error?: { message?: string; details?: string[] };
+      next_actions?: string[];
+    };
+    expect(output.error?.message).toContain('login --json requires token input');
+    expect(output.next_actions).toEqual([
+      'printf %s "$TOKEN" | agentfeed login --token-stdin --json',
+      'printf %s "$TOKEN" | agentfeed login --token - --json --no-save'
+    ]);
+    expect(failure?.stderr ?? '').toBe('');
+    expect(failure?.stdout ?? '').not.toContain('AgentFeed browser authorization');
   });
 
   it('refuses token-stdin login before writing credentials when API metadata is incompatible', async () => {

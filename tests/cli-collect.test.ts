@@ -260,10 +260,11 @@ describe('collect CLI command', () => {
       failure = error as { stderr?: string; stdout?: string };
     }
 
-    expect(failure?.stderr).toContain('AgentFeed config is unreadable or invalid JSON');
-    expect(failure?.stderr).toContain('Re-run agentfeed init or restore the file from backup');
-    expect(failure?.stderr).not.toContain('Unexpected token');
-    expect(failure?.stdout ?? '').toBe('');
+    const output = JSON.parse(failure?.stdout ?? '{}') as { error: { message: string; details: string[] } };
+    expect(output.error.message).toContain('AgentFeed config is unreadable or invalid JSON');
+    expect(output.error.message).toContain('Re-run agentfeed init or restore the file from backup');
+    expect(output.error.message).not.toContain('Unexpected token');
+    expect(failure?.stderr ?? '').toBe('');
   });
 
   it('fails malformed project config shape before creating a draft', async () => {
@@ -283,11 +284,12 @@ describe('collect CLI command', () => {
       failure = error as { stderr?: string; stdout?: string };
     }
 
-    expect(failure?.stderr).toContain('AgentFeed config is invalid');
-    expect(failure?.stderr).toContain('project.tags must be an array of strings');
-    expect(failure?.stderr).toContain('Re-run agentfeed init or restore the file from backup');
-    expect(failure?.stderr).not.toContain('TypeError');
-    expect(failure?.stdout ?? '').toBe('');
+    const output = JSON.parse(failure?.stdout ?? '{}') as { error: { message: string; details: string[] } };
+    expect(output.error.message).toContain('AgentFeed config is invalid');
+    expect(output.error.message).toContain('project.tags must be an array of strings');
+    expect(output.error.message).toContain('Re-run agentfeed init or restore the file from backup');
+    expect(output.error.message).not.toContain('TypeError');
+    expect(failure?.stderr ?? '').toBe('');
   });
 
   it('persists collection cursor when rendering JSON output', async () => {
@@ -374,10 +376,13 @@ describe('collect CLI command', () => {
       failure = error as { stdout?: string; stderr?: string };
     }
 
-    expect(failure?.stdout ?? '').toBe('');
-    expect(failure?.stderr ?? '').toContain('AgentFeed token is missing.');
-    expect(failure?.stderr ?? '').toContain('Run: agentfeed login');
-    expect(failure?.stderr ?? '').toContain('Run: printf %s "$TOKEN" | agentfeed login --token-stdin');
+    const output = JSON.parse(failure?.stdout ?? '{}') as { error: { message: string }; next_actions: string[] };
+    expect(output.error.message).toContain('AgentFeed token is missing.');
+    expect(output.next_actions).toEqual([
+      'agentfeed login',
+      'printf %s "$TOKEN" | agentfeed login --token-stdin'
+    ]);
+    expect(failure?.stderr ?? '').toBe('');
     const draftFiles = await readdir(join(dir, '.agentfeed', 'drafts')).catch(() => []);
     expect(draftFiles.filter((file) => file.endsWith('.json'))).toHaveLength(0);
   });
@@ -470,11 +475,12 @@ describe('collect CLI command', () => {
       } catch (error) {
         failure = error as { stdout?: string; stderr?: string };
       }
-      expect(failure?.stdout ?? '').toBe('');
-      expect(failure?.stderr ?? '').toContain('API compatibility check failed');
-      expect(failure?.stderr ?? '').toContain('before uploading drafts');
-      expect(failure?.stderr ?? '').toContain('Run: agentfeed doctor');
-      expect(failure?.stderr ?? '').not.toContain('af_live_collect_incompatible_api');
+      const output = JSON.parse(failure?.stdout ?? '{}') as { error: { message: string }; next_actions: string[] };
+      expect(output.error.message).toContain('API compatibility check failed');
+      expect(output.error.message).toContain('before uploading drafts');
+      expect(output.next_actions).toEqual(['agentfeed doctor']);
+      expect(failure?.stdout ?? '').not.toContain('af_live_collect_incompatible_api');
+      expect(failure?.stderr ?? '').toBe('');
       expect(metadataCount).toBe(1);
       expect(tokenStatusCount).toBe(0);
       expect(ingestRequestCount).toBe(0);
@@ -661,14 +667,16 @@ describe('collect CLI command', () => {
     try {
       const address = server.address();
       if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
-      await expect(execFileAsync(process.execPath, [
-        cliPath,
-        'collect',
-        '--json',
-        '--upload',
-        '--all',
-        '--no-save-cursor'
-      ], {
+      let failure: { stdout?: string; stderr?: string } | undefined;
+      try {
+        await execFileAsync(process.execPath, [
+          cliPath,
+          'collect',
+          '--json',
+          '--upload',
+          '--all',
+          '--no-save-cursor'
+        ], {
         cwd: dir,
         encoding: 'utf8',
         env: {
@@ -677,9 +685,13 @@ describe('collect CLI command', () => {
           AGENTFEED_TOKEN: 'af_live_collect_invalid_token',
           AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
         }
-      })).rejects.toMatchObject({
-        stderr: expect.stringContaining('Ingestion token check failed')
-      });
+        });
+      } catch (error) {
+        failure = error as { stdout?: string; stderr?: string };
+      }
+      const output = JSON.parse(failure?.stdout ?? '{}') as { error: { message: string } };
+      expect(output.error.message).toContain('Ingestion token check failed');
+      expect(failure?.stderr ?? '').toBe('');
       expect(tokenStatusCount).toBe(1);
       expect(ingestRequestCount).toBe(0);
     } finally {
@@ -712,16 +724,18 @@ describe('collect CLI command', () => {
     try {
       const address = server.address();
       if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
-      await expect(execFileAsync(process.execPath, [
-        cliPath,
-        'collect',
-        '--json',
-        '--upload',
-        '--since',
-        '2026-05-20T01:00:00Z',
-        '--until',
-        '2026-05-20T02:00:00Z'
-      ], {
+      let failure: { stdout?: string; stderr?: string } | undefined;
+      try {
+        await execFileAsync(process.execPath, [
+          cliPath,
+          'collect',
+          '--json',
+          '--upload',
+          '--since',
+          '2026-05-20T01:00:00Z',
+          '--until',
+          '2026-05-20T02:00:00Z'
+        ], {
         cwd: dir,
         encoding: 'utf8',
         env: {
@@ -730,9 +744,13 @@ describe('collect CLI command', () => {
           AGENTFEED_TOKEN: 'af_live_collect_cursor_invalid_token',
           AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
         }
-      })).rejects.toMatchObject({
-        stderr: expect.stringContaining('Ingestion token check failed')
-      });
+        });
+      } catch (error) {
+        failure = error as { stdout?: string; stderr?: string };
+      }
+      const output = JSON.parse(failure?.stdout ?? '{}') as { error: { message: string } };
+      expect(output.error.message).toContain('Ingestion token check failed');
+      expect(failure?.stderr ?? '').toBe('');
       await expect(readCollectionState(dir)).resolves.toEqual({});
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
@@ -761,16 +779,18 @@ describe('collect CLI command', () => {
     try {
       const address = server.address();
       if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
-      await expect(execFileAsync(process.execPath, [
-        cliPath,
-        'collect',
-        '--json',
-        '--upload',
-        '--since',
-        '2026-05-20T01:00:00Z',
-        '--until',
-        '2026-05-20T02:00:00Z'
-      ], {
+      let failure: { stdout?: string; stderr?: string } | undefined;
+      try {
+        await execFileAsync(process.execPath, [
+          cliPath,
+          'collect',
+          '--json',
+          '--upload',
+          '--since',
+          '2026-05-20T01:00:00Z',
+          '--until',
+          '2026-05-20T02:00:00Z'
+        ], {
         cwd: dir,
         encoding: 'utf8',
         env: {
@@ -779,9 +799,13 @@ describe('collect CLI command', () => {
           AGENTFEED_TOKEN: 'af_live_collect_cursor_upload_fails',
           AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
         }
-      })).rejects.toMatchObject({
-        stderr: expect.stringContaining('Server error. Local draft was kept.')
-      });
+        });
+      } catch (error) {
+        failure = error as { stdout?: string; stderr?: string };
+      }
+      const output = JSON.parse(failure?.stdout ?? '{}') as { error: { message: string } };
+      expect(output.error.message).toContain('Server error. Local draft was kept.');
+      expect(failure?.stderr ?? '').toBe('');
       expect(ingestRequestCount).toBeGreaterThan(0);
       await expect(readCollectionState(dir)).resolves.toEqual({});
     } finally {

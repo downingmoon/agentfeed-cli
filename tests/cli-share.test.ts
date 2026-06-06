@@ -521,23 +521,30 @@ describe('share CLI command', () => {
 
     try {
       const sessionFile = await writeCodexShareSession('share-incompatible-api', 'gpt-incompatible-api', 'incompatibleApi');
-      await expect(spawnAgentFeedJson([
-        'share',
-        '--json',
-        '--source',
-        'codex',
-        '--session-file',
-        sessionFile,
-        '--all',
-        '--no-clipboard'
-      ], {
+      let failure: { stdout?: string; stderr?: string } | undefined;
+      try {
+        await spawnAgentFeedJson([
+          'share',
+          '--json',
+          '--source',
+          'codex',
+          '--session-file',
+          sessionFile,
+          '--all',
+          '--no-clipboard'
+        ], {
         ...process.env,
         HOME: home,
         AGENTFEED_TOKEN: 'af_live_incompatible_api',
         AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
-      })).rejects.toMatchObject({
-        stderr: expect.stringContaining('API compatibility check failed')
-      });
+        });
+      } catch (error) {
+        failure = error as { stdout?: string; stderr?: string };
+      }
+      const output = JSON.parse(failure?.stdout ?? '{}') as { error: { message: string }; next_actions: string[] };
+      expect(output.error.message).toContain('API compatibility check failed');
+      expect(output.next_actions).toEqual(['agentfeed doctor']);
+      expect(failure?.stderr ?? '').toBe('');
       expect(ingestRequestCount).toBe(0);
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
@@ -569,23 +576,29 @@ describe('share CLI command', () => {
 
     try {
       const sessionFile = await writeCodexShareSession('share-invalid-token', 'gpt-invalid-token', 'invalidToken');
-      await expect(spawnAgentFeedJson([
-        'share',
-        '--json',
-        '--source',
-        'codex',
-        '--session-file',
-        sessionFile,
-        '--all',
-        '--no-clipboard'
-      ], {
+      let failure: { stdout?: string; stderr?: string } | undefined;
+      try {
+        await spawnAgentFeedJson([
+          'share',
+          '--json',
+          '--source',
+          'codex',
+          '--session-file',
+          sessionFile,
+          '--all',
+          '--no-clipboard'
+        ], {
         ...process.env,
         HOME: home,
         AGENTFEED_TOKEN: 'af_live_invalid_token',
         AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
-      })).rejects.toMatchObject({
-        stderr: expect.stringContaining('Ingestion token check failed')
-      });
+        });
+      } catch (error) {
+        failure = error as { stdout?: string; stderr?: string };
+      }
+      const output = JSON.parse(failure?.stdout ?? '{}') as { error: { message: string } };
+      expect(output.error.message).toContain('Ingestion token check failed');
+      expect(failure?.stderr ?? '').toBe('');
       expect(tokenStatusCount).toBe(1);
       expect(ingestRequestCount).toBe(0);
     } finally {

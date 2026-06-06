@@ -103,6 +103,23 @@ describe('preview CLI command', () => {
     expect(stderr).toContain('Run: agentfeed drafts');
   });
 
+  it('prints structured JSON errors when preview --json has no local draft', async () => {
+    const { stdout, stderr } = runPreviewFailure(['preview', '--latest', '--json']);
+    const output = JSON.parse(stdout) as {
+      error: { message: string; details: string[] };
+      next_actions: string[];
+    };
+
+    expect(stderr).toBe('');
+    expect(output.error.message).toBe('No local drafts found.');
+    expect(output.error.details).toEqual(expect.arrayContaining(['Create a draft:', 'Inspect saved drafts:']));
+    expect(output.next_actions).toEqual([
+      'agentfeed collect --explain',
+      'agentfeed share --dry',
+      'agentfeed drafts'
+    ]);
+  });
+
   it('guides users back to drafts and collect when previewing a missing draft id', async () => {
     const { stdout, stderr } = runPreviewFailure(['preview', '--id', 'draft_missing']);
 
@@ -303,11 +320,15 @@ describe('preview CLI command', () => {
         failure = error as { stdout?: string | Buffer; stderr?: string | Buffer };
       }
 
-      expect(String(failure?.stdout ?? '')).toBe('');
-      expect(String(failure?.stderr ?? '')).toContain('API compatibility check failed');
-      expect(String(failure?.stderr ?? '')).toContain('before uploading drafts');
-      expect(String(failure?.stderr ?? '')).toContain('Run: agentfeed doctor');
-      expect(String(failure?.stderr ?? '')).not.toContain('af_live_preview_incompatible');
+      const output = JSON.parse(String(failure?.stdout ?? '{}')) as {
+        error: { message: string; details: string[] };
+        next_actions: string[];
+      };
+      expect(String(failure?.stderr ?? '')).toBe('');
+      expect(output.error.message).toContain('API compatibility check failed');
+      expect(output.error.message).toContain('before uploading drafts');
+      expect(output.next_actions).toEqual(['agentfeed doctor']);
+      expect(String(failure?.stdout ?? '')).not.toContain('af_live_preview_incompatible');
       expect(metadataCount).toBe(1);
       expect(previewCount).toBe(0);
     } finally {

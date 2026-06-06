@@ -401,6 +401,21 @@ describe('CLI help and option validation', () => {
     expect(failure.stdout).toBe('');
   });
 
+  it('prints structured JSON errors when --json commands fail before running', async () => {
+    const failure = await runCliFailure(['status', '--bogus', '--json']);
+    const output = JSON.parse(failure.stdout) as {
+      error: { code: string; message: string; details: string[] };
+      next_actions: string[];
+      suggestions: string[];
+    };
+
+    expect(failure.stderr).toBe('');
+    expect(output.error.message).toBe('Unknown option: --bogus');
+    expect(output.error.code).toContain('unknown_option_bogus');
+    expect(output.next_actions).toEqual(['agentfeed status --help']);
+    expect(output.suggestions).toEqual([]);
+  });
+
 
   it('suggests concrete workflows when a global-looking option is missing its command', async () => {
     const dry = await runCliFailure(['--dry']);
@@ -411,10 +426,14 @@ describe('CLI help and option validation', () => {
     expect(dry.stdout).toBe('');
 
     const json = await runCliFailure(['--json']);
-    expect(json.stderr).toContain('Option appears before command: --json');
-    expect(json.stderr).toContain('Try: agentfeed status --json');
-    expect(json.stderr).toContain('Try: agentfeed commands --json');
-    expect(json.stdout).toBe('');
+    const jsonOutput = JSON.parse(json.stdout) as { error: { message: string; details: string[] }; next_actions: string[] };
+    expect(json.stderr).toBe('');
+    expect(jsonOutput.error.message).toContain('Option appears before command: --json');
+    expect(jsonOutput.next_actions).toEqual(expect.arrayContaining([
+      'agentfeed status --json',
+      'agentfeed commands --json',
+      'agentfeed --help'
+    ]));
 
     const apiBase = await runCliFailure(['--api-base-url', 'http://localhost:8001/v1']);
     expect(apiBase.stderr).toContain('Option appears before command: --api-base-url');
@@ -424,12 +443,12 @@ describe('CLI help and option validation', () => {
 
   it('explains command-first syntax when options are placed before the command', async () => {
     const json = await runCliFailure(['--json', 'status']);
-    expect(json.stderr).toContain('Option appears before command: --json');
-    expect(json.stderr).toContain('AgentFeed uses command-first syntax: agentfeed <command> [options].');
-    expect(json.stderr).toContain('Use: agentfeed status --json');
-    expect(json.stderr).toContain('Run: agentfeed status --help');
-    expect(json.stderr).not.toContain('Unknown command: --json');
-    expect(json.stdout).toBe('');
+    const jsonOutput = JSON.parse(json.stdout) as { error: { message: string; details: string[] }; next_actions: string[] };
+    expect(json.stderr).toBe('');
+    expect(jsonOutput.error.message).toContain('Option appears before command: --json');
+    expect(jsonOutput.error.details.join('\n')).toContain('AgentFeed uses command-first syntax: agentfeed <command> [options].');
+    expect(jsonOutput.next_actions).toEqual(['agentfeed status --json', 'agentfeed status --help']);
+    expect(json.stdout).not.toContain('Unknown command: --json');
 
     const apiBase = await runCliFailure(['--api-base-url', 'http://localhost:8001/v1', 'login']);
     expect(apiBase.stderr).toContain('Option appears before command: --api-base-url');

@@ -73,6 +73,7 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('Global options:');
     expect(stdout).toContain('agentfeed --version');
     expect(stdout).toContain('agentfeed -v');
+    expect(stdout).toContain('agentfeed version');
     expect(stdout).toContain('Help:');
     expect(stdout).toContain('agentfeed help');
     expect(stdout).toContain('agentfeed help <command>');
@@ -100,6 +101,8 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('Collect, preview, and optionally upload in one workflow');
     expect(stdout).toContain('doctor');
     expect(stdout).toContain('Run local diagnostics');
+    expect(stdout).toContain('version');
+    expect(stdout).toContain('Print the installed AgentFeed CLI version');
     expect(stdout).toContain('completion');
     expect(stdout).toContain('Print shell completion script');
     expect(stdout).not.toContain('agentfeed collect --source codex');
@@ -209,6 +212,7 @@ describe('CLI help and option validation', () => {
       [['logout', '--help'], ['Usage: agentfeed logout', '--json']],
       [['status', '--help'], ['Usage: agentfeed status', 'credential, API, project', '--json']],
       [['rotate', '--help'], ['Usage: agentfeed rotate', '--browser', '--api-base-url']],
+      [['version', '--help'], ['Usage: agentfeed version', 'agentfeed --version', '--json']],
       [['token', 'rotate', '--help'], ['Usage: agentfeed token rotate', 'Compatibility alias for:', 'agentfeed rotate']],
       [['collect', '--help'], ['Usage: agentfeed collect', '--source <source>', '--no-save-cursor']],
       [['share', '--help'], ['Usage: agentfeed share', '--note <text>', '--run-configured-commands']],
@@ -241,6 +245,23 @@ describe('CLI help and option validation', () => {
     expect(stdout).not.toContain('Usage: agentfeed <command>');
     expect(stdout).not.toContain('agentfeed collect --source codex');
     expect(stderr).toBe('');
+  });
+
+  it('prints version through command, global flags, and machine-readable JSON', async () => {
+    const command = await runCli(['version']);
+    const longFlag = await runCli(['--version']);
+    const shortFlag = await runCli(['-v']);
+    const json = await runCli(['version', '--json']);
+    const helpTopic = await runCli(['help', 'version']);
+    const trailingHelp = await runCli(['version', 'help']);
+
+    expect(command.stderr).toBe('');
+    expect(command.stdout.trim()).toMatch(/^\d+\.\d+\.\d+/);
+    expect(longFlag.stdout.trim()).toBe(command.stdout.trim());
+    expect(shortFlag.stdout.trim()).toBe(command.stdout.trim());
+    expect(JSON.parse(json.stdout)).toEqual({ version: command.stdout.trim() });
+    expect(helpTopic.stdout).toContain('Usage: agentfeed version');
+    expect(trailingHelp.stdout).toContain('Usage: agentfeed version');
   });
 
   it('rejects unknown options before running a command', async () => {

@@ -1725,6 +1725,14 @@ async function cmdCompletion(args: string[]) {
   print(completionScript(shell));
 }
 
+async function cmdVersion(args: string[]) {
+  if (flag(args, '--json')) {
+    print(JSON.stringify({ version: AGENTFEED_CLI_VERSION }, null, 2));
+    return;
+  }
+  print(AGENTFEED_CLI_VERSION);
+}
+
 const PUBLIC_COMMANDS = [
   'help',
   'init',
@@ -1737,6 +1745,7 @@ const PUBLIC_COMMANDS = [
   'scan',
   'status',
   'doctor',
+  'version',
   'hook',
   'drafts',
   'discard',
@@ -1757,6 +1766,7 @@ const COMMAND_DESCRIPTIONS: Record<(typeof PUBLIC_COMMANDS)[number], string> = {
   scan: 'Scan and redact public draft fields',
   status: 'Show credentials, project, and draft status',
   doctor: 'Run local diagnostics',
+  version: 'Print the installed AgentFeed CLI version',
   hook: 'Install or remove agent hooks',
   drafts: 'List local draft summaries',
   discard: 'Delete a local draft',
@@ -1770,7 +1780,7 @@ const COMMAND_GROUPS: Array<{ title: string; commands: Array<(typeof PUBLIC_COMM
   { title: 'Share work', commands: ['share', 'collect', 'preview', 'publish', 'open'] },
   { title: 'Privacy and drafts', commands: ['scan', 'drafts', 'discard'] },
   { title: 'Automation', commands: ['hook', 'completion'] },
-  { title: 'Account and diagnostics', commands: ['doctor', 'rotate', 'logout'] }
+  { title: 'Account and diagnostics', commands: ['doctor', 'version', 'rotate', 'logout'] }
 ];
 
 const KNOWN_COMMANDS = new Set([
@@ -1780,6 +1790,7 @@ const KNOWN_COMMANDS = new Set([
   'logout',
   'status',
   'rotate',
+  'version',
   'token',
   'collect',
   'share',
@@ -1988,6 +1999,10 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     flags: ['--json'],
     validatePositionals: NO_POSITIONALS('doctor')
   },
+  version: {
+    flags: ['--json'],
+    validatePositionals: NO_POSITIONALS('version')
+  },
   drafts: {
     flags: ['--json'],
     validatePositionals: NO_POSITIONALS('drafts')
@@ -2183,7 +2198,7 @@ function printCommandCatalog(): void {
 function printHelp(): void {
   print(ui.heading('Usage: agentfeed <command> [options]'));
   print(`Version: ${AGENTFEED_CLI_VERSION}`);
-  print(`\n${ui.section('Global options')}:\n  agentfeed --help\n  agentfeed --version\n  agentfeed -v`);
+  print(`\n${ui.section('Global options')}:\n  agentfeed --help\n  agentfeed --version\n  agentfeed -v\n  agentfeed version`);
   print(`\n${ui.section('Help')}:\n  agentfeed help\n  agentfeed help <command>\n  agentfeed <command> help`);
   print(`\n${ui.section('Quickstart')}:\n  agentfeed init\n  agentfeed login\n  agentfeed share --dry\n  agentfeed share --yes --open-review`);
   print(`\n${ui.section('Headless login')}:\n  printf %s "$TOKEN" | agentfeed login --token-stdin\n  printf %s "$TOKEN" | agentfeed login --token - --no-save`);
@@ -2227,6 +2242,17 @@ Equivalent forms:
   agentfeed <command> --help
 
 Options:
+  --help, -h                Show this help`,
+    version: `Usage: agentfeed version [options]
+
+Print the installed AgentFeed CLI version.
+
+Equivalent forms:
+  agentfeed --version
+  agentfeed -v
+
+Options:
+  --json                    Print machine-readable version output
   --help, -h                Show this help`,
     init: `Usage: agentfeed init [options]
 
@@ -2501,6 +2527,7 @@ async function main() {
     case 'scan': return cmdScan(args);
     case 'hook': return cmdHook(args);
     case 'doctor': return cmdDoctor(args);
+    case 'version': return cmdVersion(args);
     case 'drafts': return cmdDrafts(args);
     case 'discard': return cmdDiscard(args);
     case 'open': return cmdOpen(args);

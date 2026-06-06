@@ -48,12 +48,15 @@ describe('agent discovery', () => {
     expect(lines).toContain('Agent signals:');
     expect(lines).toContain('Codex CLI: detected');
     expect(lines).toContain('OMX: detected');
-    expect(lines).toContain('  Quality: high when Codex session rows are available; medium with OMX metadata only.');
+    expect(lines).toContain('  Quality: high with Codex session rows; medium with OMX metadata.');
     expect(lines).toContain('  Try: agentfeed collect --source codex --explain');
+    expect(lines).toContain('  If discovery misses logs:');
+    expect(lines).toContain('    agentfeed collect --source codex --session-file <path> --explain');
     expect(lines).toContain('  Plugin role: enriches Codex evidence with tokens, subagents, turns, and modes.');
     expect(lines).toContain('  Detected paths:');
     expect(lines.some((line) => line.includes('Run Gemini CLI in this project.'))).toBe(true);
     expect(lines.some((line) => line.includes('Try: agentfeed collect --source gemini-cli --explain'))).toBe(true);
+    expect(lines.filter((line) => line.length > 80)).toEqual([]);
   });
 
   it('summarizes agent signals as automation-friendly JSON rows', async () => {

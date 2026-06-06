@@ -43,6 +43,16 @@ function signal(label: string, paths: string[], guidance: string): AgentSignal {
   return { detected: paths.length > 0, label, paths, guidance };
 }
 
+function formatDetectedPathLine(path: string): string {
+  const prefix = '  - ';
+  const maxLength = 80;
+  if (prefix.length + path.length <= maxLength) return `${prefix}${path}`;
+  const available = maxLength - prefix.length - 1;
+  const headLength = Math.max(16, Math.floor(available / 2));
+  const tailLength = Math.max(16, available - headLength);
+  return `${prefix}${path.slice(0, headLength)}…${path.slice(-tailLength)}`;
+}
+
 export async function detectAgentSignals(options: { cwd: string; home?: string }): Promise<AgentSignals> {
   const home = options.home ?? homedir();
   const cwd = options.cwd;
@@ -73,7 +83,7 @@ export function formatAgentSignalLines(signals: AgentSignals): string[] {
     lines.push(...agentSignalGuidanceLines(key));
     if (row.detected && row.paths.length) {
       lines.push('  Detected paths:');
-      for (const path of row.paths.slice(0, 3)) lines.push(`  - ${path}`);
+      for (const path of row.paths.slice(0, 3)) lines.push(formatDetectedPathLine(path));
       if (row.paths.length > 3) lines.push(`  - ...and ${row.paths.length - 3} more`);
     }
   }
@@ -129,21 +139,24 @@ function agentSignalGuidanceLines(key: AgentSignalKey): string[] {
       ];
     case 'codex':
       return [
-        '  Quality: high when Codex session rows are available; medium with OMX metadata only.',
+        '  Quality: high with Codex session rows; medium with OMX metadata.',
         '  Try: agentfeed collect --source codex --explain',
-        '  If default discovery misses logs: agentfeed collect --source codex --session-file <path> --explain'
+        '  If discovery misses logs:',
+        '    agentfeed collect --source codex --session-file <path> --explain'
       ];
     case 'cursor':
       return [
         '  Quality: low until a Cursor transcript format is explicitly supported.',
         '  Try: agentfeed collect --source cursor --explain',
-        '  Improve: pass an exported Cursor/session metadata file with --session-file <path>.'
+        '  Improve: pass exported Cursor/session metadata.',
+        '    Use --session-file <path>.'
       ];
     case 'gemini_cli':
       return [
-        '  Quality: high when Gemini CLI session rows are available; medium with Superpowers metadata.',
+        '  Quality: high with Gemini CLI rows; medium with Superpowers metadata.',
         '  Try: agentfeed collect --source gemini-cli --explain',
-        '  If default discovery misses logs: agentfeed collect --source gemini-cli --session-file <path> --explain'
+        '  If discovery misses logs:',
+        '    agentfeed collect --source gemini-cli --session-file <path> --explain'
       ];
     case 'omc':
       return [

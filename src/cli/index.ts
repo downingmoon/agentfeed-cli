@@ -2080,7 +2080,7 @@ async function cmdDrafts(args: string[]) {
     print(`  Updated: ${formatDraftUpdatedAt(row.updated_at)}`);
     print(`  Project: ${row.project}`);
     print(`  Title: ${row.title}`);
-    print(`  Metrics: ${row.metrics}`);
+    for (const line of ui.wrapKeyValue('  Metrics', row.metrics ?? 'no metrics')) print(line);
     if (row.status === 'uploaded') {
       print(`  Open: ${ui.command(`agentfeed open --id ${row.id}`)}`);
     } else {

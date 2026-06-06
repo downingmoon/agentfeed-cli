@@ -105,6 +105,27 @@ describe('drafts CLI command', () => {
     expect(stdout).toContain(`agentfeed publish --id ${draft.id} --yes`);
   });
 
+  it('wraps long draft metrics in narrow terminals', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.worklog.title = 'Long metrics draft';
+    draft.worklog.metrics.files_changed = 23;
+    draft.worklog.metrics.lines_added = 1495;
+    draft.worklog.metrics.lines_removed = 164;
+    draft.worklog.metrics.tests_run = 150;
+    draft.worklog.metrics.tool_calls = 1295;
+    draft.worklog.metrics.tokens_used = 2_620_000_000;
+    await writeDraft(dir, draft);
+
+    const { stdout, stderr } = await runCli(['drafts'], { COLUMNS: '56', AGENTFEED_PLAIN: '1' });
+
+    expect(stderr).toBe('');
+    const lines = stdout.split(/\r?\n/);
+    const metricsIndex = lines.findIndex((line) => line.startsWith('  Metrics:'));
+    expect(metricsIndex).toBeGreaterThanOrEqual(0);
+    expect(lines[metricsIndex + 1]).toMatch(/^           calls · 2\.62B tokens$/);
+    expect(lines.filter((line) => line.length > 80)).toEqual([]);
+  });
+
   it('prints a sectioned discard summary and removes local draft artifacts', async () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
     draft.worklog.title = 'Discard me cleanly';

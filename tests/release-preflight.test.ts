@@ -244,8 +244,12 @@ describe('release preflight guardrails', () => {
     const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
 
     expect(readme).toContain('terminal-first feel as modern agent CLIs');
+    expect(readme).toContain('agentfeed commands');
+    expect(readme).toContain('guided workflows');
+    expect(readme).toContain('when to use each command');
     expect(readme).toContain('agentfeed share --dry');
     expect(readme).toContain('agentfeed share --yes --open-review');
+    expect(readme).toContain('Upload skipped: AgentFeed token is missing');
     expect(readme).toContain('agentfeed collect --explain');
     expect(readme).toContain('agentfeed preview --latest');
     expect(readme).toContain('agentfeed publish --latest --yes');

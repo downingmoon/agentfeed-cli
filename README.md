@@ -21,8 +21,20 @@ Requires Node.js 20+. The npm package is configured as `agentfeed-cli` and expos
 ```bash
 npm install -g agentfeed-cli
 agentfeed --version
-agentfeed --help
+agentfeed commands
 ```
+
+Recommended installed-user flow:
+
+```bash
+agentfeed commands          # see guided workflows and when to use each command
+agentfeed init              # create .agentfeed/config.json for this repo
+agentfeed login             # browser approval or token stdin setup
+agentfeed share --dry       # collect + preview without uploading
+agentfeed share --yes --open-review
+```
+
+If you are not logged in yet, `agentfeed share` still creates a local preview and tells you the exact `agentfeed login` / `agentfeed publish` next actions. Uploading to AgentFeed always requires a token and explicit upload intent.
 
 For local development before an npm release, link the checked-out repository:
 
@@ -45,9 +57,10 @@ gate, then verifies `npm pack --dry-run --json` output so stale `dist/` cannot
 pass a local release check. It also verifies that the publish tarball contains
 the built CLI and excludes source, tests, local drafts, env files, and agent
 runtime state, then installs that tarball into a temporary project and executes
-the installed `agentfeed --help` / `agentfeed --version` binary path. CI also
-runs this installed-package smoke on Windows so the npm-generated `agentfeed.cmd`
-wrapper is covered before release.
+the installed `agentfeed --help`, `agentfeed --version`, and first-run
+`init`/`status`/`share --dry`/`drafts` workflow through the packaged binary path.
+CI also runs this installed-package smoke on Windows so the npm-generated
+`agentfeed.cmd` wrapper is covered before release.
 
 ## Release and provenance
 
@@ -87,10 +100,13 @@ posture before overriding the package-level provenance setting. See:
 First setup:
 
 ```bash
+agentfeed commands
 agentfeed init
 agentfeed login
 agentfeed status
 ```
+
+`agentfeed commands` shows guided workflows. `agentfeed status` summarizes setup progress, and `agentfeed doctor` lists the first fix to try when setup is incomplete.
 
 Daily one-command workflow:
 
@@ -209,7 +225,7 @@ Zsh and fish completions include human-readable option descriptions and value hi
 
 ## One-command sharing
 
-`agentfeed share` is the recommended daily command. It creates a local draft, prints the public-safe preview that will be uploaded, and requires explicit upload intent before creating a private AgentFeed review draft. Use `--yes` for human-readable uploads, or `--json` when a machine will inspect the returned upload/handoff object; CI/non-interactive runs are not exempt from this private-review upload gate.
+`agentfeed share` is the recommended daily command. It creates a local draft, prints the public-safe preview that will be uploaded, and requires explicit upload intent before creating a private AgentFeed review draft. If no token is configured, it does **not** throw away the collection result: it keeps the local draft, prints `Upload skipped: AgentFeed token is missing`, and shows the login/publish commands needed to finish. Use `--yes` for human-readable uploads, or `--json` when a machine will inspect the returned upload/handoff object; CI/non-interactive runs are not exempt from this private-review upload gate.
 
 ```bash
 agentfeed share              # collect -> preview, then print the exact --yes command for interactive upload

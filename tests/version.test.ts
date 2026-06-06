@@ -87,6 +87,8 @@ describe('CLI version metadata', () => {
     expect(releaseScript).toContain("['install', '--prefix'");
     expect(readme).toContain('npm run release:preflight');
     expect(readme).toContain('installs that tarball into a temporary project');
+    expect(readme).toContain('first-run');
+    expect(readme).toContain('share --dry');
     expect(readme).toContain('npm publish --access public');
     expect(readme).toContain('Trusted publishing automatically generates provenance');
     expect(readme).toContain('https://docs.npmjs.com/generating-provenance-statements');

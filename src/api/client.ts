@@ -328,7 +328,12 @@ export function draftUploadCredentialBindingHash(credentials: AgentFeedCredentia
 
 function friendlyError(status: number, code: string, message: string, details?: Record<string, unknown>): string {
   if (status === 401 || code === 'INGESTION_TOKEN_INVALID') {
-    return 'Login/token problem. Run: agentfeed rotate. If AGENTFEED_TOKEN is set, replace that environment variable or run: agentfeed rotate --browser.';
+    return [
+      'Login/token problem.',
+      'Run: agentfeed rotate',
+      'If AGENTFEED_TOKEN is set, update it in your shell or secret manager, or rotate saved credentials without the environment token:',
+      'Run: unset AGENTFEED_TOKEN && agentfeed rotate --browser'
+    ].join('\n');
   }
   if (status === 413 || code === 'INGESTION_PAYLOAD_TOO_LARGE') return 'Draft payload is too large. Local draft was kept.';
   if (status === 422 || code === 'VALIDATION_ERROR') return `Validation error: ${message}${details ? ` ${JSON.stringify(details)}` : ''}`;

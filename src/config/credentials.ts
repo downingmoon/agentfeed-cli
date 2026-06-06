@@ -545,9 +545,17 @@ export async function loadCredentials(): Promise<AgentFeedCredentials | null> {
   return (await loadCredentialsWithMetadata()).credentials;
 }
 
+function missingTokenMessage(): string {
+  return [
+    'AgentFeed token is missing.',
+    'Run: agentfeed login',
+    'Run: printf %s "$TOKEN" | agentfeed login --token-stdin'
+  ].join('\n');
+}
+
 export async function resolveCredentials(base: AgentFeedCredentials | null): Promise<AgentFeedCredentials> {
   const token = process.env.AGENTFEED_TOKEN || base?.ingestion_token;
-  if (!token) throw new Error('AgentFeed token is missing. Run: agentfeed login, or pipe a token with: printf %s "$TOKEN" | agentfeed login --token-stdin');
+  if (!token) throw new Error(missingTokenMessage());
   const tokenSource: CredentialTokenSource = process.env.AGENTFEED_TOKEN ? 'environment' : 'credentials_file';
   const api = protectRepoDiscoveredApiBase(
     await resolveApiBaseUrlWithMetadata({ storedApiBaseUrl: savedApiBaseUrlForTokenSource(base, tokenSource) }),

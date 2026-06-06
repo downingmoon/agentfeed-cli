@@ -616,6 +616,19 @@ describe('project config', () => {
     expect(resolved.api_base_url).toBe('https://api.agentfeed.dev/v1');
   });
 
+  it('resolveCredentials reports missing tokens with copyable login commands', async () => {
+    let failure: Error | undefined;
+    try {
+      await resolveCredentials(null);
+    } catch (error) {
+      failure = error as Error;
+    }
+
+    expect(failure?.message).toContain('AgentFeed token is missing.');
+    expect(failure?.message).toContain('Run: agentfeed login');
+    expect(failure?.message).toContain('Run: printf %s "$TOKEN" | agentfeed login --token-stdin');
+  });
+
   it('reports credential and API base provenance without exposing token values in metadata', async () => {
     process.env.AGENTFEED_TOKEN = 'af_live_env_secret';
     process.env.AGENTFEED_API_BASE_URL = 'http://localhost:8001/v1';

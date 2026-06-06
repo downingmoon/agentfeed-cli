@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { rm } from 'node:fs/promises';
+import { relative } from 'node:path';
 import { initProject, loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
 import { credentialsFromToken, credentialsPath, deleteSavedCredentials, loadCredentials, loadCredentialsWithMetadata, saveCredentials, type CredentialTokenSource } from '../config/credentials.js';
 import { resolveApiBaseUrl, resolveApiBaseUrlWithMetadata, type ApiBaseUrlSource } from '../config/api-base.js';
@@ -30,6 +31,11 @@ import * as ui from './ui.js';
 
 function print(text = '') { process.stdout.write(`${text}\n`); }
 function err(text = '') { process.stderr.write(`${text}\n`); }
+
+function projectRelativePath(projectRoot: string, path: string): string {
+  const rel = relative(projectRoot, path);
+  return rel && !rel.startsWith('..') ? rel : path;
+}
 
 function credentialSourceLabel(source: CredentialTokenSource): string {
   switch (source) {
@@ -574,19 +580,39 @@ async function resolveDraftId(cwd: string, args: string[]): Promise<string> {
 }
 
 async function cmdInit(args: string[]) {
-  const result = await initProject({ cwd: process.cwd(), projectName: option(args, '--project-name'), noGitCheck: flag(args, '--no-git-check') });
-  print(ui.heading('AgentFeed initialized'));
-  print('AgentFeed initialized.');
+  const result = await initProject({
+    cwd: process.cwd(),
+    projectName: option(args, '--project-name'),
+    noGitCheck: flag(args, '--no-git-check'),
+    force: flag(args, '--force')
+  });
+  print(ui.heading(result.alreadyInitialized ? 'AgentFeed already initialized' : result.backupPaths.length ? 'AgentFeed reinitialized' : 'AgentFeed initialized'));
+  print(result.alreadyInitialized
+    ? 'Existing AgentFeed config kept.'
+    : result.backupPaths.length
+      ? 'AgentFeed config recreated after backing up existing files.'
+      : 'AgentFeed initialized.');
   print();
   print(ui.section('Summary'));
   print(`Project: ${result.config.project.name}`);
   print(`Visibility: ${result.config.project.visibility}`);
   print('Config: .agentfeed/config.json');
+  if (result.backupPaths.length) {
+    print();
+    print(ui.section('Backups'));
+    for (const backupPath of result.backupPaths) print(projectRelativePath(result.root, backupPath));
+  }
   print();
   print(ui.section('Next'));
-  print(`  ${ui.command('agentfeed login')}`);
-  print(`  ${ui.command('agentfeed hook install claude-code')}`);
-  print(`  ${ui.command('agentfeed share --dry')}`);
+  if (result.alreadyInitialized) {
+    print(`  ${ui.command('agentfeed status')}`);
+    print(`  ${ui.command('agentfeed share --dry')}`);
+    print(`  ${ui.command('agentfeed init --force')}`);
+  } else {
+    print(`  ${ui.command('agentfeed login')}`);
+    print(`  ${ui.command('agentfeed hook install claude-code')}`);
+    print(`  ${ui.command('agentfeed share --dry')}`);
+  }
 }
 
 async function cmdLogin(args: string[]) {
@@ -1682,7 +1708,7 @@ function unsupportedHookTargetMessage(): string {
 
 const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
   init: {
-    flags: ['--no-git-check'],
+    flags: ['--no-git-check', '--force'],
     valueOptions: ['--project-name'],
     validatePositionals: NO_POSITIONALS('init')
   },
@@ -1975,6 +2001,7 @@ Initialize .agentfeed/config.json in the current git project.
 Options:
   --project-name <name>     Override the detected project name
   --no-git-check            Allow initialization outside a git repository
+  --force                   Recreate config after backing up existing files
   --help, -h                Show this help`,
     login: `Usage: agentfeed login [options]
 

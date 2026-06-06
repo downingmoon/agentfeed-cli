@@ -174,7 +174,7 @@ describe('CLI help and option validation', () => {
 
   it('prints command-specific help for every public command surface', async () => {
     const expectations: Array<[string[], string[]]> = [
-      [['init', '--help'], ['Usage: agentfeed init', '--project-name', '--no-git-check']],
+      [['init', '--help'], ['Usage: agentfeed init', '--project-name', '--no-git-check', '--force']],
       [['login', '--help'], ['Usage: agentfeed login', '--token-stdin', '--no-open']],
       [['logout', '--help'], ['Usage: agentfeed logout', '--json']],
       [['status', '--help'], ['Usage: agentfeed status', 'credential, API, project', '--json']],

@@ -1,6 +1,6 @@
 import { beforeAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { execFile } from 'node:child_process';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -71,6 +71,50 @@ describe('CLI init and hook setup UX', () => {
     expect(stdout).toContain('agentfeed hook install claude-code');
     expect(stdout).toContain('agentfeed share --dry');
     expect(stderr).toBe('');
+  });
+
+  it('keeps existing config when init is rerun without force', async () => {
+    await initProject();
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.project.tags = ['custom'];
+    await writeFile(configPath, JSON.stringify(config, null, 2));
+
+    const { stdout, stderr } = await runCli(['init', '--no-git-check', '--project-name', 'overwritten']);
+    const saved = JSON.parse(await readFile(configPath, 'utf8'));
+
+    expect(stdout).toContain('AgentFeed already initialized');
+    expect(stdout).toContain('Existing AgentFeed config kept.');
+    expect(stdout).toContain('Project: setup-polish');
+    expect(stdout).toContain('Next');
+    expect(stdout).toContain('agentfeed status');
+    expect(stdout).toContain('agentfeed share --dry');
+    expect(stdout).toContain('agentfeed init --force');
+    expect(stderr).toBe('');
+    expect(saved.project.name).toBe('setup-polish');
+    expect(saved.project.tags).toEqual(['custom']);
+  });
+
+  it('backs up existing config when init is forced', async () => {
+    await initProject();
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.project.tags = ['custom'];
+    await writeFile(configPath, JSON.stringify(config, null, 2));
+
+    const { stdout, stderr } = await runCli(['init', '--no-git-check', '--project-name', 'forced-setup', '--force']);
+    const saved = JSON.parse(await readFile(configPath, 'utf8'));
+
+    expect(stdout).toContain('AgentFeed reinitialized');
+    expect(stdout).toContain('AgentFeed config recreated after backing up existing files.');
+    expect(stdout).toContain('Project: forced-setup');
+    expect(stdout).toContain('Backups');
+    expect(stdout).toContain('.agentfeed/backups/config.');
+    expect(stdout).toContain('.agentfeed/backups/redaction-rules.');
+    expect(stdout).toContain('agentfeed login');
+    expect(stderr).toBe('');
+    expect(saved.project.name).toBe('forced-setup');
+    expect(saved.project.tags).toEqual([]);
   });
 
   it('guides init before hook install when the project is not initialized', async () => {

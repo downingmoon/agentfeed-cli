@@ -1,3 +1,4 @@
+import { cp } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 import { cwd as processCwd } from 'node:process';
 import type { AgentFeedProjectConfig } from '../types.js';
@@ -12,6 +13,10 @@ const CLAUDE_HOOK_SCOPES = new Set(['project', 'global']);
 
 function configError(path: string, message: string): Error {
   return new Error(`AgentFeed config is invalid at ${path}: ${message}. Re-run agentfeed init or restore the file from backup.`);
+}
+
+function timestamp(): string {
+  return new Date().toISOString().replace(/[-:.TZ]/g, '');
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -159,11 +164,38 @@ export async function loadProjectConfig(cwd = processCwd()): Promise<AgentFeedPr
   return validateProjectConfig(config, path);
 }
 
-export async function initProject(options: { cwd?: string; projectName?: string; noGitCheck?: boolean } = {}) {
+async function backupIfExists(path: string, backupDir: string, name: string): Promise<string | null> {
+  if (!(await pathExists(path))) return null;
+  await ensureDir(backupDir);
+  const backupPath = join(backupDir, `${name}.${timestamp()}.json`);
+  await cp(path, backupPath, { force: false });
+  return backupPath;
+}
+
+export async function initProject(options: { cwd?: string; projectName?: string; noGitCheck?: boolean; force?: boolean } = {}) {
   const cwd = options.cwd ?? processCwd();
   const gitRoot = await findGitRoot(cwd);
   if (!options.noGitCheck && !gitRoot) throw new Error('Not inside a Git repository. Use --no-git-check to initialize anyway.');
   const root = gitRoot ?? cwd;
+  const afDir = join(root, '.agentfeed');
+  const configPath = join(afDir, 'config.json');
+  const redactionRulesPath = join(afDir, 'redaction-rules.json');
+  if ((await pathExists(configPath)) && !options.force) {
+    let existingConfig: AgentFeedProjectConfig;
+    try {
+      existingConfig = await loadProjectConfig(root);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      throw new Error([
+        `AgentFeed is already initialized but the config cannot be read at ${configPath}.`,
+        reason,
+        'Run: agentfeed init --force',
+        'Run: agentfeed doctor'
+      ].join('\n'));
+    }
+    return { root, config: existingConfig, alreadyInitialized: true, backupPaths: [] as string[] };
+  }
+
   const repository = await run('git', ['remote', 'get-url', 'origin'], root);
   const name = options.projectName ?? basename(root);
   const config = defaultProjectConfig({ name, slug: slugify(name), repositoryUrl: repository.ok ? stripUrlUserInfo(repository.stdout) : null });
@@ -172,9 +204,15 @@ export async function initProject(options: { cwd?: string; projectName?: string;
   config.agents.codex.enabled = signals.codex.detected || signals.omx.detected;
   config.agents.cursor.enabled = signals.cursor.detected;
   config.agents.gemini_cli.enabled = signals.gemini_cli.detected || signals.superpowers.detected;
-  const afDir = join(root, '.agentfeed');
   await Promise.all(['drafts', 'logs', 'cache', 'backups'].map((d) => ensureDir(join(afDir, d))));
-  await writeJson(join(afDir, 'config.json'), config);
-  await writeJson(join(afDir, 'redaction-rules.json'), defaultRedactionRules);
-  return { root, config };
+  const backupDir = join(afDir, 'backups');
+  const backupPaths = options.force
+    ? (await Promise.all([
+      backupIfExists(configPath, backupDir, 'config'),
+      backupIfExists(redactionRulesPath, backupDir, 'redaction-rules')
+    ])).filter((path): path is string => Boolean(path))
+    : [];
+  await writeJson(configPath, config);
+  await writeJson(redactionRulesPath, defaultRedactionRules);
+  return { root, config, alreadyInitialized: false, backupPaths };
 }

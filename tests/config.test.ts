@@ -58,6 +58,8 @@ describe('project config', () => {
 
     expect(result.config.project.name).toBe('My CLI');
     expect(result.config.project.slug).toBe('my-cli');
+    expect(result.alreadyInitialized).toBe(false);
+    expect(result.backupPaths).toEqual([]);
     await expect(loadProjectConfig(dir)).resolves.toMatchObject({
       version: '0.2',
       project: { visibility: 'private' },
@@ -68,6 +70,48 @@ describe('project config', () => {
     const other = await mkdtemp(join(tmpdir(), 'agentfeed-missing-'));
     await expect(loadProjectConfig(other)).rejects.toThrow(/AgentFeed project is not initialized/i);
     await rm(other, { recursive: true, force: true });
+  });
+
+  it('keeps an existing project config when init is rerun without force', async () => {
+    await initProject({ cwd: dir, projectName: 'First CLI', noGitCheck: true });
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.project.tags = ['custom'];
+    await writeFile(configPath, JSON.stringify(config, null, 2));
+
+    const rerun = await initProject({ cwd: dir, projectName: 'Second CLI', noGitCheck: true });
+    const saved = JSON.parse(await readFile(configPath, 'utf8'));
+
+    expect(rerun.alreadyInitialized).toBe(true);
+    expect(rerun.backupPaths).toEqual([]);
+    expect(rerun.config.project.name).toBe('First CLI');
+    expect(saved.project.name).toBe('First CLI');
+    expect(saved.project.tags).toEqual(['custom']);
+  });
+
+  it('backs up existing config files before forced reinitialization', async () => {
+    await initProject({ cwd: dir, projectName: 'First CLI', noGitCheck: true });
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const rulesPath = join(dir, '.agentfeed', 'redaction-rules.json');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.project.tags = ['custom'];
+    await writeFile(configPath, JSON.stringify(config, null, 2));
+    await writeFile(rulesPath, JSON.stringify({ custom_rule: true }, null, 2));
+
+    const rerun = await initProject({ cwd: dir, projectName: 'Second CLI', noGitCheck: true, force: true });
+    const saved = JSON.parse(await readFile(configPath, 'utf8'));
+
+    expect(rerun.alreadyInitialized).toBe(false);
+    expect(rerun.backupPaths).toHaveLength(2);
+    expect(rerun.backupPaths.every((path) => path.includes(join('.agentfeed', 'backups')))).toBe(true);
+    expect(saved.project.name).toBe('Second CLI');
+    expect(saved.project.tags).toEqual([]);
+    const configBackup = rerun.backupPaths.find((path) => path.includes('config.'));
+    const rulesBackup = rerun.backupPaths.find((path) => path.includes('redaction-rules.'));
+    expect(configBackup).toBeTruthy();
+    expect(rulesBackup).toBeTruthy();
+    expect(JSON.parse(await readFile(configBackup!, 'utf8')).project.tags).toEqual(['custom']);
+    expect(JSON.parse(await readFile(rulesBackup!, 'utf8')).custom_rule).toBe(true);
   });
 
   it('rejects malformed project config shapes with clear field-specific errors', async () => {

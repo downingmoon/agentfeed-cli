@@ -777,6 +777,15 @@ function printNextCommands(commands: string[]): void {
   }
 }
 
+function printRecommendedCommands(commands: string[]): void {
+  const unique = uniqueNextCommands(commands);
+  if (!unique.length) return;
+  print('Recommended order:');
+  unique.forEach((command, index) => {
+    print(`  ${index + 1}. ${ui.command(command)}`);
+  });
+}
+
 function printUrlBlock(label: string, url: string): void {
   print(`${label}:`);
   print(`  ${ui.command(url)}`);
@@ -1345,7 +1354,7 @@ async function cmdStatus(args: string[] = []) {
   }
   print();
   print(ui.section('Next'));
-  printNextCommands(nextActions);
+  printRecommendedCommands(nextActions);
 }
 
 
@@ -1909,7 +1918,7 @@ async function cmdDoctor(args: string[] = []) {
   for (const line of agentSignalLines) print(line);
   print();
   print(ui.section('Next'));
-  printNextCommands(nextActions);
+  printRecommendedCommands(nextActions);
 }
 
 interface DraftListRow {

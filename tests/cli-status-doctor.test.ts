@@ -289,6 +289,8 @@ describe('status and doctor provenance output', () => {
     expect(stdout).toContain('Project initialized: no');
     expect(stdout).toContain('User/token: missing');
     expect(stdout).toContain('Next');
+    expect(stdout).toContain('Recommended order:');
+    expect(stdout).toContain('  1. git init && agentfeed init');
     expect(stdout).toContain('git init && agentfeed init');
     expect(stdout).toContain('agentfeed init --no-git-check');
     expect(stdout).toContain('agentfeed login');
@@ -323,6 +325,8 @@ describe('status and doctor provenance output', () => {
     expect(stdout).toContain('Project initialized: yes');
     expect(stdout).toContain('User/token: missing');
     expect(stdout).toContain('Next');
+    expect(stdout).toContain('Recommended order:');
+    expect(stdout).toContain('  1. agentfeed login');
     expect(stdout).toContain('agentfeed login');
     expect(stdout).toContain('agentfeed share --dry');
     expect(stdout.indexOf('agentfeed login')).toBeLessThan(stdout.indexOf('agentfeed share --dry'));
@@ -1262,6 +1266,8 @@ describe('status and doctor provenance output', () => {
     expect(stdout).toContain('ingestion token exists: no');
     expect(stdout).toContain('API ready: no');
     expect(stdout).toContain('Next');
+    expect(stdout).toContain('Recommended order:');
+    expect(stdout).toContain('  1. git init && agentfeed init');
     expect(stdout).toContain('git init && agentfeed init');
     expect(stdout).toContain('agentfeed init --no-git-check');
     expect(stdout).toContain('agentfeed login');
@@ -1317,6 +1323,8 @@ describe('status and doctor provenance output', () => {
       expect(stdout).toContain('ingestion token exists: no');
       expect(stdout).toContain('API ready: yes');
       expect(stdout).toContain('Next');
+      expect(stdout).toContain('Recommended order:');
+      expect(stdout).toContain('  1. agentfeed login');
       expect(stdout).toContain('agentfeed login');
       expect(stdout).toContain('agentfeed share --dry');
       expect(stdout.indexOf('agentfeed login')).toBeLessThan(stdout.indexOf('agentfeed share --dry'));

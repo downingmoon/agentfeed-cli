@@ -2275,11 +2275,27 @@ function commandCatalogNextActions(): string[] {
   return ['agentfeed init', 'agentfeed login', 'agentfeed share --dry'];
 }
 
+const COMMAND_WORKFLOWS: Array<{ name: string; commands: string[] }> = [
+  { name: 'First setup', commands: ['agentfeed init', 'agentfeed login', 'agentfeed status'] },
+  { name: 'Daily share', commands: ['agentfeed share --dry', 'agentfeed share --yes --open-review'] },
+  { name: 'Review drafts', commands: ['agentfeed drafts', 'agentfeed preview --latest', 'agentfeed publish --latest --yes'] },
+  { name: 'Troubleshoot', commands: ['agentfeed doctor', 'agentfeed collect --explain', 'agentfeed status'] }
+];
+
+function printCommandWorkflows(): void {
+  print(`\n${ui.section('Common workflows')}:`);
+  for (const workflow of COMMAND_WORKFLOWS) {
+    print(`  ${workflow.name}:`);
+    for (const command of workflow.commands) print(`    ${ui.command(command)}`);
+  }
+}
+
 async function cmdCommands(args: string[]) {
   const nextActions = commandCatalogNextActions();
   if (flag(args, '--json')) {
     print(JSON.stringify({
       next_actions: nextActions,
+      workflows: COMMAND_WORKFLOWS,
       commands: COMMAND_GROUPS.map((group) => ({
         group: group.title,
         commands: group.commands.map((command) => commandCatalogEntry(command))
@@ -2289,6 +2305,7 @@ async function cmdCommands(args: string[]) {
   }
   print(ui.heading('AgentFeed commands'));
   printCommandCatalog();
+  printCommandWorkflows();
   print(`\n${ui.section('Try this')}:`);
   printNextCommands(nextActions);
   print(`\nRun ${ui.command('agentfeed help <command>')} for command-specific options.`);
@@ -2365,6 +2382,25 @@ const COMMAND_USAGE_OVERRIDES: Partial<Record<(typeof PUBLIC_COMMANDS)[number], 
   completion: 'agentfeed completion <shell>'
 };
 
+interface CommandOptionDetail {
+  name: string;
+  description: string;
+  requires_value: boolean;
+  value_hint?: string;
+}
+
+function commandOptionDetails(command: string): CommandOptionDetail[] {
+  return completionOptionsFor(command).map((optionName) => {
+    const requiresValue = completionOptionRequiresValue(command, optionName);
+    return {
+      name: optionName,
+      description: completionOptionDescription(command, optionName),
+      requires_value: requiresValue,
+      ...(requiresValue ? { value_hint: completionValuePlaceholder(optionName) } : {})
+    };
+  });
+}
+
 function commandCatalogEntry(command: (typeof PUBLIC_COMMANDS)[number]): {
   name: string;
   description: string;
@@ -2374,6 +2410,7 @@ function commandCatalogEntry(command: (typeof PUBLIC_COMMANDS)[number]): {
   options: {
     flags: string[];
     value_options: string[];
+    option_details: CommandOptionDetail[];
     conflicts: Array<[string, string]>;
     completion_words: string[];
   };
@@ -2388,6 +2425,7 @@ function commandCatalogEntry(command: (typeof PUBLIC_COMMANDS)[number]): {
     options: {
       flags: [...(spec?.flags ?? [])],
       value_options: [...(spec?.valueOptions ?? [])],
+      option_details: commandOptionDetails(command),
       conflicts: [...(spec?.conflicts ?? [])].map(([first, second]) => [first, second]),
       completion_words: completionWordsFor(command)
     }

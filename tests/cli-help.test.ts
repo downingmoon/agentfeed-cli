@@ -202,6 +202,12 @@ describe('CLI help and option validation', () => {
     expect(human.stdout).toContain('Start:');
     expect(human.stdout).toContain('commands');
     expect(human.stdout).toContain('List available AgentFeed commands');
+    expect(human.stdout).toContain('Common workflows:');
+    expect(human.stdout).toContain('First setup:');
+    expect(human.stdout).toContain('agentfeed init');
+    expect(human.stdout).toContain('Daily share:');
+    expect(human.stdout).toContain('agentfeed share --yes --open-review');
+    expect(human.stdout).toContain('Review drafts:');
     expect(human.stdout).toContain('Try this:');
     expect(human.stdout).toContain('agentfeed init');
     expect(human.stdout).toContain('agentfeed login');
@@ -211,6 +217,7 @@ describe('CLI help and option validation', () => {
     const json = await runCli(['commands', '--json']);
     const parsed = JSON.parse(json.stdout) as {
       next_actions?: string[];
+      workflows?: Array<{ name: string; commands: string[] }>;
       commands: Array<{
         group: string;
         commands: Array<{
@@ -222,6 +229,7 @@ describe('CLI help and option validation', () => {
           options?: {
             flags?: string[];
             value_options?: string[];
+            option_details?: Array<{ name: string; description: string; requires_value: boolean; value_hint?: string }>;
             conflicts?: Array<[string, string]>;
             completion_words?: string[];
           };
@@ -235,6 +243,10 @@ describe('CLI help and option validation', () => {
 
     expect(json.stderr).toBe('');
     expect(parsed.next_actions).toEqual(['agentfeed init', 'agentfeed login', 'agentfeed share --dry']);
+    expect(parsed.workflows).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'First setup', commands: ['agentfeed init', 'agentfeed login', 'agentfeed status'] }),
+      expect.objectContaining({ name: 'Daily share', commands: expect.arrayContaining(['agentfeed share --dry', 'agentfeed share --yes --open-review']) })
+    ]));
     expect(parsed.commands.some((group) => group.group === 'Start')).toBe(true);
     expect(share).toMatchObject({
       description: 'Collect, preview, and optionally upload in one workflow',
@@ -245,6 +257,10 @@ describe('CLI help and option validation', () => {
     expect(share?.options).toMatchObject({
       flags: expect.arrayContaining(['--dry', '--yes', '--json', '--clipboard', '--open-review', '--no-save-cursor']),
       value_options: expect.arrayContaining(['--source', '--session-file', '--note']),
+      option_details: expect.arrayContaining([
+        expect.objectContaining({ name: '--source', description: 'Select agent source', requires_value: true, value_hint: 'source' }),
+        expect.objectContaining({ name: '--no-save-cursor', description: 'Do not advance the collection cursor', requires_value: false })
+      ]),
       conflicts: expect.arrayContaining([['--dry', '--yes'], ['--clipboard', '--no-clipboard']]),
       completion_words: expect.arrayContaining(['--dry', '--json', '--note', '--source', '--help'])
     });

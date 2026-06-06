@@ -784,6 +784,104 @@ function statusNextActions(options: {
   return ['agentfeed share --yes'];
 }
 
+
+interface DoctorReadinessItem {
+  name: string;
+  status: 'ready' | 'attention';
+  detail: string;
+  next_action?: string;
+}
+
+function detectedAgentSignalCount(lines: string[]): number {
+  return lines.filter((line) => /^.+: detected$/.test(line.trim())).length;
+}
+
+function doctorApiDetail(options: {
+  invalidApiBaseUrl: boolean;
+  apiReachability: Awaited<ReturnType<typeof checkApiReachability>> | null;
+  apiCompatibility: Awaited<ReturnType<typeof checkApiCompatibility>> | null;
+}): string {
+  if (options.invalidApiBaseUrl) return 'invalid API base URL';
+  if (!options.apiReachability?.ok) {
+    return `API not reachable (${options.apiReachability?.status ?? options.apiReachability?.error ?? 'unreachable'})`;
+  }
+  if (!options.apiCompatibility?.compatible) {
+    return `API contract mismatch (${options.apiCompatibility?.status ?? options.apiCompatibility?.error ?? 'unknown'})`;
+  }
+  return 'reachable and compatible';
+}
+
+function doctorReadinessItems(options: {
+  invalidApiBaseUrl: boolean;
+  projectConfigValid: boolean;
+  missingToken: boolean;
+  insideGitRepository: boolean;
+  tokenWarnings: string[];
+  apiReachability: Awaited<ReturnType<typeof checkApiReachability>> | null;
+  apiCompatibility: Awaited<ReturnType<typeof checkApiCompatibility>> | null;
+  agentSignalLines: string[];
+}): DoctorReadinessItem[] {
+  const apiReady = !options.invalidApiBaseUrl && Boolean(options.apiReachability?.ok && options.apiCompatibility?.compatible);
+  const agentSignalCount = detectedAgentSignalCount(options.agentSignalLines);
+  const projectInitAction = options.insideGitRepository ? 'agentfeed init' : 'git init && agentfeed init';
+  return [
+    options.missingToken
+      ? { name: 'Account', status: 'attention', detail: 'token missing', next_action: 'agentfeed login' }
+      : options.tokenWarnings.length
+      ? { name: 'Account', status: 'attention', detail: options.tokenWarnings[0], next_action: 'agentfeed rotate' }
+      : { name: 'Account', status: 'ready', detail: 'token configured' },
+    apiReady
+      ? { name: 'API', status: 'ready', detail: doctorApiDetail(options) }
+      : {
+        name: 'API',
+        status: 'attention',
+        detail: doctorApiDetail(options),
+        next_action: options.invalidApiBaseUrl ? 'unset AGENTFEED_API_BASE_URL' : 'agentfeed doctor'
+      },
+    options.projectConfigValid
+      ? { name: 'Project', status: 'ready', detail: 'initialized' }
+      : { name: 'Project', status: 'attention', detail: 'not initialized', next_action: projectInitAction },
+    options.insideGitRepository
+      ? { name: 'Git', status: 'ready', detail: 'repository detected' }
+      : { name: 'Git', status: 'attention', detail: 'repository not detected', next_action: 'git init' },
+    options.projectConfigValid
+      ? { name: 'Collection', status: 'ready', detail: 'cursor available' }
+      : { name: 'Collection', status: 'attention', detail: 'unavailable until project is initialized', next_action: projectInitAction },
+    agentSignalCount > 0
+      ? {
+        name: 'Agent signals',
+        status: 'ready',
+        detail: `${agentSignalCount} source${agentSignalCount === 1 ? '' : 's'} detected`
+      }
+      : {
+        name: 'Agent signals',
+        status: 'attention',
+        detail: 'no supported agent signals detected',
+        next_action: 'agentfeed collect --explain'
+      }
+  ];
+}
+
+function doctorSummary(readiness: DoctorReadinessItem[]): { status: 'ready' | 'attention_needed'; ready: number; attention: number } {
+  const attention = readiness.filter((item) => item.status === 'attention').length;
+  return {
+    status: attention > 0 ? 'attention_needed' : 'ready',
+    ready: readiness.length - attention,
+    attention
+  };
+}
+
+function printDoctorSummary(readiness: DoctorReadinessItem[]): void {
+  const summary = doctorSummary(readiness);
+  print(ui.section('Summary'));
+  print(`Overall: ${summary.status === 'ready' ? 'ready' : 'attention needed'} (${summary.ready} ready, ${summary.attention} attention)`);
+  for (const item of readiness) {
+    const next = item.next_action ? ` → ${item.next_action}` : '';
+    print(`${readinessMarker(item.status)} ${item.name}: ${item.detail}${next}`);
+  }
+  print();
+}
+
 function doctorNextActions(options: {
   invalidApiBaseUrl: boolean;
   projectConfigValid: boolean;
@@ -1616,9 +1714,22 @@ async function cmdDoctor(args: string[] = []) {
     tokenWarnings,
     apiNeedsRecheck
   });
+  const readiness = doctorReadinessItems({
+    invalidApiBaseUrl: diagnostics.invalidApiBaseUrl,
+    projectConfigValid,
+    missingToken,
+    insideGitRepository: Boolean(git.repository_root),
+    tokenWarnings,
+    apiReachability,
+    apiCompatibility,
+    agentSignalLines
+  });
+  const summary = doctorSummary(readiness);
 
   if (flag(args, '--json')) {
     print(JSON.stringify({
+      summary,
+      readiness,
       runtime: doctorCheckRows(runtimeChecks),
       account: doctorCheckRows(accountChecks),
       api: doctorCheckRows(apiChecks),
@@ -1633,6 +1744,8 @@ async function cmdDoctor(args: string[] = []) {
 
   print(ui.heading('AgentFeed doctor'));
   print();
+
+  printDoctorSummary(readiness);
 
   printDoctorChecks('Runtime', runtimeChecks);
   printDoctorChecks('Account', accountChecks);

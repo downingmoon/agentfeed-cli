@@ -1237,6 +1237,11 @@ describe('status and doctor provenance output', () => {
     });
 
     expect(stdout).toContain('AgentFeed doctor');
+    expect(stdout).toContain('Summary');
+    expect(stdout).toContain('Overall: attention needed');
+    expect(stdout).toContain('Account: token missing');
+    expect(stdout).toContain('Project: not initialized');
+    expect(stdout).toContain('API: API not reachable');
     expect(stdout).toContain('project config valid: no');
     expect(stdout).toContain('ingestion token exists: no');
     expect(stdout).toContain('API ready: no');
@@ -1245,8 +1250,9 @@ describe('status and doctor provenance output', () => {
     expect(stdout).toContain('agentfeed init --no-git-check');
     expect(stdout).toContain('agentfeed login');
     expect(stdout).toContain('agentfeed doctor');
-    expect(stdout.indexOf('git init && agentfeed init')).toBeLessThan(stdout.indexOf('agentfeed login'));
-    expect(stdout.indexOf('agentfeed login')).toBeLessThan(stdout.indexOf('agentfeed doctor'));
+    const nextSection = stdout.slice(stdout.lastIndexOf('Next'));
+    expect(nextSection.indexOf('git init && agentfeed init')).toBeLessThan(nextSection.indexOf('agentfeed login'));
+    expect(nextSection.indexOf('agentfeed login')).toBeLessThan(nextSection.indexOf('agentfeed doctor'));
     expect(stderr).toBe('');
   });
 
@@ -1349,11 +1355,19 @@ describe('status and doctor provenance output', () => {
       api: Array<{ name: string; value: string }>;
       project: Array<{ name: string; value: string }>;
       collection: Array<{ name: string; value: string }>;
+      summary: { status: string; ready: number; attention: number };
+      readiness: Array<{ name: string; status: string; detail: string; next_action?: string }>;
       warnings: string[];
       agent_signals: string[];
       next_actions: string[];
     };
     expect(stderr).toBe('');
+    expect(output.summary.status).toBe('attention_needed');
+    expect(output.summary.attention).toBeGreaterThan(0);
+    expect(output.readiness).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'Account', status: 'attention', detail: 'token missing', next_action: 'agentfeed login' }),
+      expect.objectContaining({ name: 'API', status: 'attention', detail: 'invalid API base URL', next_action: 'unset AGENTFEED_API_BASE_URL' })
+    ]));
     expect(output.runtime.some((row) => row.name === 'agentfeed version')).toBe(true);
     expect(output.account.some((row) => row.name === 'credential source')).toBe(true);
     expect(output.api.some((row) => row.name === 'API base URL configured')).toBe(true);

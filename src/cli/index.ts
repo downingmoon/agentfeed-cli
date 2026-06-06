@@ -120,6 +120,13 @@ function formatTokenExpiry(expiresAt: string): string {
   return `${new Date(expires).toISOString()} (${relative})`;
 }
 
+function draftModelsLabel(draft: LocalDraft): string | null {
+  const models = draft.worklog.metrics.models_used?.length
+    ? draft.worklog.metrics.models_used
+    : draft.worklog.model ? [draft.worklog.model] : [];
+  return models.length ? models.join(', ') : null;
+}
+
 function printCredentialResult(options: {
   heading: string;
   message: string;
@@ -808,18 +815,32 @@ async function cmdCollect(args: string[]) {
   print(ui.section('Summary'));
   print(`ID: ${draft.id}`);
   print(`Project: ${draft.project.name}`);
+  print(`Title: ${singleLine(draft.worklog.title)}`);
   print(`Privacy: ${draft.privacy_scan.status}`);
+  print();
+  print(ui.section('Signals'));
+  print(`Agent: ${draft.worklog.agent}`);
+  const models = draftModelsLabel(draft);
+  if (models) print(`Models: ${models}`);
   print(`Metrics: ${formatMetricsRow(draft)}`);
-  if (flag(args, '--explain')) print(`\n${formatCollectionExplain(draft)}`);
+  if (flag(args, '--explain')) {
+    print();
+    print(ui.section('Collection'));
+    print(formatCollectionExplain(draft));
+  }
   print();
   print(ui.section('Next'));
-  print(`Preview:\n  agentfeed preview --id ${draft.id}\n`);
-  print(`Upload:\n  agentfeed publish --id ${draft.id} --yes`);
+  print('Preview:');
+  print(`  ${ui.command(`agentfeed preview --id ${draft.id}`)}`);
+  print('Upload:');
+  print(`  ${ui.command(`agentfeed publish --id ${draft.id} --yes`)}`);
   if (flag(args, '--upload')) {
     await cmdPublish(['--id', draft.id, '--yes', ...(flag(args, '--open-review') ? ['--open-review'] : []), ...(flag(args, '--no-open-review') ? ['--no-open-review'] : [])]);
   } else {
     const config = await loadProjectConfig(process.cwd());
     if (!flag(args, '--no-upload') && config.collection.auto_upload) {
+      print();
+      print(ui.section('Warnings'));
       print('Note: collection.auto_upload is ignored by collect for safety. Use agentfeed collect --upload to upload explicitly.');
     }
   }

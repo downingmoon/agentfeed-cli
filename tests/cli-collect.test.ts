@@ -121,8 +121,16 @@ describe('collect CLI command', () => {
     expect(stdout).toContain('Summary');
     expect(stdout).toContain('Next');
     expect(stdout).toContain('ID:');
+    expect(stdout).toContain('Title:');
+    expect(stdout).toContain('Signals');
+    expect(stdout).toContain('Agent:');
+    expect(stdout).toContain('Metrics:');
+    expect(stdout).toContain('Collection');
+    expect(stdout).toContain('Collection quality');
     expect(stdout).toContain('Preview:');
+    expect(stdout).toContain('agentfeed preview --id');
     expect(stdout).toContain('Upload:');
+    expect(stdout).toContain('agentfeed publish --id');
   });
 
   it('prints subcommand help without collecting or updating local state', async () => {
@@ -280,7 +288,7 @@ describe('collect CLI command', () => {
     const draft = JSON.parse(stdout);
     expect(draft.id).toMatch(/^draft_/);
     expect(stdout).not.toContain('\u001b[');
-    expect(stdout).not.toMatch(/(^|\n)(AgentFeed draft|Summary|Next|ID:|Preview:|Upload:)/);
+    expect(stdout).not.toMatch(/(^|\n)(AgentFeed draft|Summary|Signals|Collection|Next|ID:|Preview:|Upload:)/);
   });
 
   it('auto-slices default collect windows after an idle gap', async () => {

@@ -533,8 +533,16 @@ function formatPrivacyScanReport(input: PublicScanFields, redacted: PublicScanFi
     `Findings: ${scan.findings.length}`,
     `Result: ${result}`
   ];
-  if (options.dryRun) lines.push('Dry run: draft not modified.');
-  if (options.path) lines.push('Path scan: no draft was modified.');
+  if (options.draftId) {
+    if (options.dryRun) {
+      lines.push('Dry run: draft not modified.');
+    } else if (scan.findings.length) {
+      lines.push('Saved: redacted public fields were written to the local draft.');
+    } else {
+      lines.push('Saved: privacy scan result was written to the local draft.');
+    }
+  }
+  if (options.path) lines.push('Path scan: inspect only; no draft was modified.');
   if (scan.findings.length) {
     lines.push('', ui.section('Findings detail'));
     for (const finding of scan.findings) {

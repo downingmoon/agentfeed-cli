@@ -89,6 +89,7 @@ describe('scan CLI command', () => {
     expect(stdout).toContain(`Target: draft ${draft.id}`);
     expect(stdout).toContain('Mode: redact and save');
     expect(stdout).toContain('Privacy: danger');
+    expect(stdout).toContain('Saved: redacted public fields were written to the local draft.');
     expect(stdout).toContain('- summary: Deploy with [REDACTED_SECRET]');
     expect(stdout).toContain('Next');
     expect(stdout).toContain(`agentfeed preview --id ${draft.id}`);
@@ -144,7 +145,8 @@ describe('scan CLI command', () => {
     expect(stdout).toContain('AgentFeed privacy scan');
     expect(stdout).toContain('Target: path ');
     expect(stdout).toContain('Mode: inspect only');
-    expect(stdout).toContain('Path scan: no draft was modified.');
+    expect(stdout).toContain('Path scan: inspect only; no draft was modified.');
+    expect(stdout).not.toContain('Dry run: draft not modified.');
     expect(stdout).toContain('Next');
     expect(stdout).toContain('agentfeed collect --explain');
   });

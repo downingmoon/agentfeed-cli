@@ -19,6 +19,18 @@ export interface ShareOptions {
   yes: boolean;
 }
 
+function formatScaledCount(value: number, unit: number, decimals: number): string {
+  return (value / unit).toFixed(decimals).replace(/\.0+$|(\.\d*[1-9])0+$/, '$1');
+}
+
+function formatTokenCount(value: number): string {
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000_000) return `${formatScaledCount(value, 1_000_000_000, 2)}B tokens`;
+  if (abs >= 1_000_000) return `${formatScaledCount(value, 1_000_000, 1)}M tokens`;
+  if (abs >= 1_000) return `${Math.round(value / 1000)}K tokens`;
+  return `${value} tokens`;
+}
+
 export function formatMetricsRow(draft: LocalDraft): string {
   const m = draft.worklog.metrics;
   const parts: string[] = [];
@@ -28,7 +40,7 @@ export function formatMetricsRow(draft: LocalDraft): string {
   }
   if (m.tests_run != null) parts.push(`${m.tests_run} tests`);
   if (m.tool_calls != null) parts.push(`${m.tool_calls} tool calls`);
-  if (m.tokens_used != null) parts.push(`${Math.round(m.tokens_used / 1000)}K tokens`);
+  if (m.tokens_used != null) parts.push(formatTokenCount(m.tokens_used));
   return parts.length ? parts.join(' · ') : 'no metrics';
 }
 
@@ -47,7 +59,7 @@ function formatAgentMetricLines(draft: LocalDraft): string[] {
     ...metrics.map((metric) => {
       const parts = [
         metric.model ?? null,
-        metric.tokens_used != null ? `${Math.round(metric.tokens_used / 1000)}K tokens` : null,
+        metric.tokens_used != null ? formatTokenCount(metric.tokens_used) : null,
         metric.files_changed != null ? `${metric.files_changed} files` : null,
         metric.lines_added != null || metric.lines_removed != null ? `+${metric.lines_added ?? 0} -${metric.lines_removed ?? 0}` : null,
         metric.tool_calls != null ? `${metric.tool_calls} tools` : null,

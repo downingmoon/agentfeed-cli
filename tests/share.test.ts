@@ -143,4 +143,22 @@ describe('share command helpers', () => {
     expect(output).not.toContain('0 files');
     expect(output).toContain('Metrics: 12K tokens');
   });
+
+  it('uses M/B token units instead of unreadable K-only counts', () => {
+    const draft = createEmptyDraft({ projectName: 'agentfeed-cli', projectRoot: '/tmp/agentfeed-cli', source: 'codex' });
+    draft.worklog.metrics.files_changed = null;
+    draft.worklog.metrics.lines_added = null;
+    draft.worklog.metrics.lines_removed = null;
+    draft.worklog.metrics.tokens_used = 55_640_583;
+    draft.worklog.metrics.agent_metrics = [
+      { agent: 'codex', model: 'gpt-5.5', tokens_used: 2_366_942_496, files_changed: 9, lines_added: 1564, lines_removed: 210, tool_calls: 503, commands_run: 319 }
+    ];
+
+    const output = formatSharePreview(draft);
+
+    expect(output).toContain('Metrics: 55.6M tokens');
+    expect(output).toContain('- codex: gpt-5.5 · 2.37B tokens · 9 files · +1564 -210 · 503 tools · 319 cmds');
+    expect(output).not.toContain('55641K tokens');
+    expect(output).not.toContain('2366942K tokens');
+  });
 });

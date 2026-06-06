@@ -276,14 +276,14 @@ async function handoffReviewUrl(reviewUrl: string, options: { copy: boolean; ope
     handoff.clipboard.requested = true;
     tasks.push(safeBooleanAction(() => copyToClipboard(reviewUrl)).then((ok) => {
       handoff.clipboard.ok = ok;
-      if (!ok) handoff.clipboard.warning = 'Review URL was not copied to clipboard. Copy upload.review_url manually.';
+      if (!ok) handoff.clipboard.warning = 'Review URL was not copied to clipboard. Copy the review URL manually.';
     }));
   }
   if (options.open) {
     handoff.browser.requested = true;
     tasks.push(safeBooleanAction(() => openBrowser(reviewUrl)).then((ok) => {
       handoff.browser.ok = ok;
-      if (!ok) handoff.browser.warning = 'Review URL could not be opened automatically. Open upload.review_url manually.';
+      if (!ok) handoff.browser.warning = 'Review URL could not be opened automatically. Open the review URL manually.';
     }));
   }
   await Promise.all(tasks);
@@ -292,16 +292,24 @@ async function handoffReviewUrl(reviewUrl: string, options: { copy: boolean; ope
 
 function reviewUrlHandoffLines(handoff: ReviewUrlHandoff, reviewUrl: string): string[] {
   const lines: string[] = [];
+  let manualUrlNeeded = false;
   if (handoff.clipboard.requested) {
     if (handoff.clipboard.ok) lines.push('Review URL copied to clipboard.');
-    else lines.push(`Warning: ${handoff.clipboard.warning ?? 'Review URL was not copied to clipboard. Copy it manually.'}`);
+    else {
+      lines.push(`Warning: ${handoff.clipboard.warning ?? 'Review URL was not copied to clipboard. Copy it manually.'}`);
+      manualUrlNeeded = true;
+    }
   }
   if (handoff.browser.requested) {
     if (handoff.browser.ok) lines.push('Review URL opened in browser.');
     else {
       lines.push(`Warning: ${handoff.browser.warning ?? 'Review URL could not be opened automatically. Open it manually.'}`);
-      lines.push(reviewUrl);
+      manualUrlNeeded = true;
     }
+  }
+  if (manualUrlNeeded) {
+    lines.push('Manual review URL:');
+    lines.push(`  ${ui.command(reviewUrl)}`);
   }
   return lines;
 }

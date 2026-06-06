@@ -2570,7 +2570,9 @@ describe('share CLI command', () => {
 
       expect(publish.stdout).toContain('Warning: Review URL was not copied to clipboard.');
       expect(publish.stdout).toContain('Warning: Review URL could not be opened automatically.');
-      expect(publish.stdout).toContain('http://localhost:3001/worklogs/worklog_publish_failed_handoff/review');
+      expect(publish.stdout).toContain('Manual review URL:');
+      expect(publish.stdout).toContain('  http://localhost:3001/worklogs/worklog_publish_failed_handoff/review');
+      expect(publish.stdout).not.toContain('upload.review_url');
     } finally {
       await rm(fakeBin, { recursive: true, force: true });
       await new Promise<void>((resolve) => server.close(() => resolve()));

@@ -68,7 +68,7 @@ describe('project config', () => {
     });
     
     const other = await mkdtemp(join(tmpdir(), 'agentfeed-missing-'));
-    await expect(loadProjectConfig(other)).rejects.toThrow(/AgentFeed project is not initialized/i);
+    await expect(loadProjectConfig(other)).rejects.toThrow(/AgentFeed project is not initialized[\s\S]*Run: agentfeed init[\s\S]*Run: agentfeed init --no-git-check/i);
     await rm(other, { recursive: true, force: true });
   });
 

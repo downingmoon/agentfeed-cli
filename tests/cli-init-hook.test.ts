@@ -133,6 +133,8 @@ describe('CLI init and hook setup UX', () => {
     expect(failure.stdout).toBe('');
     expect(failure.stderr).toContain('AgentFeed project is not initialized.');
     expect(failure.stderr).toContain('Run: agentfeed init');
+    expect(failure.stderr).toContain('Run: git init && agentfeed init');
+    expect(failure.stderr).toContain('Run: agentfeed init --no-git-check');
     expect(failure.stderr).not.toContain('TypeError');
     expect(existsSync(join(dir, '.claude', 'settings.json'))).toBe(false);
   });

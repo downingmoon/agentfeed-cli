@@ -220,7 +220,9 @@ describe('share CLI command', () => {
     const failure = await runCliFailure(['share', '--yes']);
 
     expect(failure.stdout).toBe('');
-    expect(failure.stderr).toContain('AgentFeed project is not initialized. Run: agentfeed init');
+    expect(failure.stderr).toContain('AgentFeed project is not initialized.');
+    expect(failure.stderr).toContain('Run: agentfeed init');
+    expect(failure.stderr).not.toContain('Run: agentfeed init --no-git-check');
     expect(failure.stderr).not.toContain('AgentFeed token is missing.');
   });
 

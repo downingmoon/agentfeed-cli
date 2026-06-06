@@ -153,7 +153,7 @@ export async function resolveProjectRoot(cwd = processCwd()): Promise<string> {
 
 export async function loadProjectConfig(cwd = processCwd()): Promise<AgentFeedProjectConfig> {
   const root = await findUp(cwd, '.agentfeed');
-  if (!root) throw new Error('AgentFeed project is not initialized. Run: agentfeed init');
+  if (!root) throw new Error(await projectNotInitializedMessage(cwd));
   const path = join(root, '.agentfeed', 'config.json');
   let config: unknown;
   try {
@@ -162,6 +162,18 @@ export async function loadProjectConfig(cwd = processCwd()): Promise<AgentFeedPr
     throw new Error(`AgentFeed config is unreadable or invalid JSON at ${path}. Re-run agentfeed init or restore the file from backup.`);
   }
   return validateProjectConfig(config, path);
+}
+
+async function projectNotInitializedMessage(cwd: string): Promise<string> {
+  const lines = [
+    'AgentFeed project is not initialized.',
+    'Run: agentfeed init'
+  ];
+  if (!await findGitRoot(cwd)) {
+    lines.push('Run: git init && agentfeed init');
+    lines.push('Run: agentfeed init --no-git-check');
+  }
+  return lines.join('\n');
 }
 
 async function backupIfExists(path: string, backupDir: string, name: string): Promise<string | null> {

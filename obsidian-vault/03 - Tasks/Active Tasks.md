@@ -39,9 +39,10 @@ updated: 2026-06-06
 > - `agentfeed status`가 `Setup progress: n/5 ready · m need attention` 요약을 출력하고, `status --json`도 같은 summary를 제공한다.
 > - `agentfeed doctor`가 Summary 안에서 `Fix first` 우선순위 명령을 보여주고, `doctor --json`도 `priority_actions`를 제공한다.
 > - `agentfeed share` / `share --yes`는 token이 없어도 실패하지 않고 local draft preview를 만든 뒤 `upload_skipped`와 login/publish 순서를 안내한다.
+> - 모든 public command help surface가 `When to use` 섹션을 포함해 명령 사용 시점을 바로 설명한다.
 > - `npm run build`: 통과.
 > - `npx vitest run tests/release-preflight.test.ts --reporter=verbose`: 15 tests passed.
-> - `npm run release:preflight`: 26 test files, 532 tests passed.
+> - `npm run release:preflight`: 26 test files, 533 tests passed.
 > - release preflight가 npm tarball 설치 후 실제 installed `agentfeed` binary로 `--help`, `--version`, `init`, `status`, `share --dry`, `drafts` 첫 사용자 플로우를 검증한다.
 
 ## 완료됨 — 로컬/CI/contract/UI 품질
@@ -52,6 +53,7 @@ updated: 2026-06-06
 - [x] `agentfeed status`에 setup progress 요약을 추가해 첫 사용자가 준비 상태와 남은 조치를 한눈에 파악하도록 보강.
 - [x] `agentfeed doctor`에 `Fix first` 우선순위 액션을 추가해 여러 진단 실패 시 먼저 고칠 항목을 명확화.
 - [x] `agentfeed share`가 token missing 상태에서도 local draft를 생성하고 preview/login/publish 다음 행동을 안내하도록 보강.
+- [x] 모든 public command help에 `When to use` 안내를 추가해 명령 선택 부담을 낮춤.
 - [x] Frontend signed-out Header가 `/`와 `/feed`를 혼동하지 않도록 Home/Feed nav와 active state 수정.
 - [x] Frontend landing/feed/review/profile/project 주요 grid가 모바일에서 고정폭 overflow를 만들지 않도록 responsive layout으로 수정.
 - [x] Frontend list response wrapper가 `pagination` 누락/부분 payload에서도 fail-closed 동작하도록 정규화.

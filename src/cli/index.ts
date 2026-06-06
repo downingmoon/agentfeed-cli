@@ -3283,6 +3283,9 @@ function printCommandHelp(command: string): void {
 Compatibility alias for:
   agentfeed rotate
 
+When to use:
+  Prefer agentfeed rotate unless another script still calls this alias.
+
 Options:
   --browser                 Force browser-based token replacement
   --no-open                 Print the auth URL instead of opening a browser
@@ -3296,6 +3299,9 @@ Options:
     help: `Usage: agentfeed help [command]
 
 Show AgentFeed root help or command-specific help.
+
+When to use:
+  Use this when you forget a command or want command-specific options.
 
 Examples:
   agentfeed help
@@ -3313,6 +3319,9 @@ Options:
 
 List available AgentFeed commands grouped by workflow area.
 
+When to use:
+  Use this to pick the right command for setup, sharing, or debugging.
+
 Equivalent forms:
   agentfeed help
   agentfeed --help
@@ -3323,6 +3332,9 @@ Options:
     version: `Usage: agentfeed version [options]
 
 Print the installed AgentFeed CLI version.
+
+When to use:
+  Use this for bug reports, support, and release checks.
 
 Equivalent forms:
   agentfeed --version
@@ -3335,6 +3347,9 @@ Options:
 
 Initialize .agentfeed/config.json in the current git project.
 
+When to use:
+  Run once in each project before collecting AgentFeed drafts.
+
 Options:
   --project-name <name>     Override the detected project name
   --no-git-check            Allow initialization outside a git repository
@@ -3345,6 +3360,9 @@ Options:
 
 Connect this machine to AgentFeed.
 Without token input, login starts safe browser approval.
+
+When to use:
+  Run before uploading or after status says the token is missing.
 
 Options:
   --no-open                 Print the auth URL instead of opening a browser
@@ -3371,6 +3389,9 @@ Safety:
 
 Remove saved AgentFeed credentials from this machine.
 
+When to use:
+  Run when switching accounts or disconnecting this device.
+
 Options:
   --json                    Print machine-readable logout status
   --help, -h                Show this help
@@ -3389,12 +3410,18 @@ Safety:
 
 Show credential, API, project, hook, draft, and collection cursor status.
 
+When to use:
+  Run when setup feels stuck or before sharing from a new shell.
+
 Options:
   --json                    Print machine-readable status
   --help, -h                Show this help`,
     rotate: `Usage: agentfeed rotate [options]
 
 Replace the saved ingestion token through browser approval.
+
+When to use:
+  Run when a token expires, leaks, or belongs to the wrong account.
 
 Options:
   --browser                 Force browser-based token replacement
@@ -3417,6 +3444,9 @@ Safety:
 Collect local agent work into a private review draft.
 By default, collect saves locally and does not upload.
 Omit --source to auto-detect Claude/Codex/Cursor/Gemini sessions and plugins.
+
+When to use:
+  Use for advanced collection control before previewing or publishing.
 
 Common options:
   --source <source>         Override source (auto-detect is default)
@@ -3450,6 +3480,9 @@ Collect, preview, and optionally upload a private review draft.
 Use this as the daily one-command workflow.
 Omit --source to auto-detect Claude/Codex/Cursor/Gemini sessions and plugins.
 
+When to use:
+  Use after an AI coding session to make a reviewable worklog.
+
 Options:
   --yes, -y                 Upload without interactive confirmation
   --dry, --dry-run          Collect and preview only; do not upload
@@ -3481,6 +3514,9 @@ Examples:
 
 Render a saved local draft preview.
 
+When to use:
+  Use before publishing to inspect the public-safe draft content.
+
 Options:
   --latest                  Preview the newest local draft (default)
   --id <draft_id>           Preview a specific draft
@@ -3490,6 +3526,9 @@ Options:
     publish: `Usage: agentfeed publish [options]
 
 Upload a saved local draft as a private AgentFeed review draft.
+
+When to use:
+  Use after previewing a local draft and logging in.
 
 Options:
   --latest                  Publish the newest local draft (default)
@@ -3510,6 +3549,9 @@ Examples:
 
 Scan and redact public fields before sharing.
 
+When to use:
+  Use when a draft may contain secrets or sensitive project details.
+
 Options:
   --latest                  Scan the newest local draft (default)
   --id <draft_id>           Scan a specific draft
@@ -3525,6 +3567,9 @@ Examples:
     hook: `Usage: agentfeed hook install|uninstall claude-code [options]
 
 Install or remove the AgentFeed Claude Code hook.
+
+When to use:
+  Use to capture Claude Code sessions automatically for richer drafts.
 
 Options:
   --global                  Modify the global Claude Code settings
@@ -3543,6 +3588,9 @@ Examples:
 Run local AgentFeed diagnostics for credentials, API reachability,
 project config, git, and agent signals.
 
+When to use:
+  Run when collection, login, upload, or agent detection looks wrong.
+
 Options:
   --json                    Print machine-readable diagnostics
   --help, -h                Show this help`,
@@ -3550,12 +3598,18 @@ Options:
 
 List saved local draft summaries and next actions.
 
+When to use:
+  Use to find pending drafts and the next publish or preview command.
+
 Options:
   --json                    Print machine-readable draft summaries
   --help, -h                Show this help`,
     discard: `Usage: agentfeed discard [options]
 
 Delete a saved local draft after explicit confirmation.
+
+When to use:
+  Use to remove stale, duplicate, or unwanted local drafts.
 
 Options:
   --latest                  Discard the newest local draft (default)
@@ -3566,6 +3620,9 @@ Options:
     open: `Usage: agentfeed open [options]
 
 Reopen a trusted review URL from a previously uploaded draft.
+
+When to use:
+  Use after publishing when you need to return to the review page.
 
 Options:
   --latest                  Open the newest uploaded draft (default)
@@ -3579,6 +3636,9 @@ Examples:
     completion: `Usage: agentfeed completion <shell>
 
 Print a shell completion script for AgentFeed commands and options.
+
+When to use:
+  Use once per shell to enable tab completion.
 
 Supported shells: zsh, bash, fish
 

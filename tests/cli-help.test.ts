@@ -350,6 +350,38 @@ describe('CLI help and option validation', () => {
     }
   });
 
+  it('explains when to use every public command help surface', async () => {
+    const helpSurfaces: string[][] = [
+      ['help', '--help'],
+      ['commands', '--help'],
+      ['init', '--help'],
+      ['login', '--help'],
+      ['logout', '--help'],
+      ['status', '--help'],
+      ['rotate', '--help'],
+      ['version', '--help'],
+      ['token', 'rotate', '--help'],
+      ['collect', '--help'],
+      ['share', '--help'],
+      ['preview', '--help'],
+      ['publish', '--help'],
+      ['scan', '--help'],
+      ['hook', '--help'],
+      ['doctor', '--help'],
+      ['drafts', '--help'],
+      ['discard', '--help'],
+      ['open', '--help'],
+      ['completion', '--help']
+    ];
+
+    for (const args of helpSurfaces) {
+      const { stdout, stderr } = await runCli(args);
+      expect(stderr).toBe('');
+      expect(stdout, `agentfeed ${args.join(' ')}`).toContain('When to use:');
+      expect(stdout, `agentfeed ${args.join(' ')}`).not.toContain('Usage: agentfeed <command>');
+    }
+  });
+
   it('prints command-specific help for every public command surface', async () => {
     const expectations: Array<[string[], string[]]> = [
       [['help', '--help'], ['Usage: agentfeed help', 'agentfeed help collect', 'agentfeed <command> --help']],

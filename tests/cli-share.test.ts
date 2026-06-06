@@ -378,12 +378,19 @@ describe('share CLI command', () => {
     expect(failure.stderr).not.toContain('TypeError');
   });
 
-  it('guides login when share or publish needs a token', async () => {
-    const share = await runCliFailure(['share', '--yes', '--all']);
-    expect(share.stdout).toBe('');
-    expect(share.stderr).toContain('AgentFeed token is missing.');
-    expect(share.stderr).toContain('Run: agentfeed login');
-    expect(share.stderr).toContain('Run: printf %s "$TOKEN" | agentfeed login --token-stdin');
+  it('keeps share useful without a token and guides login before upload', async () => {
+    const share = await execFileAsync(process.execPath, [cliPath, 'share', '--yes', '--all'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home, AGENTFEED_TOKEN: '', FORCE_COLOR: undefined }
+    });
+    expect(share.stderr).toBe('');
+    expect(share.stdout).toContain('AgentFeed share preview');
+    expect(share.stdout).toContain('Upload skipped: AgentFeed token is missing. Local draft kept:');
+    expect(share.stdout).toContain('Recommended order:');
+    expect(share.stdout).toContain('agentfeed preview --id');
+    expect(share.stdout).toContain('agentfeed login');
+    expect(share.stdout).toContain('agentfeed publish --id');
 
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
     draft.worklog.title = 'Publish needs login';
@@ -423,6 +430,41 @@ describe('share CLI command', () => {
     ]);
     expect(stdout).not.toContain('\u001b[');
     expect(stdout).not.toMatch(/(^|\n)(AgentFeed share preview|Ready to share private review draft|Summary|Collection quality|Next|Publish later)/);
+  });
+
+  it('prints parseable share JSON upload-skipped guidance when token is missing', async () => {
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const shareJsonNoToken = true;\n');
+
+    const { stdout, stderr } = await execFileAsync(process.execPath, [
+      cliPath,
+      'share',
+      '--json',
+      '--yes',
+      '--all'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home, AGENTFEED_TOKEN: '' }
+    });
+
+    const output = JSON.parse(stdout) as {
+      dry_run?: boolean;
+      upload_skipped?: { reason?: string; next_action?: string } | null;
+      draft?: { id?: string };
+      next_actions?: string[];
+    };
+    const draftId = output.draft?.id;
+    expect(stderr).toBe('');
+    expect(output.dry_run).toBe(false);
+    expect(output.upload_skipped).toEqual({ reason: 'token_missing', next_action: 'agentfeed login' });
+    expect(draftId).toMatch(/^draft_/);
+    expect(output.next_actions).toEqual([
+      `agentfeed preview --id ${draftId}`,
+      'agentfeed login',
+      `agentfeed publish --id ${draftId} --yes`
+    ]);
+    expect(stdout).not.toContain('AgentFeed token is missing.');
+    expect(stdout).not.toContain('[');
   });
 
   it('prints structured upload completion for human-readable share uploads', async () => {

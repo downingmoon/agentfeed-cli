@@ -1550,16 +1550,16 @@ async function cmdShare(args: string[]) {
   await loadProjectConfig(process.cwd());
   const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
   const creds = opts.dryRun ? null : await loadCredentials();
-  if (!opts.dryRun && !creds) throw new Error(missingTokenMessage());
 
   const collection = await collectDraftWithStatus({ cwd: process.cwd(), source: opts.source, sessionFile: opts.sessionFile, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all'), note: opts.note, runConfiguredCommands: opts.runConfiguredCommands, skipConfiguredCommands: opts.dryRun });
   let draft = await sanitizeDraftForCliOutput(process.cwd(), collection.draft);
 
   if (opts.json) {
-    if (opts.dryRun) {
-      const hasCredentials = await hasCredentialsForPublishGuidance();
+    if (opts.dryRun || !creds) {
+      const hasCredentials = Boolean(creds) || await hasCredentialsForPublishGuidance();
       print(JSON.stringify({
-        dry_run: true,
+        dry_run: opts.dryRun,
+        upload_skipped: !opts.dryRun && !creds ? { reason: 'token_missing', next_action: 'agentfeed login' } : null,
         reused_existing_draft: collection.reusedExisting,
         draft,
         privacy_policy: privacyPolicySummary(draft),
@@ -1568,14 +1568,14 @@ async function cmdShare(args: string[]) {
       }, null, 2));
       return;
     }
-    const metadata = await requireUploadPreflight(creds!);
-    const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds!, reviewBaseUrl: metadata.review_base_url });
+    const metadata = await requireUploadPreflight(creds);
+    const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds, reviewBaseUrl: metadata.review_base_url });
     draft = await sanitizeDraftForCliOutput(process.cwd(), await readDraft(process.cwd(), draft.id));
     if (!opts.noSaveCursor) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
     const handoff = await handoffReviewUrl(result.review_url, {
       copy: shouldCopyReviewUrl({ json: true, noClipboard: opts.noClipboard, clipboard: flag(args, '--clipboard') }),
       open: await shouldOpenReviewAfterUpload(opts.openReview, { respectConfig: false, noOpen: opts.noOpenReview }),
-      apiBaseUrl: creds!.api_base_url,
+      apiBaseUrl: creds.api_base_url,
       reviewBaseUrl: result.review_base_url ?? metadata.review_base_url
     });
     print(JSON.stringify({
@@ -1601,10 +1601,13 @@ async function cmdShare(args: string[]) {
     print();
   }
 
-  if (opts.dryRun) {
-    const nextActions = shareDryRunNextActions(draft.id, await hasCredentialsForPublishGuidance());
+  if (opts.dryRun || !creds) {
+    const hasCredentials = Boolean(creds) || await hasCredentialsForPublishGuidance();
+    const nextActions = shareDryRunNextActions(draft.id, hasCredentials);
     print(ui.section('Next'));
-    print(`Dry run complete. Local draft kept: ${draft.id}`);
+    print(opts.dryRun
+      ? `Dry run complete. Local draft kept: ${draft.id}`
+      : `Upload skipped: AgentFeed token is missing. Local draft kept: ${draft.id}`);
     printRecommendedCommands(nextActions);
     return;
   }
@@ -1614,13 +1617,13 @@ async function cmdShare(args: string[]) {
     return;
   }
 
-  const metadata = await requireUploadPreflight(creds!);
-  const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds!, reviewBaseUrl: metadata.review_base_url });
+  const metadata = await requireUploadPreflight(creds);
+  const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds, reviewBaseUrl: metadata.review_base_url });
   if (!opts.noSaveCursor) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
   const handoff = await handoffReviewUrl(result.review_url, {
     copy: shouldCopyReviewUrl({ noClipboard: opts.noClipboard }),
     open: await shouldOpenReviewAfterUpload(opts.openReview, { noOpen: opts.noOpenReview }),
-    apiBaseUrl: creds!.api_base_url,
+    apiBaseUrl: creds.api_base_url,
     reviewBaseUrl: result.review_base_url ?? metadata.review_base_url
   });
   printUploadResult({

@@ -498,11 +498,18 @@ async function resolveDraftId(cwd: string, args: string[]): Promise<string> {
 
 async function cmdInit(args: string[]) {
   const result = await initProject({ cwd: process.cwd(), projectName: option(args, '--project-name'), noGitCheck: flag(args, '--no-git-check') });
-  print('AgentFeed initialized.\n');
+  print(ui.heading('AgentFeed initialized'));
+  print('AgentFeed initialized.');
+  print();
+  print(ui.section('Summary'));
   print(`Project: ${result.config.project.name}`);
   print(`Visibility: ${result.config.project.visibility}`);
-  print('Config: .agentfeed/config.json\n');
-  print('Next:\n  agentfeed login\n  agentfeed hook install claude-code');
+  print('Config: .agentfeed/config.json');
+  print();
+  print(ui.section('Next'));
+  print(`  ${ui.command('agentfeed login')}`);
+  print(`  ${ui.command('agentfeed hook install claude-code')}`);
+  print(`  ${ui.command('agentfeed share --dry')}`);
 }
 
 async function cmdLogin(args: string[]) {
@@ -976,13 +983,40 @@ async function cmdHook(args: string[]) {
   const scope = flag(args, '--global') ? 'global' : 'project';
   const settingsPath = option(args, '--settings-path');
   if (action === 'install') {
-    const result = await installClaudeCodeHook({ projectRoot: root, scope, settingsPath, dryRun: flag(args, '--dry-run') });
-    print(`${flag(args, '--dry-run') ? 'Would install' : 'Installed'} AgentFeed Claude Code hook.`);
+    const dryRun = flag(args, '--dry-run');
+    const result = await installClaudeCodeHook({ projectRoot: root, scope, settingsPath, dryRun });
+    print(ui.heading(dryRun ? 'AgentFeed hook dry run' : 'AgentFeed hook installed'));
+    print(`${dryRun ? 'Would install' : 'Installed'} AgentFeed Claude Code hook.`);
+    print();
+    print(ui.section('Summary'));
+    print('Target: claude-code');
+    print('Action: install');
+    print(`Scope: ${scope}`);
+    print(`Dry run: ${dryRun ? 'yes' : 'no'}`);
     print(`Settings: ${result.path}`);
+    if (result.backupPath) print(`Backup: ${result.backupPath}`);
+    print();
+    print(ui.section('Next'));
+    if (dryRun) {
+      print(`  ${ui.command('agentfeed hook install claude-code')}`);
+    } else {
+      print(`  ${ui.command('agentfeed status')}`);
+      print(`  ${ui.command('agentfeed share --dry')}`);
+    }
   } else if (action === 'uninstall') {
     const result = await uninstallClaudeCodeHook({ projectRoot: root, scope, settingsPath });
+    print(ui.heading('AgentFeed hook removed'));
     print('Uninstalled AgentFeed Claude Code hook.');
+    print();
+    print(ui.section('Summary'));
+    print('Target: claude-code');
+    print('Action: uninstall');
+    print(`Scope: ${scope}`);
     print(`Settings: ${result.path}`);
+    if (result.backupPath) print(`Backup: ${result.backupPath}`);
+    print();
+    print(ui.section('Next'));
+    print(`  ${ui.command('agentfeed status')}`);
   } else throw new Error('Usage: agentfeed hook install|uninstall claude-code');
 }
 

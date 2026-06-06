@@ -537,6 +537,12 @@ function hookNextActions(action: 'install' | 'uninstall', dryRun = false): strin
   return ['agentfeed status'];
 }
 
+function initNextActions(alreadyInitialized: boolean): string[] {
+  return alreadyInitialized
+    ? ['agentfeed status', 'agentfeed share --dry', 'agentfeed init --force']
+    : ['agentfeed login', 'agentfeed hook install claude-code', 'agentfeed share --dry'];
+}
+
 function formatPrivacyScanReport(input: PublicScanFields, redacted: PublicScanFields, scan: ReturnType<typeof scanAndRedactFields>['scan'], options: { dryRun?: boolean; draftId?: string; path?: string } = {}): string {
   const target = options.draftId ? `draft ${options.draftId}` : options.path ? `path ${options.path}` : 'current input';
   const mode = options.draftId
@@ -711,6 +717,22 @@ async function cmdInit(args: string[]) {
     noGitCheck: flag(args, '--no-git-check'),
     force: flag(args, '--force')
   });
+  const nextActions = initNextActions(result.alreadyInitialized);
+  if (flag(args, '--json')) {
+    print(JSON.stringify({
+      already_initialized: result.alreadyInitialized,
+      project: {
+        name: result.config.project.name,
+        visibility: result.config.project.visibility,
+        tags: result.config.project.tags
+      },
+      root: result.root,
+      config_path: '.agentfeed/config.json',
+      backup_paths: result.backupPaths.map((backupPath) => projectRelativePath(result.root, backupPath)),
+      next_actions: nextActions
+    }, null, 2));
+    return;
+  }
   print(ui.heading(result.alreadyInitialized ? 'AgentFeed already initialized' : result.backupPaths.length ? 'AgentFeed reinitialized' : 'AgentFeed initialized'));
   print(result.alreadyInitialized
     ? 'Existing AgentFeed config kept.'
@@ -729,15 +751,7 @@ async function cmdInit(args: string[]) {
   }
   print();
   print(ui.section('Next'));
-  if (result.alreadyInitialized) {
-    print(`  ${ui.command('agentfeed status')}`);
-    print(`  ${ui.command('agentfeed share --dry')}`);
-    print(`  ${ui.command('agentfeed init --force')}`);
-  } else {
-    print(`  ${ui.command('agentfeed login')}`);
-    print(`  ${ui.command('agentfeed hook install claude-code')}`);
-    print(`  ${ui.command('agentfeed share --dry')}`);
-  }
+  printNextCommands(nextActions);
 }
 
 async function cmdLogin(args: string[]) {
@@ -2070,7 +2084,7 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     validatePositionals: NO_POSITIONALS('commands')
   },
   init: {
-    flags: ['--no-git-check', '--force'],
+    flags: ['--no-git-check', '--force', '--json'],
     valueOptions: ['--project-name'],
     validatePositionals: NO_POSITIONALS('init')
   },
@@ -2442,6 +2456,7 @@ Options:
   --project-name <name>     Override the detected project name
   --no-git-check            Allow initialization outside a git repository
   --force                   Recreate config after backing up existing files
+  --json                    Print machine-readable initialization result
   --help, -h                Show this help`,
     login: `Usage: agentfeed login [options]
 

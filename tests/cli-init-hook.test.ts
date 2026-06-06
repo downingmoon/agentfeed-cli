@@ -83,6 +83,30 @@ describe('CLI init and hook setup UX', () => {
     expect(stderr).toBe('');
   });
 
+  it('prints machine-readable initialization result with next actions', async () => {
+    const { stdout, stderr } = await runCli(['init', '--no-git-check', '--project-name', 'setup-json', '--json']);
+    const output = JSON.parse(stdout) as {
+      already_initialized?: boolean;
+      project?: { name?: string; visibility?: string; tags?: string[] };
+      root?: string;
+      config_path?: string;
+      backup_paths?: string[];
+      next_actions?: string[];
+    };
+
+    expect(stderr).toBe('');
+    expect(output).toMatchObject({
+      already_initialized: false,
+      project: { name: 'setup-json', visibility: 'private', tags: [] },
+      config_path: '.agentfeed/config.json',
+      backup_paths: [],
+      next_actions: ['agentfeed login', 'agentfeed hook install claude-code', 'agentfeed share --dry']
+    });
+    expect(output.root).toMatch(/agentfeed-cli-init-hook-/);
+    expect(stdout).not.toContain('AgentFeed initialized');
+    expect(stdout).not.toMatch(/(^|\n)Next(\n|$)/);
+  });
+
   it('keeps existing config when init is rerun without force', async () => {
     await initProject();
     const configPath = join(dir, '.agentfeed', 'config.json');
@@ -101,6 +125,26 @@ describe('CLI init and hook setup UX', () => {
     expect(stdout).toContain('agentfeed share --dry');
     expect(stdout).toContain('agentfeed init --force');
     expect(stderr).toBe('');
+    expect(saved.project.name).toBe('setup-polish');
+    expect(saved.project.tags).toEqual(['custom']);
+  });
+
+  it('prints machine-readable already-initialized next actions without overwriting config', async () => {
+    await initProject();
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.project.tags = ['custom'];
+    await writeFile(configPath, JSON.stringify(config, null, 2));
+
+    const { stdout, stderr } = await runCli(['init', '--no-git-check', '--project-name', 'overwritten', '--json']);
+    const output = JSON.parse(stdout) as { already_initialized?: boolean; project?: { name?: string; tags?: string[] }; next_actions?: string[] };
+    const saved = JSON.parse(await readFile(configPath, 'utf8'));
+
+    expect(stderr).toBe('');
+    expect(output.already_initialized).toBe(true);
+    expect(output.project).toMatchObject({ name: 'setup-polish', tags: ['custom'] });
+    expect(output.next_actions).toEqual(['agentfeed status', 'agentfeed share --dry', 'agentfeed init --force']);
+    expect(stdout).not.toContain('AgentFeed already initialized');
     expect(saved.project.name).toBe('setup-polish');
     expect(saved.project.tags).toEqual(['custom']);
   });

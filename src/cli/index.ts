@@ -366,19 +366,28 @@ function cachedUploadReuseReasonLabel(reason: CachedUploadReuseFailureReason): s
 }
 
 function printUploadConfirmationRequired(draft: LocalDraft, command: string, extraCommand?: string, options: { cacheReuseReason?: CachedUploadReuseFailureReason } = {}): void {
+  print(ui.heading('AgentFeed upload paused'));
   print('Upload confirmation required.');
   print('No data was uploaded to AgentFeed.');
-  if (options.cacheReuseReason) print(`Saved private review cache cannot be reused: ${cachedUploadReuseReasonLabel(options.cacheReuseReason)}.`);
+  if (options.cacheReuseReason) {
+    print();
+    print(ui.section('Warnings'));
+    print(`Saved private review cache cannot be reused: ${cachedUploadReuseReasonLabel(options.cacheReuseReason)}.`);
+  }
   print();
+  print(ui.section('Summary'));
   print(`Draft: ${draft.id}`);
   print(`Project: ${draft.project.name}`);
   print(`Title: ${draft.worklog.title}`);
   print(`Privacy: ${draft.privacy_scan.status} · findings ${draft.privacy_scan.findings.length}`);
   print();
-  print(`Upload after reviewing this draft:
-  ${command}`);
-  if (extraCommand) print(`Or collect and upload in one command:
-  ${extraCommand}`);
+  print(ui.section('Next'));
+  print('Upload after reviewing this draft:');
+  print(`  ${ui.command(command)}`);
+  if (extraCommand) {
+    print('Or collect and upload in one command:');
+    print(`  ${ui.command(extraCommand)}`);
+  }
 }
 
 function tokenExpiryWarning(expiresAt?: string | null, expiringSoon?: boolean): string | null {
@@ -1237,9 +1246,22 @@ async function cmdDiscard(args: string[]) {
   const id = await resolveDraftId(process.cwd(), args);
   const root = await resolveProjectRoot(process.cwd());
   const { jsonPath, markdownPath } = draftPaths(root, id);
+  const hadJson = await pathExists(jsonPath);
+  const hadMarkdown = await pathExists(markdownPath);
+  if (!hadJson && !hadMarkdown) throw new Error(`Draft not found: ${id}`);
   await rm(jsonPath, { force: true });
   await rm(markdownPath, { force: true });
+  print(ui.heading('AgentFeed draft discarded'));
   print(`Discarded draft: ${id}`);
+  print();
+  print(ui.section('Summary'));
+  print(`Draft: ${id}`);
+  print(`JSON: ${hadJson ? 'removed' : 'not found'}`);
+  print(`Markdown: ${hadMarkdown ? 'removed' : 'not found'}`);
+  print();
+  print(ui.section('Next'));
+  print(`  ${ui.command('agentfeed drafts')}`);
+  print(`  ${ui.command('agentfeed collect --explain')}`);
 }
 
 async function cmdOpen(args: string[]) {

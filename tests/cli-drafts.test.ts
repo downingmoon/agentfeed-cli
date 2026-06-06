@@ -1,6 +1,7 @@
 import { beforeAll, beforeEach, afterEach, describe, expect, it } from 'vitest';
 import { execFile } from 'node:child_process';
 import { mkdtemp, rm } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
@@ -71,6 +72,27 @@ describe('drafts CLI command', () => {
     expect(stdout).toContain('Metrics: 2 files · +42 -7');
     expect(stdout).toContain(`agentfeed preview --id ${draft.id}`);
     expect(stdout).toContain(`agentfeed publish --id ${draft.id} --yes`);
+  });
+
+  it('prints a sectioned discard summary and removes local draft artifacts', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.worklog.title = 'Discard me cleanly';
+    const paths = await writeDraft(dir, draft);
+
+    const { stdout, stderr } = await runCli(['discard', '--id', draft.id]);
+
+    expect(stderr).toBe('');
+    expect(stdout).toContain('AgentFeed draft discarded');
+    expect(stdout).toContain(`Discarded draft: ${draft.id}`);
+    expect(stdout).toContain('Summary');
+    expect(stdout).toContain(`Draft: ${draft.id}`);
+    expect(stdout).toContain('JSON: removed');
+    expect(stdout).toContain('Markdown: removed');
+    expect(stdout).toContain('Next');
+    expect(stdout).toContain('agentfeed drafts');
+    expect(stdout).toContain('agentfeed collect --explain');
+    expect(existsSync(paths.jsonPath)).toBe(false);
+    expect(existsSync(paths.markdownPath)).toBe(false);
   });
 
   it('prints machine-readable draft summaries without human headings', async () => {

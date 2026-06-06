@@ -488,8 +488,12 @@ describe('share CLI command', () => {
         }
       });
 
+      expect(share.stdout).toContain('AgentFeed upload paused');
       expect(share.stdout).toContain('Upload confirmation required.');
       expect(share.stdout).toContain('No data was uploaded to AgentFeed.');
+      expect(share.stdout).toContain('Summary');
+      expect(share.stdout).toContain('Next');
+      expect(share.stdout).toContain('Upload after reviewing this draft:');
       expect(share.stdout).toContain('agentfeed publish --id');
       expect(share.stdout).toContain('--yes');
       expect(ingestRequestCount).toBe(0);

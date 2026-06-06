@@ -1644,11 +1644,25 @@ function editDistance(a: string, b: string): number {
   return previous[b.length];
 }
 
+function commonPrefixLength(a: string, b: string): number {
+  const length = Math.min(a.length, b.length);
+  let index = 0;
+  while (index < length && a[index] === b[index]) index += 1;
+  return index;
+}
+
 function closestMatch(input: string, candidates: readonly string[]): string | null {
-  let best: { candidate: string; distance: number } | null = null;
+  let best: { candidate: string; distance: number; prefix: number } | null = null;
   for (const candidate of candidates) {
     const distance = editDistance(input, candidate);
-    if (!best || distance < best.distance) best = { candidate, distance };
+    const prefix = commonPrefixLength(input, candidate);
+    if (
+      !best
+      || distance < best.distance
+      || (distance === best.distance && prefix > best.prefix)
+    ) {
+      best = { candidate, distance, prefix };
+    }
   }
   if (!best) return null;
   const threshold = Math.max(2, Math.floor(Math.max(input.length, best.candidate.length) / 3));

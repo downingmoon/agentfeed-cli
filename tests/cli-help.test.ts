@@ -196,6 +196,16 @@ describe('CLI help and option validation', () => {
     expect(failure.stdout).toBe('');
   });
 
+  it('breaks option suggestion ties by shared prefix so --sorce suggests --source', async () => {
+    const failure = await runCliFailure(['collect', '--sorce', 'codex']);
+
+    expect(failure.stderr).toContain('Unknown option: --sorce');
+    expect(failure.stderr).toContain('Did you mean: --source');
+    expect(failure.stderr).not.toContain('Did you mean: --force');
+    expect(failure.stderr).toContain('Run: agentfeed collect --help');
+    expect(failure.stdout).toBe('');
+  });
+
   it('rejects collect when --source is missing a value', async () => {
     const failure = await runCliFailure(['collect', '--source']);
 

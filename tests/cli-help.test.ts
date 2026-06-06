@@ -71,11 +71,20 @@ describe('CLI help and option validation', () => {
 
     expect(stdout).toContain('Usage: agentfeed <command>');
     expect(stdout).toContain('Commands:');
+    expect(stdout).toContain('Start:');
+    expect(stdout).toContain('Share work:');
+    expect(stdout).toContain('Privacy and drafts:');
+    expect(stdout).toContain('Automation:');
+    expect(stdout).toContain('Account and diagnostics:');
     expect(stdout).toContain('agentfeed <command> --help');
     expect(stdout).toContain('collect');
+    expect(stdout).toContain('Collect local agent work into a private review draft');
     expect(stdout).toContain('share');
+    expect(stdout).toContain('Collect, preview, and optionally upload in one workflow');
     expect(stdout).toContain('doctor');
+    expect(stdout).toContain('Run local diagnostics');
     expect(stdout).toContain('completion');
+    expect(stdout).toContain('Print shell completion script');
     expect(stdout).not.toContain('agentfeed collect --source codex');
     expect(stdout).not.toContain('agentfeed publish --id <draft_id> --yes');
     expect(stdout).not.toContain('agentfeed token rotate');

@@ -1451,6 +1451,14 @@ const COMMAND_DESCRIPTIONS: Record<(typeof PUBLIC_COMMANDS)[number], string> = {
   completion: 'Print shell completion script'
 };
 
+const COMMAND_GROUPS: Array<{ title: string; commands: Array<(typeof PUBLIC_COMMANDS)[number]> }> = [
+  { title: 'Start', commands: ['init', 'login', 'status'] },
+  { title: 'Share work', commands: ['share', 'collect', 'preview', 'publish', 'open'] },
+  { title: 'Privacy and drafts', commands: ['scan', 'drafts', 'discard'] },
+  { title: 'Automation', commands: ['hook', 'completion'] },
+  { title: 'Account and diagnostics', commands: ['doctor', 'rotate', 'logout'] }
+];
+
 const KNOWN_COMMANDS = new Set([
   'init',
   'login',
@@ -1679,6 +1687,16 @@ function validateCommandArgs(command: string, args: string[]): void {
   if (positionalError) throw new Error(positionalError);
 }
 
+function printCommandCatalog(): void {
+  print(`\n${ui.section('Commands')}:`);
+  for (const group of COMMAND_GROUPS) {
+    print(`  ${group.title}:`);
+    for (const command of group.commands) {
+      print(`    ${ui.command(command.padEnd(10))} ${COMMAND_DESCRIPTIONS[command]}`);
+    }
+  }
+}
+
 function printHelp(): void {
   print(ui.heading('Usage: agentfeed <command> [options]'));
   print(`Version: ${AGENTFEED_CLI_VERSION}`);
@@ -1687,7 +1705,7 @@ function printHelp(): void {
   print(`\n${ui.section('Draft review')}:\n  agentfeed collect --explain\n  agentfeed preview --latest\n  agentfeed publish --latest --yes\n  agentfeed open --latest`);
   print(`\n${ui.section('Advanced and diagnostics')}:\n  agentfeed doctor\n  agentfeed scan --id <draft_id> --dry-run\n  agentfeed hook install claude-code\n  agentfeed drafts\n  agentfeed discard --id <draft_id>\n  agentfeed rotate\n  agentfeed logout`);
   print(`\n${ui.section('Shell completion')}:\n  agentfeed completion zsh\n  agentfeed completion bash\n  agentfeed completion fish`);
-  print(`\n${ui.section('Commands')}:\n  ${PUBLIC_COMMANDS.join(', ')}`);
+  printCommandCatalog();
   print(`\nRun ${ui.command('agentfeed <command> --help')} for command-specific options.`);
 }
 

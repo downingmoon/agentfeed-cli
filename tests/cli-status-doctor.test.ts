@@ -570,10 +570,12 @@ describe('status and doctor provenance output', () => {
       credentials_file_deleted: boolean;
       environment_token_active: boolean;
       warnings: string[];
+      next_actions?: string[];
     };
     expect(result.credentials_file_deleted).toBe(true);
     expect(result.environment_token_active).toBe(true);
     expect(result.warnings.join('\n')).toContain('AGENTFEED_TOKEN is still set');
+    expect(result.next_actions).toEqual(['agentfeed status']);
     expect(stdout).not.toContain(token);
     expect(stderr).not.toContain(token);
     await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });

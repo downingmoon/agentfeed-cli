@@ -999,7 +999,8 @@ async function cmdLogout(args: string[]) {
       warnings: [
         ...result.warnings,
         ...(envTokenActive ? ['AGENTFEED_TOKEN is still set in this shell; unset it or update your shell/secret manager to finish logout.'] : [])
-      ]
+      ],
+      next_actions: ['agentfeed status']
     }, null, 2));
     return;
   }

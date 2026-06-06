@@ -2078,6 +2078,19 @@ function noUploadedDraftsMessage(latestDraft: LocalDraft): string {
   ].join('\n');
 }
 
+function noOpenableDraftsMessage(): string {
+  return [
+    'No uploaded review drafts found.',
+    '',
+    'Create and review a draft first:',
+    'Run: agentfeed share --dry',
+    'Run: agentfeed publish --latest --yes',
+    '',
+    'Or inspect saved drafts:',
+    'Run: agentfeed drafts'
+  ].join('\n');
+}
+
 function openNextActions(draftId: string): string[] {
   return uniqueNextCommands([
     `agentfeed preview --id ${draftId}`,
@@ -2095,7 +2108,7 @@ async function resolveOpenDraft(args: string[]): Promise<LocalDraft> {
   }
 
   const rows = await listDrafts(process.cwd());
-  if (!rows.length) return readLatestDraft(process.cwd());
+  if (!rows.length) throw new Error(noOpenableDraftsMessage());
 
   let latestValidDraft: LocalDraft | null = null;
   for (const row of rows) {

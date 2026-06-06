@@ -356,6 +356,19 @@ describe('drafts CLI command', () => {
     expect(stderr).toContain('Run: agentfeed drafts');
   });
 
+  it('guides create and publish when opening before any draft exists', async () => {
+    const { stdout, stderr } = await runCliFailure(['open', '--latest']);
+
+    expect(stdout).toBe('');
+    expect(stderr).toContain('No uploaded review drafts found.');
+    expect(stderr).toContain('Create and review a draft first:');
+    expect(stderr).toContain('Run: agentfeed share --dry');
+    expect(stderr).toContain('Run: agentfeed publish --latest --yes');
+    expect(stderr).toContain('Or inspect saved drafts:');
+    expect(stderr).toContain('Run: agentfeed drafts');
+    expect(stderr).not.toContain('No local drafts found.');
+  });
+
   it('guides publishing the newest draft when no uploaded drafts exist', async () => {
     const oldDraft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
     oldDraft.id = 'draft_pending_old';

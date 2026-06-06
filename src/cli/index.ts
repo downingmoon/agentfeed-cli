@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { rm } from 'node:fs/promises';
 import { initProject, loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
-import { credentialsFromToken, deleteSavedCredentials, loadCredentials, loadCredentialsWithMetadata, saveCredentials, type CredentialTokenSource } from '../config/credentials.js';
+import { credentialsFromToken, credentialsPath, deleteSavedCredentials, loadCredentials, loadCredentialsWithMetadata, saveCredentials, type CredentialTokenSource } from '../config/credentials.js';
 import { resolveApiBaseUrl, resolveApiBaseUrlWithMetadata, type ApiBaseUrlSource } from '../config/api-base.js';
 import { DEFAULT_API_BASE_URL } from '../config/defaults.js';
 import { markCollectionComplete, readCollectionState, resolveCollectionWindow } from '../config/collection-state.js';
@@ -57,6 +57,55 @@ function apiBaseSourceLabel(source: ApiBaseUrlSource, detail?: string): string {
     case 'stored_credentials': return `saved credentials file${suffix}`;
     case 'env_file': return `discovered env file${suffix}`;
     case 'default': return `default${suffix}`;
+  }
+}
+
+type CredentialsMetadata = Awaited<ReturnType<typeof loadCredentialsWithMetadata>>;
+
+interface DiagnosticCredentialsMetadata {
+  metadata: CredentialsMetadata;
+  invalidApiBaseUrl: boolean;
+}
+
+function invalidApiBaseUrlMessage(error: unknown): string | null {
+  if (!(error instanceof Error)) return null;
+  return error.message.startsWith('Invalid AgentFeed API base URL') ? error.message : null;
+}
+
+function invalidConfiguredApiBaseUrlLabel(): string {
+  const value = process.env.AGENTFEED_API_BASE_URL?.trim();
+  return value ? `invalid (${value})` : 'invalid';
+}
+
+function invalidApiBaseUrlWarnings(message: string): string[] {
+  return [
+    `invalid AgentFeed API URL setting ignored for diagnostics: ${message}`,
+    'Fix AGENTFEED_API_BASE_URL, unset it, or set AGENTFEED_ALLOW_INSECURE_API=1 for explicit development-only HTTP testing.'
+  ];
+}
+
+async function loadDiagnosticCredentialsWithMetadata(options: { cwd?: string } = {}): Promise<DiagnosticCredentialsMetadata> {
+  try {
+    return { metadata: await loadCredentialsWithMetadata(options), invalidApiBaseUrl: false };
+  } catch (error) {
+    const message = invalidApiBaseUrlMessage(error);
+    if (!message) throw error;
+    const tokenSource: CredentialTokenSource = process.env.AGENTFEED_TOKEN ? 'environment' : 'missing';
+    const file = credentialsPath();
+    return {
+      invalidApiBaseUrl: true,
+      metadata: {
+        credentials: null,
+        token_source: tokenSource,
+        credentials_file_path: file,
+        credentials_file_exists: await pathExists(file),
+        credential_store: tokenSource === 'environment' ? 'environment' : 'missing',
+        api_base_url: invalidConfiguredApiBaseUrlLabel(),
+        api_base_url_source: 'environment',
+        api_base_url_source_detail: 'AGENTFEED_API_BASE_URL',
+        warnings: invalidApiBaseUrlWarnings(message)
+      }
+    };
   }
 }
 
@@ -467,8 +516,10 @@ async function draftUploadPendingForStatus(path: string): Promise<boolean> {
 }
 
 async function cmdStatus() {
-  const credentialResolution = await loadCredentialsWithMetadata({ cwd: process.cwd() });
+  const diagnostics = await loadDiagnosticCredentialsWithMetadata({ cwd: process.cwd() });
+  const credentialResolution = diagnostics.metadata;
   const creds = credentialResolution.credentials;
+  const hasToken = Boolean(creds) || credentialResolution.token_source !== 'missing';
   let config: Awaited<ReturnType<typeof loadProjectConfig>> | null = null;
   let root = process.cwd();
   try { root = await resolveProjectRoot(process.cwd()); config = await loadProjectConfig(root); } catch { /* not initialized */ }
@@ -486,7 +537,9 @@ async function cmdStatus() {
     }
   }
   const allWarnings = [...credentialResolution.warnings, ...statusWarnings];
-  const health = !creds
+  const health = diagnostics.invalidApiBaseUrl
+    ? 'attention needed'
+    : !hasToken
     ? 'setup needed'
     : !config
       ? 'project setup needed'
@@ -498,7 +551,7 @@ async function cmdStatus() {
   print(`Health: ${health === 'ready' ? ui.good(health) : ui.warn(health)}`);
   print();
   print(ui.section('Account'));
-  print(`User/token: ${creds ? 'configured' : 'missing'}`);
+  print(`User/token: ${hasToken ? 'configured' : 'missing'}`);
   print(`User/token source: ${credentialSourceLabel(credentialResolution.token_source)}`);
   print(`Credential store: ${credentialStoreLabel(credentialResolution.credential_store)}`);
   print(`Credentials file: ${credentialResolution.credentials_file_exists ? credentialResolution.credentials_file_path : 'missing'}`);
@@ -776,22 +829,25 @@ async function cmdHook(args: string[]) {
 }
 
 async function cmdDoctor() {
+  print(ui.heading('AgentFeed doctor'));
+  print();
   const checks: Array<[string, boolean | string]> = [];
   checks.push(['Node version', process.versions.node]);
   checks.push(['agentfeed version', AGENTFEED_CLI_VERSION]);
-  const credentialResolution = await loadCredentialsWithMetadata({ cwd: process.cwd() });
+  const diagnostics = await loadDiagnosticCredentialsWithMetadata({ cwd: process.cwd() });
+  const credentialResolution = diagnostics.metadata;
   const creds = credentialResolution.credentials;
   const apiResolution = credentialResolution.api_base_url
     ? null
     : await resolveApiBaseUrlWithMetadata({ cwd: process.cwd() });
   const apiBaseUrl = credentialResolution.api_base_url ?? apiResolution?.value ?? await resolveApiBaseUrl();
-  const apiReachability = await checkApiReachability(apiBaseUrl);
-  const apiCompatibility = await checkApiCompatibility(apiBaseUrl);
+  const apiReachability = diagnostics.invalidApiBaseUrl ? null : await checkApiReachability(apiBaseUrl);
+  const apiCompatibility = diagnostics.invalidApiBaseUrl ? null : await checkApiCompatibility(apiBaseUrl);
   checks.push(['global credentials file exists', creds ? 'yes' : 'no']);
   checks.push(['credentials file path', credentialResolution.credentials_file_path]);
   checks.push(['credential source', credentialSourceLabel(credentialResolution.token_source)]);
   checks.push(['credential store', credentialStoreLabel(credentialResolution.credential_store)]);
-  checks.push(['ingestion token exists', creds?.ingestion_token ? 'yes' : 'no']);
+  checks.push(['ingestion token exists', creds?.ingestion_token || credentialResolution.token_source === 'environment' ? 'yes' : 'no']);
   checks.push(['API base URL configured', apiBaseUrl]);
   checks.push([
     'API base URL source',
@@ -800,21 +856,29 @@ async function cmdDoctor() {
       credentialResolution.api_base_url_source_detail ?? apiResolution?.source_detail
     )
   ]);
-  checks.push(['API ready', apiReachability.ok ? `yes (${apiReachability.status})` : `no (${apiReachability.status ?? apiReachability.error ?? 'unreachable'})`]);
+  checks.push(['API ready', apiReachability
+    ? apiReachability.ok ? `yes (${apiReachability.status})` : `no (${apiReachability.status ?? apiReachability.error ?? 'unreachable'})`
+    : 'skipped (invalid API base URL)'
+  ]);
   checks.push([
     'API compatibility',
-    apiCompatibility.compatible
+    apiCompatibility
+      ? apiCompatibility.compatible
       ? `yes (${apiCompatibility.data?.api_version ?? 'unknown'} / ${apiCompatibility.data?.contract_version ?? 'unknown'})`
       : `no (${apiCompatibility.status ?? apiCompatibility.error ?? 'unreachable'})`
+      : 'skipped (invalid API base URL)'
   ]);
   const tokenWarnings: string[] = [];
-  if (creds?.ingestion_token) {
+  if (creds?.ingestion_token && !diagnostics.invalidApiBaseUrl) {
     const tokenCheck = await checkIngestionToken(creds);
     checks.push(['ingestion token valid', tokenCheck.ok ? `yes (${tokenCheck.status})` : `no (${tokenCheck.status ?? tokenCheck.error ?? 'unreachable'})`]);
     const expiresAt = tokenCheck.data?.token?.expires_at ?? creds.token_expires_at ?? null;
     checks.push(['ingestion token expires at', expiresAt ? formatTokenExpiry(expiresAt) : 'unknown']);
     const warning = tokenExpiryWarning(expiresAt, tokenCheck.data?.token?.expiring_soon);
     if (warning) tokenWarnings.push(warning);
+  } else if (credentialResolution.token_source === 'environment' && diagnostics.invalidApiBaseUrl) {
+    checks.push(['ingestion token valid', 'skipped (invalid API base URL)']);
+    checks.push(['ingestion token expires at', 'unknown']);
   } else {
     checks.push(['ingestion token valid', 'skipped']);
     checks.push(['ingestion token expires at', 'unknown']);

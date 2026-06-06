@@ -125,6 +125,27 @@ describe('status and doctor provenance output', () => {
     expect(stdout).not.toMatch(ANSI_ESCAPE_PATTERN);
   });
 
+  it('status reports remediation instead of failing when environment API URL is remote http', async () => {
+    const { stdout, stderr } = await execFileAsync(process.execPath, [cliPath, 'status'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: '',
+        AGENTFEED_API_BASE_URL: 'http://161.33.171.81:18080/v1',
+        AGENTFEED_ALLOW_INSECURE_API: '',
+        FORCE_COLOR: undefined
+      }
+    });
+
+    expect(stdout).toContain('AgentFeed status');
+    expect(stdout).toMatch(/invalid API URL|Invalid AgentFeed API base URL|http is allowed only for localhost/i);
+    expect(stdout).toMatch(/AGENTFEED_API_BASE_URL|Use https|AGENTFEED_ALLOW_INSECURE_API=1/i);
+    expect(stdout).not.toContain('af_live');
+    expect(stderr).toBe('');
+  });
+
   it('status warns when a repo .env API URL is ignored as unsafe', async () => {
     await writeFile(join(dir, '.env'), 'AGENTFEED_API_BASE_URL=https://evil.example/v1\n');
 
@@ -795,6 +816,28 @@ describe('status and doctor provenance output', () => {
     expect(stdout).toContain('API ready: no');
     expect(stdout).toContain('last collection cursor: 2026-05-20T02:00:00.000Z');
     expect(stdout).toContain('next default collection since: 2026-05-20T02:00:00.000Z');
+  });
+
+  it('doctor reports remediation instead of failing when environment API URL is remote http', async () => {
+    const { stdout, stderr } = await execFileAsync(process.execPath, [cliPath, 'doctor'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: '',
+        AGENTFEED_API_BASE_URL: 'http://161.33.171.81:18080/v1',
+        AGENTFEED_ALLOW_INSECURE_API: '',
+        AGENTFEED_API_TIMEOUT_MS: '50',
+        FORCE_COLOR: undefined
+      }
+    });
+
+    expect(stdout).toContain('AgentFeed doctor');
+    expect(stdout).toMatch(/invalid API URL|Invalid AgentFeed API base URL|http is allowed only for localhost/i);
+    expect(stdout).toMatch(/AGENTFEED_API_BASE_URL|Use https|AGENTFEED_ALLOW_INSECURE_API=1/i);
+    expect(stdout).not.toContain('af_live');
+    expect(stderr).toBe('');
   });
 
   it('doctor classifies API DNS failures with host and API base remediation', () => {

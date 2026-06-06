@@ -202,6 +202,10 @@ describe('CLI help and option validation', () => {
     expect(human.stdout).toContain('Start:');
     expect(human.stdout).toContain('commands');
     expect(human.stdout).toContain('List available AgentFeed commands');
+    expect(human.stdout).toContain('Try this:');
+    expect(human.stdout).toContain('agentfeed init');
+    expect(human.stdout).toContain('agentfeed login');
+    expect(human.stdout).toContain('agentfeed share --dry');
     expect(human.stdout).toContain('Run agentfeed help <command>');
 
     const json = await runCli(['commands', '--json']);

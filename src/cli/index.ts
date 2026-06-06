@@ -1891,10 +1891,15 @@ async function cmdVersion(args: string[]) {
   print(AGENTFEED_CLI_VERSION);
 }
 
+function commandCatalogNextActions(): string[] {
+  return ['agentfeed init', 'agentfeed login', 'agentfeed share --dry'];
+}
+
 async function cmdCommands(args: string[]) {
+  const nextActions = commandCatalogNextActions();
   if (flag(args, '--json')) {
     print(JSON.stringify({
-      next_actions: ['agentfeed init', 'agentfeed login', 'agentfeed share --dry'],
+      next_actions: nextActions,
       commands: COMMAND_GROUPS.map((group) => ({
         group: group.title,
         commands: group.commands.map((command) => commandCatalogEntry(command))
@@ -1904,6 +1909,8 @@ async function cmdCommands(args: string[]) {
   }
   print(ui.heading('AgentFeed commands'));
   printCommandCatalog();
+  print(`\n${ui.section('Try this')}:`);
+  printNextCommands(nextActions);
   print(`\nRun ${ui.command('agentfeed help <command>')} for command-specific options.`);
 }
 

@@ -147,6 +147,7 @@ describe('CLI help and option validation', () => {
       [['share', '--help'], ['Examples:', 'agentfeed share --dry', 'agentfeed share --yes --open-review']],
       [['publish', '--help'], ['Examples:', 'agentfeed publish --latest --yes', 'agentfeed publish --latest --json --clipboard']],
       [['scan', '--help'], ['Examples:', 'agentfeed scan --latest --dry-run', 'agentfeed scan --path .']],
+      [['hook', '--help'], ['Examples:', 'agentfeed hook install claude-code --dry-run', 'agentfeed hook uninstall claude-code']],
       [['open', '--help'], ['Examples:', 'agentfeed open --latest', 'agentfeed open --id draft_20260606_120000_abcd']],
     ];
 
@@ -203,6 +204,23 @@ describe('CLI help and option validation', () => {
     expect(failure.stderr).toContain('Did you mean: --source');
     expect(failure.stderr).not.toContain('Did you mean: --force');
     expect(failure.stderr).toContain('Run: agentfeed collect --help');
+    expect(failure.stdout).toBe('');
+  });
+
+  it('prints hook recovery commands when hook action or target is missing', async () => {
+    const failure = await runCliFailure(['hook']);
+
+    expect(failure.stderr).toContain('Usage: agentfeed hook install|uninstall claude-code');
+    expect(failure.stderr).toContain('Run: agentfeed hook --help');
+    expect(failure.stderr).toContain('Run: agentfeed hook install claude-code --dry-run');
+    expect(failure.stdout).toBe('');
+  });
+
+  it('prints supported hook target guidance for unsupported hook targets', async () => {
+    const failure = await runCliFailure(['hook', 'install', 'cursor']);
+
+    expect(failure.stderr).toContain('Only claude-code hooks are supported.');
+    expect(failure.stderr).toContain('Run: agentfeed hook install claude-code --help');
     expect(failure.stdout).toBe('');
   });
 

@@ -1059,7 +1059,7 @@ async function cmdScan(args: string[]) {
 async function cmdHook(args: string[]) {
   const action = args[0];
   const target = args[1];
-  if (target !== 'claude-code') throw new Error('Only claude-code hooks are supported in MVP.');
+  if (target !== 'claude-code') throw new Error(unsupportedHookTargetMessage());
   const root = await resolveProjectRoot(process.cwd());
   const scope = flag(args, '--global') ? 'global' : 'project';
   const settingsPath = option(args, '--settings-path');
@@ -1098,7 +1098,7 @@ async function cmdHook(args: string[]) {
     print();
     print(ui.section('Next'));
     print(`  ${ui.command('agentfeed status')}`);
-  } else throw new Error('Usage: agentfeed hook install|uninstall claude-code');
+  } else throw new Error(hookUsageMessage());
 }
 
 async function cmdDoctor() {
@@ -1556,6 +1556,21 @@ interface CommandArgSpec {
 const NO_POSITIONALS = (command: string) => (positionals: string[]) =>
   positionals.length ? `Unexpected argument for ${command}: ${positionals[0]}` : null;
 
+function hookUsageMessage(): string {
+  return [
+    'Usage: agentfeed hook install|uninstall claude-code',
+    'Run: agentfeed hook --help',
+    'Run: agentfeed hook install claude-code --dry-run'
+  ].join('\n');
+}
+
+function unsupportedHookTargetMessage(): string {
+  return [
+    'Only claude-code hooks are supported.',
+    'Run: agentfeed hook install claude-code --help'
+  ].join('\n');
+}
+
 const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
   init: {
     flags: ['--no-git-check'],
@@ -1618,11 +1633,11 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     flags: ['--global', '--project', '--dry-run'],
     valueOptions: ['--settings-path'],
     validatePositionals: (positionals) => {
-      if (positionals.length < 2) return 'Usage: agentfeed hook install|uninstall claude-code';
+      if (positionals.length < 2) return hookUsageMessage();
       if (positionals.length > 2) return `Unexpected argument for hook: ${positionals[2]}`;
       const [action, target] = positionals;
-      if (action !== 'install' && action !== 'uninstall') return 'Usage: agentfeed hook install|uninstall claude-code';
-      if (target !== 'claude-code') return 'Only claude-code hooks are supported in MVP.';
+      if (action !== 'install' && action !== 'uninstall') return hookUsageMessage();
+      if (target !== 'claude-code') return unsupportedHookTargetMessage();
       return null;
     }
   },
@@ -1958,7 +1973,12 @@ Options:
   --project                 Use project settings (default)
   --settings-path <path>    Override the Claude Code settings path
   --dry-run                 Print intended install changes without writing
-  --help, -h                Show this help`,
+  --help, -h                Show this help
+
+Examples:
+  agentfeed hook install claude-code --dry-run
+  agentfeed hook install claude-code
+  agentfeed hook uninstall claude-code`,
     doctor: `Usage: agentfeed doctor
 
 Run local AgentFeed diagnostics for credentials, API reachability, project config, git, and agent signals.

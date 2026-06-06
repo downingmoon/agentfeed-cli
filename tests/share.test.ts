@@ -62,7 +62,7 @@ describe('share command helpers', () => {
   });
 
   it('rejects unsupported share source values before creating drafts', () => {
-    expect(() => parseShareArgs(['--source', 'banana-agent'])).toThrow(/Unsupported agent source/i);
+    expect(() => parseShareArgs(['--source', 'gemni-cli'])).toThrow(/Unsupported agent source: gemni-cli[\s\S]*Did you mean: --source gemini-cli[\s\S]*Run: agentfeed share --source gemini-cli --dry[\s\S]*Run: agentfeed share --help/i);
   });
 
   it('renders a user note in the share preview', () => {

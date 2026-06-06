@@ -821,7 +821,7 @@ async function cmdLogout(args: string[]) {
 }
 
 async function cmdCollect(args: string[]) {
-  const source = parseAgentSource(option(args, '--source'));
+  const source = parseAgentSource(option(args, '--source'), 'collect');
   const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
   const collection = await collectDraftWithStatus({ cwd: process.cwd(), source, sessionFile: option(args, '--session-file') ?? null, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all'), runConfiguredCommands: flag(args, '--run-configured-commands') });
   let draft = await sanitizeDraftForCliOutput(process.cwd(), collection.draft);

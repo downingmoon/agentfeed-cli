@@ -157,7 +157,7 @@ describe('collect CLI command', () => {
         cliPath,
         'collect',
         '--source',
-        'banana-agent',
+        'gemni-cli',
         '--no-save-cursor'
       ], {
         cwd: dir,
@@ -171,7 +171,11 @@ describe('collect CLI command', () => {
 
     expect(error).toBeTruthy();
     const stderr = String((error as { stderr?: Buffer | string }).stderr ?? '');
-    expect(stderr).toMatch(/Unsupported agent source/i);
+    expect(stderr).toContain('Unsupported agent source: gemni-cli');
+    expect(stderr).toContain('Supported sources: claude-code, codex, cursor, gemini-cli, other');
+    expect(stderr).toContain('Did you mean: --source gemini-cli');
+    expect(stderr).toContain('Run: agentfeed collect --source gemini-cli --explain');
+    expect(stderr).toContain('Run: agentfeed collect --help');
   });
 
 

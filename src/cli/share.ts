@@ -158,7 +158,7 @@ export function parseShareArgs(args: string[]): ShareOptions {
     openReview: flag(args, '--open-review'),
     noOpenReview: flag(args, '--no-open-review'),
     json: flag(args, '--json'),
-    source: parseAgentSource(option(args, '--source')),
+    source: parseAgentSource(option(args, '--source'), 'share'),
     sessionFile: option(args, '--session-file') ?? null,
     since: option(args, '--since') ?? null,
     until: option(args, '--until') ?? null,

@@ -32,6 +32,14 @@ import * as ui from './ui.js';
 function print(text = '') { process.stdout.write(`${text}\n`); }
 function err(text = '') { process.stderr.write(`${text}\n`); }
 
+function formatWarningLine(warning: string): string {
+  return ui.warn(`Warning: ${warning}`);
+}
+
+function printWarningLines(warnings: string[]): void {
+  for (const warning of warnings) print(formatWarningLine(warning));
+}
+
 function jsonModeRequested(argv = process.argv.slice(2)): boolean {
   return argv.some((arg) => arg === '--json');
 }
@@ -189,7 +197,7 @@ function printCredentialResult(options: {
   if (options.warnings?.length) {
     print();
     print(ui.section('Warnings'));
-    for (const warning of options.warnings) print(`Warning: ${warning}`);
+    printWarningLines(options.warnings);
   }
   print();
   print(ui.section('Next'));
@@ -296,14 +304,14 @@ function reviewUrlHandoffLines(handoff: ReviewUrlHandoff, reviewUrl: string): st
   if (handoff.clipboard.requested) {
     if (handoff.clipboard.ok) lines.push('Review URL copied to clipboard.');
     else {
-      lines.push(`Warning: ${handoff.clipboard.warning ?? 'Review URL was not copied to clipboard. Copy it manually.'}`);
+      lines.push(formatWarningLine(handoff.clipboard.warning ?? 'Review URL was not copied to clipboard. Copy it manually.'));
       manualUrlNeeded = true;
     }
   }
   if (handoff.browser.requested) {
     if (handoff.browser.ok) lines.push('Review URL opened in browser.');
     else {
-      lines.push(`Warning: ${handoff.browser.warning ?? 'Review URL could not be opened automatically. Open it manually.'}`);
+      lines.push(formatWarningLine(handoff.browser.warning ?? 'Review URL could not be opened automatically. Open it manually.'));
       manualUrlNeeded = true;
     }
   }
@@ -1311,7 +1319,7 @@ async function cmdStatus(args: string[] = []) {
   if (creds?.token_expires_at) {
     print(`Token expires at: ${formatTokenExpiry(creds.token_expires_at)}`);
     const warning = tokenExpiryWarning(creds.token_expires_at);
-    if (warning) print(ui.warn(`Warning: ${warning}`));
+    if (warning) print(formatWarningLine(warning));
   }
   print();
   print(ui.section('API'));
@@ -1319,7 +1327,7 @@ async function cmdStatus(args: string[] = []) {
   if (credentialResolution.api_base_url_source) {
     print(`API base URL source: ${apiBaseSourceLabel(credentialResolution.api_base_url_source, credentialResolution.api_base_url_source_detail)}`);
   }
-  for (const warning of allWarnings) print(ui.warn(`Warning: ${warning}`));
+  printWarningLines(allWarnings);
   print();
   print(ui.section('Project'));
   print(`Project initialized: ${config ? 'yes' : 'no'}`);
@@ -1333,7 +1341,7 @@ async function cmdStatus(args: string[] = []) {
   print(`Last collection cursor: ${formatCollectionCursor(collectionState.last_collected_at)}`);
   print(`Next default collection since: ${nextDefaultCollectionSince(collectionState.last_collected_at)}`);
   if (pending > 0 && collectionState.last_collected_at) {
-    print(ui.warn('Warning: pending local drafts exist while a collection cursor is set; publish/discard them or use --all/--since if the next collect looks empty.'));
+    print(formatWarningLine('pending local drafts exist while a collection cursor is set; publish/discard them or use --all/--since if the next collect looks empty.'));
   }
   print();
   print(ui.section('Next'));
@@ -1408,7 +1416,7 @@ async function cmdLogout(args: string[]) {
   if (warnings.length) {
     print();
     print(ui.section('Warnings'));
-    for (const warning of warnings) print(`Warning: ${warning}`);
+    printWarningLines(warnings);
   }
   print();
   printLogoutSecurityChecklist(securityChecklist);
@@ -1893,7 +1901,7 @@ async function cmdDoctor(args: string[] = []) {
 
   if (warnings.length) {
     print(ui.section('Warnings'));
-    for (const warning of warnings) print(`Warning: ${warning}`);
+    printWarningLines(warnings);
     print();
   }
 
@@ -2256,7 +2264,7 @@ async function cmdOpen(args: string[]) {
     if (warnings.length) {
       print();
       print(ui.section('Warnings'));
-      for (const warning of warnings) print(`Warning: ${warning}`);
+      printWarningLines(warnings);
     }
     print();
     print(ui.section('Next'));
@@ -2272,7 +2280,7 @@ async function cmdOpen(args: string[]) {
   if (warnings.length) {
     print();
     print(ui.section('Warnings'));
-    for (const warning of warnings) print(`Warning: ${warning}`);
+    printWarningLines(warnings);
   }
   print();
   print(ui.section('Next'));

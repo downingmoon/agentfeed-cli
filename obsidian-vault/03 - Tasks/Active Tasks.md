@@ -42,6 +42,7 @@ updated: 2026-06-06
 > - 모든 public command help surface가 `When to use` 섹션을 포함해 명령 사용 시점을 바로 설명한다.
 > - `agentfeed commands`가 `Guided workflows`로 Beginner setup / Daily share / Draft review / Power user / Recovery 흐름을 설명한다.
 > - README npm install/onboarding이 `agentfeed commands`, no-token `share` fallback, installed-package first-run preflight 범위를 현재 CLI UX와 일치하도록 최신화됐다.
+> - `publish`/upload preflight 실패가 `Fix first` / `Then retry` 구조와 JSON `next_actions`로 `doctor`, `status`, `login`, `rotate`, retry publish 명령을 안내하도록 보강됐다.
 > - `npm run build`: 통과.
 > - `npx vitest run tests/release-preflight.test.ts --reporter=verbose`: 15 tests passed.
 > - `npm run release:preflight`: 26 test files, 533 tests passed.
@@ -58,6 +59,7 @@ updated: 2026-06-06
 - [x] 모든 public command help에 `When to use` 안내를 추가해 명령 선택 부담을 낮춤.
 - [x] `agentfeed commands` workflow를 목적 중심 guided workflow로 재구성하고 JSON description 계약 추가.
 - [x] README install/quickstart/share/release preflight 문서를 현재 npm 설치 사용자 플로우와 no-token share fallback에 맞게 최신화.
+- [x] `publish`/upload preflight 실패 복구 UX를 `Fix first` / `Then retry`와 JSON `next_actions` 중심으로 보강.
 - [x] Frontend signed-out Header가 `/`와 `/feed`를 혼동하지 않도록 Home/Feed nav와 active state 수정.
 - [x] Frontend landing/feed/review/profile/project 주요 grid가 모바일에서 고정폭 overflow를 만들지 않도록 responsive layout으로 수정.
 - [x] Frontend list response wrapper가 `pagination` 누락/부분 payload에서도 fail-closed 동작하도록 정규화.

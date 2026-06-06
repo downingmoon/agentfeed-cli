@@ -327,7 +327,7 @@ describe('preview CLI command', () => {
       expect(String(failure?.stderr ?? '')).toBe('');
       expect(output.error.message).toContain('API compatibility check failed');
       expect(output.error.message).toContain('before uploading drafts');
-      expect(output.next_actions).toEqual(['agentfeed doctor']);
+      expect(output.next_actions).toEqual(['agentfeed doctor', 'agentfeed status']);
       expect(String(failure?.stdout ?? '')).not.toContain('af_live_preview_incompatible');
       expect(metadataCount).toBe(1);
       expect(previewCount).toBe(0);

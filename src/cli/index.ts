@@ -428,28 +428,62 @@ function missingTokenMessage(): string {
   ].join('\n');
 }
 
-async function requireApiCompatibilityBeforeUpload(apiBaseUrl: string): Promise<ApiMetadata> {
+interface UploadPreflightOptions {
+  retryCommand?: string;
+}
+
+function formatRecoveryMessage(firstLine: string, fixCommands: string[], retryCommand?: string): string {
+  const lines = [
+    firstLine,
+    '',
+    'Fix first:',
+    ...uniqueNextCommands(fixCommands).map(command => `Run: ${command}`)
+  ];
+  if (retryCommand) {
+    lines.push('', 'Then retry:', `Run: ${retryCommand}`);
+  }
+  return lines.join('\n');
+}
+
+function apiCompatibilityRecoveryCommands(result: Awaited<ReturnType<typeof checkApiCompatibility>>): string[] {
+  const commands = ['agentfeed doctor', 'agentfeed status'];
+  if (result.status == null) commands.push('agentfeed doctor --json');
+  return commands;
+}
+
+function ingestionTokenRecoveryCommands(result: Awaited<ReturnType<typeof checkIngestionToken>>): string[] {
+  if (result.status === 401 || result.status === 403) {
+    return ['agentfeed login', 'agentfeed rotate', 'agentfeed status'];
+  }
+  if (result.status == null || (result.status >= 500 && result.status <= 599)) {
+    return ['agentfeed doctor', 'agentfeed status'];
+  }
+  return ['agentfeed login', 'agentfeed rotate', 'agentfeed doctor', 'agentfeed status'];
+}
+
+async function requireApiCompatibilityBeforeUpload(apiBaseUrl: string, options: UploadPreflightOptions = {}): Promise<ApiMetadata> {
   const result = await checkApiCompatibility(apiBaseUrl);
   if (result.compatible && result.data) return result.data;
-  throw new Error([
+  throw new Error(formatRecoveryMessage(
     `API compatibility check failed for ${result.url}: ${apiCompatibilityFailureDetail(result)} before uploading drafts.`,
-    'Run: agentfeed doctor'
-  ].join('\n'));
+    apiCompatibilityRecoveryCommands(result),
+    options.retryCommand
+  ));
 }
 
-async function requireIngestionTokenBeforeUpload(credentials: AgentFeedCredentials): Promise<void> {
+async function requireIngestionTokenBeforeUpload(credentials: AgentFeedCredentials, options: UploadPreflightOptions = {}): Promise<void> {
   const result = await checkIngestionToken(credentials);
   if (result.ok) return;
-  throw new Error([
+  throw new Error(formatRecoveryMessage(
     `Ingestion token check failed for ${result.url}: ${apiCheckFailureDetail(result)} before uploading drafts.`,
-    'Run: agentfeed login',
-    'Run: agentfeed rotate'
-  ].join('\n'));
+    ingestionTokenRecoveryCommands(result),
+    options.retryCommand
+  ));
 }
 
-async function requireUploadPreflight(credentials: AgentFeedCredentials): Promise<ApiMetadata> {
-  const metadata = await requireApiCompatibilityBeforeUpload(credentials.api_base_url);
-  await requireIngestionTokenBeforeUpload(credentials);
+async function requireUploadPreflight(credentials: AgentFeedCredentials, options: UploadPreflightOptions = {}): Promise<ApiMetadata> {
+  const metadata = await requireApiCompatibilityBeforeUpload(credentials.api_base_url, options);
+  await requireIngestionTokenBeforeUpload(credentials, options);
   return metadata;
 }
 
@@ -1697,7 +1731,7 @@ async function cmdPublish(args: string[]) {
     printUploadConfirmationRequired(existingDraft, `agentfeed publish --id ${id} --yes`, undefined, existingDraft.upload.uploaded ? { cacheReuseReason: cacheReuseStatus.reason } : {});
     return;
   }
-  const metadata = await requireUploadPreflight(creds);
+  const metadata = await requireUploadPreflight(creds, { retryCommand: `agentfeed publish --id ${id} --yes` });
   const result = await publishDraft({ cwd: process.cwd(), id, credentials: creds, reviewBaseUrl: metadata?.review_base_url });
   const savedDraft = await readDraft(process.cwd(), id);
   if (flag(args, '--json')) {

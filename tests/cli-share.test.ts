@@ -587,7 +587,7 @@ describe('share CLI command', () => {
       }
       const output = JSON.parse(failure?.stdout ?? '{}') as { error: { message: string }; next_actions: string[] };
       expect(output.error.message).toContain('API compatibility check failed');
-      expect(output.next_actions).toEqual(['agentfeed doctor']);
+      expect(output.next_actions).toEqual(['agentfeed doctor', 'agentfeed status']);
       expect(failure?.stderr ?? '').toBe('');
       expect(ingestRequestCount).toBe(0);
     } finally {
@@ -640,8 +640,9 @@ describe('share CLI command', () => {
       } catch (error) {
         failure = error as { stdout?: string; stderr?: string };
       }
-      const output = JSON.parse(failure?.stdout ?? '{}') as { error: { message: string } };
+      const output = JSON.parse(failure?.stdout ?? '{}') as { error: { message: string }; next_actions?: string[] };
       expect(output.error.message).toContain('Ingestion token check failed');
+      expect(output.next_actions).toEqual(['agentfeed login', 'agentfeed rotate', 'agentfeed status']);
       expect(failure?.stderr ?? '').toBe('');
       expect(tokenStatusCount).toBe(1);
       expect(ingestRequestCount).toBe(0);
@@ -678,19 +679,55 @@ describe('share CLI command', () => {
       draft.worklog.title = 'Invalid token publish';
       await writeDraft(dir, draft);
 
-      await expect(execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id, '--yes'], {
-        cwd: dir,
-        encoding: 'utf8',
-        env: {
-          ...process.env,
-          HOME: home,
-          AGENTFEED_TOKEN: 'af_live_invalid_token',
-          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
-        }
-      })).rejects.toMatchObject({
-        stderr: expect.stringContaining('Ingestion token check failed')
-      });
-      expect(tokenStatusCount).toBe(1);
+      let humanFailure: { stdout?: string; stderr?: string } | undefined;
+      try {
+        await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id, '--yes'], {
+          cwd: dir,
+          encoding: 'utf8',
+          env: {
+            ...process.env,
+            HOME: home,
+            AGENTFEED_TOKEN: 'af_live_invalid_token',
+            AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+          }
+        });
+      } catch (error) {
+        humanFailure = error as { stdout?: string; stderr?: string };
+      }
+      expect(humanFailure?.stdout ?? '').toBe('');
+      expect(humanFailure?.stderr ?? '').toContain('Ingestion token check failed');
+      expect(humanFailure?.stderr ?? '').toContain('Fix first');
+      expect(humanFailure?.stderr ?? '').toContain('Run: agentfeed login');
+      expect(humanFailure?.stderr ?? '').toContain('Run: agentfeed rotate');
+      expect(humanFailure?.stderr ?? '').toContain('Run: agentfeed status');
+      expect(humanFailure?.stderr ?? '').toContain('Then retry');
+      expect(humanFailure?.stderr ?? '').toContain(`Run: agentfeed publish --id ${draft.id} --yes`);
+
+      let jsonFailure: { stdout?: string; stderr?: string } | undefined;
+      try {
+        await execFileAsync(process.execPath, [cliPath, 'publish', '--id', draft.id, '--json'], {
+          cwd: dir,
+          encoding: 'utf8',
+          env: {
+            ...process.env,
+            HOME: home,
+            AGENTFEED_TOKEN: 'af_live_invalid_token',
+            AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+          }
+        });
+      } catch (error) {
+        jsonFailure = error as { stdout?: string; stderr?: string };
+      }
+      const jsonOutput = JSON.parse(jsonFailure?.stdout ?? '{}') as { error?: { message?: string }; next_actions?: string[] };
+      expect(jsonFailure?.stderr ?? '').toBe('');
+      expect(jsonOutput.error?.message).toContain('Ingestion token check failed');
+      expect(jsonOutput.next_actions).toEqual([
+        'agentfeed login',
+        'agentfeed rotate',
+        'agentfeed status',
+        `agentfeed publish --id ${draft.id} --yes`
+      ]);
+      expect(tokenStatusCount).toBe(2);
       expect(ingestRequestCount).toBe(0);
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
@@ -751,7 +788,11 @@ describe('share CLI command', () => {
       expect(failure?.stdout ?? '').toBe('');
       expect(failure?.stderr ?? '').toContain('API compatibility check failed');
       expect(failure?.stderr ?? '').toContain('before uploading drafts');
+      expect(failure?.stderr ?? '').toContain('Fix first');
       expect(failure?.stderr ?? '').toContain('Run: agentfeed doctor');
+      expect(failure?.stderr ?? '').toContain('Run: agentfeed status');
+      expect(failure?.stderr ?? '').toContain('Then retry');
+      expect(failure?.stderr ?? '').toContain(`Run: agentfeed publish --id ${draft.id} --yes`);
       expect(failure?.stderr ?? '').not.toContain('af_live_publish_incompatible_api');
       expect(metadataCount).toBe(1);
       expect(tokenStatusCount).toBe(0);

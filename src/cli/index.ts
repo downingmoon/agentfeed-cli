@@ -2064,19 +2064,37 @@ const COMMAND_EXAMPLES: Record<(typeof PUBLIC_COMMANDS)[number], string> = {
   completion: 'agentfeed completion zsh'
 };
 
+const COMMAND_USAGE_OVERRIDES: Partial<Record<(typeof PUBLIC_COMMANDS)[number], string>> = {
+  hook: 'agentfeed hook install|uninstall claude-code [options]',
+  completion: 'agentfeed completion <shell>'
+};
+
 function commandCatalogEntry(command: (typeof PUBLIC_COMMANDS)[number]): {
   name: string;
   description: string;
   usage: string;
   help_command: string;
   example_command: string;
+  options: {
+    flags: string[];
+    value_options: string[];
+    conflicts: Array<[string, string]>;
+    completion_words: string[];
+  };
 } {
+  const spec = COMMAND_ARG_SPECS[command];
   return {
     name: command,
     description: COMMAND_DESCRIPTIONS[command],
-    usage: `agentfeed ${command} [options]`,
+    usage: COMMAND_USAGE_OVERRIDES[command] ?? `agentfeed ${command} [options]`,
     help_command: `agentfeed help ${command}`,
-    example_command: COMMAND_EXAMPLES[command]
+    example_command: COMMAND_EXAMPLES[command],
+    options: {
+      flags: [...(spec?.flags ?? [])],
+      value_options: [...(spec?.valueOptions ?? [])],
+      conflicts: [...(spec?.conflicts ?? [])].map(([first, second]) => [first, second]),
+      completion_words: completionWordsFor(command)
+    }
   };
 }
 

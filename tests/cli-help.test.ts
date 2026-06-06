@@ -213,12 +213,25 @@ describe('CLI help and option validation', () => {
       next_actions?: string[];
       commands: Array<{
         group: string;
-        commands: Array<{ name: string; description: string; usage?: string; help_command?: string; example_command?: string }>;
+        commands: Array<{
+          name: string;
+          description: string;
+          usage?: string;
+          help_command?: string;
+          example_command?: string;
+          options?: {
+            flags?: string[];
+            value_options?: string[];
+            conflicts?: Array<[string, string]>;
+            completion_words?: string[];
+          };
+        }>;
       }>;
     };
     const flatCommands = parsed.commands.flatMap((group) => group.commands);
     const share = flatCommands.find((command) => command.name === 'share');
     const commands = flatCommands.find((command) => command.name === 'commands');
+    const completion = flatCommands.find((command) => command.name === 'completion');
 
     expect(json.stderr).toBe('');
     expect(parsed.next_actions).toEqual(['agentfeed init', 'agentfeed login', 'agentfeed share --dry']);
@@ -229,9 +242,27 @@ describe('CLI help and option validation', () => {
       help_command: 'agentfeed help share',
       example_command: 'agentfeed share --dry'
     });
+    expect(share?.options).toMatchObject({
+      flags: expect.arrayContaining(['--dry', '--yes', '--json', '--clipboard', '--open-review']),
+      value_options: expect.arrayContaining(['--source', '--session-file', '--note']),
+      conflicts: expect.arrayContaining([['--dry', '--yes'], ['--clipboard', '--no-clipboard']]),
+      completion_words: expect.arrayContaining(['--dry', '--json', '--note', '--source', '--help'])
+    });
     expect(commands).toMatchObject({
       help_command: 'agentfeed help commands',
       example_command: 'agentfeed commands'
+    });
+    expect(commands?.options).toMatchObject({
+      flags: ['--json'],
+      value_options: [],
+      conflicts: [],
+      completion_words: ['--help', '--json']
+    });
+    expect(completion).toMatchObject({
+      usage: 'agentfeed completion <shell>',
+      options: {
+        completion_words: expect.arrayContaining(['zsh', 'bash', 'fish', '--help'])
+      }
     });
     expect(json.stdout).not.toMatch(/^AgentFeed commands$/m);
     expect(json.stdout).not.toMatch(/(^|\n)Run agentfeed help/);

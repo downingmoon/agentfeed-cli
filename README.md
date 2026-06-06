@@ -140,6 +140,8 @@ agentfeed completion fish > ~/.config/fish/completions/agentfeed.fish
 
 Completion scripts are generated from the same command metadata used by help and option validation, so command-specific flags stay aligned.
 
+`agentfeed commands --json` exposes the same command catalog for tools: each command includes description, usage, help/example commands, flags, value-taking options, conflicting option pairs, and completion words. Use it when another agent or script needs to discover the CLI safely instead of hard-coding command syntax.
+
 ## One-command sharing
 
 `agentfeed share` is the recommended daily command. It creates a local draft, prints the public-safe preview that will be uploaded, and requires explicit upload intent before creating a private AgentFeed review draft. Use `--yes` for human-readable uploads, or `--json` when a machine will inspect the returned upload/handoff object; CI/non-interactive runs are not exempt from this private-review upload gate.

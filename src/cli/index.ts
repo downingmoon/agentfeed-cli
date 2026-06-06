@@ -448,24 +448,41 @@ async function shouldOpenReviewAfterUpload(openFlag: boolean, options: { respect
 }
 
 function formatPrivacyScanReport(input: PublicScanFields, redacted: PublicScanFields, scan: ReturnType<typeof scanAndRedactFields>['scan'], options: { dryRun?: boolean; draftId?: string; path?: string } = {}): string {
+  const target = options.draftId ? `draft ${options.draftId}` : options.path ? `path ${options.path}` : 'current input';
+  const mode = options.draftId
+    ? (options.dryRun ? 'dry run' : 'redact and save')
+    : 'inspect only';
+  const result = scan.findings.length
+    ? 'Sensitive public fields found; review redactions before sharing.'
+    : 'No public-field findings detected.';
   const lines = [
     ui.heading('AgentFeed privacy scan'),
     '',
     ui.section('Summary'),
+    `Target: ${target}`,
+    `Mode: ${mode}`,
     `Privacy: ${scan.status}`,
-    `Findings: ${scan.findings.length}`
+    `Findings: ${scan.findings.length}`,
+    `Result: ${result}`
   ];
   if (options.dryRun) lines.push('Dry run: draft not modified.');
+  if (options.path) lines.push('Path scan: no draft was modified.');
   if (scan.findings.length) {
     lines.push('', ui.section('Findings detail'));
     for (const finding of scan.findings) {
       lines.push(`- [${finding.severity}] ${finding.type}${finding.field ? ` at ${finding.field}` : ''} -> ${finding.sample_redacted ?? '[REDACTED]'}`);
     }
+  } else {
+    lines.push('', ui.section('Findings detail'));
+    lines.push('No findings detected.');
   }
   const previews = redactedFieldPreviews(input, redacted);
   if (previews.length) {
     lines.push('', ui.section('Redacted preview'));
     for (const preview of previews) lines.push(`- ${preview.field}: ${preview.value}`);
+  } else {
+    lines.push('', ui.section('Redacted preview'));
+    lines.push('No redactions needed.');
   }
   lines.push('', ui.section('Next'));
   if (options.draftId) {

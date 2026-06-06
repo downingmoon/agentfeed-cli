@@ -52,8 +52,11 @@ describe('scan CLI command', () => {
 
     expect(stdout).toContain('AgentFeed privacy scan');
     expect(stdout).toContain('Summary');
+    expect(stdout).toContain(`Target: draft ${draft.id}`);
+    expect(stdout).toContain('Mode: dry run');
     expect(stdout).toContain('Privacy: danger');
     expect(stdout).toContain('Findings: 1');
+    expect(stdout).toContain('Result: Sensitive public fields found; review redactions before sharing.');
     expect(stdout).toContain('Dry run: draft not modified.');
     expect(stdout).toContain('Findings detail');
     expect(stdout).toContain('Redacted preview');
@@ -83,6 +86,8 @@ describe('scan CLI command', () => {
 
     const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
 
+    expect(stdout).toContain(`Target: draft ${draft.id}`);
+    expect(stdout).toContain('Mode: redact and save');
     expect(stdout).toContain('Privacy: danger');
     expect(stdout).toContain('- summary: Deploy with [REDACTED_SECRET]');
     expect(stdout).toContain('Next');
@@ -91,6 +96,57 @@ describe('scan CLI command', () => {
     expect(stdout).not.toContain(secret);
     expect(saved.privacy_scan.status).toBe('danger');
     expect(saved.worklog.summary).toBe('Deploy with [REDACTED_SECRET]');
+  });
+
+  it('prints a reassuring safe report when no redaction is needed', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.worklog.summary = 'Refined CLI output and kept public fields clean.';
+    await writeDraft(dir, draft);
+
+    const stdout = execFileSync(process.execPath, [
+      cliPath,
+      'scan',
+      '--id',
+      draft.id,
+      '--dry-run'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    expect(stdout).toContain('AgentFeed privacy scan');
+    expect(stdout).toContain(`Target: draft ${draft.id}`);
+    expect(stdout).toContain('Mode: dry run');
+    expect(stdout).toContain('Privacy: safe');
+    expect(stdout).toContain('Findings: 0');
+    expect(stdout).toContain('Result: No public-field findings detected.');
+    expect(stdout).toContain('Findings detail');
+    expect(stdout).toContain('No findings detected.');
+    expect(stdout).toContain('Redacted preview');
+    expect(stdout).toContain('No redactions needed.');
+    expect(stdout).toContain('Next');
+    expect(stdout).toContain(`agentfeed scan --id ${draft.id}`);
+  });
+
+  it('makes path scans explicit that no draft was modified', async () => {
+    const stdout = execFileSync(process.execPath, [
+      cliPath,
+      'scan',
+      '--path',
+      dir
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    expect(stdout).toContain('AgentFeed privacy scan');
+    expect(stdout).toContain('Target: path ');
+    expect(stdout).toContain('Mode: inspect only');
+    expect(stdout).toContain('Path scan: no draft was modified.');
+    expect(stdout).toContain('Next');
+    expect(stdout).toContain('agentfeed collect --explain');
   });
 
   it('keeps scan JSON machine-readable without human UX headings', async () => {

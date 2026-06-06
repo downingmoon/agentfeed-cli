@@ -79,6 +79,7 @@ describe('status and doctor provenance output', () => {
 
     expect(stdout).toContain('AgentFeed status');
     expect(stdout).toContain('Readiness');
+    expect(stdout).toContain('Setup progress: 3/5 ready · 2 need attention');
     expect(stdout).toContain('API: base URL accepted');
     expect(stdout).toContain('Account: token missing → agentfeed login');
     expect(stdout).toContain('Project: initialized');
@@ -213,6 +214,7 @@ describe('status and doctor provenance output', () => {
 
     const output = JSON.parse(stdout) as {
       health: string;
+      summary: { status: string; ready: number; attention: number; total: number };
       readiness: Array<{ name: string; status: string; detail: string; next_action?: string }>;
       account: { token_configured: boolean; token_expires_at: string | null };
       api: { base_url: string };
@@ -223,6 +225,7 @@ describe('status and doctor provenance output', () => {
     };
     expect(stderr).toBe('');
     expect(output.health).toBeTruthy();
+    expect(output.summary).toEqual({ status: 'attention_needed', ready: 4, attention: 1, total: 5 });
     expect(output.readiness).toEqual(expect.arrayContaining([
       expect.objectContaining({ name: 'API', status: 'ready', detail: 'base URL accepted' }),
       expect.objectContaining({ name: 'Account', status: 'ready', detail: 'token configured' }),
@@ -283,6 +286,7 @@ describe('status and doctor provenance output', () => {
     expect(stdout).toContain('AgentFeed status');
     expect(stdout).toContain('Health: setup needed');
     expect(stdout).toContain('Readiness');
+    expect(stdout).toContain('Setup progress: 2/5 ready · 3 need attention');
     expect(stdout).toContain('Account: token missing → agentfeed login');
     expect(stdout).toContain('Project: not initialized → git init && agentfeed init');
     expect(stdout).toContain('Git: repository not detected → git init');

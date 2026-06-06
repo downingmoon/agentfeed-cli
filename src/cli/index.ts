@@ -853,8 +853,25 @@ function readinessMarker(status: StatusReadinessItem['status']): string {
   return status === 'ready' ? ui.good('✓') : ui.warn('!');
 }
 
+function statusSummary(readiness: StatusReadinessItem[]): { status: 'ready' | 'attention_needed'; ready: number; attention: number; total: number } {
+  const attention = readiness.filter((item) => item.status === 'attention').length;
+  return {
+    status: attention === 0 ? 'ready' : 'attention_needed',
+    ready: readiness.length - attention,
+    attention,
+    total: readiness.length
+  };
+}
+
+function setupProgressText(readiness: StatusReadinessItem[]): string {
+  const summary = statusSummary(readiness);
+  const attentionLabel = summary.attention === 1 ? '1 needs attention' : `${summary.attention} need attention`;
+  return `${summary.ready}/${summary.total} ready · ${attentionLabel}`;
+}
+
 function printStatusReadiness(items: StatusReadinessItem[]): void {
   print(ui.section('Readiness'));
+  print(`Setup progress: ${setupProgressText(items)}`);
   for (const item of items) {
     const next = item.next_action ? ` → ${item.next_action}` : '';
     print(`${readinessMarker(item.status)} ${item.name}: ${item.detail}${next}`);
@@ -1283,6 +1300,7 @@ async function cmdStatus(args: string[] = []) {
   if (flag(args, '--json')) {
     print(JSON.stringify({
       health,
+      summary: statusSummary(readiness),
       readiness,
       account: {
         token_configured: hasToken,

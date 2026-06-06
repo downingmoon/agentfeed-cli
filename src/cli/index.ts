@@ -1710,6 +1710,13 @@ function noUploadedDraftsMessage(latestDraft: LocalDraft): string {
   ].join('\n');
 }
 
+function openNextActions(draftId: string): string[] {
+  return uniqueNextCommands([
+    `agentfeed preview --id ${draftId}`,
+    'agentfeed status'
+  ]);
+}
+
 async function resolveOpenDraft(args: string[]): Promise<LocalDraft> {
   await loadProjectConfig(process.cwd());
   const id = option(args, '--id');
@@ -1761,6 +1768,20 @@ async function cmdOpen(args: string[]) {
     throw new Error('Saved draft review URL is invalid. Run agentfeed share again to upload a fresh private review draft.');
   }
   const opened = await openBrowser(reviewUrl);
+  const openWarnings = [
+    ...warnings,
+    ...(!opened ? ['Review URL could not be opened automatically. Open review_url manually.'] : [])
+  ];
+  if (flag(args, '--json')) {
+    print(JSON.stringify({
+      draft_id: draft.id,
+      review_url: reviewUrl,
+      opened,
+      warnings: openWarnings,
+      next_actions: openNextActions(draft.id)
+    }, null, 2));
+    return;
+  }
   if (!opened) {
     print(ui.heading('AgentFeed review URL'));
     print('Browser open failed. Open this URL manually:');
@@ -1776,8 +1797,7 @@ ${reviewUrl}`);
     }
     print();
     print(ui.section('Next'));
-    print(`  ${ui.command(`agentfeed preview --id ${draft.id}`)}`);
-    print(`  ${ui.command('agentfeed status')}`);
+    printNextCommands(openNextActions(draft.id));
     return;
   }
   print(ui.heading('AgentFeed review opened'));
@@ -1794,8 +1814,7 @@ ${reviewUrl}`);
   }
   print();
   print(ui.section('Next'));
-  print(`  ${ui.command(`agentfeed preview --id ${draft.id}`)}`);
-  print(`  ${ui.command('agentfeed status')}`);
+  printNextCommands(openNextActions(draft.id));
 }
 
 function completionOptionsFor(command: string): string[] {
@@ -2273,7 +2292,7 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     validatePositionals: NO_POSITIONALS('discard')
   },
   open: {
-    flags: ['--latest'],
+    flags: ['--latest', '--json'],
     valueOptions: ['--id'],
     conflicts: [['--id', '--latest']],
     validatePositionals: NO_POSITIONALS('open')
@@ -2719,6 +2738,7 @@ Reopen a trusted review URL from a previously uploaded draft.
 Options:
   --latest                  Open the newest uploaded draft (default)
   --id <draft_id>           Open a specific draft's review URL
+  --json                    Print machine-readable review URL handoff status
   --help, -h                Show this help
 
 Examples:

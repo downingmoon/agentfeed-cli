@@ -301,6 +301,39 @@ describe('drafts CLI command', () => {
     expect(stdout).toContain('http is allowed only for localhost');
   });
 
+  it('prints machine-readable open fallback when the browser cannot be opened', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.id = 'draft_open_json';
+    draft.upload = {
+      uploaded: true,
+      worklog_id: 'worklog_open_json',
+      review_url: 'https://agentfeed.dev/worklogs/worklog_open_json/review',
+      uploaded_at: '2026-06-06T00:00:00.000Z'
+    };
+    await writeDraft(dir, draft);
+
+    const { stdout, stderr } = await runCli(['open', '--id', draft.id, '--json']);
+    const output = JSON.parse(stdout) as {
+      draft_id?: string;
+      review_url?: string;
+      opened?: boolean;
+      warnings?: string[];
+      next_actions?: string[];
+    };
+
+    expect(stderr).toBe('');
+    expect(output).toMatchObject({
+      draft_id: draft.id,
+      review_url: 'https://agentfeed.dev/worklogs/worklog_open_json/review',
+      opened: false,
+      next_actions: [`agentfeed preview --id ${draft.id}`, 'agentfeed status']
+    });
+    expect(output.warnings?.join('\n')).toContain('could not be opened');
+    expect(stdout).not.toContain('AgentFeed review URL');
+    expect(stdout).not.toContain('Browser open failed');
+    expect(stdout).not.toMatch(/(^|\n)Next(\n|$)/);
+  });
+
   it('guides publish and preview when opening a pending draft by id', async () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
     draft.id = 'draft_pending_open';

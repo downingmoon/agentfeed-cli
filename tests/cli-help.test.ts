@@ -274,7 +274,7 @@ describe('CLI help and option validation', () => {
       [['doctor', '--help'], ['Usage: agentfeed doctor', 'diagnostics', '--json']],
       [['drafts', '--help'], ['Usage: agentfeed drafts', '--json']],
       [['discard', '--help'], ['Usage: agentfeed discard', '--latest', '--id', '--yes', '--json']],
-      [['open', '--help'], ['Usage: agentfeed open', '--latest', '--id']],
+      [['open', '--help'], ['Usage: agentfeed open', '--latest', '--id', '--json']],
       [['completion', '--help'], ['Usage: agentfeed completion <shell>', 'zsh', 'bash', 'fish']],
     ];
 

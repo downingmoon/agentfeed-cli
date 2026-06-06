@@ -130,7 +130,7 @@ export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: bool
   });
 
   output.write(`\n${ui.section('Authorize')}\n`);
-  output.write(`Open this URL to authorize AgentFeed CLI:\n${session.authorize_url}\n`);
+  output.write(`Open this URL to authorize AgentFeed CLI:\n  ${ui.command(session.authorize_url)}\n`);
   output.write(`Approval code: ${session.user_code}\n`);
   output.write('Enter this code in the browser before approving the CLI session.\n\n');
   if (!options.noOpen) {

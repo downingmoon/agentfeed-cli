@@ -387,7 +387,7 @@ describe('preview CLI command', () => {
     });
 
     expect(stdout).toContain('Upload: uploaded');
-    expect(stdout).toContain('Review URL: https://agentfeed.dev/worklogs/worklog_uploaded_preview/review');
+    expect(stdout).toContain('Review URL:\n  https://agentfeed.dev/worklogs/worklog_uploaded_preview/review');
     expect(stdout).toContain(`agentfeed open --id ${draft.id}`);
     expect(stdout).toContain(`agentfeed scan --id ${draft.id}`);
   });

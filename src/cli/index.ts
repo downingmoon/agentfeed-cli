@@ -356,8 +356,7 @@ function printUploadResult(options: {
   print(ui.section('Summary'));
   print(`Draft: ${options.draftId}`);
   print(`Status: ${options.result.status}`);
-  print(`Review URL:
-${options.result.review_url}`);
+  printUrlBlock('Review URL', options.result.review_url);
 
   const handoffLines = reviewUrlHandoffLines(options.handoff, options.result.review_url);
   if (handoffLines.length) {
@@ -760,6 +759,11 @@ function printNextCommands(commands: string[]): void {
   for (const command of uniqueNextCommands(commands)) {
     print(`  ${ui.command(command)}`);
   }
+}
+
+function printUrlBlock(label: string, url: string): void {
+  print(`${label}:`);
+  print(`  ${ui.command(url)}`);
 }
 
 function shareDryRunNextActions(draftId: string, hasCredentials: boolean): string[] {
@@ -1602,7 +1606,7 @@ async function cmdPreview(args: string[]) {
   print(`Metrics: ${formatMetricsRow(draft)}`);
   print(`Privacy: ${draft.privacy_scan.status} · findings ${draft.privacy_scan.findings.length}`);
   print(`Upload: ${uploadStatus}`);
-  if (draft.upload.review_url) print(`Review URL: ${draft.upload.review_url}`);
+  if (draft.upload.review_url) printUrlBlock('Review URL', draft.upload.review_url);
   print();
   print(ui.section('Next'));
   printNextCommands(previewNextActions(draft));
@@ -2209,8 +2213,7 @@ async function cmdOpen(args: string[]) {
     print();
     print(ui.section('Summary'));
     print(`Draft: ${draft.id}`);
-    print(`Review URL:
-${reviewUrl}`);
+    printUrlBlock('Review URL', reviewUrl);
     if (warnings.length) {
       print();
       print(ui.section('Warnings'));
@@ -2226,8 +2229,7 @@ ${reviewUrl}`);
   print();
   print(ui.section('Summary'));
   print(`Draft: ${draft.id}`);
-  print(`Review URL:
-${reviewUrl}`);
+  printUrlBlock('Review URL', reviewUrl);
   if (warnings.length) {
     print();
     print(ui.section('Warnings'));

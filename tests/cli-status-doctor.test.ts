@@ -448,6 +448,7 @@ describe('status and doctor provenance output', () => {
       expect(stdout).toContain(`Using AgentFeed API: http://127.0.0.1:${address.port}/v1`);
       expect(stdout).toContain('Authorize');
       expect(stdout).toContain('Open this URL to authorize AgentFeed CLI:');
+      expect(stdout).toContain('  http://127.0.0.1:3001/cli/authorize?session_id=session-cli-ux');
       expect(stdout).toContain('http://127.0.0.1:3001/cli/authorize?session_id=session-cli-ux');
       expect(stdout).toContain('Approval code: 123-456');
       expect(stdout).toContain('Enter this code in the browser before approving the CLI session.');

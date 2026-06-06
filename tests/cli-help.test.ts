@@ -507,6 +507,8 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('_agentfeed');
     expect(stdout).toContain('agentfeed');
     expect(stdout).toContain('completion) compadd -- zsh bash fish --help');
+    expect(stdout).toContain('help) compadd -- help commands init login');
+    expect(stdout).toContain('completion token --help');
     expect(stderr).toBe('');
   });
 
@@ -516,6 +518,8 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('_agentfeed()');
     expect(stdout).toContain('complete -F _agentfeed agentfeed');
     expect(stdout).toContain('completion) options="zsh bash fish --help"');
+    expect(stdout).toContain('help) options="help commands init login');
+    expect(stdout).toContain('completion token --help"');
     expect(stderr).toBe('');
   });
 
@@ -525,6 +529,8 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('complete -c agentfeed');
     expect(stdout).toContain('completion');
     expect(stdout).toContain('complete -c agentfeed -n "__fish_seen_subcommand_from completion" -a "zsh bash fish"');
+    expect(stdout).toContain('complete -c agentfeed -n "__fish_seen_subcommand_from help" -a "help commands init login');
+    expect(stdout).toContain('completion token" -d "Help topic"');
     expect(stderr).toBe('');
   });
 });

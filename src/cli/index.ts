@@ -1619,10 +1619,14 @@ function completionOptionsFor(command: string): string[] {
   return [...new Set([...(spec.flags ?? []), ...(spec.valueOptions ?? []), '--help'])].sort();
 }
 
+function helpTopicWords(): string[] {
+  return [...PUBLIC_COMMANDS, 'token'];
+}
+
 function completionWordsFor(command: string): string[] {
-  return command === 'completion'
-    ? ['zsh', 'bash', 'fish', ...completionOptionsFor(command)]
-    : completionOptionsFor(command);
+  if (command === 'completion') return ['zsh', 'bash', 'fish', ...completionOptionsFor(command)];
+  if (command === 'help') return [...helpTopicWords(), ...completionOptionsFor(command)];
+  return completionOptionsFor(command);
 }
 
 function zshCompletionScript(): string {
@@ -1686,10 +1690,12 @@ complete -F _agentfeed agentfeed
 
 function fishCompletionScript(): string {
   const commandList = PUBLIC_COMMANDS.join(' ');
+  const helpTopics = helpTopicWords().join(' ');
   const lines = [
     'complete -c agentfeed -f',
     ...PUBLIC_COMMANDS.map((command) => `complete -c agentfeed -n "not __fish_seen_subcommand_from ${commandList}" -a "${command}" -d "${COMMAND_DESCRIPTIONS[command]}"`),
     'complete -c agentfeed -n "__fish_seen_subcommand_from completion" -a "zsh bash fish" -d "Completion shell"',
+    `complete -c agentfeed -n "__fish_seen_subcommand_from help" -a "${helpTopics}" -d "Help topic"`,
     ...PUBLIC_COMMANDS.flatMap((command) => completionOptionsFor(command).map((optionName) => {
       if (optionName.startsWith('--')) {
         return `complete -c agentfeed -n "__fish_seen_subcommand_from ${command}" -l ${optionName.slice(2)} -d "Option for agentfeed ${command}"`;

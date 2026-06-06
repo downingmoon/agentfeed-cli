@@ -1313,6 +1313,7 @@ async function cmdCollect(args: string[]) {
   print(`Project: ${draft.project.name}`);
   print(`Title: ${singleLine(draft.worklog.title)}`);
   print(`Privacy: ${draft.privacy_scan.status}`);
+  if (flag(args, '--dry') || flag(args, '--dry-run')) print('Mode: dry run (local draft only; no upload attempted)');
   print();
   print(ui.section('Signals'));
   print(`Agent: ${draft.worklog.agent}`);
@@ -2117,8 +2118,8 @@ const COMPLETION_OPTION_DESCRIPTIONS: Record<string, string> = {
   '--api-base-url': 'Override AgentFeed API base URL',
   '--browser': 'Allow browser authorization in guarded environments',
   '--clipboard': 'Copy the review URL to clipboard',
-  '--dry': 'Preview without saving or uploading changes',
-  '--dry-run': 'Preview without saving or uploading changes',
+  '--dry': 'Collect or preview without uploading',
+  '--dry-run': 'Collect or preview without uploading',
   '--explain': 'Show how local work was collected',
   '--force': 'Bypass the local draft reuse guard',
   '--global': 'Use global Claude Code settings',
@@ -2713,9 +2714,9 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     }
   },
   collect: {
-    flags: ['--all', '--force', '--run-configured-commands', '--explain', '--json', '--upload', '--open-review', '--no-open-review', '--no-save-cursor', '--no-upload'],
+    flags: ['--dry', '--dry-run', '--all', '--force', '--run-configured-commands', '--explain', '--json', '--upload', '--open-review', '--no-open-review', '--no-save-cursor', '--no-upload'],
     valueOptions: ['--source', '--session-file', '--since', '--until'],
-    conflicts: [['--upload', '--no-upload'], ['--open-review', '--no-open-review']],
+    conflicts: [['--upload', '--no-upload'], ['--dry', '--upload'], ['--dry-run', '--upload'], ['--open-review', '--no-open-review']],
     validatePositionals: NO_POSITIONALS('collect')
   },
   share: {
@@ -3119,6 +3120,7 @@ Common options:
   --until <timestamp>       End collection window (ISO timestamp)
   --all                     Ignore the saved collection cursor
   --force                   Recollect even if a matching draft already exists
+  --dry, --dry-run          Explicitly keep the draft local; collect never uploads unless --upload
   --explain                 Include collection source/quality diagnostics
   --run-configured-commands Run configured local evidence commands
 
@@ -3133,6 +3135,7 @@ Advanced options:
 
 Examples:
   agentfeed collect --explain
+  agentfeed collect --dry-run --explain
   agentfeed collect --source codex --session-file ~/.codex/session.jsonl --all
   agentfeed collect --json --no-save-cursor`,
     share: `Usage: agentfeed share [options]

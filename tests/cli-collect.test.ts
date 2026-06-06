@@ -143,11 +143,53 @@ describe('collect CLI command', () => {
     expect(stdout).toContain('Usage: agentfeed collect');
     expect(stdout).toContain('--source <source>');
     expect(stdout).toContain('--session-file <path>');
+    expect(stdout).toContain('--dry, --dry-run');
+    expect(stdout).toContain('agentfeed collect --dry-run --explain');
     expect(stdout).not.toContain('Usage: agentfeed <command>');
     expect(stdout).not.toContain('agentfeed login --token-stdin');
     expect(stderr).toBe('');
     await expect(readdir(join(dir, '.agentfeed', 'drafts'))).resolves.toEqual([]);
     await expect(readFile(join(dir, '.agentfeed', 'state.json'), 'utf8')).rejects.toThrow();
+  });
+
+
+  it('accepts collect dry-run as an explicit local-only alias', async () => {
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = "collect-dry-run";\n');
+
+    const { stdout, stderr } = await execFileAsync(process.execPath, [
+      cliPath,
+      'collect',
+      '--dry-run',
+      '--explain',
+      '--all',
+      '--no-save-cursor'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    expect(stderr).toBe('');
+    expect(stdout).toContain('Mode: dry run (local draft only; no upload attempted)');
+    expect(stdout).toContain('Collection quality');
+    expect(stdout).toContain('Upload:');
+    expect(stdout).toContain('agentfeed publish --id');
+  });
+
+  it('rejects contradictory collect dry-run upload flags before creating a draft', async () => {
+    const { stderr } = await execFileAsync(process.execPath, [
+      cliPath,
+      'collect',
+      '--dry-run',
+      '--upload'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    }).catch((error: { stderr: string }) => error);
+
+    expect(stderr).toContain('Conflicting options for collect: --dry-run and --upload');
+    expect(stderr).toContain('Run: agentfeed collect --help');
   });
 
   it('rejects unsupported source values before creating a draft', async () => {

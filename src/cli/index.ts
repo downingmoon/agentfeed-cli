@@ -474,6 +474,20 @@ function formatPrivacyScanReport(input: PublicScanFields, redacted: PublicScanFi
   return lines.join('\n');
 }
 
+function doctorCheckMarker(value: boolean | string): string {
+  const text = String(value).toLowerCase();
+  if (text.startsWith('yes') || text === 'ready' || text === 'configured') return ui.good('✓');
+  if (text.startsWith('no') || text.includes('invalid') || text.includes('unreachable')) return ui.warn('!');
+  if (text.startsWith('skipped') || text.startsWith('unknown') || text.startsWith('unavailable')) return '-';
+  return '•';
+}
+
+function printDoctorChecks(title: string, checks: Array<[string, boolean | string]>): void {
+  print(ui.section(title));
+  for (const [name, value] of checks) print(`${doctorCheckMarker(value)} ${name}: ${value}`);
+  print();
+}
+
 async function resolveDraftId(cwd: string, args: string[]): Promise<string> {
   const id = option(args, '--id');
   if (id) return id;
@@ -975,9 +989,10 @@ async function cmdHook(args: string[]) {
 async function cmdDoctor() {
   print(ui.heading('AgentFeed doctor'));
   print();
-  const checks: Array<[string, boolean | string]> = [];
-  checks.push(['Node version', process.versions.node]);
-  checks.push(['agentfeed version', AGENTFEED_CLI_VERSION]);
+  const runtimeChecks: Array<[string, boolean | string]> = [
+    ['Node version', process.versions.node],
+    ['agentfeed version', AGENTFEED_CLI_VERSION]
+  ];
   const diagnostics = await loadDiagnosticCredentialsWithMetadata({ cwd: process.cwd() });
   const credentialResolution = diagnostics.metadata;
   const creds = credentialResolution.credentials;
@@ -987,65 +1002,104 @@ async function cmdDoctor() {
   const apiBaseUrl = credentialResolution.api_base_url ?? apiResolution?.value ?? await resolveApiBaseUrl();
   const apiReachability = diagnostics.invalidApiBaseUrl ? null : await checkApiReachability(apiBaseUrl);
   const apiCompatibility = diagnostics.invalidApiBaseUrl ? null : await checkApiCompatibility(apiBaseUrl);
-  checks.push(['global credentials file exists', creds ? 'yes' : 'no']);
-  checks.push(['credentials file path', credentialResolution.credentials_file_path]);
-  checks.push(['credential source', credentialSourceLabel(credentialResolution.token_source)]);
-  checks.push(['credential store', credentialStoreLabel(credentialResolution.credential_store)]);
-  checks.push(['ingestion token exists', creds?.ingestion_token || credentialResolution.token_source === 'environment' ? 'yes' : 'no']);
-  checks.push(['API base URL configured', apiBaseUrl]);
-  checks.push([
+  const accountChecks: Array<[string, boolean | string]> = [
+    ['global credentials file exists', creds ? 'yes' : 'no'],
+    ['credentials file path', credentialResolution.credentials_file_path],
+    ['credential source', credentialSourceLabel(credentialResolution.token_source)],
+    ['credential store', credentialStoreLabel(credentialResolution.credential_store)],
+    ['ingestion token exists', creds?.ingestion_token || credentialResolution.token_source === 'environment' ? 'yes' : 'no']
+  ];
+  const apiChecks: Array<[string, boolean | string]> = [
+    ['API base URL configured', apiBaseUrl],
+    [
     'API base URL source',
     apiBaseSourceLabel(
       credentialResolution.api_base_url_source ?? apiResolution?.source ?? 'default',
       credentialResolution.api_base_url_source_detail ?? apiResolution?.source_detail
     )
-  ]);
-  checks.push(['API ready', apiReachability
-    ? apiReachability.ok ? `yes (${apiReachability.status})` : `no (${apiReachability.status ?? apiReachability.error ?? 'unreachable'})`
-    : 'skipped (invalid API base URL)'
-  ]);
-  checks.push([
+    ],
+    ['API ready', apiReachability
+      ? apiReachability.ok ? `yes (${apiReachability.status})` : `no (${apiReachability.status ?? apiReachability.error ?? 'unreachable'})`
+      : 'skipped (invalid API base URL)'
+    ],
+    [
     'API compatibility',
     apiCompatibility
       ? apiCompatibility.compatible
       ? `yes (${apiCompatibility.data?.api_version ?? 'unknown'} / ${apiCompatibility.data?.contract_version ?? 'unknown'})`
       : `no (${apiCompatibility.status ?? apiCompatibility.error ?? 'unreachable'})`
       : 'skipped (invalid API base URL)'
-  ]);
+    ]
+  ];
   const tokenWarnings: string[] = [];
   if (creds?.ingestion_token && !diagnostics.invalidApiBaseUrl) {
     const tokenCheck = await checkIngestionToken(creds);
-    checks.push(['ingestion token valid', tokenCheck.ok ? `yes (${tokenCheck.status})` : `no (${tokenCheck.status ?? tokenCheck.error ?? 'unreachable'})`]);
+    accountChecks.push(['ingestion token valid', tokenCheck.ok ? `yes (${tokenCheck.status})` : `no (${tokenCheck.status ?? tokenCheck.error ?? 'unreachable'})`]);
     const expiresAt = tokenCheck.data?.token?.expires_at ?? creds.token_expires_at ?? null;
-    checks.push(['ingestion token expires at', expiresAt ? formatTokenExpiry(expiresAt) : 'unknown']);
+    accountChecks.push(['ingestion token expires at', expiresAt ? formatTokenExpiry(expiresAt) : 'unknown']);
     const warning = tokenExpiryWarning(expiresAt, tokenCheck.data?.token?.expiring_soon);
     if (warning) tokenWarnings.push(warning);
   } else if (credentialResolution.token_source === 'environment' && diagnostics.invalidApiBaseUrl) {
-    checks.push(['ingestion token valid', 'skipped (invalid API base URL)']);
-    checks.push(['ingestion token expires at', 'unknown']);
+    accountChecks.push(['ingestion token valid', 'skipped (invalid API base URL)']);
+    accountChecks.push(['ingestion token expires at', 'unknown']);
   } else {
-    checks.push(['ingestion token valid', 'skipped']);
-    checks.push(['ingestion token expires at', 'unknown']);
+    accountChecks.push(['ingestion token valid', 'skipped']);
+    accountChecks.push(['ingestion token expires at', 'unknown']);
   }
   let collectionStateLabel = 'unavailable (project not initialized)';
   let nextCollectionSinceLabel = 'unavailable (project not initialized)';
+  let projectConfigValid = false;
   try {
     await loadProjectConfig(process.cwd());
-    checks.push(['project config valid', 'yes']);
+    projectConfigValid = true;
     const collectionState = await readCollectionState(process.cwd());
     collectionStateLabel = formatCollectionCursor(collectionState.last_collected_at);
     nextCollectionSinceLabel = nextDefaultCollectionSince(collectionState.last_collected_at);
   } catch {
-    checks.push(['project config valid', 'no']);
+    projectConfigValid = false;
   }
-  checks.push(['last collection cursor', collectionStateLabel]);
-  checks.push(['next default collection since', nextCollectionSinceLabel]);
   const git = await collectGitMetrics(process.cwd());
-  checks.push(['current directory is git repository', git.branch || git.head_commit ? 'yes' : 'no']);
-  for (const [name, value] of checks) print(`${name}: ${value}`);
-  for (const warning of [...credentialResolution.warnings, ...(apiResolution?.warnings ?? []), ...tokenWarnings]) print(`Warning: ${warning}`);
+  const projectChecks: Array<[string, boolean | string]> = [
+    ['project config valid', projectConfigValid ? 'yes' : 'no'],
+    ['current directory is git repository', git.branch || git.head_commit ? 'yes' : 'no']
+  ];
+  const collectionChecks: Array<[string, boolean | string]> = [
+    ['last collection cursor', collectionStateLabel],
+    ['next default collection since', nextCollectionSinceLabel]
+  ];
+  const warnings = [...credentialResolution.warnings, ...(apiResolution?.warnings ?? []), ...tokenWarnings];
+
+  printDoctorChecks('Runtime', runtimeChecks);
+  printDoctorChecks('Account', accountChecks);
+  printDoctorChecks('API', apiChecks);
+  printDoctorChecks('Project', projectChecks);
+  printDoctorChecks('Collection', collectionChecks);
+
+  if (warnings.length) {
+    print(ui.section('Warnings'));
+    for (const warning of warnings) print(`Warning: ${warning}`);
+    print();
+  }
+
+  const agentSignalLines = formatAgentSignalLines(await detectAgentSignals({ cwd: process.cwd() }));
+  print(ui.section('Agent signals'));
+  for (const line of agentSignalLines) print(line);
   print();
-  for (const line of formatAgentSignalLines(await detectAgentSignals({ cwd: process.cwd() }))) print(line);
+  print(ui.section('Next'));
+  if (diagnostics.invalidApiBaseUrl) {
+    print(`  ${ui.command('unset AGENTFEED_API_BASE_URL')}`);
+    print(`  ${ui.command('AGENTFEED_ALLOW_INSECURE_API=1 agentfeed doctor')}`);
+  } else if (!apiReachability?.ok || !apiCompatibility?.compatible) {
+    print(`  ${ui.command('agentfeed doctor')}`);
+  } else if (!creds && credentialResolution.token_source === 'missing') {
+    print(`  ${ui.command('agentfeed login')}`);
+  } else if (!projectConfigValid) {
+    print(`  ${ui.command('agentfeed init')}`);
+  } else if (tokenWarnings.length) {
+    print(`  ${ui.command('agentfeed rotate')}`);
+  } else {
+    print(`  ${ui.command('agentfeed share --dry')}`);
+  }
 }
 
 interface DraftListRow {

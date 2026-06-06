@@ -864,6 +864,13 @@ describe('status and doctor provenance output', () => {
     });
 
     expect(stdout).toContain('credential source: environment (AGENTFEED_TOKEN)');
+    expect(stdout).toContain('Runtime');
+    expect(stdout).toContain('Account');
+    expect(stdout).toContain('API');
+    expect(stdout).toContain('Project');
+    expect(stdout).toContain('Collection');
+    expect(stdout).toContain('Agent signals');
+    expect(stdout).toContain('Next');
     expect(stdout).toContain('API base URL configured: http://127.0.0.1:9/v1');
     expect(stdout).toContain('API base URL source: environment (AGENTFEED_API_BASE_URL)');
     expect(stdout).toContain('API ready: no');
@@ -887,8 +894,11 @@ describe('status and doctor provenance output', () => {
     });
 
     expect(stdout).toContain('AgentFeed doctor');
+    expect(stdout).toContain('Warnings');
+    expect(stdout).toContain('Next');
     expect(stdout).toMatch(/invalid API URL|Invalid AgentFeed API base URL|http is allowed only for localhost/i);
     expect(stdout).toMatch(/AGENTFEED_API_BASE_URL|Use https|AGENTFEED_ALLOW_INSECURE_API=1/i);
+    expect(stdout).toContain('unset AGENTFEED_API_BASE_URL');
     expect(stdout).not.toContain('af_live');
     expect(stderr).toBe('');
   });
@@ -909,6 +919,8 @@ describe('status and doctor provenance output', () => {
     expect(stdout).toContain('API base URL configured: https://agentfeed-doctor.invalid/v1');
     expect(stdout).toContain('API ready: no (DNS lookup failed for agentfeed-doctor.invalid');
     expect(stdout).toContain('API compatibility: no (DNS lookup failed for agentfeed-doctor.invalid');
+    expect(stdout).toContain('Next');
+    expect(stdout).toContain('agentfeed doctor');
     expect(stdout).toContain('AGENTFEED_API_BASE_URL');
   });
 
@@ -980,7 +992,10 @@ describe('status and doctor provenance output', () => {
       expect(stdout).toContain('API compatibility: yes (v1 / 2026-06-03)');
       expect(stdout).toContain('ingestion token valid: yes (200)');
       expect(stdout).toContain(`ingestion token expires at: ${soon}`);
+      expect(stdout).toContain('Warnings');
       expect(stdout).toContain('Warning: ingestion token expires soon');
+      expect(stdout).toContain('Next');
+      expect(stdout).toContain('agentfeed rotate');
       expect(stdout).not.toContain('af_live_env_status');
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));

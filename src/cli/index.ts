@@ -1070,11 +1070,14 @@ async function cmdShare(args: string[]) {
   }
 
   if (opts.dryRun) {
+    const hasCredentials = await hasCredentialsForPublishGuidance();
     print(ui.section('Next'));
     print(`Dry run complete. Local draft kept: ${draft.id}`);
-    print('Publish later:');
-    print(`  ${ui.command(`agentfeed publish --id ${draft.id} --yes`)}`);
+    print('Review locally:');
     print(`  ${ui.command(`agentfeed preview --id ${draft.id}`)}`);
+    print('Publish later:');
+    if (!hasCredentials) print(`  ${ui.command('agentfeed login')}`);
+    print(`  ${ui.command(`agentfeed publish --id ${draft.id} --yes`)}`);
     return;
   }
 
@@ -1099,6 +1102,14 @@ async function cmdShare(args: string[]) {
     result,
     handoff
   });
+}
+
+async function hasCredentialsForPublishGuidance(): Promise<boolean> {
+  try {
+    return Boolean((await loadCredentialsWithMetadata({ cwd: process.cwd() })).credentials);
+  } catch {
+    return false;
+  }
 }
 
 async function cmdPreview(args: string[]) {

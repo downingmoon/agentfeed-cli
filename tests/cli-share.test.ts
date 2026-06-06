@@ -251,7 +251,7 @@ describe('share CLI command', () => {
     ], {
       cwd: dir,
       encoding: 'utf8',
-      env: { ...process.env, HOME: home }
+      env: { ...process.env, HOME: home, AGENTFEED_TOKEN: '' }
     });
 
     expect(stderr).toBe('');
@@ -265,9 +265,13 @@ describe('share CLI command', () => {
     expect(stdout).toContain('Upload target: private AgentFeed review draft');
     expect(stdout).toContain('Next');
     expect(stdout).toContain('Dry run complete. Local draft kept:');
+    expect(stdout).toContain('Review locally:');
     expect(stdout).toContain('Publish later:');
+    expect(stdout).toContain('agentfeed login');
     expect(stdout).toContain('agentfeed publish --id');
     expect(stdout).toContain('agentfeed preview --id');
+    expect(stdout.indexOf('agentfeed preview --id')).toBeLessThan(stdout.indexOf('agentfeed publish --id'));
+    expect(stdout.indexOf('agentfeed login')).toBeLessThan(stdout.indexOf('agentfeed publish --id'));
   });
 
   it('accepts share --dry --explain as the explainable daily workflow', async () => {
@@ -282,7 +286,7 @@ describe('share CLI command', () => {
     ], {
       cwd: dir,
       encoding: 'utf8',
-      env: { ...process.env, HOME: home }
+      env: { ...process.env, HOME: home, AGENTFEED_TOKEN: '' }
     });
 
     expect(stderr).toBe('');
@@ -291,8 +295,37 @@ describe('share CLI command', () => {
     expect(stdout).toContain('Collection quality');
     expect(stdout).toContain('Sources:');
     expect(stdout).toContain('Dry run complete. Local draft kept:');
+    expect(stdout).toContain('agentfeed login');
     expect(stdout).toContain('agentfeed publish --id');
     expect(stdout).not.toContain('Unknown option: --explain');
+  });
+
+  it('does not ask users to login again in share dry-run guidance when credentials exist', async () => {
+    await mkdir(join(home, '.agentfeed'), { recursive: true });
+    await writeFile(join(home, '.agentfeed', 'credentials.json'), JSON.stringify({
+      api_base_url: 'https://api.agentfeed.dev/v1',
+      ingestion_token: 'af_live_share_dry_guidance',
+      created_at: '2026-06-06T00:00:00.000Z'
+    }));
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = false;\nexport const shareDryWithToken = true;\n');
+
+    const { stdout, stderr } = await execFileAsync(process.execPath, [
+      cliPath,
+      'share',
+      '--dry',
+      '--all'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home, AGENTFEED_TOKEN: '' }
+    });
+
+    expect(stderr).toBe('');
+    expect(stdout).toContain('Dry run complete. Local draft kept:');
+    expect(stdout).toContain('Publish later:');
+    expect(stdout).toContain('agentfeed publish --id');
+    expect(stdout).not.toContain('agentfeed login');
+    expect(stdout).not.toContain('af_live_share_dry_guidance');
   });
 
   it('fails malformed project config with actionable recovery before share dry-run', async () => {

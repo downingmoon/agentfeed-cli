@@ -68,6 +68,45 @@ describe('share command helpers', () => {
     expect(() => parseShareArgs(['--source', 'gemni-cli'])).toThrow(/Unsupported agent source: gemni-cli[\s\S]*Tip: omit --source to let AgentFeed auto-detect Claude\/Codex\/Cursor\/Gemini sessions\.[\s\S]*Did you mean: --source gemini-cli[\s\S]*Run: agentfeed share --dry[\s\S]*Run: agentfeed share --source gemini-cli --dry[\s\S]*Run: agentfeed share --help/i);
   });
 
+
+  it('wraps long share preview prose for narrow terminals', () => {
+    const previousColumns = process.env.COLUMNS;
+    process.env.COLUMNS = '56';
+    try {
+      const draft = createEmptyDraft({ projectName: 'agentfeed-cli', projectRoot: '/tmp/agentfeed-cli', source: 'codex' });
+      draft.worklog.summary = 'The AI agent worked on application code, test coverage, configuration, authentication, api layer, documentation, and UI components.';
+      draft.worklog.changed_areas = ['Application code', 'Test coverage', 'Configuration', 'Authentication', 'API layer', 'Documentation', 'UI components'];
+      draft.worklog.metrics.files_changed = 23;
+      draft.worklog.metrics.lines_added = 1495;
+      draft.worklog.metrics.lines_removed = 164;
+      draft.worklog.metrics.tests_run = 150;
+      draft.worklog.metrics.tool_calls = 1295;
+      draft.worklog.metrics.tokens_used = 2_620_000_000;
+      draft.worklog.metrics.agent_metrics = [
+        { agent: 'codex', model: 'gpt-5.5', tokens_used: 2_620_000_000, files_changed: 23, lines_added: 1495, lines_removed: 164, tool_calls: 1295, commands_run: 849 }
+      ];
+
+      const output = formatSharePreview(draft);
+      const lines = output.split('\n');
+      const summaryLines = lines.filter((line) => line.startsWith('Summary:') || line.startsWith('         '));
+      const changedAreaLines = lines.filter((line) => line.startsWith('Changed areas:') || line.startsWith('               '));
+      const metricsLines = lines.filter((line) => line.startsWith('Metrics:') || line.startsWith('         '));
+      const perAgentLines = lines.filter((line) => line.startsWith('- codex:') || line.startsWith('         '));
+
+      expect(output).toContain('Summary: The AI agent worked on application code, test');
+      expect(summaryLines.length).toBeGreaterThan(1);
+      expect(changedAreaLines.length).toBeGreaterThan(1);
+      expect(metricsLines.length).toBeGreaterThan(1);
+      expect(perAgentLines.length).toBeGreaterThan(1);
+      for (const line of [...summaryLines, ...changedAreaLines, ...metricsLines, ...perAgentLines]) {
+        expect(line.length).toBeLessThanOrEqual(56);
+      }
+    } finally {
+      if (previousColumns === undefined) delete process.env.COLUMNS;
+      else process.env.COLUMNS = previousColumns;
+    }
+  });
+
   it('renders a user note in the share preview', () => {
     const draft = createEmptyDraft({ projectName: 'agentfeed-cli', projectRoot: '/tmp/agentfeed-cli', source: 'codex' });
     draft.worklog.summary = 'Collected agent work.';

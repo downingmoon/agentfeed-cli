@@ -56,7 +56,7 @@ function formatAgentMetricLines(draft: LocalDraft): string[] {
         metric.tool_calls != null ? `${metric.tool_calls} tools` : null,
         metric.commands_run != null ? `${metric.commands_run} cmds` : null
       ].filter((part): part is string => Boolean(part));
-      return `- ${metric.agent}: ${parts.length ? parts.join(' · ') : 'no metrics'}`;
+      return ui.wrapKeyValue(`- ${metric.agent}`, parts.length ? parts.join(' · ') : 'no metrics').join('\n');
     })
   ];
 }
@@ -105,14 +105,14 @@ export function formatSharePreview(draft: LocalDraft, options: { explainDetailsF
     `Draft: ${draft.id}`,
     `Project: ${draft.project.name}`,
     `Title: ${draft.worklog.title}`,
-    `Summary: ${draft.worklog.summary}`,
+    ...ui.wrapKeyValue('Summary', draft.worklog.summary),
     ...(draft.worklog.user_note ? [`Note: ${draft.worklog.user_note}`] : []),
     '',
     ui.section('Signals'),
     `Agent: ${draft.worklog.agent}`,
     ...(models ? [`Models: ${models}`] : []),
-    `Metrics: ${formatMetricsRow(draft)}`,
-    `Changed areas: ${changedAreas}`,
+    ...ui.wrapKeyValue('Metrics', formatMetricsRow(draft)),
+    ...ui.wrapKeyValue('Changed areas', changedAreas),
     `Privacy: ${draft.privacy_scan.status} · findings ${draft.privacy_scan.findings.length}`
   ];
   const agentMetricLines = formatAgentMetricLines(draft);

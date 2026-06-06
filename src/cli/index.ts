@@ -32,12 +32,14 @@ import * as ui from './ui.js';
 function print(text = '') { process.stdout.write(`${text}\n`); }
 function err(text = '') { process.stderr.write(`${text}\n`); }
 
-function formatWarningLine(warning: string): string {
-  return ui.warn(`Warning: ${warning}`);
+function formatWarningLines(warning: string): string[] {
+  return ui.wrapKeyValue('Warning', warning).map((line) => ui.warn(line));
 }
 
 function printWarningLines(warnings: string[]): void {
-  for (const warning of warnings) print(formatWarningLine(warning));
+  for (const warning of warnings) {
+    for (const line of formatWarningLines(warning)) print(line);
+  }
 }
 
 function jsonModeRequested(argv = process.argv.slice(2)): boolean {
@@ -304,14 +306,14 @@ function reviewUrlHandoffLines(handoff: ReviewUrlHandoff, reviewUrl: string): st
   if (handoff.clipboard.requested) {
     if (handoff.clipboard.ok) lines.push('Review URL copied to clipboard.');
     else {
-      lines.push(formatWarningLine(handoff.clipboard.warning ?? 'Review URL was not copied to clipboard. Copy it manually.'));
+      lines.push(...formatWarningLines(handoff.clipboard.warning ?? 'Review URL was not copied to clipboard. Copy it manually.'));
       manualUrlNeeded = true;
     }
   }
   if (handoff.browser.requested) {
     if (handoff.browser.ok) lines.push('Review URL opened in browser.');
     else {
-      lines.push(formatWarningLine(handoff.browser.warning ?? 'Review URL could not be opened automatically. Open it manually.'));
+      lines.push(...formatWarningLines(handoff.browser.warning ?? 'Review URL could not be opened automatically. Open it manually.'));
       manualUrlNeeded = true;
     }
   }
@@ -1328,7 +1330,7 @@ async function cmdStatus(args: string[] = []) {
   if (creds?.token_expires_at) {
     print(`Token expires at: ${formatTokenExpiry(creds.token_expires_at)}`);
     const warning = tokenExpiryWarning(creds.token_expires_at);
-    if (warning) print(formatWarningLine(warning));
+    if (warning) printWarningLines([warning]);
   }
   print();
   print(ui.section('API'));
@@ -1350,7 +1352,7 @@ async function cmdStatus(args: string[] = []) {
   print(`Last collection cursor: ${formatCollectionCursor(collectionState.last_collected_at)}`);
   print(`Next default collection since: ${nextDefaultCollectionSince(collectionState.last_collected_at)}`);
   if (pending > 0 && collectionState.last_collected_at) {
-    print(formatWarningLine('pending local drafts exist while a collection cursor is set; publish/discard them or use --all/--since if the next collect looks empty.'));
+    printWarningLines(['pending local drafts exist while a collection cursor is set; publish/discard them or use --all/--since if the next collect looks empty.']);
   }
   print();
   print(ui.section('Next'));

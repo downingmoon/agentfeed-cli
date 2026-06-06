@@ -56,6 +56,50 @@ export function command(text: string): string {
   return color(text, 'cyan');
 }
 
+function configuredColumns(): number | null {
+  const stdoutColumns = process.stdout.columns;
+  if (Number.isFinite(stdoutColumns) && stdoutColumns > 0) return stdoutColumns;
+  const envColumns = Number.parseInt(process.env.COLUMNS ?? '', 10);
+  return Number.isFinite(envColumns) && envColumns > 0 ? envColumns : null;
+}
+
+export function terminalWidth(defaultWidth = 100): number {
+  const width = configuredColumns() ?? defaultWidth;
+  return Math.max(40, Math.min(width, 160));
+}
+
+export function wrapKeyValue(label: string, value: string, options: { width?: number; hangingIndent?: number } = {}): string[] {
+  const prefix = `${label}: `;
+  const width = options.width ?? terminalWidth();
+  if (prefix.length + value.length <= width) return [`${prefix}${value}`];
+
+  const indent = ' '.repeat(options.hangingIndent ?? prefix.length);
+  const firstAvailable = Math.max(12, width - prefix.length);
+  const nextAvailable = Math.max(12, width - indent.length);
+  const words = value.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let current = prefix;
+  let available = firstAvailable;
+
+  for (const word of words) {
+    const currentTextLength = current === prefix ? 0 : current.length - (lines.length ? indent.length : prefix.length);
+    if (currentTextLength === 0) {
+      current += word;
+      continue;
+    }
+    if (currentTextLength + 1 + word.length <= available) {
+      current += ` ${word}`;
+      continue;
+    }
+    lines.push(current);
+    current = `${indent}${word}`;
+    available = nextAvailable;
+  }
+
+  if (current.trim()) lines.push(current);
+  return lines.length ? lines : [`${prefix}${value}`];
+}
+
 export function formatCliError(message: string): string {
   if (!colorEnabled(process.stderr)) return message;
   return message

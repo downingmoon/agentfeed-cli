@@ -189,6 +189,49 @@ async function writeCodexShareSession(sessionId: string, model: string, exportNa
 }
 
 describe('share CLI command', () => {
+  it('prints polished human-readable dry-run share preview sections and publish guidance', async () => {
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = false;\nexport const shareDryPreview = true;\n');
+
+    const { stdout, stderr } = await execFileAsync(process.execPath, [
+      cliPath,
+      'share',
+      '--dry',
+      '--all'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    expect(stderr).toBe('');
+    expect(stdout).toMatch(/AgentFeed share preview|Ready to share private review draft/);
+    expect(stdout).toContain('Summary');
+    expect(stdout).toContain('Collection quality');
+    expect(stdout).toMatch(/Next|Publish later/);
+  });
+
+  it('prints parseable share JSON without human UX headings or ANSI styling', async () => {
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = false;\nexport const shareJsonPreview = true;\n');
+
+    const { stdout, stderr } = await execFileAsync(process.execPath, [
+      cliPath,
+      'share',
+      '--json',
+      '--dry-run',
+      '--all'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    const output = JSON.parse(stdout) as { dry_run?: boolean; draft?: { id?: string } };
+    expect(stderr).toBe('');
+    expect(output.dry_run).toBe(true);
+    expect(output.draft?.id).toMatch(/^draft_/);
+    expect(stdout).not.toContain('\u001b[');
+    expect(stdout).not.toMatch(/(^|\n)(AgentFeed share preview|Ready to share private review draft|Summary|Collection quality|Next|Publish later)/);
+  });
 
   it('refuses share upload before ingest when API metadata is incompatible', async () => {
     let ingestRequestCount = 0;

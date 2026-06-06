@@ -643,13 +643,16 @@ async function cmdCollect(args: string[]) {
     print(JSON.stringify(draft, null, 2));
     return;
   }
+  print(ui.heading(collection.reusedExisting ? 'AgentFeed draft reused' : 'AgentFeed draft ready'));
   print(collection.reusedExisting ? 'Existing matching draft reused.\n' : 'Draft created.\n');
+  print(ui.section('Summary'));
   print(`ID: ${draft.id}`);
   print(`Project: ${draft.project.name}`);
   print(`Privacy: ${draft.privacy_scan.status}`);
   print(`Metrics: ${formatMetricsRow(draft)}`);
   if (flag(args, '--explain')) print(`\n${formatCollectionExplain(draft)}`);
   print();
+  print(ui.section('Next'));
   print(`Preview:\n  agentfeed preview --id ${draft.id}\n`);
   print(`Upload:\n  agentfeed publish --id ${draft.id} --yes`);
   if (flag(args, '--upload')) {

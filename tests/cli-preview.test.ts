@@ -30,6 +30,28 @@ afterEach(async () => {
 });
 
 describe('preview CLI command', () => {
+  it('keeps action guidance in human-readable preview output', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.worklog.title = 'Preview actions';
+    draft.worklog.summary = 'Preview should keep action guidance.';
+    await writeDraft(dir, draft);
+
+    const stdout = execFileSync(process.execPath, [
+      cliPath,
+      'preview',
+      '--id',
+      draft.id
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    expect(stdout).toContain('Actions:');
+    expect(stdout).toContain(`agentfeed publish --id ${draft.id} --yes`);
+    expect(stdout).toContain(`agentfeed scan --id ${draft.id}`);
+  });
+
   it('redacts public draft fields before rendering JSON output', async () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
     draft.worklog.summary = 'Preview should hide sk-abcdefghijklmnopqrstuvwxyz1234567890';

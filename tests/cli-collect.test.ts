@@ -101,6 +101,30 @@ async function installFailingBrowserOpener(binDir: string): Promise<void> {
 }
 
 describe('collect CLI command', () => {
+  it('prints polished human-readable explain output with draft summary and next-step sections', async () => {
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = "human-explain";\n');
+
+    const { stdout, stderr } = await execFileAsync(process.execPath, [
+      cliPath,
+      'collect',
+      '--explain',
+      '--all',
+      '--no-save-cursor'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    expect(stderr).toBe('');
+    expect(stdout).toContain('AgentFeed draft');
+    expect(stdout).toContain('Summary');
+    expect(stdout).toContain('Next');
+    expect(stdout).toContain('ID:');
+    expect(stdout).toContain('Preview:');
+    expect(stdout).toContain('Upload:');
+  });
+
   it('prints subcommand help without collecting or updating local state', async () => {
     const { stdout, stderr } = await execFileAsync(process.execPath, [cliPath, 'collect', '--help'], {
       cwd: dir,
@@ -236,6 +260,27 @@ describe('collect CLI command', () => {
     expect(draft.draft_id).toBeUndefined();
     expect(draft.source.collection_window.until).toBe('2026-05-20T02:00:00.000Z');
     await expect(readCollectionState(dir)).resolves.toEqual({ last_collected_at: '2026-05-20T02:00:00.000Z' });
+  });
+
+  it('prints parseable collect JSON without human UX headings or ANSI styling', async () => {
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = "json-clean";\n');
+
+    const stdout = execFileSync(process.execPath, [
+      cliPath,
+      'collect',
+      '--json',
+      '--all',
+      '--no-save-cursor'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    const draft = JSON.parse(stdout);
+    expect(draft.id).toMatch(/^draft_/);
+    expect(stdout).not.toContain('\u001b[');
+    expect(stdout).not.toMatch(/(^|\n)(AgentFeed draft|Summary|Next|ID:|Preview:|Upload:)/);
   });
 
   it('auto-slices default collect windows after an idle gap', async () => {

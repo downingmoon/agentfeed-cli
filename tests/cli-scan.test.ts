@@ -50,11 +50,17 @@ describe('scan CLI command', () => {
 
     const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
 
+    expect(stdout).toContain('AgentFeed privacy scan');
+    expect(stdout).toContain('Summary');
     expect(stdout).toContain('Privacy: danger');
     expect(stdout).toContain('Findings: 1');
     expect(stdout).toContain('Dry run: draft not modified.');
+    expect(stdout).toContain('Findings detail');
+    expect(stdout).toContain('Redacted preview');
     expect(stdout).toContain('[high] api_key_pattern at summary -> [REDACTED_SECRET]');
     expect(stdout).toContain('- summary: Deploy with [REDACTED_SECRET]');
+    expect(stdout).toContain('Next');
+    expect(stdout).toContain(`agentfeed scan --id ${draft.id}`);
     expect(stdout).not.toContain(secret);
     expect(saved.privacy_scan.status).toBe('safe');
   });
@@ -79,8 +85,37 @@ describe('scan CLI command', () => {
 
     expect(stdout).toContain('Privacy: danger');
     expect(stdout).toContain('- summary: Deploy with [REDACTED_SECRET]');
+    expect(stdout).toContain('Next');
+    expect(stdout).toContain(`agentfeed preview --id ${draft.id}`);
+    expect(stdout).toContain(`agentfeed publish --id ${draft.id} --yes`);
     expect(stdout).not.toContain(secret);
     expect(saved.privacy_scan.status).toBe('danger');
     expect(saved.worklog.summary).toBe('Deploy with [REDACTED_SECRET]');
+  });
+
+  it('keeps scan JSON machine-readable without human UX headings', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    draft.worklog.summary = `Deploy with ${secret}`;
+    await writeDraft(dir, draft);
+
+    const stdout = execFileSync(process.execPath, [
+      cliPath,
+      'scan',
+      '--id',
+      draft.id,
+      '--dry-run',
+      '--json'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    const output = JSON.parse(stdout) as { dry_run?: boolean; scan?: { status?: string } };
+    expect(output.dry_run).toBe(true);
+    expect(output.scan?.status).toBe('danger');
+    expect(stdout).not.toContain('AgentFeed privacy scan');
+    expect(stdout).not.toContain('Next');
+    expect(stdout).not.toContain('agentfeed scan --id');
   });
 });

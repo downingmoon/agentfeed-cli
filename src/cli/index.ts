@@ -365,19 +365,38 @@ async function shouldOpenReviewAfterUpload(openFlag: boolean, options: { respect
   }
 }
 
-function formatPrivacyScanReport(input: PublicScanFields, redacted: PublicScanFields, scan: ReturnType<typeof scanAndRedactFields>['scan'], options: { dryRun?: boolean } = {}): string {
-  const lines = [`Privacy: ${scan.status}`, `Findings: ${scan.findings.length}`];
+function formatPrivacyScanReport(input: PublicScanFields, redacted: PublicScanFields, scan: ReturnType<typeof scanAndRedactFields>['scan'], options: { dryRun?: boolean; draftId?: string; path?: string } = {}): string {
+  const lines = [
+    ui.heading('AgentFeed privacy scan'),
+    '',
+    ui.section('Summary'),
+    `Privacy: ${scan.status}`,
+    `Findings: ${scan.findings.length}`
+  ];
   if (options.dryRun) lines.push('Dry run: draft not modified.');
   if (scan.findings.length) {
-    lines.push('Findings detail:');
+    lines.push('', ui.section('Findings detail'));
     for (const finding of scan.findings) {
       lines.push(`- [${finding.severity}] ${finding.type}${finding.field ? ` at ${finding.field}` : ''} -> ${finding.sample_redacted ?? '[REDACTED]'}`);
     }
   }
   const previews = redactedFieldPreviews(input, redacted);
   if (previews.length) {
-    lines.push('Redacted preview:');
+    lines.push('', ui.section('Redacted preview'));
     for (const preview of previews) lines.push(`- ${preview.field}: ${preview.value}`);
+  }
+  lines.push('', ui.section('Next'));
+  if (options.draftId) {
+    if (options.dryRun) {
+      lines.push(`  ${ui.command(`agentfeed scan --id ${options.draftId}`)}`);
+    } else {
+      lines.push(`  ${ui.command(`agentfeed preview --id ${options.draftId}`)}`);
+      lines.push(`  ${ui.command(`agentfeed publish --id ${options.draftId} --yes`)}`);
+    }
+  } else if (options.path) {
+    lines.push(`  ${ui.command('agentfeed collect --explain')}`);
+  } else {
+    lines.push(`  ${ui.command('agentfeed status')}`);
   }
   return lines.join('\n');
 }
@@ -733,21 +752,43 @@ async function cmdPreview(args: string[]) {
     if (!creds) throw new Error('AgentFeed token is missing. Run: agentfeed login, or pipe a token with: printf %s "$TOKEN" | agentfeed login --token-stdin');
     await requireApiCompatibilityBeforeUpload(creds.api_base_url);
     const remote = await previewDraftRemote(draft, creds);
-    print(flag(args, '--json') ? JSON.stringify(remote, null, 2) : `Remote preview: ${remote.valid ? 'valid' : 'invalid'}\nWarnings: ${remote.warnings.length ? remote.warnings.join(', ') : 'none'}\nTitle: ${String(remote.preview.title ?? draft.worklog.title)}`);
+    if (flag(args, '--json')) {
+      print(JSON.stringify(remote, null, 2));
+    } else {
+      print(ui.heading('AgentFeed remote preview'));
+      print();
+      print(ui.section('Summary'));
+      print(`Remote preview: ${remote.valid ? 'valid' : 'invalid'}`);
+      print(`Warnings: ${remote.warnings.length ? remote.warnings.join(', ') : 'none'}`);
+      print(`Title: ${singleLine(String(remote.preview.title ?? draft.worklog.title))}`);
+      print();
+      print(ui.section('Next'));
+      print(`  ${ui.command(`agentfeed publish --id ${draft.id} --yes`)}`);
+      print(`  ${ui.command(`agentfeed scan --id ${draft.id}`)}`);
+    }
     return;
   }
   if (flag(args, '--json')) { print(JSON.stringify(draft, null, 2)); return; }
-  print('┌─────────────────────────────────────────────┐');
-  print(`│ @local · ${draft.worklog.agent} · ${draft.project.name}`);
-  print('│');
-  print(`│ ${draft.worklog.title}`);
-  print(`│ ${draft.worklog.summary}`);
-  print('│');
-  print(`│ ${formatMetricsRow(draft)}`);
-  print('│');
-  print(`│ Privacy: ${draft.privacy_scan.status}`);
-  print('└─────────────────────────────────────────────┘\n');
-  print(`Actions:\n  agentfeed publish --id ${draft.id} --yes\n  agentfeed scan --id ${draft.id}`);
+  const uploadStatus = draft.upload.uploaded ? 'uploaded' : 'pending';
+  print(ui.heading('AgentFeed preview'));
+  print();
+  print(`@local · ${draft.worklog.agent} · ${draft.project.name}`);
+  print();
+  print(ui.section('Summary'));
+  print(`ID: ${draft.id}`);
+  print(`Title: ${singleLine(draft.worklog.title)}`);
+  print(`Summary: ${singleLine(draft.worklog.summary)}`);
+  print();
+  print(ui.section('Details'));
+  print(`Metrics: ${formatMetricsRow(draft)}`);
+  print(`Privacy: ${draft.privacy_scan.status} · findings ${draft.privacy_scan.findings.length}`);
+  print(`Upload: ${uploadStatus}`);
+  if (draft.upload.review_url) print(`Review URL: ${draft.upload.review_url}`);
+  print();
+  const primaryAction = draft.upload.uploaded
+    ? `agentfeed open --id ${draft.id}`
+    : `agentfeed publish --id ${draft.id} --yes`;
+  print(`Actions:\n  ${primaryAction}\n  agentfeed scan --id ${draft.id}`);
 }
 
 async function cmdPublish(args: string[]) {
@@ -796,7 +837,7 @@ async function cmdScan(args: string[]) {
     const result = scanAndRedactFields(input);
     print(flag(args, '--json')
       ? JSON.stringify(dryRun ? { dry_run: true, scan: result.scan, redacted_fields: redactedFieldPreviews(input, result.redacted) } : result.scan, null, 2)
-      : formatPrivacyScanReport(input, result.redacted, result.scan, { dryRun }));
+      : formatPrivacyScanReport(input, result.redacted, result.scan, { dryRun, path: option(args, '--path')! }));
     return;
   }
   const id = await resolveDraftId(process.cwd(), args);
@@ -810,7 +851,7 @@ async function cmdScan(args: string[]) {
   }
   print(flag(args, '--json')
     ? JSON.stringify(dryRun ? { dry_run: true, scan: result.scan, redacted_fields: redactedFieldPreviews(input, result.redacted) } : result.scan, null, 2)
-    : formatPrivacyScanReport(input, result.redacted, result.scan, { dryRun }));
+    : formatPrivacyScanReport(input, result.redacted, result.scan, { dryRun, draftId: id }));
 }
 
 async function cmdHook(args: string[]) {

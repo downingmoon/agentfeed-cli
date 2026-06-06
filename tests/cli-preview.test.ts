@@ -47,8 +47,41 @@ describe('preview CLI command', () => {
       env: { ...process.env, HOME: home }
     });
 
+    expect(stdout).toContain('AgentFeed preview');
+    expect(stdout).toContain('Summary');
+    expect(stdout).toContain('Details');
+    expect(stdout).toContain(`ID: ${draft.id}`);
+    expect(stdout).toContain('Title: Preview actions');
+    expect(stdout).toContain('Upload: pending');
     expect(stdout).toContain('Actions:');
     expect(stdout).toContain(`agentfeed publish --id ${draft.id} --yes`);
+    expect(stdout).toContain(`agentfeed scan --id ${draft.id}`);
+  });
+
+  it('points uploaded draft previews at the trusted open workflow first', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.worklog.title = 'Uploaded preview actions';
+    draft.upload = {
+      uploaded: true,
+      worklog_id: 'worklog_uploaded_preview',
+      review_url: 'https://agentfeed.dev/worklogs/worklog_uploaded_preview/review'
+    };
+    await writeDraft(dir, draft);
+
+    const stdout = execFileSync(process.execPath, [
+      cliPath,
+      'preview',
+      '--id',
+      draft.id
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    expect(stdout).toContain('Upload: uploaded');
+    expect(stdout).toContain('Review URL: https://agentfeed.dev/worklogs/worklog_uploaded_preview/review');
+    expect(stdout).toContain(`agentfeed open --id ${draft.id}`);
     expect(stdout).toContain(`agentfeed scan --id ${draft.id}`);
   });
 

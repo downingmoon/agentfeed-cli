@@ -16,7 +16,7 @@ import { scanAndRedactFields } from '../privacy/scan.js';
 import { applyRedactedPublicFields, publicScanFieldsFromDraft, scanAndRedactDraftPublicFields, type PublicScanFields } from '../privacy/draft-sanitizer.js';
 import type { AgentFeedCredentials, LocalDraft, ReviewUrlHandoff } from '../types.js';
 import { collectGitMetrics } from '../collectors/git.js';
-import { detectAgentSignals, formatAgentSignalLines } from '../collectors/agent-discovery.js';
+import { detectAgentSignals, formatAgentSignalLines, summarizeAgentSignals } from '../collectors/agent-discovery.js';
 import { changedAreas } from '../summary/changed-areas.js';
 import { hasAgentFeedHook, installClaudeCodeHook, uninstallClaudeCodeHook, resolveClaudeSettingsPath } from '../hooks/claude-code-settings.js';
 import { flag, option } from './args.js';
@@ -1789,7 +1789,9 @@ async function cmdDoctor(args: string[] = []) {
     ['next default collection since', nextCollectionSinceLabel]
   ];
   const warnings = [...credentialResolution.warnings, ...(apiResolution?.warnings ?? []), ...tokenWarnings];
-  const agentSignalLines = formatAgentSignalLines(await detectAgentSignals({ cwd: process.cwd() }));
+  const agentSignals = await detectAgentSignals({ cwd: process.cwd() });
+  const agentSignalLines = formatAgentSignalLines(agentSignals);
+  const agentSignalSummary = summarizeAgentSignals(agentSignals);
   const missingToken = !creds && credentialResolution.token_source === 'missing';
   const apiNeedsRecheck = !apiReachability?.ok || !apiCompatibility?.compatible;
   const nextActions = doctorNextActions({
@@ -1822,6 +1824,7 @@ async function cmdDoctor(args: string[] = []) {
       project: doctorCheckRows(projectChecks),
       collection: doctorCheckRows(collectionChecks),
       warnings,
+      agent_signal_summary: agentSignalSummary,
       agent_signals: agentSignalLines,
       next_actions: nextActions
     }, null, 2));

@@ -1366,6 +1366,11 @@ describe('status and doctor provenance output', () => {
       summary: { status: string; ready: number; attention: number };
       readiness: Array<{ name: string; status: string; detail: string; next_action?: string }>;
       warnings: string[];
+      agent_signal_summary: {
+        detected_count: number;
+        missing_count: number;
+        signals: Array<{ key: string; label: string; detected: boolean; status: string; path_count: number; guidance: string; next_actions: string[] }>;
+      };
       agent_signals: string[];
       next_actions: string[];
     };
@@ -1382,6 +1387,20 @@ describe('status and doctor provenance output', () => {
     expect(output.project.some((row) => row.name === 'project config valid')).toBe(true);
     expect(output.collection.some((row) => row.name === 'last collection cursor')).toBe(true);
     expect(output.warnings.join('\n')).toContain('invalid AgentFeed API URL setting ignored for diagnostics');
+    expect(output.agent_signal_summary.detected_count + output.agent_signal_summary.missing_count).toBe(output.agent_signal_summary.signals.length);
+    expect(output.agent_signal_summary.signals).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        key: 'codex',
+        label: 'Codex CLI',
+        status: expect.stringMatching(/detected|missing/),
+        next_actions: expect.arrayContaining(['agentfeed collect --source codex --explain'])
+      }),
+      expect.objectContaining({
+        key: 'claude_code',
+        label: 'Claude Code',
+        next_actions: expect.arrayContaining(['agentfeed hook install claude-code'])
+      })
+    ]));
     expect(Array.isArray(output.agent_signals)).toBe(true);
     expect(output.next_actions).toEqual([
       'unset AGENTFEED_API_BASE_URL',

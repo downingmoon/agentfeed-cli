@@ -13,6 +13,24 @@ export interface AgentSignal {
 
 export type AgentSignals = Record<AgentSignalKey, AgentSignal>;
 
+export interface AgentSignalSummaryRow {
+  key: AgentSignalKey;
+  label: string;
+  detected: boolean;
+  status: 'detected' | 'missing';
+  path_count: number;
+  guidance: string;
+  next_actions: string[];
+}
+
+export interface AgentSignalSummary {
+  detected_count: number;
+  missing_count: number;
+  signals: AgentSignalSummaryRow[];
+}
+
+const AGENT_SIGNAL_ORDER: AgentSignalKey[] = ['claude_code', 'codex', 'cursor', 'gemini_cli', 'omc', 'omx', 'superpowers'];
+
 async function existing(paths: string[]): Promise<string[]> {
   const found: string[] = [];
   for (const path of paths) {
@@ -48,8 +66,7 @@ export async function detectAgentSignals(options: { cwd: string; home?: string }
 
 export function formatAgentSignalLines(signals: AgentSignals): string[] {
   const lines = ['Agent signals:'];
-  const order: AgentSignalKey[] = ['claude_code', 'codex', 'cursor', 'gemini_cli', 'omc', 'omx', 'superpowers'];
-  for (const key of order) {
+  for (const key of AGENT_SIGNAL_ORDER) {
     const row = signals[key];
     lines.push(`${row.label}: ${row.detected ? 'detected' : 'not found'}`);
     lines.push(`  ${row.guidance}`);
@@ -61,6 +78,45 @@ export function formatAgentSignalLines(signals: AgentSignals): string[] {
     }
   }
   return lines;
+}
+
+export function summarizeAgentSignals(signals: AgentSignals): AgentSignalSummary {
+  const rows = AGENT_SIGNAL_ORDER.map((key): AgentSignalSummaryRow => {
+    const row = signals[key];
+    return {
+      key,
+      label: row.label,
+      detected: row.detected,
+      status: row.detected ? 'detected' : 'missing',
+      path_count: row.paths.length,
+      guidance: row.guidance,
+      next_actions: agentSignalNextActions(key)
+    };
+  });
+  return {
+    detected_count: rows.filter((row) => row.detected).length,
+    missing_count: rows.filter((row) => !row.detected).length,
+    signals: rows
+  };
+}
+
+function agentSignalNextActions(key: AgentSignalKey): string[] {
+  switch (key) {
+    case 'claude_code':
+      return ['agentfeed collect --source claude-code --explain', 'agentfeed hook install claude-code'];
+    case 'codex':
+      return ['agentfeed collect --source codex --explain', 'agentfeed collect --source codex --session-file <path> --explain'];
+    case 'cursor':
+      return ['agentfeed collect --source cursor --explain', 'agentfeed collect --source cursor --session-file <path> --explain'];
+    case 'gemini_cli':
+      return ['agentfeed collect --source gemini-cli --explain', 'agentfeed collect --source gemini-cli --session-file <path> --explain'];
+    case 'omc':
+      return ['agentfeed collect --source claude-code --explain'];
+    case 'omx':
+      return ['agentfeed collect --source codex --explain'];
+    case 'superpowers':
+      return ['agentfeed collect --source gemini-cli --explain'];
+  }
 }
 
 function agentSignalGuidanceLines(key: AgentSignalKey): string[] {

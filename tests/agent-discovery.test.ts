@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { mkdir, mkdtemp, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { detectAgentSignals, formatAgentSignalLines } from '../src/collectors/agent-discovery.js';
+import { detectAgentSignals, formatAgentSignalLines, summarizeAgentSignals } from '../src/collectors/agent-discovery.js';
 import { initProject } from '../src/config/project-config.js';
 
 let dir: string;
@@ -54,6 +54,33 @@ describe('agent discovery', () => {
     expect(lines).toContain('  Detected paths:');
     expect(lines.some((line) => line.includes('Run Gemini CLI in this project.'))).toBe(true);
     expect(lines.some((line) => line.includes('Try: agentfeed collect --source gemini-cli --explain'))).toBe(true);
+  });
+
+  it('summarizes agent signals as automation-friendly JSON rows', async () => {
+    await mkdir(join(dir, '.omx', 'state'), { recursive: true });
+
+    const summary = summarizeAgentSignals(await detectAgentSignals({ cwd: dir, home }));
+    const codex = summary.signals.find((row) => row.key === 'codex');
+    const omx = summary.signals.find((row) => row.key === 'omx');
+    const claude = summary.signals.find((row) => row.key === 'claude_code');
+
+    expect(summary.detected_count).toBeGreaterThanOrEqual(2);
+    expect(summary.missing_count).toBeGreaterThan(0);
+    expect(codex).toMatchObject({
+      label: 'Codex CLI',
+      detected: true,
+      status: 'detected',
+      path_count: 1,
+      next_actions: expect.arrayContaining(['agentfeed collect --source codex --explain'])
+    });
+    expect(omx).toMatchObject({ label: 'OMX', detected: true, status: 'detected', path_count: 1 });
+    expect(claude).toMatchObject({
+      label: 'Claude Code',
+      detected: false,
+      status: 'missing',
+      path_count: 0,
+      next_actions: expect.arrayContaining(['agentfeed hook install claude-code'])
+    });
   });
 
   it('auto-enables detected agents during init', async () => {

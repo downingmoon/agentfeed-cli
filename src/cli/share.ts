@@ -104,7 +104,7 @@ export function formatPrivacyPolicyLines(draft: LocalDraft): string[] {
   return lines;
 }
 
-export function formatSharePreview(draft: LocalDraft): string {
+export function formatSharePreview(draft: LocalDraft, options: { explainDetailsFollow?: boolean } = {}): string {
   const m = draft.worklog.metrics;
   const models = modelsLabel(draft);
   const changedAreas = draft.worklog.changed_areas.length ? draft.worklog.changed_areas.join(', ') : 'Application code';
@@ -142,13 +142,17 @@ export function formatSharePreview(draft: LocalDraft): string {
   );
   const windowLine = formatCollectionWindowLine(draft.source.collection_window, draft.source.collection_window_reason);
   if (windowLine) lines.push(windowLine);
-  if (m.collection_sources?.length) {
-    lines.push('Collection sources:');
-    for (const source of m.collection_sources) lines.push(`- ${source.type}: ${source.name} (${source.quality})`);
+  if (options.explainDetailsFollow) {
+    lines.push('Collection details: shown below');
   } else {
-    lines.push('Collection sources: none');
+    if (m.collection_sources?.length) {
+      lines.push('Collection sources:');
+      for (const source of m.collection_sources) lines.push(`- ${source.type}: ${source.name} (${source.quality})`);
+    } else {
+      lines.push('Collection sources: none');
+    }
+    lines.push(...formatCollectionGuidanceLines(m));
   }
-  lines.push(...formatCollectionGuidanceLines(m));
 
   lines.push('', ui.section('Target'), 'Upload target: private AgentFeed review draft');
   return lines.join('\n');

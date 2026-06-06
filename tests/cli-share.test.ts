@@ -313,8 +313,10 @@ describe('share CLI command', () => {
     expect(stderr).toBe('');
     expect(stdout).toContain('AgentFeed share preview');
     expect(stdout).toContain('Collection details');
+    expect(stdout).toContain('Collection details: shown below');
     expect(stdout).toContain('Collection quality');
     expect(stdout).toContain('Sources:');
+    expect((stdout.match(/Collection guidance:/g) ?? []).length).toBeLessThanOrEqual(1);
     expect(stdout).toContain('Dry run complete. Local draft kept:');
     expect(stdout).toContain('agentfeed login');
     expect(stdout).toContain('agentfeed publish --id');

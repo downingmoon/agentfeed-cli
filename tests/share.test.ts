@@ -123,6 +123,19 @@ describe('share command helpers', () => {
     expect(output).toContain('Without agent evidence, this draft may be mostly git-diff based.');
   });
 
+  it('keeps share preview concise when collection details follow below', () => {
+    const draft = createEmptyDraft({ projectName: 'agentfeed-cli', projectRoot: '/tmp/agentfeed-cli', source: 'codex' });
+    draft.worklog.metrics.collection_quality = null;
+    draft.worklog.metrics.collection_sources = [];
+
+    const output = formatSharePreview(draft, { explainDetailsFollow: true });
+
+    expect(output).toContain('Collection quality: unknown');
+    expect(output).toContain('Collection details: shown below');
+    expect(output).not.toContain('Collection sources: none');
+    expect(output).not.toContain('Collection guidance:');
+  });
+
   it('shows idle-gap inferred collection windows in the share preview', () => {
     const draft = createEmptyDraft({ projectName: 'agentfeed-cli', projectRoot: '/tmp/agentfeed-cli', source: 'codex' });
     draft.source.collection_window = { since: '2026-05-20T01:01:00.000Z', until: '2026-05-20T02:00:00.000Z' };

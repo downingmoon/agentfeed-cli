@@ -1476,7 +1476,7 @@ async function cmdShare(args: string[]) {
   }
 
   if (collection.reusedExisting) print(`Reusing existing matching draft: ${draft.id}\n`);
-  print(formatSharePreview(draft));
+  print(formatSharePreview(draft, { explainDetailsFollow: opts.explain }));
   print();
   if (opts.explain) {
     print(ui.section('Collection details'));

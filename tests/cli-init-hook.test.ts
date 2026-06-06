@@ -82,9 +82,10 @@ describe('CLI init and hook setup UX', () => {
     expect(stdout).toContain('Agent hook: capture Claude Code sessions automatically');
     expect(stdout).toContain('First draft: collect locally without uploading');
     expect(stdout).toContain('Next');
-    expect(stdout).toContain('agentfeed login');
-    expect(stdout).toContain('agentfeed hook install claude-code');
-    expect(stdout).toContain('agentfeed share --dry');
+    expect(stdout).toContain('Recommended order:');
+    expect(stdout).toContain('  1. agentfeed login');
+    expect(stdout).toContain('  2. agentfeed hook install claude-code');
+    expect(stdout).toContain('  3. agentfeed share --dry');
     expect(stderr).toBe('');
   });
 

@@ -73,8 +73,9 @@ describe('drafts CLI command', () => {
     expect(stdout).toContain('AgentFeed drafts (0)');
     expect(stdout).toContain('No local drafts found.');
     expect(stdout).toContain('Next');
-    expect(stdout).toContain('agentfeed collect --explain');
-    expect(stdout).toContain('agentfeed share --dry');
+    expect(stdout).toContain('Recommended order:');
+    expect(stdout).toContain('  1. agentfeed collect --explain');
+    expect(stdout).toContain('  2. agentfeed share --dry');
   });
 
   it('prints human-readable draft summaries with preview and upload guidance', async () => {
@@ -103,6 +104,9 @@ describe('drafts CLI command', () => {
     expect(stdout).toContain('Metrics: 2 files · +42 -7');
     expect(stdout).toContain(`agentfeed preview --id ${draft.id}`);
     expect(stdout).toContain(`agentfeed publish --id ${draft.id} --yes`);
+    expect(stdout).toContain('Recommended order:');
+    expect(stdout).toContain(`  1. agentfeed preview --id ${draft.id}`);
+    expect(stdout).toContain(`  2. agentfeed publish --id ${draft.id} --yes`);
   });
 
   it('wraps long draft metrics in narrow terminals', async () => {

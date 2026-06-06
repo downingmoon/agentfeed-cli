@@ -1078,7 +1078,7 @@ async function cmdInit(args: string[]) {
   printInitSetupChecklist(setupChecklist);
   print();
   print(ui.section('Next'));
-  printNextCommands(nextActions);
+  printRecommendedCommands(nextActions);
 }
 
 async function cmdLogin(args: string[]) {
@@ -2062,7 +2062,7 @@ async function cmdDrafts(args: string[]) {
     print('No local drafts found.');
     print();
     print(ui.section('Next'));
-    printNextCommands(nextActions);
+    printRecommendedCommands(nextActions);
     return;
   }
 
@@ -2090,7 +2090,7 @@ async function cmdDrafts(args: string[]) {
 
   print();
   print(ui.section('Next'));
-  printNextCommands(nextActions);
+  printRecommendedCommands(nextActions);
 }
 
 async function cmdDiscard(args: string[]) {

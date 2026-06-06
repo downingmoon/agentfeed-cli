@@ -14,6 +14,24 @@ const cliPath = join(repoRoot, 'dist', 'cli', 'index.js');
 let dir: string;
 let home: string;
 
+function runPreviewFailure(args: string[]): { stdout: string; stderr: string } {
+  try {
+    execFileSync(process.execPath, [cliPath, ...args], {
+      cwd: dir,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, HOME: home }
+    });
+  } catch (error) {
+    const failure = error as { stdout?: string | Buffer; stderr?: string | Buffer };
+    return {
+      stdout: String(failure.stdout ?? ''),
+      stderr: String(failure.stderr ?? '')
+    };
+  }
+  throw new Error(`Expected agentfeed ${args.join(' ')} to fail`);
+}
+
 beforeAll(() => {
   ensureCliBuilt(repoRoot);
 });
@@ -30,6 +48,24 @@ afterEach(async () => {
 });
 
 describe('preview CLI command', () => {
+  it('guides users when no local draft exists for latest preview', async () => {
+    const { stdout, stderr } = runPreviewFailure(['preview', '--latest']);
+
+    expect(stdout).toBe('');
+    expect(stderr).toContain('No local drafts found.');
+    expect(stderr).toContain('Run: agentfeed collect --explain');
+    expect(stderr).toContain('Run: agentfeed share --dry');
+  });
+
+  it('guides users back to drafts and collect when previewing a missing draft id', async () => {
+    const { stdout, stderr } = runPreviewFailure(['preview', '--id', 'draft_missing']);
+
+    expect(stdout).toBe('');
+    expect(stderr).toContain('Draft not found: draft_missing');
+    expect(stderr).toContain('Run: agentfeed drafts');
+    expect(stderr).toContain('Run: agentfeed collect --explain');
+  });
+
   it('keeps action guidance in human-readable preview output', async () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
     draft.worklog.title = 'Preview actions';

@@ -6,10 +6,26 @@ import { pathExists, readJson } from '../utils/fs.js';
 import { validateLocalDraft } from './validation.js';
 import { draftPaths, isSafeDraftId } from './paths.js';
 
+function draftNotFoundMessage(id: string): string {
+  return [
+    `Draft not found: ${id}`,
+    'Run: agentfeed drafts',
+    'Run: agentfeed collect --explain'
+  ].join('\n');
+}
+
+function noDraftsMessage(): string {
+  return [
+    'No local drafts found.',
+    'Run: agentfeed collect --explain',
+    'Run: agentfeed share --dry'
+  ].join('\n');
+}
+
 export async function readDraft(cwd: string, id: string): Promise<LocalDraft> {
   const root = await resolveProjectRoot(cwd);
   const { jsonPath } = draftPaths(root, id);
-  if (!(await pathExists(jsonPath))) throw new Error(`Draft not found: ${id}`);
+  if (!(await pathExists(jsonPath))) throw new Error(draftNotFoundMessage(id));
   const draft = validateLocalDraft(await readJson<unknown>(jsonPath), jsonPath);
   if (draft.id !== id) {
     throw new Error(`AgentFeed draft is invalid at ${jsonPath}: id must match requested draft id ${id}. Run agentfeed collect to create a fresh draft.`);
@@ -35,6 +51,6 @@ export async function findLatestDraft(cwd: string): Promise<{ id: string; path: 
 
 export async function readLatestDraft(cwd: string): Promise<LocalDraft> {
   const latest = await findLatestDraft(cwd);
-  if (!latest) throw new Error('No local drafts found. Run: agentfeed collect');
+  if (!latest) throw new Error(noDraftsMessage());
   return readDraft(cwd, latest.id);
 }

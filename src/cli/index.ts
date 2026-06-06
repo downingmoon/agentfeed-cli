@@ -525,7 +525,13 @@ async function resolveDraftId(cwd: string, args: string[]): Promise<string> {
   const id = option(args, '--id');
   if (id) return id;
   const latest = await findLatestDraft(cwd);
-  if (!latest) throw new Error('No local drafts found. Run: agentfeed collect');
+  if (!latest) {
+    throw new Error([
+      'No local drafts found.',
+      'Run: agentfeed collect --explain',
+      'Run: agentfeed share --dry'
+    ].join('\n'));
+  }
   return latest.id;
 }
 
@@ -1294,7 +1300,13 @@ async function cmdDiscard(args: string[]) {
   const { jsonPath, markdownPath } = draftPaths(root, id);
   const hadJson = await pathExists(jsonPath);
   const hadMarkdown = await pathExists(markdownPath);
-  if (!hadJson && !hadMarkdown) throw new Error(`Draft not found: ${id}`);
+  if (!hadJson && !hadMarkdown) {
+    throw new Error([
+      `Draft not found: ${id}`,
+      'Run: agentfeed drafts',
+      'Run: agentfeed collect --explain'
+    ].join('\n'));
+  }
   await rm(jsonPath, { force: true });
   await rm(markdownPath, { force: true });
   print(ui.heading('AgentFeed draft discarded'));

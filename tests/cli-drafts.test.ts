@@ -40,6 +40,16 @@ async function runCli(args: string[]): Promise<{ stdout: string; stderr: string 
   });
 }
 
+async function runCliFailure(args: string[]): Promise<{ stdout: string; stderr: string }> {
+  try {
+    await runCli(args);
+  } catch (error) {
+    const failure = error as { stdout?: string; stderr?: string };
+    return { stdout: failure.stdout ?? '', stderr: failure.stderr ?? '' };
+  }
+  throw new Error(`Expected agentfeed ${args.join(' ')} to fail`);
+}
+
 describe('drafts CLI command', () => {
   it('prints a helpful empty state with next actions', async () => {
     const { stdout, stderr } = await runCli(['drafts']);
@@ -93,6 +103,15 @@ describe('drafts CLI command', () => {
     expect(stdout).toContain('agentfeed collect --explain');
     expect(existsSync(paths.jsonPath)).toBe(false);
     expect(existsSync(paths.markdownPath)).toBe(false);
+  });
+
+  it('guides users back to drafts and collect when discarding a missing draft', async () => {
+    const { stdout, stderr } = await runCliFailure(['discard', '--id', 'draft_missing']);
+
+    expect(stdout).toBe('');
+    expect(stderr).toContain('Draft not found: draft_missing');
+    expect(stderr).toContain('Run: agentfeed drafts');
+    expect(stderr).toContain('Run: agentfeed collect --explain');
   });
 
   it('prints machine-readable draft summaries without human headings', async () => {

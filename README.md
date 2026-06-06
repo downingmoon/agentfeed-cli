@@ -96,9 +96,12 @@ The CLI creates `.agentfeed/drafts/*.json` first and uploads only reviewable pri
 ```bash
 printf '%s' "$AGENTFEED_TOKEN" | agentfeed login --token-stdin
 printf '%s' "$AGENTFEED_TOKEN" | agentfeed login --token - --no-save
+printf '%s' "$AGENTFEED_TOKEN" | agentfeed login --token-stdin --json
 ```
 
 Literal `agentfeed login --token <token>` input is disabled by default because raw secrets can leak through shell history and process listings. Use stdin (`--token-stdin` or `--token -`) for existing tokens; a local throwaway development escape hatch exists only when `AGENTFEED_ALLOW_UNSAFE_ARGV_TOKEN=1` is set.
+
+Use `login --token-stdin --json` for headless setup. Browser login remains human-readable because it must show the authorization URL and approval code; `login --json` without token input exits with a recovery command instead of mixing browser prompts into JSON stdout.
 
 When a saved device token is near expiry or compromised, run:
 

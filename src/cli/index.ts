@@ -164,6 +164,24 @@ function printCredentialResult(options: {
   }
 }
 
+function credentialJsonResult(options: {
+  saved: boolean;
+  apiBaseUrl: string;
+  tokenExpiresAt?: string | null;
+  user?: AgentFeedCredentials['user'];
+  warnings?: string[];
+  next: string[];
+}): Record<string, unknown> {
+  return {
+    saved: options.saved,
+    api_base_url: options.apiBaseUrl,
+    token_expires_at: options.tokenExpiresAt ?? null,
+    user: options.user ?? null,
+    warnings: options.warnings ?? [],
+    next_actions: options.next
+  };
+}
+
 function formatCollectionCursor(value?: string | null): string {
   if (!value) return 'none';
   const parsed = Date.parse(value);
@@ -794,6 +812,7 @@ async function cmdInit(args: string[]) {
 async function cmdLogin(args: string[]) {
   const tokenOption = option(args, '--token');
   const tokenFromStdin = flag(args, '--token-stdin') || tokenOption === '-';
+  const json = flag(args, '--json');
   if (tokenOption && tokenOption !== '-' && tokenFromStdin) {
     throw new Error('Use only one token input method: --token -, or --token-stdin.');
   }
@@ -804,6 +823,13 @@ async function cmdLogin(args: string[]) {
   const apiBaseUrl = option(args, '--api-base-url');
   const noSave = flag(args, '--no-save');
   if (!token) {
+    if (json) {
+      throw new Error([
+        'login --json requires token input so stdout stays machine-readable.',
+        'Run: printf %s "$TOKEN" | agentfeed login --token-stdin --json',
+        'Run: printf %s "$TOKEN" | agentfeed login --token - --json --no-save'
+      ].join('\n'));
+    }
     const existing = await loadCredentialsWithMetadata({ cwd: process.cwd() });
     const creds = await browserLogin({ apiBaseUrl, noOpen: flag(args, '--no-open'), save: !noSave, cwd: process.cwd(), storedApiBaseUrl: existing.credentials?.api_base_url, allowCiBrowser: flag(args, '--browser') });
     const warnings: string[] = [];
@@ -835,6 +861,18 @@ async function cmdLogin(args: string[]) {
     const saved = await loadCredentialsWithMetadata({ cwd: process.cwd() });
     warnings.push(...saved.warnings);
   }
+  const next = noSave ? ['agentfeed status'] : ['agentfeed status', 'agentfeed share --dry'];
+  if (json) {
+    print(JSON.stringify(credentialJsonResult({
+      saved: !noSave,
+      apiBaseUrl: creds.api_base_url,
+      tokenExpiresAt: creds.token_expires_at,
+      user: creds.user,
+      warnings,
+      next
+    }), null, 2));
+    return;
+  }
   printCredentialResult({
     heading: noSave ? 'AgentFeed token loaded (not saved)' : 'AgentFeed credentials saved',
     message: noSave ? 'AgentFeed token loaded for this command only (not saved).' : 'AgentFeed credentials saved.',
@@ -842,7 +880,7 @@ async function cmdLogin(args: string[]) {
     tokenExpiresAt: creds.token_expires_at,
     saved: !noSave,
     warnings,
-    next: noSave ? ['agentfeed status'] : ['agentfeed status', 'agentfeed share --dry']
+    next
   });
 }
 
@@ -2234,7 +2272,7 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     validatePositionals: NO_POSITIONALS('init')
   },
   login: {
-    flags: ['--token-stdin', '--no-save', '--no-open', '--browser'],
+    flags: ['--token-stdin', '--no-save', '--no-open', '--browser', '--json'],
     valueOptions: ['--token', '--api-base-url'],
     validatePositionals: NO_POSITIONALS('login')
   },
@@ -2614,6 +2652,7 @@ Options:
   --api-base-url <url>      Override the AgentFeed API base URL
   --token-stdin             Read an ingestion token from stdin
   --token -                 Read an ingestion token from stdin
+  --json                    Print machine-readable token-input login result
   --help, -h                Show this help`,
     logout: `Usage: agentfeed logout [options]
 

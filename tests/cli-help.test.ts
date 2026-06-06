@@ -290,7 +290,7 @@ describe('CLI help and option validation', () => {
       [['help', '--help'], ['Usage: agentfeed help', 'agentfeed help collect', 'agentfeed <command> --help']],
       [['commands', '--help'], ['Usage: agentfeed commands', 'command catalog', '--json']],
       [['init', '--help'], ['Usage: agentfeed init', '--project-name', '--no-git-check', '--force']],
-      [['login', '--help'], ['Usage: agentfeed login', '--token-stdin', '--no-open']],
+      [['login', '--help'], ['Usage: agentfeed login', '--token-stdin', '--no-open', '--json']],
       [['logout', '--help'], ['Usage: agentfeed logout', '--json']],
       [['status', '--help'], ['Usage: agentfeed status', 'credential, API, project', '--json']],
       [['rotate', '--help'], ['Usage: agentfeed rotate', '--browser', '--api-base-url']],

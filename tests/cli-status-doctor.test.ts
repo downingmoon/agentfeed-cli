@@ -500,6 +500,85 @@ describe('status and doctor provenance output', () => {
     }
   });
 
+  it('login prints machine-readable token-stdin results without leaking the secret', async () => {
+    const token = 'af_live_stdin_json_secret';
+    const server = await import('node:http').then(({ createServer }) => createServer((req, res) => {
+      if (req.url === '/v1/metadata') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify(compatibleMetadata()));
+        return;
+      }
+      res.writeHead(404).end();
+    }));
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind');
+
+    try {
+      const { stdout, stderr } = await execFileWithInput(
+        ['login', '--token-stdin', '--json', '--api-base-url', `http://127.0.0.1:${address.port}/v1`],
+        `${token}\n`,
+        {
+          cwd: dir,
+          encoding: 'utf8',
+          env: {
+            ...process.env,
+            HOME: home,
+            AGENTFEED_TOKEN: '',
+            AGENTFEED_CI: '1',
+            AGENTFEED_CREDENTIAL_STORE: 'file'
+          }
+        }
+      );
+
+      const output = JSON.parse(stdout) as {
+        saved?: boolean;
+        api_base_url?: string;
+        token_expires_at?: string | null;
+        warnings?: string[];
+        next_actions?: string[];
+      };
+      expect(stderr).not.toContain(token);
+      expect(stdout).not.toContain(token);
+      expect(output).toMatchObject({
+        saved: true,
+        api_base_url: `http://127.0.0.1:${address.port}/v1`,
+        token_expires_at: null,
+        warnings: [],
+        next_actions: ['agentfeed status', 'agentfeed share --dry']
+      });
+      expect(stdout).not.toContain('AgentFeed credentials saved');
+      expect(stdout).not.toMatch(/(^|\n)Next(\n|$)/);
+      const saved = JSON.parse(await readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8'));
+      expect(saved.ingestion_token).toBe(token);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('login --json refuses browser auth so stdout stays parseable', async () => {
+    let failure: { stdout?: string; stderr?: string } | undefined;
+    try {
+      await execFileAsync(process.execPath, [cliPath, 'login', '--json', '--no-open'], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: '',
+          AGENTFEED_CI: '1'
+        }
+      });
+    } catch (error) {
+      failure = error as { stdout?: string; stderr?: string };
+    }
+
+    expect(failure?.stdout ?? '').toBe('');
+    expect(failure?.stderr ?? '').toContain('login --json requires token input');
+    expect(failure?.stderr ?? '').toContain('Run: printf %s "$TOKEN" | agentfeed login --token-stdin --json');
+    expect(failure?.stderr ?? '').not.toContain('AgentFeed browser authorization');
+  });
+
   it('refuses token-stdin login before writing credentials when API metadata is incompatible', async () => {
     const token = 'af_live_incompatible_stdin_secret';
     const server = await import('node:http').then(({ createServer }) => createServer((req, res) => {

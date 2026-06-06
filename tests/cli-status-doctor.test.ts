@@ -142,6 +142,11 @@ describe('status and doctor provenance output', () => {
     expect(stdout).toContain('AgentFeed status');
     expect(stdout).toMatch(/invalid API URL|Invalid AgentFeed API base URL|http is allowed only for localhost/i);
     expect(stdout).toMatch(/AGENTFEED_API_BASE_URL|Use https|AGENTFEED_ALLOW_INSECURE_API=1/i);
+    expect(stdout).toContain('Next');
+    expect(stdout).toContain('unset AGENTFEED_API_BASE_URL');
+    expect(stdout).toContain('AGENTFEED_ALLOW_INSECURE_API=1 agentfeed status');
+    expect(stdout).toContain('agentfeed doctor');
+    expect(stdout).not.toContain('  agentfeed login');
     expect(stdout).not.toContain('af_live');
     expect(stderr).toBe('');
   });

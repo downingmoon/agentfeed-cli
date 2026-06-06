@@ -741,7 +741,11 @@ async function cmdStatus() {
   }
   print();
   print(ui.section('Next'));
-  if (!creds) {
+  if (diagnostics.invalidApiBaseUrl) {
+    print(`  ${ui.command('unset AGENTFEED_API_BASE_URL')}`);
+    print(`  ${ui.command('AGENTFEED_ALLOW_INSECURE_API=1 agentfeed status')}`);
+    print(`  ${ui.command('agentfeed doctor')}`);
+  } else if (!creds) {
     print(`  ${ui.command('agentfeed login')}`);
   } else if (!config) {
     print(`  ${ui.command('agentfeed init')}`);

@@ -77,6 +77,18 @@ function ciBrowserLoginBlocked(options: { allowCiBrowser?: boolean }): boolean {
     && options.allowCiBrowser !== true;
 }
 
+function ciBrowserLoginBlockedMessage(): string {
+  return [
+    'Browser login is disabled in CI.',
+    'If AGENTFEED_TOKEN is already set, run non-login AgentFeed commands directly.',
+    'Otherwise provide a token safely:',
+    'Run: printf %s "$TOKEN" | agentfeed login --token-stdin',
+    'To intentionally run browser auth in this environment:',
+    'Run: agentfeed login --browser',
+    'Run: agentfeed rotate --browser'
+  ].join('\n');
+}
+
 async function requireApiCompatibilityBeforeCredentialSave(apiBaseUrl: string): Promise<void> {
   const result = await checkApiCompatibility(apiBaseUrl);
   if (result.compatible) return;
@@ -91,7 +103,7 @@ async function requireApiCompatibilityBeforeCredentialSave(apiBaseUrl: string): 
 
 export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: boolean; waitMs?: number; save?: boolean; cwd?: string; storedApiBaseUrl?: string; allowCiBrowser?: boolean; replaceTokenId?: string } = {}) {
   if (ciBrowserLoginBlocked(options)) {
-    throw new Error('Browser login is disabled in CI. If AGENTFEED_TOKEN is already set, use non-login AgentFeed commands directly. Otherwise set AGENTFEED_TOKEN or pipe a token with: printf %s "$TOKEN" | agentfeed login --token-stdin. To intentionally run browser auth anyway, pass --browser.');
+    throw new Error(ciBrowserLoginBlockedMessage());
   }
   const apiResolution = await resolveApiBaseUrlWithMetadata({
     cwd: options.cwd,

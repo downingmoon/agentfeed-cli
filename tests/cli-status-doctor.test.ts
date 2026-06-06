@@ -652,8 +652,9 @@ describe('status and doctor provenance output', () => {
 
       expect(failure?.stderr).toContain('Browser login is disabled in CI.');
       expect(failure?.stderr).toContain('AGENTFEED_TOKEN');
-      expect(failure?.stderr).toContain('agentfeed login --token-stdin');
-      expect(failure?.stderr).toContain('--browser');
+      expect(failure?.stderr).toContain('Run: printf %s "$TOKEN" | agentfeed login --token-stdin');
+      expect(failure?.stderr).toContain('Run: agentfeed login --browser');
+      expect(failure?.stderr).toContain('Run: agentfeed rotate --browser');
       expect(failure?.stdout ?? '').toBe('');
       expect(requestCount).toBe(0);
       expect(Date.now() - startedAt).toBeLessThan(5000);
@@ -693,12 +694,61 @@ describe('status and doctor provenance output', () => {
       }
 
       expect(failure?.stderr).toContain('Browser login is disabled in CI.');
-      expect(failure?.stderr).toContain('AGENTFEED_TOKEN');
-      expect(failure?.stderr).toContain('--browser');
+      expect(failure?.stderr).toContain('If AGENTFEED_TOKEN is already set, run non-login AgentFeed commands directly.');
+      expect(failure?.stderr).toContain('Run: agentfeed login --browser');
+      expect(failure?.stderr).toContain('Run: agentfeed rotate --browser');
       expect(failure?.stdout ?? '').toBe('');
       expect(requestCount).toBe(0);
       expect(Date.now() - startedAt).toBeLessThan(5000);
       await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('rotate fails fast in CI with token remediation and no browser session request', async () => {
+    await mkdir(join(home, '.agentfeed'), { recursive: true });
+    await writeFile(join(home, '.agentfeed', 'credentials.json'), JSON.stringify({
+      api_base_url: 'http://127.0.0.1:9/v1',
+      ingestion_token: 'af_live_old_secret',
+      token_expires_at: '2026-06-01T00:00:00Z',
+      created_at: '2026-05-30T00:00:00Z'
+    }));
+    let requestCount = 0;
+    const server = await import('node:http').then(({ createServer }) => createServer((_req, res) => {
+      requestCount += 1;
+      res.writeHead(500, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ error: { code: 'UNEXPECTED_BROWSER_SESSION_REQUEST' } }));
+    }));
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind');
+    const startedAt = Date.now();
+
+    try {
+      let failure: { stderr?: string; stdout?: string } | undefined;
+      try {
+        await execFileAsync(process.execPath, [cliPath, 'rotate', '--api-base-url', `http://127.0.0.1:${address.port}/v1`], {
+          cwd: dir,
+          encoding: 'utf8',
+          env: {
+            ...process.env,
+            HOME: home,
+            AGENTFEED_TOKEN: '',
+            AGENTFEED_CI: '1'
+          }
+        });
+      } catch (error) {
+        failure = error as { stderr?: string; stdout?: string };
+      }
+
+      expect(failure?.stderr).toContain('Browser login is disabled in CI.');
+      expect(failure?.stderr).toContain('Run: printf %s "$TOKEN" | agentfeed login --token-stdin');
+      expect(failure?.stderr).toContain('Run: agentfeed login --browser');
+      expect(failure?.stderr).toContain('Run: agentfeed rotate --browser');
+      expect(failure?.stdout ?? '').toBe('');
+      expect(requestCount).toBe(0);
+      expect(Date.now() - startedAt).toBeLessThan(5000);
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }

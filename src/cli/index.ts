@@ -1711,6 +1711,33 @@ function discardCompleteNextActions(): string[] {
   return ['agentfeed drafts', 'agentfeed collect --explain'];
 }
 
+interface DraftListSummary {
+  total: number;
+  valid: number;
+  invalid: number;
+  pending: number;
+  uploaded: number;
+}
+
+function draftListSummary(rows: DraftListRow[]): DraftListSummary {
+  const validRows = rows.filter((row) => row.valid);
+  return {
+    total: rows.length,
+    valid: validRows.length,
+    invalid: rows.length - validRows.length,
+    pending: validRows.filter((row) => row.status === 'pending').length,
+    uploaded: validRows.filter((row) => row.status === 'uploaded').length
+  };
+}
+
+function printDraftListSummary(summary: DraftListSummary): void {
+  print(ui.section('Summary'));
+  print(`Total: ${summary.total}`);
+  print(`Pending upload: ${summary.pending}`);
+  print(`Uploaded: ${summary.uploaded}`);
+  if (summary.invalid > 0) print(ui.warn(`Invalid: ${summary.invalid}`));
+}
+
 function draftListNextActions(rows: DraftListRow[]): string[] {
   if (!rows.length) {
     return ['agentfeed collect --explain', 'agentfeed share --dry'];
@@ -1730,9 +1757,10 @@ function draftListNextActions(rows: DraftListRow[]): string[] {
 async function cmdDrafts(args: string[]) {
   await loadProjectConfig(process.cwd());
   const rows = await Promise.all((await listDrafts(process.cwd())).map((row) => draftListRow(row)));
+  const summary = draftListSummary(rows);
   const nextActions = draftListNextActions(rows);
   if (flag(args, '--json')) {
-    print(JSON.stringify({ drafts: rows, next_actions: nextActions }, null, 2));
+    print(JSON.stringify({ summary, drafts: rows, next_actions: nextActions }, null, 2));
     return;
   }
 
@@ -1746,6 +1774,8 @@ async function cmdDrafts(args: string[]) {
     return;
   }
 
+  print();
+  printDraftListSummary(summary);
   print();
   for (const row of rows) {
     if (!row.valid) {

@@ -89,6 +89,10 @@ describe('drafts CLI command', () => {
 
     expect(stderr).toBe('');
     expect(stdout).toContain('AgentFeed drafts (1)');
+    expect(stdout).toContain('Summary');
+    expect(stdout).toContain('Total: 1');
+    expect(stdout).toContain('Pending upload: 1');
+    expect(stdout).toContain('Uploaded: 0');
     expect(stdout).toContain(draft.id);
     expect(stdout).toContain('pending');
     expect(stdout).toContain('codex');
@@ -213,9 +217,10 @@ describe('drafts CLI command', () => {
 
   it('prints machine-readable empty draft next actions without human headings', async () => {
     const { stdout, stderr } = await runCli(['drafts', '--json']);
-    const output = JSON.parse(stdout) as { drafts?: unknown[]; next_actions?: string[] };
+    const output = JSON.parse(stdout) as { summary?: { total?: number; pending?: number; uploaded?: number; invalid?: number }; drafts?: unknown[]; next_actions?: string[] };
 
     expect(stderr).toBe('');
+    expect(output.summary).toEqual({ total: 0, valid: 0, invalid: 0, pending: 0, uploaded: 0 });
     expect(output.drafts).toEqual([]);
     expect(output.next_actions).toEqual(['agentfeed collect --explain', 'agentfeed share --dry']);
     expect(stdout).not.toContain('AgentFeed drafts');
@@ -233,9 +238,10 @@ describe('drafts CLI command', () => {
     await writeDraft(dir, draft);
 
     const { stdout, stderr } = await runCli(['drafts', '--json']);
-    const output = JSON.parse(stdout) as { drafts?: Array<{ id?: string; status?: string; title?: string; review_url?: string | null }>; next_actions?: string[] };
+    const output = JSON.parse(stdout) as { summary?: { total?: number; pending?: number; uploaded?: number; invalid?: number }; drafts?: Array<{ id?: string; status?: string; title?: string; review_url?: string | null }>; next_actions?: string[] };
 
     expect(stderr).toBe('');
+    expect(output.summary).toMatchObject({ total: 1, pending: 0, uploaded: 1, invalid: 0 });
     expect(output.drafts).toHaveLength(1);
     expect(output.drafts?.[0]).toMatchObject({
       id: draft.id,

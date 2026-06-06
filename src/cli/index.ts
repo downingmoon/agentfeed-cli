@@ -1471,17 +1471,75 @@ async function cmdDiscard(args: string[]) {
   print(`  ${ui.command('agentfeed collect --explain')}`);
 }
 
+function notUploadedDraftMessage(draft: LocalDraft): string {
+  return [
+    `Draft has not been uploaded yet: ${draft.id}`,
+    `Run: agentfeed publish --id ${draft.id} --yes`,
+    `Run: agentfeed preview --id ${draft.id}`,
+    'Run: agentfeed drafts'
+  ].join('\n');
+}
+
+function noUploadedDraftsMessage(latestDraft: LocalDraft): string {
+  return [
+    'No uploaded local drafts found.',
+    `Newest draft: ${latestDraft.id}`,
+    `Run: agentfeed publish --id ${latestDraft.id} --yes`,
+    'Run: agentfeed share --yes',
+    'Run: agentfeed drafts'
+  ].join('\n');
+}
+
+async function resolveOpenDraft(args: string[]): Promise<LocalDraft> {
+  const id = option(args, '--id');
+  if (id && !flag(args, '--latest')) {
+    const draft = await readDraft(process.cwd(), id);
+    if (!draft.upload.review_url) throw new Error(notUploadedDraftMessage(draft));
+    return draft;
+  }
+
+  const rows = await listDrafts(process.cwd());
+  if (!rows.length) return readLatestDraft(process.cwd());
+
+  let latestValidDraft: LocalDraft | null = null;
+  for (const row of rows) {
+    let draft: LocalDraft;
+    try {
+      draft = await readDraft(process.cwd(), row.id);
+    } catch {
+      continue;
+    }
+    latestValidDraft ??= draft;
+    if (draft.upload.review_url) return draft;
+  }
+
+  if (latestValidDraft) throw new Error(noUploadedDraftsMessage(latestValidDraft));
+  throw new Error([
+    'No openable local drafts found.',
+    'Run: agentfeed drafts',
+    'Run: agentfeed collect --explain'
+  ].join('\n'));
+}
+
 async function cmdOpen(args: string[]) {
-  const draft = flag(args, '--latest') || !option(args, '--id') ? await readLatestDraft(process.cwd()) : await readDraft(process.cwd(), option(args, '--id')!);
-  if (!draft.upload.review_url) throw new Error('Draft has not been uploaded yet.');
-  const credentials = await loadCredentialsWithMetadata({ cwd: process.cwd() });
+  const draft = await resolveOpenDraft(args);
+  const reviewUrl = draft.upload.review_url;
+  if (!reviewUrl) throw new Error(notUploadedDraftMessage(draft));
   const trustedApiBases = new Set([DEFAULT_API_BASE_URL]);
+  const warnings: string[] = [];
   if (draft.upload.api_base_url) trustedApiBases.add(draft.upload.api_base_url);
-  if (credentials.api_base_url) trustedApiBases.add(credentials.api_base_url);
-  if (![...trustedApiBases].some((apiBaseUrl) => isTrustedReviewUrl(draft.upload.review_url!, apiBaseUrl, draft.upload.review_base_url))) {
+  try {
+    const credentials = await loadCredentialsWithMetadata({ cwd: process.cwd() });
+    if (credentials.api_base_url) trustedApiBases.add(credentials.api_base_url);
+  } catch (error) {
+    const invalidApiMessage = invalidApiBaseUrlMessage(error);
+    if (!invalidApiMessage) throw error;
+    warnings.push(`ignored invalid AgentFeed API URL while opening a saved review URL: ${invalidApiMessage}`);
+  }
+  if (![...trustedApiBases].some((apiBaseUrl) => isTrustedReviewUrl(reviewUrl, apiBaseUrl, draft.upload.review_base_url))) {
     throw new Error('Saved draft review URL is invalid. Run agentfeed share again to upload a fresh private review draft.');
   }
-  const opened = await openBrowser(draft.upload.review_url);
+  const opened = await openBrowser(reviewUrl);
   if (!opened) {
     print(ui.heading('AgentFeed review URL'));
     print('Browser open failed. Open this URL manually:');
@@ -1489,7 +1547,12 @@ async function cmdOpen(args: string[]) {
     print(ui.section('Summary'));
     print(`Draft: ${draft.id}`);
     print(`Review URL:
-${draft.upload.review_url}`);
+${reviewUrl}`);
+    if (warnings.length) {
+      print();
+      print(ui.section('Warnings'));
+      for (const warning of warnings) print(`Warning: ${warning}`);
+    }
     print();
     print(ui.section('Next'));
     print(`  ${ui.command(`agentfeed preview --id ${draft.id}`)}`);
@@ -1502,7 +1565,12 @@ ${draft.upload.review_url}`);
   print(ui.section('Summary'));
   print(`Draft: ${draft.id}`);
   print(`Review URL:
-${draft.upload.review_url}`);
+${reviewUrl}`);
+  if (warnings.length) {
+    print();
+    print(ui.section('Warnings'));
+    for (const warning of warnings) print(`Warning: ${warning}`);
+  }
   print();
   print(ui.section('Next'));
   print(`  ${ui.command(`agentfeed preview --id ${draft.id}`)}`);

@@ -1557,6 +1557,64 @@ describe('share CLI command', () => {
     }
   });
 
+  it('honors --no-save-cursor for successful JSON share uploads', async () => {
+    const server = createServer(async (req, res) => {
+      if (handleUploadPreflight(req, res)) return;
+      if (req.method !== 'POST' || req.url !== '/v1/ingest/worklogs') {
+        res.writeHead(404).end();
+        return;
+      }
+      await readRequestBody(req);
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({
+        data: {
+          id: 'worklog_share_no_cursor',
+          status: 'needs_review',
+          visibility: 'private',
+          review_url: 'http://localhost:3001/worklogs/worklog_share_no_cursor/review',
+          created_at: '2026-05-31T00:00:00.000Z'
+        }
+      }));
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+
+    try {
+      const sessionFile = await writeCodexShareSession('share-no-save-cursor', 'gpt-no-cursor', 'noSaveCursor');
+      const { stdout, stderr } = await execFileAsync(process.execPath, [
+        cliPath,
+        'share',
+        '--json',
+        '--source',
+        'codex',
+        '--session-file',
+        sessionFile,
+        '--all',
+        '--no-save-cursor',
+        '--no-clipboard'
+      ], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          AGENTFEED_TOKEN: 'af_live_test_token',
+          AGENTFEED_API_BASE_URL: `http://127.0.0.1:${address.port}/v1`
+        }
+      });
+
+      expect(stderr).toBe('');
+      expect(JSON.parse(stdout)).toMatchObject({
+        dry_run: false,
+        upload: { review_url: 'http://localhost:3001/worklogs/worklog_share_no_cursor/review' }
+      });
+      await expect(readCollectionState(dir)).resolves.toEqual({});
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
   it('does not copy or open review URLs when share JSON upload fails', async () => {
     const server = createServer(async (req, res) => {
       if (handleUploadPreflight(req, res)) return;

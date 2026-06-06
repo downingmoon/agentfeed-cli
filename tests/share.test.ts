@@ -37,7 +37,7 @@ describe('share command helpers', () => {
   });
 
   it('parses share-specific options and preserves collect source options', () => {
-    expect(parseShareArgs(['--dry', '--open-review', '--source', 'gemini-cli', '--session-file=/tmp/session.jsonl', '--since', '2026-05-20T01:00:00Z', '--until=2026-05-20T02:00:00Z', '--note', 'Refined login flow', '--no-clipboard', '--run-configured-commands'])).toEqual({
+    expect(parseShareArgs(['--dry', '--open-review', '--source', 'gemini-cli', '--session-file=/tmp/session.jsonl', '--since', '2026-05-20T01:00:00Z', '--until=2026-05-20T02:00:00Z', '--note', 'Refined login flow', '--no-clipboard', '--no-save-cursor', '--run-configured-commands'])).toEqual({
       dryRun: true,
       openReview: true,
       noOpenReview: false,
@@ -49,6 +49,7 @@ describe('share command helpers', () => {
       until: '2026-05-20T02:00:00Z',
       note: 'Refined login flow',
       noClipboard: true,
+      noSaveCursor: true,
       runConfiguredCommands: true,
       yes: false
     });

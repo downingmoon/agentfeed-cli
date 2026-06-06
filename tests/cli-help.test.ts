@@ -243,7 +243,7 @@ describe('CLI help and option validation', () => {
       example_command: 'agentfeed share --dry'
     });
     expect(share?.options).toMatchObject({
-      flags: expect.arrayContaining(['--dry', '--yes', '--json', '--clipboard', '--open-review']),
+      flags: expect.arrayContaining(['--dry', '--yes', '--json', '--clipboard', '--open-review', '--no-save-cursor']),
       value_options: expect.arrayContaining(['--source', '--session-file', '--note']),
       conflicts: expect.arrayContaining([['--dry', '--yes'], ['--clipboard', '--no-clipboard']]),
       completion_words: expect.arrayContaining(['--dry', '--json', '--note', '--source', '--help'])
@@ -297,7 +297,7 @@ describe('CLI help and option validation', () => {
       [['version', '--help'], ['Usage: agentfeed version', 'agentfeed --version', '--json']],
       [['token', 'rotate', '--help'], ['Usage: agentfeed token rotate', 'Compatibility alias for:', 'agentfeed rotate']],
       [['collect', '--help'], ['Usage: agentfeed collect', '--source <source>', '--no-save-cursor']],
-      [['share', '--help'], ['Usage: agentfeed share', '--note <text>', '--explain', '--run-configured-commands']],
+      [['share', '--help'], ['Usage: agentfeed share', '--note <text>', '--explain', '--no-save-cursor', '--run-configured-commands']],
       [['preview', '--help'], ['Usage: agentfeed preview', '--remote', '--json']],
       [['publish', '--help'], ['Usage: agentfeed publish', '--open-review', '--json']],
       [['scan', '--help'], ['Usage: agentfeed scan', '--path <path>', '--dry-run']],

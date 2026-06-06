@@ -1270,7 +1270,7 @@ async function cmdShare(args: string[]) {
     const metadata = await requireUploadPreflight(creds!);
     const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds!, reviewBaseUrl: metadata.review_base_url });
     draft = await sanitizeDraftForCliOutput(process.cwd(), await readDraft(process.cwd(), draft.id));
-    await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
+    if (!opts.noSaveCursor) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
     const handoff = await handoffReviewUrl(result.review_url, {
       copy: shouldCopyReviewUrl({ json: true, noClipboard: opts.noClipboard, clipboard: flag(args, '--clipboard') }),
       open: await shouldOpenReviewAfterUpload(opts.openReview, { respectConfig: false, noOpen: opts.noOpenReview }),
@@ -1319,7 +1319,7 @@ async function cmdShare(args: string[]) {
 
   const metadata = await requireUploadPreflight(creds!);
   const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds!, reviewBaseUrl: metadata.review_base_url });
-  await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
+  if (!opts.noSaveCursor) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
   const handoff = await handoffReviewUrl(result.review_url, {
     copy: shouldCopyReviewUrl({ noClipboard: opts.noClipboard }),
     open: await shouldOpenReviewAfterUpload(opts.openReview, { noOpen: opts.noOpenReview }),
@@ -2538,7 +2538,7 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     validatePositionals: NO_POSITIONALS('collect')
   },
   share: {
-    flags: ['--dry', '--dry-run', '--yes', '-y', '--open-review', '--no-open-review', '--all', '--force', '--run-configured-commands', '--explain', '--no-clipboard', '--no-clip', '--json', '--clipboard'],
+    flags: ['--dry', '--dry-run', '--yes', '-y', '--open-review', '--no-open-review', '--all', '--force', '--run-configured-commands', '--explain', '--no-save-cursor', '--no-clipboard', '--no-clip', '--json', '--clipboard'],
     valueOptions: ['--source', '--session-file', '--since', '--until', '--note'],
     conflicts: [
       ['--dry', '--yes'],
@@ -2949,6 +2949,7 @@ Options:
   --all                     Ignore the saved collection cursor
   --force                   Recollect even if a matching draft already exists
   --explain                 Include collection source/quality diagnostics
+  --no-save-cursor          Do not advance the collection cursor after upload
   --note <text>             Attach a user note to the draft
   --open-review             Open uploaded private review URL
   --no-open-review          Suppress browser handoff
@@ -2961,6 +2962,7 @@ Options:
 Examples:
   agentfeed share --dry
   agentfeed share --dry --explain
+  agentfeed share --dry --no-save-cursor
   agentfeed share --note "Fixed auth flow"
   agentfeed share --yes --open-review`,
     preview: `Usage: agentfeed preview [options]

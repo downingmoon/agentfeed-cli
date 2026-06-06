@@ -16,6 +16,7 @@ export interface ShareOptions {
   until?: string | null;
   note?: string | null;
   noClipboard: boolean;
+  noSaveCursor: boolean;
   runConfiguredCommands: boolean;
   yes: boolean;
 }
@@ -166,6 +167,7 @@ export function parseShareArgs(args: string[]): ShareOptions {
     until: option(args, '--until') ?? null,
     note: option(args, '--note') ?? null,
     noClipboard: flag(args, '--no-clipboard') || flag(args, '--no-clip'),
+    noSaveCursor: flag(args, '--no-save-cursor'),
     runConfiguredCommands: flag(args, '--run-configured-commands'),
     yes: flag(args, '--yes') || flag(args, '-y')
   };

@@ -73,6 +73,10 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('Global options:');
     expect(stdout).toContain('agentfeed --version');
     expect(stdout).toContain('agentfeed -v');
+    expect(stdout).toContain('Help:');
+    expect(stdout).toContain('agentfeed help');
+    expect(stdout).toContain('agentfeed help <command>');
+    expect(stdout).toContain('agentfeed <command> help');
     expect(stdout).toContain('Quickstart:');
     expect(stdout).toContain('agentfeed init');
     expect(stdout).toContain('agentfeed login');
@@ -83,6 +87,8 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('agentfeed login --token - --no-save');
     expect(stdout).toContain('Commands:');
     expect(stdout).toContain('Start:');
+    expect(stdout).toContain('help');
+    expect(stdout).toContain('Show root or command-specific help');
     expect(stdout).toContain('Share work:');
     expect(stdout).toContain('Privacy and drafts:');
     expect(stdout).toContain('Automation:');
@@ -155,6 +161,29 @@ describe('CLI help and option validation', () => {
     expect(stderr).toBe('');
   });
 
+  it('supports natural help command aliases for root and command-specific help', async () => {
+    const root = await runCli(['help']);
+    expect(root.stderr).toBe('');
+    expect(root.stdout).toContain('Usage: agentfeed <command>');
+    expect(root.stdout).toContain('Quickstart:');
+
+    const collectTopic = await runCli(['help', 'collect']);
+    expect(collectTopic.stderr).toBe('');
+    expect(collectTopic.stdout).toContain('Usage: agentfeed collect');
+    expect(collectTopic.stdout).toContain('agentfeed collect --explain');
+    expect(collectTopic.stdout).not.toContain('Usage: agentfeed <command>');
+
+    const trailingHelp = await runCli(['collect', 'help']);
+    expect(trailingHelp.stderr).toBe('');
+    expect(trailingHelp.stdout).toContain('Usage: agentfeed collect');
+    expect(trailingHelp.stdout).toContain('--source <source>');
+
+    const tokenHelp = await runCli(['help', 'token', 'rotate']);
+    expect(tokenHelp.stderr).toBe('');
+    expect(tokenHelp.stdout).toContain('Usage: agentfeed token rotate');
+    expect(tokenHelp.stdout).toContain('Compatibility alias for:');
+  });
+
   it('prints example-driven help for the main review workflow commands', async () => {
     const expectations: Array<[string[], string[]]> = [
       [['share', '--help'], ['Examples:', 'agentfeed share --dry', 'agentfeed share --yes --open-review']],
@@ -174,6 +203,7 @@ describe('CLI help and option validation', () => {
 
   it('prints command-specific help for every public command surface', async () => {
     const expectations: Array<[string[], string[]]> = [
+      [['help', '--help'], ['Usage: agentfeed help', 'agentfeed help collect', 'agentfeed <command> --help']],
       [['init', '--help'], ['Usage: agentfeed init', '--project-name', '--no-git-check', '--force']],
       [['login', '--help'], ['Usage: agentfeed login', '--token-stdin', '--no-open']],
       [['logout', '--help'], ['Usage: agentfeed logout', '--json']],
@@ -245,6 +275,20 @@ describe('CLI help and option validation', () => {
     expect(failure.stderr).toContain('Did you mean: agentfeed status');
     expect(failure.stderr).toContain('Run: agentfeed --help');
     expect(failure.stdout).toBe('');
+  });
+
+  it('suggests help topics and the help command for close typos', async () => {
+    const topic = await runCliFailure(['help', 'statsu']);
+    expect(topic.stderr).toContain('Unknown help topic: statsu');
+    expect(topic.stderr).toContain('Did you mean: agentfeed help status');
+    expect(topic.stderr).toContain('Run: agentfeed help');
+    expect(topic.stdout).toBe('');
+
+    const command = await runCliFailure(['hlp']);
+    expect(command.stderr).toContain('Unknown command: hlp');
+    expect(command.stderr).toContain('Did you mean: agentfeed help');
+    expect(command.stderr).toContain('Run: agentfeed --help');
+    expect(command.stdout).toBe('');
   });
 
   it('suggests --open-review when share receives a close option typo', async () => {

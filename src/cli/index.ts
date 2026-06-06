@@ -1726,6 +1726,7 @@ async function cmdCompletion(args: string[]) {
 }
 
 const PUBLIC_COMMANDS = [
+  'help',
   'init',
   'login',
   'share',
@@ -1745,6 +1746,7 @@ const PUBLIC_COMMANDS = [
 ] as const;
 
 const COMMAND_DESCRIPTIONS: Record<(typeof PUBLIC_COMMANDS)[number], string> = {
+  help: 'Show root or command-specific help',
   init: 'Initialize AgentFeed in the current project',
   login: 'Connect this machine through browser approval',
   share: 'Collect, preview, and optionally upload in one workflow',
@@ -1764,7 +1766,7 @@ const COMMAND_DESCRIPTIONS: Record<(typeof PUBLIC_COMMANDS)[number], string> = {
 };
 
 const COMMAND_GROUPS: Array<{ title: string; commands: Array<(typeof PUBLIC_COMMANDS)[number]> }> = [
-  { title: 'Start', commands: ['init', 'login', 'status'] },
+  { title: 'Start', commands: ['help', 'init', 'login', 'status'] },
   { title: 'Share work', commands: ['share', 'collect', 'preview', 'publish', 'open'] },
   { title: 'Privacy and drafts', commands: ['scan', 'drafts', 'discard'] },
   { title: 'Automation', commands: ['hook', 'completion'] },
@@ -1772,6 +1774,7 @@ const COMMAND_GROUPS: Array<{ title: string; commands: Array<(typeof PUBLIC_COMM
 ];
 
 const KNOWN_COMMANDS = new Set([
+  'help',
   'init',
   'login',
   'logout',
@@ -1836,6 +1839,15 @@ function flaglessOptionSuggestionLine(command: string, positionals: string[], pr
   return suggestion ? [`Did you mean: ${suggestion}`] : [];
 }
 
+function helpTopicError(topic: string): string {
+  const suggestion = closestMatch(topic, PUBLIC_COMMANDS);
+  return [
+    `Unknown help topic: ${topic}`,
+    ...(suggestion ? [`Did you mean: agentfeed help ${suggestion}`] : []),
+    'Run: agentfeed help'
+  ].join('\n');
+}
+
 const NO_POSITIONALS = (command: string) => (positionals: string[]) =>
   positionals.length
     ? commandUsageError(
@@ -1865,6 +1877,18 @@ function unsupportedHookTargetMessage(action = 'install', target?: string): stri
 }
 
 const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
+  help: {
+    validatePositionals: (positionals) => {
+      if (positionals.length === 0) return null;
+      if (positionals[0] === 'token') {
+        if (positionals.length === 1) return null;
+        if (positionals.length === 2 && positionals[1] === 'rotate') return null;
+        return commandUsageError(`Unexpected argument for help token: ${positionals[1]}`, 'help');
+      }
+      if (positionals.length > 1) return commandUsageError(`Unexpected argument for help: ${positionals[1]}`, 'help');
+      return KNOWN_COMMANDS.has(positionals[0]) ? null : helpTopicError(positionals[0]);
+    }
+  },
   init: {
     flags: ['--no-git-check', '--force'],
     valueOptions: ['--project-name'],
@@ -2044,9 +2068,9 @@ function closestMatch(input: string, candidates: readonly string[]): string | nu
 }
 
 function commandHelpHint(command: string): string {
-  return command === 'token'
-    ? 'Run: agentfeed token rotate --help'
-    : `Run: agentfeed ${command} --help`;
+  if (command === 'token') return 'Run: agentfeed token rotate --help';
+  if (command === 'help') return 'Run: agentfeed help --help';
+  return `Run: agentfeed ${command} --help`;
 }
 
 function unknownCommandError(command: string): Error {
@@ -2160,6 +2184,7 @@ function printHelp(): void {
   print(ui.heading('Usage: agentfeed <command> [options]'));
   print(`Version: ${AGENTFEED_CLI_VERSION}`);
   print(`\n${ui.section('Global options')}:\n  agentfeed --help\n  agentfeed --version\n  agentfeed -v`);
+  print(`\n${ui.section('Help')}:\n  agentfeed help\n  agentfeed help <command>\n  agentfeed <command> help`);
   print(`\n${ui.section('Quickstart')}:\n  agentfeed init\n  agentfeed login\n  agentfeed share --dry\n  agentfeed share --yes --open-review`);
   print(`\n${ui.section('Headless login')}:\n  printf %s "$TOKEN" | agentfeed login --token-stdin\n  printf %s "$TOKEN" | agentfeed login --token - --no-save`);
   print(`\n${ui.section('Daily workflow')}:\n  agentfeed share\n  agentfeed share --yes\n  agentfeed share --dry\n  agentfeed share --note "Fixed auth flow"\n  agentfeed status`);
@@ -2187,6 +2212,22 @@ Options:
   }
 
   const helps: Record<string, string> = {
+    help: `Usage: agentfeed help [command]
+
+Show AgentFeed root help or command-specific help.
+
+Examples:
+  agentfeed help
+  agentfeed help collect
+  agentfeed collect help
+  agentfeed help token rotate
+
+Equivalent forms:
+  agentfeed --help
+  agentfeed <command> --help
+
+Options:
+  --help, -h                Show this help`,
     init: `Usage: agentfeed init [options]
 
 Initialize .agentfeed/config.json in the current git project.
@@ -2402,6 +2443,23 @@ Options:
   print(text);
 }
 
+function printHelpTopic(args: string[]): void {
+  if (args.length === 0) {
+    printHelp();
+    return;
+  }
+  if (args[0] === 'token') {
+    printCommandHelp('token');
+    return;
+  }
+  printCommandHelp(args[0]);
+}
+
+function isTrailingHelpAlias(command: string, args: string[]): boolean {
+  if (args.length === 1 && args[0] === 'help') return true;
+  return command === 'token' && args.length === 2 && args[0] === 'rotate' && args[1] === 'help';
+}
+
 async function main() {
   const [command, ...args] = process.argv.slice(2);
   if (command === undefined || command === '--help' || command === '-h') {
@@ -2412,6 +2470,16 @@ async function main() {
     throw leadingOptionError(command, args);
   }
   if (hasHelpFlag(args)) {
+    if (!KNOWN_COMMANDS.has(command)) throw unknownCommandError(command);
+    printCommandHelp(command);
+    return;
+  }
+  if (command === 'help') {
+    validateCommandArgs(command, args);
+    printHelpTopic(args);
+    return;
+  }
+  if (isTrailingHelpAlias(command, args)) {
     if (!KNOWN_COMMANDS.has(command)) throw unknownCommandError(command);
     printCommandHelp(command);
     return;

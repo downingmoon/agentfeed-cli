@@ -696,6 +696,57 @@ function shareDryRunNextActions(draftId: string, hasCredentials: boolean): strin
   ]);
 }
 
+interface StatusReadinessItem {
+  name: string;
+  status: 'ready' | 'attention';
+  detail: string;
+  next_action?: string;
+}
+
+function statusReadinessItems(options: {
+  invalidApiBaseUrl: boolean;
+  projectInitialized: boolean;
+  hasToken: boolean;
+  insideGitRepository: boolean;
+  pendingUploads: number;
+}): StatusReadinessItem[] {
+  const projectInitAction = options.insideGitRepository ? 'agentfeed init' : 'git init && agentfeed init';
+  return [
+    options.invalidApiBaseUrl
+      ? { name: 'API', status: 'attention', detail: 'invalid API base URL', next_action: 'agentfeed doctor' }
+      : { name: 'API', status: 'ready', detail: 'base URL accepted' },
+    options.projectInitialized
+      ? { name: 'Project', status: 'ready', detail: 'initialized' }
+      : { name: 'Project', status: 'attention', detail: 'not initialized', next_action: projectInitAction },
+    options.insideGitRepository
+      ? { name: 'Git', status: 'ready', detail: 'repository detected' }
+      : { name: 'Git', status: 'attention', detail: 'repository not detected', next_action: 'git init' },
+    options.hasToken
+      ? { name: 'Account', status: 'ready', detail: 'token configured' }
+      : { name: 'Account', status: 'attention', detail: 'token missing', next_action: 'agentfeed login' },
+    options.pendingUploads > 0
+      ? {
+        name: 'Uploads',
+        status: 'attention',
+        detail: `${options.pendingUploads} pending draft${options.pendingUploads === 1 ? '' : 's'}`,
+        next_action: 'agentfeed publish --latest --yes'
+      }
+      : { name: 'Uploads', status: 'ready', detail: 'no pending uploads' }
+  ];
+}
+
+function readinessMarker(status: StatusReadinessItem['status']): string {
+  return status === 'ready' ? ui.good('✓') : ui.warn('!');
+}
+
+function printStatusReadiness(items: StatusReadinessItem[]): void {
+  print(ui.section('Readiness'));
+  for (const item of items) {
+    const next = item.next_action ? ` → ${item.next_action}` : '';
+    print(`${readinessMarker(item.status)} ${item.name}: ${item.detail}${next}`);
+  }
+}
+
 function statusNextActions(options: {
   invalidApiBaseUrl: boolean;
   projectInitialized: boolean;
@@ -998,17 +1049,20 @@ async function cmdStatus(args: string[] = []) {
       : allWarnings.length || pending > 0
         ? 'attention needed'
         : 'ready';
-  const nextActions = statusNextActions({
+  const statusOptions = {
     invalidApiBaseUrl: diagnostics.invalidApiBaseUrl,
     projectInitialized: Boolean(config),
     hasToken,
     insideGitRepository,
     pendingUploads: pending
-  });
+  };
+  const nextActions = statusNextActions(statusOptions);
+  const readiness = statusReadinessItems(statusOptions);
 
   if (flag(args, '--json')) {
     print(JSON.stringify({
       health,
+      readiness,
       account: {
         token_configured: hasToken,
         token_source: credentialResolution.token_source,
@@ -1053,6 +1107,8 @@ async function cmdStatus(args: string[] = []) {
 
   print(ui.heading('AgentFeed status'));
   print(`Health: ${health === 'ready' ? ui.good(health) : ui.warn(health)}`);
+  print();
+  printStatusReadiness(readiness);
   print();
   print(ui.section('Account'));
   print(`User/token: ${hasToken ? 'configured' : 'missing'}`);

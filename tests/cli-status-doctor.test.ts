@@ -78,6 +78,11 @@ describe('status and doctor provenance output', () => {
     });
 
     expect(stdout).toContain('AgentFeed status');
+    expect(stdout).toContain('Readiness');
+    expect(stdout).toContain('API: base URL accepted');
+    expect(stdout).toContain('Account: token missing → agentfeed login');
+    expect(stdout).toContain('Project: initialized');
+    expect(stdout).toContain('Uploads: no pending uploads');
     expect(stdout).toContain('Account');
     expect(stdout).toContain('Project');
     expect(stdout).toContain('Collection');
@@ -208,6 +213,7 @@ describe('status and doctor provenance output', () => {
 
     const output = JSON.parse(stdout) as {
       health: string;
+      readiness: Array<{ name: string; status: string; detail: string; next_action?: string }>;
       account: { token_configured: boolean; token_expires_at: string | null };
       api: { base_url: string };
       project: { initialized: boolean; name: string | null };
@@ -217,6 +223,12 @@ describe('status and doctor provenance output', () => {
     };
     expect(stderr).toBe('');
     expect(output.health).toBeTruthy();
+    expect(output.readiness).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'API', status: 'ready', detail: 'base URL accepted' }),
+      expect.objectContaining({ name: 'Account', status: 'ready', detail: 'token configured' }),
+      expect.objectContaining({ name: 'Project', status: 'ready', detail: 'initialized' }),
+      expect.objectContaining({ name: 'Uploads', status: 'ready', detail: 'no pending uploads' })
+    ]));
     expect(output.account.token_configured).toBe(true);
     expect(output.account.token_expires_at).toBe('2026-06-15T00:00:00Z');
     expect(output.api.base_url).toBe('http://127.0.0.1:9/v1');
@@ -270,6 +282,10 @@ describe('status and doctor provenance output', () => {
 
     expect(stdout).toContain('AgentFeed status');
     expect(stdout).toContain('Health: setup needed');
+    expect(stdout).toContain('Readiness');
+    expect(stdout).toContain('Account: token missing → agentfeed login');
+    expect(stdout).toContain('Project: not initialized → git init && agentfeed init');
+    expect(stdout).toContain('Git: repository not detected → git init');
     expect(stdout).toContain('Project initialized: no');
     expect(stdout).toContain('User/token: missing');
     expect(stdout).toContain('Next');
@@ -368,6 +384,7 @@ describe('status and doctor provenance output', () => {
 
     expect(stdout).toContain('Last collection cursor: 2026-05-20T02:00:00.000Z');
     expect(stdout).toContain('Next default collection since: 2026-05-20T02:00:00.000Z');
+    expect(stdout).toContain('Uploads: 1 pending draft → agentfeed publish --latest --yes');
     expect(stdout).toContain('Warning: pending local drafts exist while a collection cursor is set');
     expect(stdout).toContain('--all/--since');
   });

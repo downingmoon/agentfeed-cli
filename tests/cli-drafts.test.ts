@@ -93,6 +93,8 @@ describe('drafts CLI command', () => {
     expect(stdout).toContain('Total: 1');
     expect(stdout).toContain('Pending upload: 1');
     expect(stdout).toContain('Uploaded: 0');
+    expect(stdout).toContain('Order: newest first');
+    expect(stdout).toMatch(/Updated: \d{4}-\d{2}-\d{2}T.*\((just now|\d+[mhd] ago|\d+mo ago|\d+y ago|in \d+[mhd]|in \d+mo|in \d+y|in less than 1m)\)/);
     expect(stdout).toContain(draft.id);
     expect(stdout).toContain('pending');
     expect(stdout).toContain('codex');

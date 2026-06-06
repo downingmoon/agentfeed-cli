@@ -1979,6 +1979,35 @@ function printDraftListSummary(summary: DraftListSummary): void {
   print(`Pending upload: ${summary.pending}`);
   print(`Uploaded: ${summary.uploaded}`);
   if (summary.invalid > 0) print(ui.warn(`Invalid: ${summary.invalid}`));
+  print('Order: newest first');
+}
+
+function formatRelativeTime(value: string, now = Date.now()): string {
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) return value;
+
+  const deltaMs = parsed - now;
+  const absMs = Math.abs(deltaMs);
+  const future = deltaMs > 0;
+  const suffix = future ? 'from now' : 'ago';
+
+  if (absMs < 60_000) return future ? 'in less than 1m' : 'just now';
+  const minutes = Math.floor(absMs / 60_000);
+  if (minutes < 60) return future ? `in ${minutes}m` : `${minutes}m ${suffix}`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return future ? `in ${hours}h` : `${hours}h ${suffix}`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return future ? `in ${days}d` : `${days}d ${suffix}`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return future ? `in ${months}mo` : `${months}mo ${suffix}`;
+  const years = Math.floor(days / 365);
+  return future ? `in ${years}y` : `${years}y ${suffix}`;
+}
+
+function formatDraftUpdatedAt(value: string): string {
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) return value;
+  return `${new Date(parsed).toISOString()} (${formatRelativeTime(value)})`;
 }
 
 function draftListNextActions(rows: DraftListRow[]): string[] {
@@ -2023,10 +2052,12 @@ async function cmdDrafts(args: string[]) {
   for (const row of rows) {
     if (!row.valid) {
       print(`${row.id}  invalid`);
+      print(`  Updated: ${formatDraftUpdatedAt(row.updated_at)}`);
       print(`  Error: ${row.error}`);
       continue;
     }
     print(`${row.id}  ${row.status}  ${row.agent}  ${row.privacy} · findings ${row.findings}`);
+    print(`  Updated: ${formatDraftUpdatedAt(row.updated_at)}`);
     print(`  Project: ${row.project}`);
     print(`  Title: ${row.title}`);
     print(`  Metrics: ${row.metrics}`);

@@ -1985,6 +1985,29 @@ function unknownCommandError(command: string): Error {
   ].join('\n'));
 }
 
+function leadingOptionError(option: string, args: string[]): Error {
+  const optionName = option.includes('=') ? option.slice(0, option.indexOf('=')) : option;
+  const commandIndex = args.findIndex((arg) => KNOWN_COMMANDS.has(arg));
+  const command = commandIndex >= 0 ? args[commandIndex] : null;
+  const spec = command ? COMMAND_ARG_SPECS[command] : null;
+  const acceptsOption = spec
+    ? [...(spec.flags ?? []), ...(spec.valueOptions ?? []), '--help', '-h'].includes(optionName)
+    : false;
+  const valueTokens = commandIndex > 0 ? args.slice(0, commandIndex) : [];
+  const valueSuffix = spec?.valueOptions?.includes(optionName) && !option.includes('=') && valueTokens[0] && !valueTokens[0].startsWith('-')
+    ? ` ${valueTokens[0]}`
+    : '';
+  const reordered = command && acceptsOption
+    ? `agentfeed ${command} ${option}${valueSuffix}`
+    : null;
+  return new Error([
+    `Option appears before command: ${optionName}`,
+    'AgentFeed uses command-first syntax: agentfeed <command> [options].',
+    ...(reordered ? [`Use: ${reordered}`] : []),
+    ...(command ? [commandHelpHint(command)] : ['Run: agentfeed --help'])
+  ].join('\n'));
+}
+
 function unknownOptionError(command: string, optionName: string, spec: CommandArgSpec): Error {
   const candidates = [...(spec.flags ?? []), ...(spec.valueOptions ?? []), '--help', '-h'];
   const suggestion = closestMatch(optionName, candidates);
@@ -2311,6 +2334,9 @@ async function main() {
   if (command === undefined || command === '--help' || command === '-h') {
     printHelp();
     return;
+  }
+  if (command.startsWith('-') && command !== '--version' && command !== '-v') {
+    throw leadingOptionError(command, args);
   }
   if (hasHelpFlag(args)) {
     if (!KNOWN_COMMANDS.has(command)) throw unknownCommandError(command);

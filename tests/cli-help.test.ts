@@ -221,6 +221,23 @@ describe('CLI help and option validation', () => {
     expect(failure.stdout).toBe('');
   });
 
+  it('explains command-first syntax when options are placed before the command', async () => {
+    const json = await runCliFailure(['--json', 'status']);
+    expect(json.stderr).toContain('Option appears before command: --json');
+    expect(json.stderr).toContain('AgentFeed uses command-first syntax: agentfeed <command> [options].');
+    expect(json.stderr).toContain('Use: agentfeed status --json');
+    expect(json.stderr).toContain('Run: agentfeed status --help');
+    expect(json.stderr).not.toContain('Unknown command: --json');
+    expect(json.stdout).toBe('');
+
+    const apiBase = await runCliFailure(['--api-base-url', 'http://localhost:8001/v1', 'login']);
+    expect(apiBase.stderr).toContain('Option appears before command: --api-base-url');
+    expect(apiBase.stderr).toContain('Use: agentfeed login --api-base-url http://localhost:8001/v1');
+    expect(apiBase.stderr).toContain('Run: agentfeed login --help');
+    expect(apiBase.stderr).not.toContain('AgentFeed browser authorization');
+    expect(apiBase.stdout).toBe('');
+  });
+
   it('suggests status when an unknown command is a close typo', async () => {
     const failure = await runCliFailure(['statsu']);
 

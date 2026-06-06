@@ -35,6 +35,26 @@ async function runCli(args: string[]): Promise<{ stdout: string; stderr: string 
   });
 }
 
+const ANSI_ESCAPE_PATTERN = /\u001B\[[0-?]*[ -/]*[@-~]/;
+
+async function runCliWithEnv(args: string[], env: NodeJS.ProcessEnv): Promise<{ stdout: string; stderr: string }> {
+  return execFileAsync(process.execPath, [cliPath, ...args], {
+    cwd: dir,
+    encoding: 'utf8',
+    env: { ...process.env, HOME: home, AGENTFEED_TOKEN: '', AGENTFEED_CI: '1', FORCE_COLOR: undefined, ...env }
+  });
+}
+
+async function runCliFailureWithEnv(args: string[], env: NodeJS.ProcessEnv): Promise<{ stdout: string; stderr: string }> {
+  try {
+    await runCliWithEnv(args, env);
+  } catch (error) {
+    const failure = error as { stdout?: string; stderr?: string };
+    return { stdout: failure.stdout ?? '', stderr: failure.stderr ?? '' };
+  }
+  throw new Error(`Expected agentfeed ${args.join(' ')} to fail`);
+}
+
 async function runCliFailure(args: string[]): Promise<{ stdout: string; stderr: string }> {
   try {
     await runCli(args);
@@ -62,6 +82,40 @@ describe('CLI help and option validation', () => {
     expect(stdout).not.toContain('agentfeed collect --upload');
     expect(stdout).not.toContain('agentfeed preview --remote');
     expect(stderr).toBe('');
+  });
+
+
+  it('prints help without ANSI escapes when NO_COLOR is set', async () => {
+    const { stdout, stderr } = await runCliWithEnv(['--help'], { NO_COLOR: '1' });
+
+    expect(stdout).not.toMatch(ANSI_ESCAPE_PATTERN);
+    expect(stderr).not.toMatch(ANSI_ESCAPE_PATTERN);
+  });
+
+  it('prints unknown-command errors without ANSI escapes when NO_COLOR is set', async () => {
+    const failure = await runCliFailureWithEnv(['statsu'], { NO_COLOR: '1' });
+
+    expect(failure.stderr).toContain('Did you mean: agentfeed status');
+    expect(failure.stderr).toContain('Run: agentfeed --help');
+    expect(failure.stderr).not.toMatch(ANSI_ESCAPE_PATTERN);
+    expect(failure.stdout).not.toMatch(ANSI_ESCAPE_PATTERN);
+  });
+
+
+  it('prints unknown-command errors without ANSI escapes when stderr is not a TTY', async () => {
+    const failure = await runCliFailureWithEnv(['statsu'], { NO_COLOR: '' });
+
+    expect(failure.stderr).toContain('Did you mean: agentfeed status');
+    expect(failure.stderr).toContain('Run: agentfeed --help');
+    expect(failure.stderr).not.toMatch(ANSI_ESCAPE_PATTERN);
+    expect(failure.stdout).not.toMatch(ANSI_ESCAPE_PATTERN);
+  });
+
+  it('prints help without ANSI escapes when stdout is not a TTY', async () => {
+    const { stdout, stderr } = await runCliWithEnv(['--help'], { NO_COLOR: '' });
+
+    expect(stdout).not.toMatch(ANSI_ESCAPE_PATTERN);
+    expect(stderr).not.toMatch(ANSI_ESCAPE_PATTERN);
   });
 
   it('prints collect-specific help for collect --help', async () => {
@@ -92,6 +146,7 @@ describe('CLI help and option validation', () => {
     const failure = await runCliFailure(['status', '--bogus']);
 
     expect(failure.stderr).toContain('Unknown option: --bogus');
+    expect(failure.stderr).toContain('Run: agentfeed status --help');
     expect(failure.stdout).toBe('');
   });
 
@@ -100,6 +155,7 @@ describe('CLI help and option validation', () => {
 
     expect(failure.stderr).toContain('Unknown command: statsu');
     expect(failure.stderr).toContain('Did you mean: agentfeed status');
+    expect(failure.stderr).toContain('Run: agentfeed --help');
     expect(failure.stdout).toBe('');
   });
 
@@ -108,6 +164,7 @@ describe('CLI help and option validation', () => {
 
     expect(failure.stderr).toContain('Unknown option: --opne-review');
     expect(failure.stderr).toContain('Did you mean: --open-review');
+    expect(failure.stderr).toContain('Run: agentfeed share --help');
     expect(failure.stdout).toBe('');
   });
 

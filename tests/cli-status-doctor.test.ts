@@ -9,6 +9,7 @@ import { ensureCliBuilt } from './build-cli.js';
 const repoRoot = resolve('.');
 const cliPath = join(repoRoot, 'dist', 'cli', 'index.js');
 const execFileAsync = promisify(execFile);
+const ANSI_ESCAPE_PATTERN = /\u001B\[[0-?]*[ -/]*[@-~]/;
 
 function execFileWithInput(args: string[], input: string, options: Parameters<typeof execFile>[2] = {}): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
@@ -57,6 +58,73 @@ afterEach(async () => {
 });
 
 describe('status and doctor provenance output', () => {
+  it('status presents sectioned UX copy while preserving required diagnostics', async () => {
+    execFileSync(process.execPath, [cliPath, 'init', '--no-git-check', '--project-name', 'status-polish'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    const stdout = execFileSync(process.execPath, [cliPath, 'status'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: '',
+        AGENTFEED_API_BASE_URL: 'https://api.agentfeed.dev/v1',
+        FORCE_COLOR: undefined
+      }
+    });
+
+    expect(stdout).toContain('AgentFeed status');
+    expect(stdout).toContain('Account');
+    expect(stdout).toContain('Project');
+    expect(stdout).toContain('Collection');
+    expect(stdout).toContain('User/token source: missing');
+    expect(stdout).toContain('API base URL: https://api.agentfeed.dev/v1');
+    expect(stdout).toContain('Project initialized: yes');
+    expect(stdout).toContain('Project name: status-polish');
+    expect(stdout).toContain('Git repository:');
+    expect(stdout).toContain('Claude Code hook:');
+    expect(stdout).toContain('Local drafts count:');
+    expect(stdout).toContain('Pending upload count:');
+  });
+
+  it('status prints without ANSI escapes when NO_COLOR is set', async () => {
+    const stdout = execFileSync(process.execPath, [cliPath, 'status'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: '',
+        AGENTFEED_API_BASE_URL: 'https://api.agentfeed.dev/v1',
+        NO_COLOR: '1',
+        FORCE_COLOR: undefined
+      }
+    });
+
+    expect(stdout).not.toMatch(ANSI_ESCAPE_PATTERN);
+  });
+
+  it('status prints without ANSI escapes when stdout is not a TTY', async () => {
+    const stdout = execFileSync(process.execPath, [cliPath, 'status'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        HOME: home,
+        AGENTFEED_TOKEN: '',
+        AGENTFEED_API_BASE_URL: 'https://api.agentfeed.dev/v1',
+        NO_COLOR: '',
+        FORCE_COLOR: undefined
+      }
+    });
+
+    expect(stdout).not.toMatch(ANSI_ESCAPE_PATTERN);
+  });
+
   it('status warns when a repo .env API URL is ignored as unsafe', async () => {
     await writeFile(join(dir, '.env'), 'AGENTFEED_API_BASE_URL=https://evil.example/v1\n');
 

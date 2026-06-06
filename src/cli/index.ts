@@ -26,6 +26,7 @@ import { openBrowser } from '../utils/open-browser.js';
 import { copyToClipboard } from '../utils/clipboard.js';
 import { AGENTFEED_CLI_VERSION } from '../version.js';
 import { draftPaths } from '../draft/paths.js';
+import * as ui from './ui.js';
 
 function print(text = '') { process.stdout.write(`${text}\n`); }
 function err(text = '') { process.stderr.write(`${text}\n`); }
@@ -484,31 +485,62 @@ async function cmdStatus() {
       statusWarnings.push(`Claude Code settings could not be parsed at ${settingsPath}; hook status is unknown.`);
     }
   }
+  const allWarnings = [...credentialResolution.warnings, ...statusWarnings];
+  const health = !creds
+    ? 'setup needed'
+    : !config
+      ? 'project setup needed'
+      : allWarnings.length || pending > 0
+        ? 'attention needed'
+        : 'ready';
+
+  print(ui.heading('AgentFeed status'));
+  print(`Health: ${health === 'ready' ? ui.good(health) : ui.warn(health)}`);
+  print();
+  print(ui.section('Account'));
   print(`User/token: ${creds ? 'configured' : 'missing'}`);
   print(`User/token source: ${credentialSourceLabel(credentialResolution.token_source)}`);
   print(`Credential store: ${credentialStoreLabel(credentialResolution.credential_store)}`);
   print(`Credentials file: ${credentialResolution.credentials_file_exists ? credentialResolution.credentials_file_path : 'missing'}`);
+  if (creds?.token_expires_at) {
+    print(`Token expires at: ${formatTokenExpiry(creds.token_expires_at)}`);
+    const warning = tokenExpiryWarning(creds.token_expires_at);
+    if (warning) print(ui.warn(`Warning: ${warning}`));
+  }
+  print();
+  print(ui.section('API'));
   print(`API base URL: ${credentialResolution.api_base_url ?? creds?.api_base_url ?? await resolveApiBaseUrl()}`);
   if (credentialResolution.api_base_url_source) {
     print(`API base URL source: ${apiBaseSourceLabel(credentialResolution.api_base_url_source, credentialResolution.api_base_url_source_detail)}`);
   }
-  if (creds?.token_expires_at) {
-    print(`Token expires at: ${formatTokenExpiry(creds.token_expires_at)}`);
-    const warning = tokenExpiryWarning(creds.token_expires_at);
-    if (warning) print(`Warning: ${warning}`);
-  }
-  for (const warning of [...credentialResolution.warnings, ...statusWarnings]) print(`Warning: ${warning}`);
+  for (const warning of allWarnings) print(ui.warn(`Warning: ${warning}`));
+  print();
+  print(ui.section('Project'));
   print(`Project initialized: ${config ? 'yes' : 'no'}`);
   if (config) print(`Project name: ${config.project.name}`);
   const git = await collectGitMetrics(process.cwd());
   print(`Git repository: ${git.branch || git.head_commit ? 'yes' : 'no'}`);
   print(`Claude Code hook: ${hook}`);
+  print();
+  print(ui.section('Collection'));
   print(`Local drafts count: ${drafts.length}`);
   print(`Pending upload count: ${pending}`);
   print(`Last collection cursor: ${formatCollectionCursor(collectionState.last_collected_at)}`);
   print(`Next default collection since: ${nextDefaultCollectionSince(collectionState.last_collected_at)}`);
   if (pending > 0 && collectionState.last_collected_at) {
-    print('Warning: pending local drafts exist while a collection cursor is set; publish/discard them or use --all/--since if the next collect looks empty.');
+    print(ui.warn('Warning: pending local drafts exist while a collection cursor is set; publish/discard them or use --all/--since if the next collect looks empty.'));
+  }
+  print();
+  print(ui.section('Next'));
+  if (!creds) {
+    print(`  ${ui.command('agentfeed login')}`);
+  } else if (!config) {
+    print(`  ${ui.command('agentfeed init')}`);
+  } else if (pending > 0) {
+    print(`  ${ui.command('agentfeed publish --latest --yes')}`);
+    print(`  ${ui.command('agentfeed discard --latest')}`);
+  } else {
+    print(`  ${ui.command('agentfeed share --yes')}`);
   }
 }
 
@@ -1203,15 +1235,15 @@ function validateCommandArgs(command: string, args: string[]): void {
 }
 
 function printHelp(): void {
-  print('Usage: agentfeed <command> [options]');
+  print(ui.heading('Usage: agentfeed <command> [options]'));
   print(`Version: ${AGENTFEED_CLI_VERSION}`);
-  print('\nQuickstart:\n  agentfeed init\n  agentfeed login\n  printf %s "$TOKEN" | agentfeed login --token-stdin\n  printf %s "$TOKEN" | agentfeed login --token - --no-save\n  agentfeed share --yes --open-review');
-  print('\nDaily workflow:\n  agentfeed share\n  agentfeed share --yes\n  agentfeed share --dry\n  agentfeed share --note "Fixed auth flow"\n  agentfeed status');
-  print('\nDraft review:\n  agentfeed collect --explain\n  agentfeed preview --latest\n  agentfeed publish --latest --yes\n  agentfeed open --latest');
-  print('\nAdvanced and diagnostics:\n  agentfeed doctor\n  agentfeed scan --id <draft_id> --dry-run\n  agentfeed hook install claude-code\n  agentfeed drafts\n  agentfeed discard --id <draft_id>\n  agentfeed rotate\n  agentfeed logout');
-  print('\nShell completion:\n  agentfeed completion zsh\n  agentfeed completion bash\n  agentfeed completion fish');
-  print(`\nCommands:\n  ${PUBLIC_COMMANDS.join(', ')}`);
-  print('\nRun `agentfeed <command> --help` for command-specific options.');
+  print(`\n${ui.section('Quickstart')}:\n  agentfeed init\n  agentfeed login\n  printf %s "$TOKEN" | agentfeed login --token-stdin\n  printf %s "$TOKEN" | agentfeed login --token - --no-save\n  agentfeed share --yes --open-review`);
+  print(`\n${ui.section('Daily workflow')}:\n  agentfeed share\n  agentfeed share --yes\n  agentfeed share --dry\n  agentfeed share --note "Fixed auth flow"\n  agentfeed status`);
+  print(`\n${ui.section('Draft review')}:\n  agentfeed collect --explain\n  agentfeed preview --latest\n  agentfeed publish --latest --yes\n  agentfeed open --latest`);
+  print(`\n${ui.section('Advanced and diagnostics')}:\n  agentfeed doctor\n  agentfeed scan --id <draft_id> --dry-run\n  agentfeed hook install claude-code\n  agentfeed drafts\n  agentfeed discard --id <draft_id>\n  agentfeed rotate\n  agentfeed logout`);
+  print(`\n${ui.section('Shell completion')}:\n  agentfeed completion zsh\n  agentfeed completion bash\n  agentfeed completion fish`);
+  print(`\n${ui.section('Commands')}:\n  ${PUBLIC_COMMANDS.join(', ')}`);
+  print(`\nRun ${ui.command('agentfeed <command> --help')} for command-specific options.`);
 }
 
 function printCommandHelp(command: string): void {
@@ -1452,6 +1484,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  err(error instanceof Error ? error.message : String(error));
+  err(ui.formatCliError(error instanceof Error ? error.message : String(error)));
   process.exitCode = 1;
 });

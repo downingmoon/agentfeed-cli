@@ -20,6 +20,14 @@ updated: 2026-06-06
 - 서버/env 기준: [[Runtime Configuration]]
 - 완료된 대량 hardening 요약: [[Commercial Readiness Completed Summary 2026-06-04]]
 
+
+> [!info] 2026-06-06 활성 Frontend UI/UX polish goal
+> 이전 로컬/CI/contract 상용화 품질 goal은 완료 상태지만, owner가 새로 설정한 목표는 Frontend 디자인/UI/UX 완성도를 한 단계 더 높이는 별도 진행 중 goal이다. 현재 Stage 1~4는 완료/커밋 진행 중이며, 완료 판정 전 Worklog detail/review, Project/Profile, 실제 authenticated visual smoke를 더 확인해야 한다.
+> - [[Frontend UI UX Polish Stage 1 2026-06-06]]
+> - [[Frontend UI UX Polish Stage 2 2026-06-06]]
+> - [[Frontend UI UX Polish Stage 3 2026-06-06]]
+> - [[Frontend UI UX Polish Stage 4 2026-06-06]]
+
 > [!success] 2026-06-04 로컬 상용화 품질 evidence
 > - CLI `npm run release:preflight`: 통과, 397 tests passed.
 > - Frontend local CI: `NEXT_PUBLIC_API_URL=http://localhost:8000 AGENTFEED_ALLOW_LOCAL_API_BUILD=1 AGENTFEED_LOCAL_DNSLESS_CI=1 AGENTFEED_SKIP_PROD_API_COMPAT=1 npm run ci` 통과.
@@ -124,7 +132,7 @@ updated: 2026-06-06
 
 ## P2 — 제품 polish backlog
 
-- [ ] Settings/Projects 편집 form의 label/id 연결을 더 촘촘하게 보강.
+- [~] Settings/Projects 편집 form의 label/id 연결을 더 촘촘하게 보강. Settings select/toggle/token controls는 Stage 4에서 1차 보강 완료. Projects/Profile 후속 필요.
 - [ ] Project/Profile tabs의 `aria-controls`/tabpanel 연결 보강.
 - [ ] 사용자용 quick-start 문서와 개발자용 runbook 분리.
 - [ ] commercial readiness evidence artifact 위치와 재실행 절차를 운영 runbook으로 분리.

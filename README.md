@@ -105,10 +105,9 @@ When a saved device token is near expiry or compromised, run:
 ```bash
 agentfeed rotate
 agentfeed rotate --browser
-agentfeed token rotate
 ```
 
-`agentfeed rotate` uses browser approval before issuing the replacement token. When the saved token can be verified first, the backend revokes that previous token during the browser-approved exchange. The raw replacement token is saved locally and never printed. Token-authenticated self-rotation is intentionally not supported because a leaked token must not be able to mint a fresh long-lived token by itself.
+`agentfeed rotate` uses browser approval before issuing the replacement token. The older `agentfeed token rotate` spelling is kept only as a compatibility alias; prefer `agentfeed rotate` in scripts and docs. When the saved token can be verified first, the backend revokes that previous token during the browser-approved exchange. The raw replacement token is saved locally and never printed. Token-authenticated self-rotation is intentionally not supported because a leaked token must not be able to mint a fresh long-lived token by itself.
 
 | Token source | Recommended rotation path | Result |
 | --- | --- | --- |

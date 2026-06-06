@@ -108,8 +108,11 @@ describe('collect CLI command', () => {
       env: { ...process.env, HOME: home }
     });
 
-    expect(stdout).toContain('Collect:');
-    expect(stdout).toContain('agentfeed collect --source codex');
+    expect(stdout).toContain('Usage: agentfeed collect');
+    expect(stdout).toContain('--source <source>');
+    expect(stdout).toContain('--session-file <path>');
+    expect(stdout).not.toContain('Usage: agentfeed <command>');
+    expect(stdout).not.toContain('agentfeed login --token-stdin');
     expect(stderr).toBe('');
     await expect(readdir(join(dir, '.agentfeed', 'drafts'))).resolves.toEqual([]);
     await expect(readFile(join(dir, '.agentfeed', 'state.json'), 'utf8')).rejects.toThrow();

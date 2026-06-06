@@ -855,20 +855,347 @@ const KNOWN_COMMANDS = new Set([
   'open'
 ]);
 
+interface CommandArgSpec {
+  flags?: readonly string[];
+  valueOptions?: readonly string[];
+  validatePositionals?: (positionals: string[]) => string | null;
+}
+
+const NO_POSITIONALS = (command: string) => (positionals: string[]) =>
+  positionals.length ? `Unexpected argument for ${command}: ${positionals[0]}` : null;
+
+const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
+  init: {
+    flags: ['--no-git-check'],
+    valueOptions: ['--project-name'],
+    validatePositionals: NO_POSITIONALS('init')
+  },
+  login: {
+    flags: ['--token-stdin', '--no-save', '--no-open', '--browser'],
+    valueOptions: ['--token', '--api-base-url'],
+    validatePositionals: NO_POSITIONALS('login')
+  },
+  logout: {
+    flags: ['--json'],
+    validatePositionals: NO_POSITIONALS('logout')
+  },
+  status: {
+    validatePositionals: NO_POSITIONALS('status')
+  },
+  rotate: {
+    flags: ['--browser', '--no-save', '--no-open'],
+    valueOptions: ['--api-base-url'],
+    validatePositionals: NO_POSITIONALS('rotate')
+  },
+  token: {
+    flags: ['--browser', '--no-save', '--no-open'],
+    valueOptions: ['--api-base-url'],
+    validatePositionals: (positionals) => {
+      if (positionals.length === 0) return 'Usage: agentfeed token rotate';
+      if (positionals[0] !== 'rotate') return `Unknown token subcommand: ${positionals[0]}`;
+      if (positionals.length > 1) return `Unexpected argument for token rotate: ${positionals[1]}`;
+      return null;
+    }
+  },
+  collect: {
+    flags: ['--all', '--force', '--run-configured-commands', '--explain', '--json', '--upload', '--open-review', '--no-open-review', '--no-save-cursor', '--no-upload'],
+    valueOptions: ['--source', '--session-file', '--since', '--until'],
+    validatePositionals: NO_POSITIONALS('collect')
+  },
+  share: {
+    flags: ['--dry', '--dry-run', '--yes', '-y', '--open-review', '--no-open-review', '--all', '--force', '--run-configured-commands', '--no-clipboard', '--no-clip', '--json', '--clipboard'],
+    valueOptions: ['--source', '--session-file', '--since', '--until', '--note'],
+    validatePositionals: NO_POSITIONALS('share')
+  },
+  preview: {
+    flags: ['--latest', '--remote', '--json'],
+    valueOptions: ['--id'],
+    validatePositionals: NO_POSITIONALS('preview')
+  },
+  publish: {
+    flags: ['--latest', '--yes', '-y', '--json', '--clipboard', '--no-clipboard', '--open-review', '--no-open-review'],
+    valueOptions: ['--id'],
+    validatePositionals: NO_POSITIONALS('publish')
+  },
+  scan: {
+    flags: ['--latest', '--dry-run', '--dry', '--json'],
+    valueOptions: ['--id', '--path'],
+    validatePositionals: NO_POSITIONALS('scan')
+  },
+  hook: {
+    flags: ['--global', '--project', '--dry-run'],
+    valueOptions: ['--settings-path'],
+    validatePositionals: (positionals) => {
+      if (positionals.length < 2) return 'Usage: agentfeed hook install|uninstall claude-code';
+      if (positionals.length > 2) return `Unexpected argument for hook: ${positionals[2]}`;
+      const [action, target] = positionals;
+      if (action !== 'install' && action !== 'uninstall') return 'Usage: agentfeed hook install|uninstall claude-code';
+      if (target !== 'claude-code') return 'Only claude-code hooks are supported in MVP.';
+      return null;
+    }
+  },
+  doctor: {
+    validatePositionals: NO_POSITIONALS('doctor')
+  },
+  drafts: {
+    validatePositionals: NO_POSITIONALS('drafts')
+  },
+  discard: {
+    flags: ['--latest'],
+    valueOptions: ['--id'],
+    validatePositionals: NO_POSITIONALS('discard')
+  },
+  open: {
+    flags: ['--latest'],
+    valueOptions: ['--id'],
+    validatePositionals: NO_POSITIONALS('open')
+  }
+};
+
 function hasHelpFlag(args: string[]): boolean {
   return args.includes('--help') || args.includes('-h');
 }
 
+function commandHelpHint(command: string): string {
+  return command === 'token'
+    ? 'Run: agentfeed token rotate --help'
+    : `Run: agentfeed ${command} --help`;
+}
+
+function validateCommandArgs(command: string, args: string[]): void {
+  const spec = COMMAND_ARG_SPECS[command];
+  if (!spec) throw new Error(`Unknown command: ${command}`);
+  const flags = new Set([...(spec.flags ?? []), '--help', '-h']);
+  const valueOptions = new Set(spec.valueOptions ?? []);
+  const positionals: string[] = [];
+
+  for (let i = 0; i < args.length; i += 1) {
+    const raw = args[i];
+    if (raw === '--') {
+      throw new Error(`Unexpected argument for ${command}: --`);
+    }
+    if (raw.startsWith('--')) {
+      const equalsIndex = raw.indexOf('=');
+      const name = equalsIndex >= 0 ? raw.slice(0, equalsIndex) : raw;
+      if (valueOptions.has(name)) {
+        if (equalsIndex >= 0) {
+          if (raw.slice(equalsIndex + 1).length === 0) throw new Error(`${name} requires a value.`);
+        } else {
+          const value = args[i + 1];
+          if (!value || value.startsWith('--')) throw new Error(`${name} requires a value.`);
+          i += 1;
+        }
+        continue;
+      }
+      if (flags.has(name)) {
+        if (equalsIndex >= 0) throw new Error(`${name} does not accept a value.`);
+        continue;
+      }
+      throw new Error(`Unknown option: ${name}\nCommand: agentfeed ${command}\n${commandHelpHint(command)}`);
+    }
+    if (raw.startsWith('-')) {
+      if (flags.has(raw)) continue;
+      throw new Error(`Unknown option: ${raw}\nCommand: agentfeed ${command}\n${commandHelpHint(command)}`);
+    }
+    positionals.push(raw);
+  }
+
+  const positionalError = spec.validatePositionals?.(positionals);
+  if (positionalError) throw new Error(positionalError);
+}
+
 function printHelp(): void {
-  print('Usage: agentfeed <init|login|logout|rotate|status|collect|share|preview|publish|scan|hook|doctor|drafts|discard|open>');
+  print('Usage: agentfeed <command> [options]');
   print(`Version: ${AGENTFEED_CLI_VERSION}`);
-  print('\nLogin:\n  agentfeed login\n  agentfeed login --no-open\n  agentfeed login --no-save\n  agentfeed login --browser\n  printf %s "$TOKEN" | agentfeed login --token-stdin\n  printf %s "$TOKEN" | agentfeed login --token - --no-save\n  agentfeed rotate\n  agentfeed rotate --browser\n  unset AGENTFEED_TOKEN && agentfeed rotate --browser\n  agentfeed token rotate');
-  print('\nLogout:\n  agentfeed logout\n  agentfeed logout --json');
-  print('\nCollect:\n  agentfeed collect\n  agentfeed collect --explain\n  agentfeed collect --source codex\n  agentfeed collect --source gemini-cli\n  agentfeed collect --source claude-code --session-file <path>\n  agentfeed collect --since 2026-05-20T01:00:00Z\n  agentfeed collect --all\n  agentfeed collect --run-configured-commands');
-  print('\nShare:\n  agentfeed share\n  agentfeed share --yes\n  agentfeed share --dry\n  agentfeed share --open-review\n  agentfeed share --no-open-review\n  agentfeed share --since 2026-05-20T01:00:00Z\n  agentfeed share --all\n  agentfeed share --note "Fixed auth flow"\n  agentfeed share --no-clipboard\n  agentfeed share --json --clipboard\n  agentfeed share --run-configured-commands');
-  print('\nPublish:\n  agentfeed publish --latest --yes\n  agentfeed publish --id <draft_id> --yes\n  agentfeed publish --json\n  agentfeed publish --json --clipboard\n  agentfeed publish --no-clipboard\n  agentfeed publish --open-review\n  agentfeed publish --no-open-review');
-  print('\nOpen:\n  agentfeed open\n  agentfeed open --latest\n  agentfeed open --id <draft_id>');
-  print('\nScan:\n  agentfeed scan --id <draft_id>\n  agentfeed scan --id <draft_id> --dry-run\n  agentfeed scan --path . --json');
+  print('\nQuickstart:\n  agentfeed init\n  agentfeed login\n  printf %s "$TOKEN" | agentfeed login --token-stdin\n  printf %s "$TOKEN" | agentfeed login --token - --no-save\n  agentfeed share --yes --open-review');
+  print('\nDaily workflow:\n  agentfeed share\n  agentfeed share --yes\n  agentfeed share --dry\n  agentfeed share --note "Fixed auth flow"\n  agentfeed status');
+  print('\nDraft review:\n  agentfeed collect --explain\n  agentfeed preview --latest\n  agentfeed publish --latest --yes\n  agentfeed open --latest');
+  print('\nAdvanced and diagnostics:\n  agentfeed doctor\n  agentfeed scan --id <draft_id> --dry-run\n  agentfeed hook install claude-code\n  agentfeed drafts\n  agentfeed discard --id <draft_id>\n  agentfeed rotate\n  agentfeed logout');
+  print('\nCommands:\n  init, login, share, collect, preview, publish, open, scan, status, doctor, hook, drafts, discard, rotate, logout');
+  print('\nRun `agentfeed <command> --help` for command-specific options.');
+}
+
+function printCommandHelp(command: string): void {
+  if (command === 'token') {
+    print(`Usage: agentfeed token rotate [options]
+
+Compatibility alias for:
+  agentfeed rotate
+
+Options:
+  --browser                 Force browser-based token replacement
+  --no-open                 Print the authorization URL instead of opening a browser
+  --no-save                 Do not persist the replacement token
+  --api-base-url <url>      Override the AgentFeed API base URL
+  --help, -h                Show this help`);
+    return;
+  }
+
+  const helps: Record<string, string> = {
+    init: `Usage: agentfeed init [options]
+
+Initialize .agentfeed/config.json in the current git project.
+
+Options:
+  --project-name <name>     Override the detected project name
+  --no-git-check            Allow initialization outside a git repository
+  --help, -h                Show this help`,
+    login: `Usage: agentfeed login [options]
+
+Connect this machine to AgentFeed. Without token input, login starts the safe browser approval flow.
+
+Options:
+  --no-open                 Print the authorization URL instead of opening a browser
+  --browser                 Allow browser login even in CI-like environments
+  --no-save                 Do not persist credentials
+  --api-base-url <url>      Override the AgentFeed API base URL
+  --token-stdin             Read an ingestion token from stdin
+  --token -                 Read an ingestion token from stdin
+  --help, -h                Show this help`,
+    logout: `Usage: agentfeed logout [options]
+
+Remove saved AgentFeed credentials from this machine.
+
+Options:
+  --json                    Print machine-readable logout status
+  --help, -h                Show this help`,
+    status: `Usage: agentfeed status
+
+Show credential, API, project, hook, draft, and collection cursor status.
+
+Options:
+  --help, -h                Show this help`,
+    rotate: `Usage: agentfeed rotate [options]
+
+Replace the saved ingestion token through browser approval.
+
+Options:
+  --browser                 Force browser-based token replacement
+  --no-open                 Print the authorization URL instead of opening a browser
+  --no-save                 Do not persist the replacement token
+  --api-base-url <url>      Override the AgentFeed API base URL
+  --help, -h                Show this help`,
+    collect: `Usage: agentfeed collect [options]
+
+Collect local agent work into a private review draft without uploading by default.
+
+Common options:
+  --source <source>         Agent source: claude-code, codex, cursor, gemini-cli, other
+  --session-file <path>     Read an explicit agent session file
+  --since <timestamp>       Start collection window (ISO timestamp or last-collect)
+  --until <timestamp>       End collection window (ISO timestamp)
+  --all                     Ignore the saved collection cursor
+  --force                   Recollect even if a matching draft already exists
+  --explain                 Include collection source/quality diagnostics
+  --run-configured-commands Run configured local evidence commands
+
+Advanced options:
+  --json                    Print the draft JSON
+  --upload                  Upload after collecting
+  --open-review             Open uploaded private review URL
+  --no-open-review          Suppress browser handoff
+  --no-save-cursor          Do not advance the collection cursor
+  --no-upload               Suppress legacy auto_upload reminder
+  --help, -h                Show this help`,
+    share: `Usage: agentfeed share [options]
+
+Collect, preview, and optionally upload a private review draft in one daily workflow.
+
+Options:
+  --yes, -y                 Upload without interactive confirmation
+  --dry, --dry-run          Collect and preview only; do not upload
+  --source <source>         Agent source: claude-code, codex, cursor, gemini-cli, other
+  --session-file <path>     Read an explicit agent session file
+  --since <timestamp>       Start collection window (ISO timestamp or last-collect)
+  --until <timestamp>       End collection window (ISO timestamp)
+  --all                     Ignore the saved collection cursor
+  --force                   Recollect even if a matching draft already exists
+  --note <text>             Attach a user note to the draft
+  --open-review             Open uploaded private review URL
+  --no-open-review          Suppress browser handoff
+  --no-clipboard, --no-clip Do not copy the review URL
+  --json                    Print machine-readable output
+  --clipboard               Copy review URL when --json is used
+  --run-configured-commands Run configured local evidence commands
+  --help, -h                Show this help`,
+    preview: `Usage: agentfeed preview [options]
+
+Render a saved local draft preview.
+
+Options:
+  --latest                  Preview the newest local draft (default)
+  --id <draft_id>           Preview a specific draft
+  --json                    Print the local draft JSON
+  --remote                  Validate/render preview through the API
+  --help, -h                Show this help`,
+    publish: `Usage: agentfeed publish [options]
+
+Upload a saved local draft as a private AgentFeed review draft.
+
+Options:
+  --latest                  Publish the newest local draft (default)
+  --id <draft_id>           Publish a specific draft
+  --yes, -y                 Upload without interactive confirmation
+  --json                    Print machine-readable upload output
+  --clipboard               Copy review URL when --json is used
+  --no-clipboard            Do not copy the review URL
+  --open-review             Open uploaded private review URL
+  --no-open-review          Suppress browser handoff
+  --help, -h                Show this help`,
+    scan: `Usage: agentfeed scan [options]
+
+Scan and redact public fields before sharing.
+
+Options:
+  --latest                  Scan the newest local draft (default)
+  --id <draft_id>           Scan a specific draft
+  --path <path>             Scan changed-area labels from a path's git state
+  --dry-run, --dry          Report findings without modifying a draft
+  --json                    Print machine-readable scan output
+  --help, -h                Show this help`,
+    hook: `Usage: agentfeed hook install|uninstall claude-code [options]
+
+Install or remove the AgentFeed Claude Code hook.
+
+Options:
+  --global                  Modify the global Claude Code settings
+  --project                 Use project settings (default)
+  --settings-path <path>    Override the Claude Code settings path
+  --dry-run                 Print intended install changes without writing
+  --help, -h                Show this help`,
+    doctor: `Usage: agentfeed doctor
+
+Run local AgentFeed diagnostics for credentials, API reachability, project config, git, and agent signals.
+
+Options:
+  --help, -h                Show this help`,
+    drafts: `Usage: agentfeed drafts
+
+List saved local draft IDs.
+
+Options:
+  --help, -h                Show this help`,
+    discard: `Usage: agentfeed discard [options]
+
+Delete a saved local draft.
+
+Options:
+  --latest                  Discard the newest local draft (default)
+  --id <draft_id>           Discard a specific draft
+  --help, -h                Show this help`,
+    open: `Usage: agentfeed open [options]
+
+Reopen a trusted review URL from a previously uploaded draft.
+
+Options:
+  --latest                  Open the newest uploaded draft (default)
+  --id <draft_id>           Open a specific draft's review URL
+  --help, -h                Show this help`
+  };
+
+  const text = helps[command];
+  if (!text) throw new Error(`Unknown command: ${command}`);
+  print(text);
 }
 
 async function main() {
@@ -879,9 +1206,10 @@ async function main() {
   }
   if (hasHelpFlag(args)) {
     if (!KNOWN_COMMANDS.has(command)) throw new Error(`Unknown command: ${command}`);
-    printHelp();
+    printCommandHelp(command);
     return;
   }
+  if (KNOWN_COMMANDS.has(command)) validateCommandArgs(command, args);
   switch (command) {
     case 'init': return cmdInit(args);
     case 'login': return cmdLogin(args);

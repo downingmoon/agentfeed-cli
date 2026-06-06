@@ -89,7 +89,7 @@ describe('drafts CLI command', () => {
     draft.worklog.title = 'Discard me cleanly';
     const paths = await writeDraft(dir, draft);
 
-    const { stdout, stderr } = await runCli(['discard', '--id', draft.id]);
+    const { stdout, stderr } = await runCli(['discard', '--id', draft.id, '--yes']);
 
     expect(stderr).toBe('');
     expect(stdout).toContain('AgentFeed draft discarded');
@@ -103,6 +103,26 @@ describe('drafts CLI command', () => {
     expect(stdout).toContain('agentfeed collect --explain');
     expect(existsSync(paths.jsonPath)).toBe(false);
     expect(existsSync(paths.markdownPath)).toBe(false);
+  });
+
+  it('requires explicit confirmation before discarding a local draft', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+    draft.worklog.title = 'Keep me until confirmed';
+    const paths = await writeDraft(dir, draft);
+
+    const { stdout, stderr } = await runCli(['discard', '--id', draft.id]);
+
+    expect(stderr).toBe('');
+    expect(stdout).toContain('AgentFeed discard paused');
+    expect(stdout).toContain('Discard confirmation required.');
+    expect(stdout).toContain('No local draft files were deleted.');
+    expect(stdout).toContain(`Draft: ${draft.id}`);
+    expect(stdout).toContain('JSON: will be removed');
+    expect(stdout).toContain('Markdown: will be removed');
+    expect(stdout).toContain(`agentfeed discard --id ${draft.id} --yes`);
+    expect(stdout).toContain(`agentfeed preview --id ${draft.id}`);
+    expect(existsSync(paths.jsonPath)).toBe(true);
+    expect(existsSync(paths.markdownPath)).toBe(true);
   });
 
   it('guides users back to drafts and collect when discarding a missing draft', async () => {

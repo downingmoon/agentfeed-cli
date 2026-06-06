@@ -441,6 +441,23 @@ function printUploadConfirmationRequired(draft: LocalDraft, command: string, ext
   }
 }
 
+function printDiscardConfirmationRequired(id: string, options: { hadJson: boolean; hadMarkdown: boolean }): void {
+  print(ui.heading('AgentFeed discard paused'));
+  print('Discard confirmation required.');
+  print('No local draft files were deleted.');
+  print();
+  print(ui.section('Summary'));
+  print(`Draft: ${id}`);
+  print(`JSON: ${options.hadJson ? 'will be removed' : 'not found'}`);
+  print(`Markdown: ${options.hadMarkdown ? 'will be removed' : 'not found'}`);
+  print();
+  print(ui.section('Next'));
+  print('Delete this local draft after reviewing it:');
+  print(`  ${ui.command(`agentfeed discard --id ${id} --yes`)}`);
+  print('Or preview it first:');
+  print(`  ${ui.command(`agentfeed preview --id ${id}`)}`);
+}
+
 function tokenExpiryWarning(expiresAt?: string | null, expiringSoon?: boolean): string | null {
   if (!expiresAt) return null;
   const expires = Date.parse(expiresAt);
@@ -1435,6 +1452,10 @@ async function cmdDiscard(args: string[]) {
       'Run: agentfeed collect --explain'
     ].join('\n'));
   }
+  if (!flag(args, '--yes') && !flag(args, '-y')) {
+    printDiscardConfirmationRequired(id, { hadJson, hadMarkdown });
+    return;
+  }
   await rm(jsonPath, { force: true });
   await rm(markdownPath, { force: true });
   print(ui.heading('AgentFeed draft discarded'));
@@ -1800,7 +1821,7 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     validatePositionals: NO_POSITIONALS('drafts')
   },
   discard: {
-    flags: ['--latest'],
+    flags: ['--latest', '--yes', '-y'],
     valueOptions: ['--id'],
     conflicts: [['--id', '--latest']],
     validatePositionals: NO_POSITIONALS('discard')
@@ -2170,11 +2191,12 @@ Options:
   --help, -h                Show this help`,
     discard: `Usage: agentfeed discard [options]
 
-Delete a saved local draft.
+Delete a saved local draft after explicit confirmation.
 
 Options:
   --latest                  Discard the newest local draft (default)
   --id <draft_id>           Discard a specific draft
+  --yes, -y                 Delete without the confirmation preview
   --help, -h                Show this help`,
     open: `Usage: agentfeed open [options]
 

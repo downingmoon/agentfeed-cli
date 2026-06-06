@@ -10,12 +10,23 @@ function realBrowserOpenDisabledForTests(): boolean {
   return testHarnessRequestedNoBrowser && !process.env.AGENTFEED_TEST_BROWSER_LOG;
 }
 
+function containsBrowserUnsafeControl(url: string): boolean {
+  return /[\x00-\x1f\x7f]/.test(url);
+}
+
+function browserOpenCommand(currentPlatform: NodeJS.Platform, isWsl: boolean, url: string): { cmd: string; args: string[] } {
+  if (currentPlatform === 'darwin') return { cmd: 'open', args: [url] };
+  if (currentPlatform === 'win32') return { cmd: 'explorer.exe', args: [url] };
+  if (isWsl) return { cmd: 'wslview', args: [url] };
+  return { cmd: 'xdg-open', args: [url] };
+}
+
 export async function openBrowser(url: string, options: { timeoutMs?: number } = {}): Promise<boolean> {
   if (realBrowserOpenDisabledForTests()) return false;
+  if (containsBrowserUnsafeControl(url)) return false;
   const currentPlatform = platform();
   const isWsl = currentPlatform === 'linux' && release().toLowerCase().includes('microsoft');
-  const cmd = currentPlatform === 'darwin' ? 'open' : currentPlatform === 'win32' ? 'cmd' : isWsl ? 'wslview' : 'xdg-open';
-  const args = currentPlatform === 'win32' ? ['/c', 'start', '', url] : [url];
+  const { cmd, args } = browserOpenCommand(currentPlatform, isWsl, url);
   return await new Promise((resolve) => {
     let settled = false;
     const finish = (opened: boolean) => {

@@ -103,17 +103,24 @@ describe('openBrowser', () => {
     }
   });
 
-  it('uses native Windows shell opener instead of xdg-open on win32', async () => {
+  it('uses a native Windows opener without routing URLs through cmd.exe', async () => {
     osMock.platform.mockReturnValue('win32');
     const child = mockChild();
-    const url = 'https://agentfeed.dev/worklogs/worklog_windows/review';
+    const url = 'https://agentfeed.dev/worklogs/worklog_windows/review?next=a&cmd=calc|whoami';
 
     const opened = openBrowser(url);
 
-    expect(spawnMock).toHaveBeenCalledWith('cmd', ['/c', 'start', '', url], expect.objectContaining({ stdio: 'ignore' }));
+    expect(spawnMock).toHaveBeenCalledWith('explorer.exe', [url], expect.objectContaining({ stdio: 'ignore' }));
+    expect(spawnMock.mock.calls[0][0]).not.toBe('cmd');
+    expect(spawnMock.mock.calls[0][1]).not.toContain('/c');
     expect(child.unref).toHaveBeenCalled();
     child.emit('close', 0);
     await expect(opened).resolves.toBe(true);
+  });
+
+  it('rejects browser URLs with terminal or shell control characters before spawning helpers', async () => {
+    await expect(openBrowser('https://agentfeed.dev/worklogs/worklog_bad/review\u001b[31m')).resolves.toBe(false);
+    expect(spawnMock).not.toHaveBeenCalled();
   });
 
   it('uses wslview on Linux under WSL', async () => {

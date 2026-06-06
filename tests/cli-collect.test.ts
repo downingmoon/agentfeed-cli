@@ -222,7 +222,7 @@ describe('collect CLI command', () => {
   });
 
 
-  it('ignores a malformed collection cursor instead of blocking collection', async () => {
+  it('warns about a malformed collection cursor instead of silently ignoring it', async () => {
     await writeFile(join(dir, '.agentfeed', 'state.json'), '{not-json');
     await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = "cursor-recovered";\n');
 
@@ -243,6 +243,7 @@ describe('collect CLI command', () => {
     expect(draft.id).toMatch(/^draft_/);
     expect(draft.source.collection_window.since).toBeNull();
     expect(draft.source.collection_window.until).toBe('2026-05-20T02:00:00.000Z');
+    expect(draft.warnings).toEqual(expect.arrayContaining([expect.stringContaining('AgentFeed collection cursor is unreadable')]));
   });
 
   it('fails malformed project config with actionable recovery guidance', async () => {

@@ -126,7 +126,7 @@ describe('native keychain helper environments', () => {
     await rm(home, { recursive: true, force: true });
   });
 
-  it('scrubs sensitive environment variables from macOS security helper execs', async () => {
+  it('scrubs sensitive environment variables from macOS security helpers and stores tokens via stdin', async () => {
     setSensitiveEnvironment();
 
     await saveCredentials('af_live_saved_to_security', {
@@ -138,10 +138,16 @@ describe('native keychain helper environments', () => {
     expect(deleted.keychain_deleted).toBe(true);
     expect(childProcessMock.execFileCalls.map((call) => [call.command, call.args[0]])).toEqual([
       ['security', '-h'],
-      ['security', 'add-generic-password'],
       ['security', '-h'],
       ['security', 'delete-generic-password'],
     ]);
+    expect(childProcessMock.spawnCalls.map((call) => [call.command, call.args[0]])).toEqual([
+      ['security', 'add-generic-password'],
+    ]);
+    expect(childProcessMock.spawnCalls[0].input).toBe('af_live_saved_to_security\n');
+    expect(JSON.stringify(childProcessMock.spawnCalls[0].args)).not.toContain('af_live_saved_to_security');
+    expect(childProcessMock.spawnCalls[0].args.at(-1)).toBe('-w');
+    for (const call of childProcessMock.spawnCalls) expectScrubbed(call.options?.env);
     for (const call of childProcessMock.execFileCalls) expectScrubbed(call.options?.env);
   });
 

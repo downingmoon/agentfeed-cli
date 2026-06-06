@@ -1,34 +1,51 @@
 import { cp, readFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { globalAgentFeedDir, homeDir } from '../config/credentials.js';
 import { ensureDir, pathExists, writeJson } from '../utils/fs.js';
 import { sensitiveEnvironmentNames } from '../utils/subprocess-env.js';
 
 type JsonObj = Record<string, unknown>;
-const AGENTFEED_COMMAND = 'agentfeed collect --source claude-code';
+const AGENTFEED_HOOK_ARGS = 'collect --source claude-code';
+const AGENTFEED_HOOK_MARKER = 'agentfeed Claude Code Stop hook';
+
+function shellQuote(value: string): string {
+  return `'${value.replace(/'/g, "'\\''")}'`;
+}
 
 function shellUnsetSensitiveEnvironment(): string {
   return sensitiveEnvironmentNames().map((name) => `unset ${name}; `).join('');
 }
 
-export function buildClaudeCodeStopHookCommand(): string {
+function buildDefaultAgentFeedHookInvocation(): string {
+  const entry = process.argv[1];
+  if (entry && entry !== '-') {
+    return `${shellQuote(process.execPath)} ${shellQuote(resolve(entry))} ${AGENTFEED_HOOK_ARGS}`;
+  }
+  const moduleRelativeCliEntry = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'cli', 'index.js');
+  return `${shellQuote(process.execPath)} ${shellQuote(moduleRelativeCliEntry)} ${AGENTFEED_HOOK_ARGS}`;
+}
+
+function buildClaudeCodeStopHookScript(agentfeedCommand: string): string {
   return [
-    "sh -c '",
     "LOG_DIR=.agentfeed/logs; ",
     "LOG_FILE=$LOG_DIR/hook.log; ",
     "mkdir -p \"$LOG_DIR\" >/dev/null 2>&1; ",
     "{ ",
-    "printf \"\\n[%s] agentfeed Claude Code Stop hook start\\n\" \"$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date)\"; ",
-    `${shellUnsetSensitiveEnvironment()}${AGENTFEED_COMMAND}; `,
+    `printf "\\n[%s] ${AGENTFEED_HOOK_MARKER} start\\n" "$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date)"; `,
+    `${shellUnsetSensitiveEnvironment()}${agentfeedCommand}; `,
     "status=$?; ",
     "if [ $status -eq 0 ]; then ",
-    "printf \"[%s] agentfeed Claude Code Stop hook succeeded\\n\" \"$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date)\"; ",
+    `printf "[%s] ${AGENTFEED_HOOK_MARKER} succeeded\\n" "$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date)"; `,
     "else ",
-    "printf \"[%s] agentfeed Claude Code Stop hook failed with exit %s\\n\" \"$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date)\" \"$status\"; ",
+    `printf "[%s] ${AGENTFEED_HOOK_MARKER} failed with exit %s\\n" "$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date)" "$status"; `,
     "fi; ",
     "} >> \"$LOG_FILE\" 2>&1 || true; ",
-    "exit 0'",
   ].join('');
+}
+
+export function buildClaudeCodeStopHookCommand(options: { agentfeedCommand?: string } = {}): string {
+  return `sh -c ${shellQuote(buildClaudeCodeStopHookScript(options.agentfeedCommand ?? buildDefaultAgentFeedHookInvocation()))}`;
 }
 
 function timestamp(): string {
@@ -81,8 +98,8 @@ function isAgentFeedCommandHook(value: unknown): boolean {
   if (!isJsonObject(value)) return false;
   return value.type === 'command'
     && typeof value.command === 'string'
-    && value.command.includes(AGENTFEED_COMMAND)
-    && value.command.includes('agentfeed Claude Code Stop hook');
+    && value.command.includes(AGENTFEED_HOOK_ARGS)
+    && value.command.includes(AGENTFEED_HOOK_MARKER);
 }
 
 function containsAgentFeedCommandHook(value: unknown): boolean {

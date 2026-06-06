@@ -5,7 +5,7 @@ import { initProject, loadProjectConfig, resolveProjectRoot } from '../config/pr
 import { credentialsFromToken, credentialsPath, deleteSavedCredentials, loadCredentials, loadCredentialsWithMetadata, saveCredentials, type CredentialTokenSource } from '../config/credentials.js';
 import { resolveApiBaseUrl, resolveApiBaseUrlWithMetadata, type ApiBaseUrlSource } from '../config/api-base.js';
 import { DEFAULT_API_BASE_URL } from '../config/defaults.js';
-import { markCollectionComplete, readCollectionState, resolveCollectionWindow } from '../config/collection-state.js';
+import { markCollectionComplete, readCollectionStateWithDiagnostics, resolveCollectionWindowWithDiagnostics } from '../config/collection-state.js';
 import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
@@ -31,6 +31,10 @@ import * as ui from './ui.js';
 
 function print(text = '') { process.stdout.write(`${text}\n`); }
 function err(text = '') { process.stderr.write(`${text}\n`); }
+
+function safeTerminalText(value: string | null | undefined): string {
+  return ui.sanitizeTerminalText(value ?? '');
+}
 
 function formatWarningLines(warning: string): string[] {
   return ui.wrapKeyValue('Warning', warning).map((line) => ui.warn(line));
@@ -631,7 +635,7 @@ function flattenStringFields(input: PublicScanFields, prefix = ''): Array<[strin
 }
 
 function singleLine(value: string): string {
-  const text = value.replace(/\s+/g, ' ').trim();
+  const text = safeTerminalText(value).replace(/\s+/g, ' ').trim();
   return text.length > 160 ? `${text.slice(0, 157)}...` : text;
 }
 
@@ -763,7 +767,7 @@ function formatPrivacyScanReport(input: PublicScanFields, redacted: PublicScanFi
   if (scan.findings.length) {
     lines.push('', ui.section('Findings detail'));
     for (const finding of scan.findings) {
-      lines.push(`- [${finding.severity}] ${finding.type}${finding.field ? ` at ${finding.field}` : ''} -> ${finding.sample_redacted ?? '[REDACTED]'}`);
+      lines.push(`- [${safeTerminalText(finding.severity)}] ${safeTerminalText(finding.type)}${finding.field ? ` at ${safeTerminalText(finding.field)}` : ''} -> ${safeTerminalText(finding.sample_redacted ?? '[REDACTED]')}`);
     }
   } else {
     lines.push('', ui.section('Findings detail'));
@@ -772,7 +776,7 @@ function formatPrivacyScanReport(input: PublicScanFields, redacted: PublicScanFi
   const previews = redactedFieldPreviews(input, redacted);
   if (previews.length) {
     lines.push('', ui.section('Redacted preview'));
-    for (const preview of previews) lines.push(`- ${preview.field}: ${preview.value}`);
+    for (const preview of previews) lines.push(`- ${safeTerminalText(preview.field)}: ${safeTerminalText(preview.value)}`);
   } else {
     lines.push('', ui.section('Redacted preview'));
     lines.push('No redactions needed.');
@@ -1322,7 +1326,8 @@ async function cmdStatus(args: string[] = []) {
   try { root = await resolveProjectRoot(process.cwd()); config = await loadProjectConfig(root); } catch { /* not initialized */ }
   const drafts = config ? await listDrafts(root) : [];
   const pending = (await Promise.all(drafts.map((d) => draftUploadPendingForStatus(d.path)))).filter(Boolean).length;
-  const collectionState = config ? await readCollectionState(root) : {};
+  const collectionStateResult = config ? await readCollectionStateWithDiagnostics(root) : null;
+  const collectionState = collectionStateResult?.state ?? {};
   const settingsPath = config ? resolveClaudeSettingsPath({ projectRoot: root, scope: config.agents.claude_code.hook_scope }) : '';
   let hook = 'unknown';
   const statusWarnings: string[] = [];
@@ -1333,19 +1338,19 @@ async function cmdStatus(args: string[] = []) {
       statusWarnings.push(`Claude Code settings could not be parsed at ${settingsPath}; hook status is unknown.`);
     }
   }
-  const allWarnings = [...credentialResolution.warnings, ...statusWarnings];
+  const allWarnings = [...credentialResolution.warnings, ...statusWarnings, ...(collectionStateResult?.warnings ?? [])];
   const apiBaseUrl = credentialResolution.api_base_url ?? creds?.api_base_url ?? await resolveApiBaseUrl();
   const git = await collectGitMetrics(process.cwd());
   const insideGitRepository = Boolean(git.repository_root);
   const health = diagnostics.invalidApiBaseUrl
     ? 'attention needed'
-    : !hasToken
-    ? 'setup needed'
-    : !config
-      ? 'project setup needed'
-      : allWarnings.length || pending > 0
+    : allWarnings.length || pending > 0
+      ? 'attention needed'
+      : !config
         ? 'attention needed'
-        : 'ready';
+        : !hasToken
+          ? 'setup needed'
+          : 'ready';
   const statusOptions = {
     invalidApiBaseUrl: diagnostics.invalidApiBaseUrl,
     projectInitialized: Boolean(config),
@@ -1525,7 +1530,8 @@ async function cmdLogout(args: string[]) {
 async function cmdCollect(args: string[]) {
   const source = parseAgentSource(option(args, '--source'), 'collect');
   const config = await loadProjectConfig(process.cwd());
-  const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
+  const collectionWindow = await resolveCollectionWindowWithDiagnostics({ cwd: process.cwd(), args });
+  const window = collectionWindow.window;
   const uploadRequested = flag(args, '--upload');
   const uploadCredentials = uploadRequested ? await loadCredentials() : null;
   if (uploadRequested && !uploadCredentials) throw new Error(missingTokenMessage());
@@ -1542,22 +1548,27 @@ async function cmdCollect(args: string[]) {
       }
     }
     if (!flag(args, '--no-save-cursor')) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
-    print(JSON.stringify({ ...draft, next_actions: collectJsonNextActions(draft) }, null, 2));
+    print(JSON.stringify({ ...draft, warnings: collectionWindow.warnings, next_actions: collectJsonNextActions(draft) }, null, 2));
     return;
   }
   print(ui.heading(collection.reusedExisting ? 'AgentFeed draft reused' : 'AgentFeed draft ready'));
   print(collection.reusedExisting ? 'Existing matching draft reused.\n' : 'Draft created.\n');
+  if (collectionWindow.warnings.length) {
+    print(ui.section('Warnings'));
+    printWarningLines(collectionWindow.warnings);
+    print();
+  }
   print(ui.section('Summary'));
   print(`ID: ${draft.id}`);
-  print(`Project: ${draft.project.name}`);
+  print(`Project: ${safeTerminalText(draft.project.name)}`);
   print(`Title: ${singleLine(draft.worklog.title)}`);
-  print(`Privacy: ${draft.privacy_scan.status}`);
+  print(`Privacy: ${safeTerminalText(draft.privacy_scan.status)}`);
   if (flag(args, '--dry') || flag(args, '--dry-run')) print('Mode: dry run (local draft only; no upload attempted)');
   print();
   print(ui.section('Signals'));
-  print(`Agent: ${draft.worklog.agent}`);
+  print(`Agent: ${safeTerminalText(draft.worklog.agent)}`);
   const models = draftModelsLabel(draft);
-  if (models) print(`Models: ${models}`);
+  if (models) print(`Models: ${safeTerminalText(models)}`);
   for (const line of ui.wrapKeyValue('Metrics', formatMetricsRow(draft))) print(line);
   if (flag(args, '--explain')) {
     print();
@@ -1582,7 +1593,8 @@ async function cmdCollect(args: string[]) {
 async function cmdShare(args: string[]) {
   const opts = parseShareArgs(args);
   await loadProjectConfig(process.cwd());
-  const window = await resolveCollectionWindow({ cwd: process.cwd(), args });
+  const collectionWindow = await resolveCollectionWindowWithDiagnostics({ cwd: process.cwd(), args });
+  const window = collectionWindow.window;
   const creds = opts.dryRun ? null : await loadCredentials();
 
   const collection = await collectDraftWithStatus({ cwd: process.cwd(), source: opts.source, sessionFile: opts.sessionFile, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all'), note: opts.note, runConfiguredCommands: opts.runConfiguredCommands, skipConfiguredCommands: opts.dryRun });
@@ -1597,6 +1609,7 @@ async function cmdShare(args: string[]) {
         reused_existing_draft: collection.reusedExisting,
         draft,
         privacy_policy: privacyPolicySummary(draft),
+        warnings: collectionWindow.warnings,
         next_actions: shareDryRunNextActions(draft.id, hasCredentials),
         ...(opts.explain ? { collection_explain: formatCollectionExplain(draft) } : {})
       }, null, 2));
@@ -1620,6 +1633,7 @@ async function cmdShare(args: string[]) {
       upload: result,
       privacy_policy: privacyPolicySummary(draft),
       handoff,
+      warnings: collectionWindow.warnings,
       next_actions: uploadNextActions(draft.id),
       ...(opts.explain ? { collection_explain: formatCollectionExplain(draft) } : {})
     }, null, 2));
@@ -1627,6 +1641,11 @@ async function cmdShare(args: string[]) {
   }
 
   if (collection.reusedExisting) print(`Reusing existing matching draft: ${draft.id}\n`);
+  if (collectionWindow.warnings.length) {
+    print(ui.section('Warnings'));
+    printWarningLines(collectionWindow.warnings);
+    print();
+  }
   print(formatSharePreview(draft, { explainDetailsFollow: opts.explain }));
   print();
   if (opts.explain) {
@@ -1704,7 +1723,7 @@ async function cmdPreview(args: string[]) {
   const uploadStatus = draft.upload.uploaded ? 'uploaded' : 'pending';
   print(ui.heading('AgentFeed preview'));
   print();
-  print(`@local · ${draft.worklog.agent} · ${draft.project.name}`);
+  print(`@local · ${safeTerminalText(draft.worklog.agent)} · ${safeTerminalText(draft.project.name)}`);
   print();
   print(ui.section('Summary'));
   print(`ID: ${draft.id}`);
@@ -1923,9 +1942,14 @@ async function cmdDoctor(args: string[] = []) {
   try {
     await loadProjectConfig(process.cwd());
     projectConfigValid = true;
-    const collectionState = await readCollectionState(process.cwd());
-    collectionStateLabel = formatCollectionCursor(collectionState.last_collected_at);
-    nextCollectionSinceLabel = nextDefaultCollectionSince(collectionState.last_collected_at);
+    const collectionStateResult = await readCollectionStateWithDiagnostics(process.cwd());
+    collectionStateLabel = collectionStateResult.valid
+      ? formatCollectionCursor(collectionStateResult.state.last_collected_at)
+      : 'invalid (.agentfeed/state.json unreadable)';
+    nextCollectionSinceLabel = collectionStateResult.valid
+      ? nextDefaultCollectionSince(collectionStateResult.state.last_collected_at)
+      : 'beginning (cursor ignored)';
+    tokenWarnings.push(...collectionStateResult.warnings);
   } catch {
     projectConfigValid = false;
   }
@@ -2167,10 +2191,10 @@ async function cmdDrafts(args: string[]) {
       print(`  Error: ${row.error}`);
       continue;
     }
-    print(`${row.id}  ${row.status}  ${row.agent}  ${row.privacy} · findings ${row.findings}`);
+    print(`${safeTerminalText(row.id)}  ${safeTerminalText(row.status)}  ${safeTerminalText(row.agent)}  ${safeTerminalText(row.privacy)} · findings ${row.findings}`);
     print(`  Updated: ${formatDraftUpdatedAt(row.updated_at)}`);
-    print(`  Project: ${row.project}`);
-    print(`  Title: ${row.title}`);
+    print(`  Project: ${safeTerminalText(row.project)}`);
+    print(`  Title: ${safeTerminalText(row.title)}`);
     for (const line of ui.wrapKeyValue('  Metrics', row.metrics ?? 'no metrics')) print(line);
     if (row.status === 'uploaded') {
       print(`  Open: ${ui.command(`agentfeed open --id ${row.id}`)}`);

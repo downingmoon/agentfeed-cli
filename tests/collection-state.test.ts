@@ -3,7 +3,8 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { initProject } from '../src/config/project-config.js';
-import { readCollectionState, resolveCollectionWindow, writeCollectionState } from '../src/config/collection-state.js';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { readCollectionState, resolveCollectionWindow, resolveCollectionWindowWithDiagnostics, writeCollectionState } from '../src/config/collection-state.js';
 
 let dir: string;
 
@@ -42,5 +43,22 @@ describe('collection state', () => {
     await writeCollectionState(dir, { last_collected_at: '2026-05-20T02:00:00.000Z' });
 
     await expect(readCollectionState(dir)).resolves.toEqual({ last_collected_at: '2026-05-20T02:00:00.000Z' });
+  });
+
+  it('surfaces malformed state files while ignoring the unsafe cursor', async () => {
+    await mkdir(join(dir, '.agentfeed'), { recursive: true });
+    await writeFile(join(dir, '.agentfeed', 'state.json'), '{not valid json', 'utf8');
+
+    const result = await resolveCollectionWindowWithDiagnostics({
+      cwd: dir,
+      args: [],
+      now: new Date('2026-05-20T05:00:00.000Z')
+    });
+
+    expect(result.window).toEqual({ since: null, until: '2026-05-20T05:00:00.000Z' });
+    expect(result.warnings).toHaveLength(1);
+    expect(result.collection_state.valid).toBe(false);
+    expect(result.warnings[0]).toContain('Collection cursor could not be read');
+    expect(result.warnings[0]).toContain('.agentfeed/state.json');
   });
 });

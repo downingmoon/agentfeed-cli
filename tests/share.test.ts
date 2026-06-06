@@ -118,6 +118,31 @@ describe('share command helpers', () => {
     expect(output).toContain('Summary: Collected agent work.');
   });
 
+  it('neutralizes terminal control sequences in share preview text', () => {
+    const draft = createEmptyDraft({ projectName: 'agentfeed-cli\u001b]52;c;secret\u0007', projectRoot: '/tmp/agentfeed-cli', source: 'codex' });
+    draft.id = 'draft_safe\u001b[31m';
+    draft.worklog.title = 'Add share command\u001b[31m';
+    draft.worklog.summary = 'Created a one-command share flow.\r\u001b]8;;https://evil.invalid\u0007link\u001b]8;;\u0007';
+    draft.worklog.user_note = 'Refined login flow\u001b[2J';
+    draft.worklog.agent = 'codex\u001b[31m';
+    draft.worklog.model = 'gpt-5.5\u001b[31m';
+    draft.worklog.changed_areas = ['CLI\u001b[31m', 'Documentation'];
+    draft.worklog.metrics.collection_sources = [
+      { type: 'agent_session\u001b[31m', name: 'codex\u001b[31m', quality: 'high\u001b[31m' }
+    ];
+
+    const output = formatSharePreview(draft);
+
+    expect(output).not.toMatch(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/);
+    expect(output).not.toContain('\x1b');
+    expect(output).not.toContain('https://evil.invalid');
+    expect(output).toContain('Project: agentfeed-cli');
+    expect(output).toContain('Title: Add share command');
+    expect(output).toContain('Agent: codex');
+    expect(output).toContain('Models: gpt-5.5');
+    expect(output).toContain('- agent_session: codex (high)');
+  });
+
   it('explains that high-severity findings block public publishing but not private review upload', () => {
     const draft = createEmptyDraft({ projectName: 'agentfeed-cli', projectRoot: '/tmp/agentfeed-cli', source: 'codex' });
     draft.privacy_scan = {

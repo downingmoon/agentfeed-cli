@@ -322,7 +322,7 @@ function nativeKeychainStore(metadata: { keychain_service?: string; keychain_acc
         }
       },
       async write(secret: string) {
-        await execFileAsync('security', ['add-generic-password', '-a', account, '-s', service, '-w', secret, '-U'], { timeout: KEYCHAIN_TIMEOUT_MS, env: keychainCommandEnv() });
+        await spawnWithInput('security', ['add-generic-password', '-a', account, '-s', service, '-U', '-w'], `${secret}\n`);
       },
       async delete() {
         try { await execFileAsync('security', ['delete-generic-password', '-a', account, '-s', service], { timeout: KEYCHAIN_TIMEOUT_MS, env: keychainCommandEnv() }); } catch { /* item may not exist */ }

@@ -10,6 +10,9 @@ const ANSI: Record<AnsiColor, [open: string, close: string]> = {
   gray: ['\x1b[90m', '\x1b[39m'],
 };
 
+const ANSI_ESCAPE_SEQUENCE = /\x1B(?:\[[0-?]*[ -/]*[@-~]|\][^\x07\x1B]*(?:\x07|\x1B\\)|[PX^_][^\x1B]*(?:\x1B\\)|[@-Z\\-_])/g;
+const UNSAFE_TERMINAL_CONTROL = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g;
+
 interface StreamLike {
   isTTY?: boolean;
 }
@@ -27,9 +30,17 @@ export function colorEnabled(stream: StreamLike = process.stdout): boolean {
 }
 
 export function color(text: string, colorName: AnsiColor, stream: StreamLike = process.stdout): string {
-  if (!colorEnabled(stream)) return text;
+  const safeText = sanitizeTerminalText(text);
+  if (!colorEnabled(stream)) return safeText;
   const [open, close] = ANSI[colorName];
-  return `${open}${text}${close}`;
+  return `${open}${safeText}${close}`;
+}
+
+export function sanitizeTerminalText(text: string): string {
+  return text
+    .replace(ANSI_ESCAPE_SEQUENCE, '')
+    .replace(UNSAFE_TERMINAL_CONTROL, '')
+    .replace(/\r/g, '');
 }
 
 export function heading(text: string): string {
@@ -69,6 +80,8 @@ export function terminalWidth(defaultWidth = 100): number {
 }
 
 export function wrapKeyValue(label: string, value: string, options: { width?: number; hangingIndent?: number } = {}): string[] {
+  label = sanitizeTerminalText(label);
+  value = sanitizeTerminalText(value);
   const prefix = `${label}: `;
   const width = options.width ?? terminalWidth();
   if (prefix.length + value.length <= width) return [`${prefix}${value}`];
@@ -101,8 +114,9 @@ export function wrapKeyValue(label: string, value: string, options: { width?: nu
 }
 
 export function formatCliError(message: string): string {
-  if (!colorEnabled(process.stderr)) return message;
-  return message
+  const safeMessage = sanitizeTerminalText(message);
+  if (!colorEnabled(process.stderr)) return safeMessage;
+  return safeMessage
     .split('\n')
     .map((line, index) => {
       if (index === 0) return color(line, 'red', process.stderr);

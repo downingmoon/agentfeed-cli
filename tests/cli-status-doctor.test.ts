@@ -284,7 +284,7 @@ describe('status and doctor provenance output', () => {
     });
 
     expect(stdout).toContain('AgentFeed status');
-    expect(stdout).toContain('Health: setup needed');
+    expect(stdout).toContain('Health: attention needed');
     expect(stdout).toContain('Readiness');
     expect(stdout).toContain('Setup progress: 2/5 ready · 3 need attention');
     expect(stdout).toContain('Account: token missing → agentfeed login');
@@ -395,6 +395,27 @@ describe('status and doctor provenance output', () => {
     expect(stdout).toContain('Uploads: 1 pending draft → agentfeed publish --latest --yes');
     expect(stdout).toContain('Warning: pending local drafts exist while a collection cursor is set');
     expect(stdout).toContain('--all/--since');
+  });
+
+  it('status reports malformed collection cursor as an explicit warning', async () => {
+    execFileSync(process.execPath, [cliPath, 'init', '--no-git-check', '--project-name', 'cursor-status-invalid'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+    await writeFile(join(dir, '.agentfeed', 'state.json'), '{not-json');
+
+    const stdout = execFileSync(process.execPath, [cliPath, 'status'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home, AGENTFEED_TOKEN: '' }
+    });
+
+    expect(stdout).toContain('Health: attention needed');
+    expect(stdout).toContain('AgentFeed collection cursor is unreadable');
+    expect(stdout).toContain('.agentfeed/state.json');
+    expect(stdout).toContain('Last collection cursor: none');
+    expect(stdout).toContain('Next default collection since: beginning');
   });
 
   it('login no-open no-save prints safe browser-login status text without credentials', async () => {

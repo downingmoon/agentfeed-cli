@@ -281,7 +281,7 @@ describe('CLI init and hook setup UX', () => {
     expect(stderr).toBe('');
 
     const settings = JSON.parse(await readFile(join(dir, '.claude', 'settings.json'), 'utf8')) as Record<string, unknown>;
-    expect(JSON.stringify(settings)).toContain('agentfeed collect --source claude-code');
+    expect(JSON.stringify(settings)).toContain('collect --source claude-code');
   });
 
   it('prints hook uninstall summary while preserving the settings path', async () => {
@@ -302,7 +302,7 @@ describe('CLI init and hook setup UX', () => {
     expect(stderr).toBe('');
 
     const settings = JSON.parse(await readFile(join(dir, '.claude', 'settings.json'), 'utf8')) as Record<string, unknown>;
-    expect(JSON.stringify(settings)).not.toContain('agentfeed collect --source claude-code');
+    expect(JSON.stringify(settings)).not.toContain('collect --source claude-code');
   });
 
 
@@ -325,6 +325,6 @@ describe('CLI init and hook setup UX', () => {
     expect(stdout).not.toMatch(/(^|\n)Next(\n|$)/);
 
     const settings = JSON.parse(await readFile(join(dir, '.claude', 'settings.json'), 'utf8')) as Record<string, unknown>;
-    expect(JSON.stringify(settings)).not.toContain('agentfeed collect --source claude-code');
+    expect(JSON.stringify(settings)).not.toContain('collect --source claude-code');
   });
 });

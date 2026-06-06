@@ -1716,7 +1716,7 @@ describe('Claude Code hook installer', () => {
 
     try {
       process.env.session_token = 'lower_hook_secret_should_not_leak';
-      const command = buildClaudeCodeStopHookCommand();
+      const command = buildClaudeCodeStopHookCommand({ agentfeedCommand: `'${fakeAgentFeed}' collect --source claude-code` });
       const result = await execFileAsync('sh', ['-c', command], {
         cwd: dir,
         env: {
@@ -1754,12 +1754,15 @@ describe('Claude Code hook installer', () => {
     await installClaudeCodeHook({ projectRoot: dir, settingsPath: settings });
     let json = JSON.parse(await readFile(settings, 'utf8'));
     expect(json.theme).toBe('dark');
-    expect(JSON.stringify(json).match(/agentfeed collect/g)?.length).toBe(1);
-    expect(JSON.stringify(json)).toContain('echo keep');
+    const installedHookJson = JSON.stringify(json);
+    expect(installedHookJson.match(/collect --source claude-code/g)?.length).toBe(1);
+    expect(installedHookJson).not.toContain('agentfeed collect --source claude-code');
+    expect(installedHookJson).toContain('agentfeed Claude Code Stop hook');
+    expect(installedHookJson).toContain('echo keep');
 
     await uninstallClaudeCodeHook({ projectRoot: dir, settingsPath: settings });
     json = JSON.parse(await readFile(settings, 'utf8'));
-    expect(JSON.stringify(json)).not.toContain('agentfeed collect');
+    expect(JSON.stringify(json)).not.toContain('collect --source claude-code');
     expect(JSON.stringify(json)).toContain('echo keep');
   });
 

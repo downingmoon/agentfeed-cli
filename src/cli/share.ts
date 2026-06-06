@@ -42,6 +42,10 @@ function modelsLabel(draft: LocalDraft): string | null {
   return models.length ? models.join(', ') : null;
 }
 
+function safeTerminalText(value: string): string {
+  return ui.sanitizeTerminalText(value);
+}
+
 function formatAgentMetricLines(draft: LocalDraft): string[] {
   const metrics = draft.worklog.metrics.agent_metrics;
   if (!metrics?.length) return [];
@@ -56,7 +60,7 @@ function formatAgentMetricLines(draft: LocalDraft): string[] {
         metric.tool_calls != null ? `${metric.tool_calls} tools` : null,
         metric.commands_run != null ? `${metric.commands_run} cmds` : null
       ].filter((part): part is string => Boolean(part));
-      return ui.wrapKeyValue(`- ${metric.agent}`, parts.length ? parts.join(' · ') : 'no metrics').join('\n');
+      return ui.wrapKeyValue(`- ${safeTerminalText(metric.agent)}`, parts.length ? parts.join(' · ') : 'no metrics').join('\n');
     })
   ];
 }
@@ -96,24 +100,24 @@ export function formatPrivacyPolicyLines(draft: LocalDraft): string[] {
 export function formatSharePreview(draft: LocalDraft, options: { explainDetailsFollow?: boolean } = {}): string {
   const m = draft.worklog.metrics;
   const models = modelsLabel(draft);
-  const changedAreas = draft.worklog.changed_areas.length ? draft.worklog.changed_areas.join(', ') : 'Application code';
+  const changedAreas = draft.worklog.changed_areas.length ? draft.worklog.changed_areas.map(safeTerminalText).join(', ') : 'Application code';
   const lines = [
     ui.heading('AgentFeed share preview'),
     'Ready to share private review draft.',
     '',
     ui.section('Summary'),
-    `Draft: ${draft.id}`,
-    `Project: ${draft.project.name}`,
-    `Title: ${draft.worklog.title}`,
+    `Draft: ${safeTerminalText(draft.id)}`,
+    `Project: ${safeTerminalText(draft.project.name)}`,
+    `Title: ${safeTerminalText(draft.worklog.title)}`,
     ...ui.wrapKeyValue('Summary', draft.worklog.summary),
-    ...(draft.worklog.user_note ? [`Note: ${draft.worklog.user_note}`] : []),
+    ...(draft.worklog.user_note ? [`Note: ${safeTerminalText(draft.worklog.user_note)}`] : []),
     '',
     ui.section('Signals'),
-    `Agent: ${draft.worklog.agent}`,
-    ...(models ? [`Models: ${models}`] : []),
+    `Agent: ${safeTerminalText(draft.worklog.agent)}`,
+    ...(models ? [`Models: ${safeTerminalText(models)}`] : []),
     ...ui.wrapKeyValue('Metrics', formatMetricsRow(draft)),
     ...ui.wrapKeyValue('Changed areas', changedAreas),
-    `Privacy: ${draft.privacy_scan.status} · findings ${draft.privacy_scan.findings.length}`
+    `Privacy: ${safeTerminalText(draft.privacy_scan.status)} · findings ${draft.privacy_scan.findings.length}`
   ];
   const agentMetricLines = formatAgentMetricLines(draft);
   if (agentMetricLines.length) {
@@ -136,7 +140,7 @@ export function formatSharePreview(draft: LocalDraft, options: { explainDetailsF
   } else {
     if (m.collection_sources?.length) {
       lines.push('Collection sources:');
-      for (const source of m.collection_sources) lines.push(`- ${source.type}: ${source.name} (${source.quality})`);
+      for (const source of m.collection_sources) lines.push(`- ${safeTerminalText(source.type)}: ${safeTerminalText(source.name)} (${safeTerminalText(source.quality)})`);
     } else {
       lines.push('Collection sources: none');
     }

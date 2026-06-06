@@ -42,6 +42,7 @@ describe('share command helpers', () => {
       openReview: true,
       noOpenReview: false,
       json: false,
+      explain: false,
       source: 'gemini_cli',
       sessionFile: '/tmp/session.jsonl',
       since: '2026-05-20T01:00:00Z',
@@ -51,6 +52,7 @@ describe('share command helpers', () => {
       runConfiguredCommands: true,
       yes: false
     });
+    expect(parseShareArgs(['--explain']).explain).toBe(true);
     expect(parseShareArgs(['--yes']).yes).toBe(true);
     expect(parseShareArgs(['--no-open-review']).noOpenReview).toBe(true);
   });

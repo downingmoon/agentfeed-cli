@@ -9,6 +9,7 @@ export interface ShareOptions {
   openReview: boolean;
   noOpenReview: boolean;
   json: boolean;
+  explain: boolean;
   source?: AgentType;
   sessionFile?: string | null;
   since?: string | null;
@@ -158,6 +159,7 @@ export function parseShareArgs(args: string[]): ShareOptions {
     openReview: flag(args, '--open-review'),
     noOpenReview: flag(args, '--no-open-review'),
     json: flag(args, '--json'),
+    explain: flag(args, '--explain'),
     source: parseAgentSource(option(args, '--source'), 'share'),
     sessionFile: option(args, '--session-file') ?? null,
     since: option(args, '--since') ?? null,

@@ -270,6 +270,31 @@ describe('share CLI command', () => {
     expect(stdout).toContain('agentfeed preview --id');
   });
 
+  it('accepts share --dry --explain as the explainable daily workflow', async () => {
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = false;\nexport const shareDryExplain = true;\n');
+
+    const { stdout, stderr } = await execFileAsync(process.execPath, [
+      cliPath,
+      'share',
+      '--dry',
+      '--all',
+      '--explain'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    expect(stderr).toBe('');
+    expect(stdout).toContain('AgentFeed share preview');
+    expect(stdout).toContain('Collection details');
+    expect(stdout).toContain('Collection quality');
+    expect(stdout).toContain('Sources:');
+    expect(stdout).toContain('Dry run complete. Local draft kept:');
+    expect(stdout).toContain('agentfeed publish --id');
+    expect(stdout).not.toContain('Unknown option: --explain');
+  });
+
   it('fails malformed project config with actionable recovery before share dry-run', async () => {
     await writeFile(join(dir, '.agentfeed', 'config.json'), '{not-json');
 

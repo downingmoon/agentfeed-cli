@@ -216,7 +216,7 @@ describe('CLI help and option validation', () => {
 
   it('prints example-driven help for the main review workflow commands', async () => {
     const expectations: Array<[string[], string[]]> = [
-      [['share', '--help'], ['Examples:', 'agentfeed share --dry', 'agentfeed share --yes --open-review']],
+      [['share', '--help'], ['Examples:', 'agentfeed share --dry', 'agentfeed share --dry --explain', 'agentfeed share --yes --open-review']],
       [['publish', '--help'], ['Examples:', 'agentfeed publish --latest --yes', 'agentfeed publish --latest --json --clipboard']],
       [['scan', '--help'], ['Examples:', 'agentfeed scan --latest --dry-run', 'agentfeed scan --path .']],
       [['hook', '--help'], ['Examples:', 'agentfeed hook install claude-code --dry-run', 'agentfeed hook uninstall claude-code']],
@@ -243,7 +243,7 @@ describe('CLI help and option validation', () => {
       [['version', '--help'], ['Usage: agentfeed version', 'agentfeed --version', '--json']],
       [['token', 'rotate', '--help'], ['Usage: agentfeed token rotate', 'Compatibility alias for:', 'agentfeed rotate']],
       [['collect', '--help'], ['Usage: agentfeed collect', '--source <source>', '--no-save-cursor']],
-      [['share', '--help'], ['Usage: agentfeed share', '--note <text>', '--run-configured-commands']],
+      [['share', '--help'], ['Usage: agentfeed share', '--note <text>', '--explain', '--run-configured-commands']],
       [['preview', '--help'], ['Usage: agentfeed preview', '--remote', '--json']],
       [['publish', '--help'], ['Usage: agentfeed publish', '--open-review', '--json']],
       [['scan', '--help'], ['Usage: agentfeed scan', '--path <path>', '--dry-run']],

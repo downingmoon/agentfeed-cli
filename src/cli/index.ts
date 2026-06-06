@@ -1028,7 +1028,13 @@ async function cmdShare(args: string[]) {
 
   if (opts.json) {
     if (opts.dryRun) {
-      print(JSON.stringify({ dry_run: true, reused_existing_draft: collection.reusedExisting, draft, privacy_policy: privacyPolicySummary(draft) }, null, 2));
+      print(JSON.stringify({
+        dry_run: true,
+        reused_existing_draft: collection.reusedExisting,
+        draft,
+        privacy_policy: privacyPolicySummary(draft),
+        ...(opts.explain ? { collection_explain: formatCollectionExplain(draft) } : {})
+      }, null, 2));
       return;
     }
     const metadata = await requireUploadPreflight(creds!);
@@ -1041,13 +1047,27 @@ async function cmdShare(args: string[]) {
       apiBaseUrl: creds!.api_base_url,
       reviewBaseUrl: result.review_base_url ?? metadata.review_base_url
     });
-    print(JSON.stringify({ dry_run: false, reused_existing_draft: collection.reusedExisting, draft_id: draft.id, draft, upload: result, privacy_policy: privacyPolicySummary(draft), handoff }, null, 2));
+    print(JSON.stringify({
+      dry_run: false,
+      reused_existing_draft: collection.reusedExisting,
+      draft_id: draft.id,
+      draft,
+      upload: result,
+      privacy_policy: privacyPolicySummary(draft),
+      handoff,
+      ...(opts.explain ? { collection_explain: formatCollectionExplain(draft) } : {})
+    }, null, 2));
     return;
   }
 
   if (collection.reusedExisting) print(`Reusing existing matching draft: ${draft.id}\n`);
   print(formatSharePreview(draft));
   print();
+  if (opts.explain) {
+    print(ui.section('Collection details'));
+    print(formatCollectionExplain(draft));
+    print();
+  }
 
   if (opts.dryRun) {
     print(ui.section('Next'));
@@ -1976,7 +1996,7 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     validatePositionals: NO_POSITIONALS('collect')
   },
   share: {
-    flags: ['--dry', '--dry-run', '--yes', '-y', '--open-review', '--no-open-review', '--all', '--force', '--run-configured-commands', '--no-clipboard', '--no-clip', '--json', '--clipboard'],
+    flags: ['--dry', '--dry-run', '--yes', '-y', '--open-review', '--no-open-review', '--all', '--force', '--run-configured-commands', '--explain', '--no-clipboard', '--no-clip', '--json', '--clipboard'],
     valueOptions: ['--source', '--session-file', '--since', '--until', '--note'],
     conflicts: [
       ['--dry', '--yes'],
@@ -2384,6 +2404,7 @@ Options:
   --until <timestamp>       End collection window (ISO timestamp)
   --all                     Ignore the saved collection cursor
   --force                   Recollect even if a matching draft already exists
+  --explain                 Include collection source/quality diagnostics
   --note <text>             Attach a user note to the draft
   --open-review             Open uploaded private review URL
   --no-open-review          Suppress browser handoff
@@ -2395,6 +2416,7 @@ Options:
 
 Examples:
   agentfeed share --dry
+  agentfeed share --dry --explain
   agentfeed share --note "Fixed auth flow"
   agentfeed share --yes --open-review`,
     preview: `Usage: agentfeed preview [options]

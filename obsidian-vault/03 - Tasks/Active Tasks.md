@@ -176,3 +176,4 @@ updated: 2026-06-06
 - [ ] Backend integration guide의 예시 command가 현재 CLI 명령과 일치하는지 점검.
 - [x] [[Frontend Brand Assets V2 2026-06-07]] — mainline logo/icon/OG asset polish completed and verified.
 - [x] [[Frontend Agent Glyph Assets 2026-06-07]] — Claude/Codex/Cursor/Gemini text badges replaced with owned SVG glyphs.
+- [x] [[Frontend GitHub Avatar Coverage 2026-06-08]] — GitHub profile avatars preserved across feed/worklog/project owner surfaces.

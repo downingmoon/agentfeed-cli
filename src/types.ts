@@ -79,7 +79,7 @@ export interface AgentFeedCredentials {
   ingestion_token: string;
   token_id?: string | null;
   token_expires_at?: string | null;
-  user?: { id?: string; username?: string | null; display_name?: string | null };
+  user?: { id?: string; username?: string | null; display_name?: string | null; avatar_url?: string | null };
   created_at: string;
 }
 
@@ -97,7 +97,7 @@ export interface CliAuthExchangeResult {
   token_expires_at?: string | null;
   rotated_from?: string;
   rotated_at?: string;
-  user?: { id?: string; username?: string | null; display_name?: string | null };
+  user?: { id?: string; username?: string | null; display_name?: string | null; avatar_url?: string | null };
 }
 
 export interface WorklogMetrics {

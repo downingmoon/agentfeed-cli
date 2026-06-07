@@ -1008,7 +1008,11 @@ describe('api client', () => {
           token_expires_at: '2026-06-15T00:00:00Z',
           rotated_from: 'token-old',
           rotated_at: '2026-05-30T00:01:00Z',
-          user: { id: 'user-1', username: 'downingmoon' }
+          user: {
+            id: 'user-1',
+            username: 'downingmoon',
+            avatar_url: 'https://avatars.githubusercontent.com/u/4242?v=4'
+          }
         }
       }), { status: 200, headers: { 'content-type': 'application/json' } });
     });
@@ -1025,6 +1029,7 @@ describe('api client', () => {
     expect(exchange.token_expires_at).toBe('2026-06-15T00:00:00Z');
     expect(exchange.rotated_from).toBe('token-old');
     expect(exchange.rotated_at).toBe('2026-05-30T00:01:00Z');
+    expect(exchange.user?.avatar_url).toBe('https://avatars.githubusercontent.com/u/4242?v=4');
     expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.agentfeed.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
     expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://api.agentfeed.dev/v1/auth/cli/sessions/session-1/exchange', expect.objectContaining({ method: 'POST' }));
   });
@@ -1387,7 +1392,11 @@ describe('api client', () => {
           data: {
             token: 'af_live_no_open',
             token_expires_at: '2026-06-15T00:00:00Z',
-            user: { id: 'user-no-open', username: 'cli-user' }
+            user: {
+              id: 'user-no-open',
+              username: 'cli-user',
+              avatar_url: 'https://avatars.githubusercontent.com/u/4242?v=4'
+            }
           }
         }), { status: 200, headers: { 'content-type': 'application/json' } });
       }
@@ -1402,7 +1411,11 @@ describe('api client', () => {
       api_base_url: 'https://api.agentfeed.dev/v1',
       ingestion_token: 'af_live_no_open',
       token_expires_at: '2026-06-15T00:00:00Z',
-      user: { id: 'user-no-open', username: 'cli-user' }
+      user: {
+        id: 'user-no-open',
+        username: 'cli-user',
+        avatar_url: 'https://avatars.githubusercontent.com/u/4242?v=4'
+      }
     });
     expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.agentfeed.dev/v1/metadata', expect.objectContaining({ method: 'GET' }));
     expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://api.agentfeed.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
@@ -1411,7 +1424,11 @@ describe('api client', () => {
       api_base_url: 'https://api.agentfeed.dev/v1',
       ingestion_token: 'af_live_no_open',
       token_expires_at: '2026-06-15T00:00:00Z',
-      user: { id: 'user-no-open', username: 'cli-user' }
+      user: {
+        id: 'user-no-open',
+        username: 'cli-user',
+        avatar_url: 'https://avatars.githubusercontent.com/u/4242?v=4'
+      }
     });
   });
 

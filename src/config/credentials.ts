@@ -143,10 +143,12 @@ function normalizeStoredUser(value: unknown, file: string, warnings: string[]): 
   const id = optionalStoredString(value, 'id', file, warnings);
   const username = optionalStoredStringOrNull(value, 'username', file, warnings);
   const displayName = optionalStoredStringOrNull(value, 'display_name', file, warnings);
+  const avatarUrl = optionalStoredStringOrNull(value, 'avatar_url', file, warnings);
   const user: AgentFeedCredentials['user'] = {};
   if (id !== undefined) user.id = id;
   if (username !== undefined) user.username = username;
   if (displayName !== undefined) user.display_name = displayName;
+  if (avatarUrl !== undefined) user.avatar_url = avatarUrl;
   return user;
 }
 

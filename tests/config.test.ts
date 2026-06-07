@@ -163,6 +163,23 @@ describe('project config', () => {
     expect(fileMode).toBe(0o600);
   });
 
+  it('preserves GitHub avatar metadata in saved user credentials', async () => {
+    await saveCredentials('af_live_avatar_metadata', {
+      apiBaseUrl: 'http://localhost:8001/v1',
+      credentialStore: 'file',
+      user: {
+        id: 'user-1',
+        username: 'downingmoon',
+        avatar_url: 'https://avatars.githubusercontent.com/u/4242?v=4',
+      },
+    });
+
+    const resolved = await loadCredentialsWithMetadata({ cwd: dir });
+
+    expect((resolved.credentials?.user as { avatar_url?: string } | undefined)?.avatar_url)
+      .toBe('https://avatars.githubusercontent.com/u/4242?v=4');
+  });
+
   it('removes saved file credentials without exposing token values', async () => {
     await saveCredentials('af_live_logout_file_secret', { apiBaseUrl: 'http://localhost:8001/v1', credentialStore: 'file' });
 

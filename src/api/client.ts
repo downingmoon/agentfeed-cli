@@ -105,7 +105,7 @@ function healthUrl(apiBaseUrl: string): string {
 
 export interface IngestionTokenStatus {
   ok?: boolean;
-  user?: { id?: string; username?: string | null; display_name?: string | null };
+  user?: { id?: string; username?: string | null; display_name?: string | null; avatar_url?: string | null };
   token?: {
     id?: string;
     name?: string;
@@ -447,13 +447,16 @@ function parseOptionalUser(value: unknown): AgentFeedCredentials['user'] | null 
   const id = Object.hasOwn(value, 'id') ? optionalStringField(value.id) : undefined;
   const username = Object.hasOwn(value, 'username') ? optionalStringField(value.username) : undefined;
   const displayName = Object.hasOwn(value, 'display_name') ? optionalStringField(value.display_name) : undefined;
+  const avatarUrl = Object.hasOwn(value, 'avatar_url') ? optionalStringField(value.avatar_url) : undefined;
   if (id === undefined && Object.hasOwn(value, 'id')) return null;
   if (username === undefined && Object.hasOwn(value, 'username')) return null;
   if (displayName === undefined && Object.hasOwn(value, 'display_name')) return null;
+  if (avatarUrl === undefined && Object.hasOwn(value, 'avatar_url')) return null;
   const user: NonNullable<AgentFeedCredentials['user']> = {};
   if (id !== undefined && id !== null) user.id = id;
   if (username !== undefined && username !== null) user.username = username;
   if (displayName !== undefined && displayName !== null) user.display_name = displayName;
+  if (avatarUrl !== undefined && avatarUrl !== null) user.avatar_url = avatarUrl;
   return user;
 }
 

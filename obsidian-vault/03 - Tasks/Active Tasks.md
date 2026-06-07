@@ -174,3 +174,4 @@ updated: 2026-06-06
 - [x] GitHub Actions usage limit 동안 CI는 PR/manual trigger로 제한하고, direct `main` push는 로컬 `npm run release:preflight` evidence로 대체.
 - [x] Frontend landing copy의 `agentfeed preview --remote` 문구 점검. 현재 CLI에 `preview --remote`가 존재하므로 유지 가능.
 - [ ] Backend integration guide의 예시 command가 현재 CLI 명령과 일치하는지 점검.
+- [x] [[Frontend Brand Assets V2 2026-06-07]] — mainline logo/icon/OG asset polish completed and verified.

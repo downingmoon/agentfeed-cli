@@ -179,3 +179,4 @@ updated: 2026-06-08
 - [x] [[Frontend GitHub Avatar Coverage 2026-06-08]] — GitHub profile avatars preserved across feed/worklog/project owner/profile/settings surfaces, and OpenAPI contracts now guard visible user actor `avatar_url` fields.
 - [x] [[Search Project Pagination Dedupe 2026-06-08]] — Search load-more now dedupes project rows by owner plus slug so duplicate project slugs from different users remain visible.
 - [x] [[Project Key Helper Consolidation 2026-06-08]] — Projects/Search/Profile/Explore now reuse a shared owner-aware project key helper to prevent duplicate-slug drift.
+- [x] [[User Avatar Residual Coverage 2026-06-08]] — CLI authorize account card now renders the signed-in GitHub avatar, and worklog comments use a shared author/avatar-safe adapter before rendering.

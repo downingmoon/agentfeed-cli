@@ -181,3 +181,4 @@ updated: 2026-06-08
 - [x] [[Project Key Helper Consolidation 2026-06-08]] — Projects/Search/Profile/Explore now reuse a shared owner-aware project key helper to prevent duplicate-slug drift.
 - [x] [[User Avatar Residual Coverage 2026-06-08]] — CLI authorize account card now renders the signed-in GitHub avatar, and worklog comments use a shared author/avatar-safe adapter before rendering.
 - [x] [[CLI Auth Ingest Avatar Contract 2026-06-08]] — CLI auth exchange, ingestion status, managed token rotate, saved credentials, OpenAPI gate, and OAuth smoke now preserve GitHub `avatar_url`.
+- [x] [[User Avatar Owner Review Coverage 2026-06-08]] — Dashboard recent worklogs, Worklog Review public preview, and project owner adapters now preserve GitHub avatars even when public username is missing.

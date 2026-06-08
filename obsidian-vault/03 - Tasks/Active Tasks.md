@@ -90,6 +90,7 @@ updated: 2026-06-08
 - [x] [[CLI Success Response Envelope Guard 2026-06-08]] — CLI postJson/postIngest 성공 응답이 invalid JSON/data envelope missing인 경우 API boundary에서 fail-closed 처리하도록 보강 완료.
 - [x] [[Frontend Leaderboard Adapter Fail Closed 2026-06-08]] — Leaderboard adapter가 malformed ranking rows를 조용히 drop하지 않고 visible error path로 fail-closed 하도록 보강 완료.
 - [x] [[Frontend Comment Adapter Fail Closed 2026-06-08]] — Worklog comments adapter가 malformed comment rows를 빈/부분 목록으로 숨기지 않고 section error로 fail-closed 하도록 보강 완료.
+- [x] [[Frontend Explore Page Fallback Removal 2026-06-08]] — Explore tags/rising builders가 strict API normalizer 이후 page-local 빈/부분 목록 fallback으로 contract mismatch를 숨기지 않도록 보강 완료.
 
 - [x] CLI subcommand `--help`가 수집/상태파일 작성 side effect 없이 종료되도록 수정.
 - [x] CLI 주요 명령 회귀: `release:preflight`로 `login`, `collect`, `share`, `publish`, `open`, `doctor`, `status` 관련 테스트 통과.

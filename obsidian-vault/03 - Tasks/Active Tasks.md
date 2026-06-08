@@ -96,6 +96,7 @@ updated: 2026-06-08
 - [x] [[Frontend Worklog Detail Adapter Fail Closed 2026-06-08]] — Worklog detail outcome/timeline/social normalized payload를 legacy string/row-drop/zero fallback으로 숨기지 않고 fail-closed 하도록 보강 완료.
 - [x] [[Frontend Worklog Card Adapter Fail Closed 2026-06-08]] — Worklog card/list author/metrics/social normalized payload를 fallback identity/zero stats/empty metrics로 숨기지 않고 fail-closed 하도록 보강 완료.
 - [x] [[Frontend Project Adapter Stats Guard 2026-06-08]] — Project summary/detail stats adapter가 API-authorized null과 malformed object를 구분하고 detail missing stats를 합성하지 않도록 보강 완료.
+- [x] [[Frontend Project Identity Visibility Guard 2026-06-08]] — Project visibility/owner/tags/owner_id/slug malformed payload가 public filtering 또는 route fallback으로 숨겨지지 않도록 보강 완료.
 
 - [x] CLI subcommand `--help`가 수집/상태파일 작성 side effect 없이 종료되도록 수정.
 - [x] CLI 주요 명령 회귀: `release:preflight`로 `login`, `collect`, `share`, `publish`, `open`, `doctor`, `status` 관련 테스트 통과.

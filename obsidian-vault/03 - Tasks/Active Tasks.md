@@ -108,6 +108,7 @@ updated: 2026-06-08
 - [x] [[Frontend Worklog Review Privacy Finding Guard 2026-06-08]] — Worklog Review page-local privacy finding helper가 malformed row를 drop하거나 fallback 값으로 합성하지 않고 fail-closed 하도록 보강 완료.
 - [x] [[Frontend Worklog Review Public Fields Guard 2026-06-08]] — Worklog Review page-local `public_fields` helper가 비배열/blank row를 빈 목록으로 숨기지 않고 fail-closed 하도록 보강 완료.
 - [x] [[Frontend Profile Prompt Avatar Coverage 2026-06-08]] — Profile Prompts 탭의 user-uploaded prompt 카드가 text-only로 남지 않고 profile owner GitHub avatar를 렌더링하도록 보강 완료.
+- [x] [[Frontend Worklog Review Action Routing Guard 2026-06-08]] — Worklog Review resolve/publish/unpublish mutation이 typed API client action response guard를 우회하지 않도록 source contract 보강 완료.
 
 - [x] CLI subcommand `--help`가 수집/상태파일 작성 side effect 없이 종료되도록 수정.
 - [x] CLI 주요 명령 회귀: `release:preflight`로 `login`, `collect`, `share`, `publish`, `open`, `doctor`, `status` 관련 테스트 통과.

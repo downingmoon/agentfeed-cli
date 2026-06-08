@@ -152,6 +152,7 @@ updated: 2026-06-08
 - [x] [[Health Readiness Status Contract Guard 2026-06-08]] — Backend `/health`와 `/health/ready` status를 `ok` 및 `ready|not_ready` Literal schema로 고정해 readiness contract drift를 차단 완료.
 - [x] [[Username Check Reason Contract Guard 2026-06-08]] — `/users/check-username` reason을 Backend `Literal["already_taken"]`과 Frontend closed union/parser로 일치시켜 unknown username-check reason drift를 차단 완료.
 - [x] [[Dashboard Action URL Contract Guard 2026-06-08]] — Dashboard recent worklog `action_url`을 Backend schema와 Frontend API parser에서 `/worklogs/:id[/review]` 내부 경로로 고정해 external/unknown route drift를 fail-closed 처리 완료.
+- [x] [[Privacy Finding Enum Contract Guard 2026-06-08]] — Backend privacy finding `type`/`severity` Literal과 Frontend API parser/type을 일치시켜 unknown privacy finding drift를 review/detail boundary에서 fail-closed 처리 완료.
 
 ## P0 — 다음 실제 작업: 개인 서버 IP-only smoke
 

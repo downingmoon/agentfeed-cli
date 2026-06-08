@@ -39,6 +39,15 @@ related:
 - `npm run lint` ✅
 - `AGENTFEED_ALLOW_INSECURE_SERVER_TEST_API_BUILD=1 NEXT_PUBLIC_AGENTFEED_ALLOW_INSECURE_SERVER_TEST_API=1 NEXT_PUBLIC_API_URL=http://161.33.171.81:18080/v1 npm run build` ✅
 
+## 개인서버 배포 증적
+
+- `make server-up`으로 4개 AgentFeed 디렉터리 sync 및 compose 상태 확인 ✅
+- 서버 frontend 컨테이너 강제 재생성: `docker compose --env-file .env up -d --force-recreate frontend` ✅
+- 서버 source 반영 확인: `src/components/ui/Avatar.tsx`에 `rawAvatarUrl`, `setImageFailed(false)`, `[rawAvatarUrl]` 존재 ✅
+- Frontend: `http://161.33.171.81:13030` HTTP 200 ✅
+- Backend ready: `http://161.33.171.81:18080/health/ready` DB connected / migration up-to-date ✅
+- Metadata: contract `2026-06-03`, review base `http://161.33.171.81:13030` ✅
+
 ## 후행 과제
 
 > [!todo]

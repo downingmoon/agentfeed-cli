@@ -83,6 +83,7 @@ updated: 2026-06-08
 - [x] [[Strict Read List Envelope Guard 2026-06-08]] — 주요 read-list API의 permissive list wrapper 제거.
 - [x] [[Search Explore Nested Contract Guard 2026-06-08]] — Search/Explore nested project/pagination contract 보강.
 - [x] [[Permissive List Normalizer Source Guard 2026-06-08]] — API read path의 permissive list normalizer 재도입 방지.
+- [x] [[Ingest Nested Contract Fail Closed Guard 2026-06-08]] — CLI ingest nested metrics/source/timeline 객체도 계약 밖 필드를 조용히 무시하지 않도록 Backend schema와 Dev OpenAPI gate를 fail-closed로 보강 완료.
 
 - [x] CLI subcommand `--help`가 수집/상태파일 작성 side effect 없이 종료되도록 수정.
 - [x] CLI 주요 명령 회귀: `release:preflight`로 `login`, `collect`, `share`, `publish`, `open`, `doctor`, `status` 관련 테스트 통과.

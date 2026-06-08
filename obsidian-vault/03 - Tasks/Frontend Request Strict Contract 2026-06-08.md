@@ -64,7 +64,7 @@ bash -n scripts/test-all.sh scripts/check-openapi-contract.mjs
 - Backend ruff: pass
 - Backend targeted pytest: `3 passed, 369 deselected`
 - Dev OpenAPI gate: pass
-- Request body field contracts checked: `231 fields across 21 operations with additionalProperties=false`
+- Request body field contracts checked: `232 fields across 22 operations with additionalProperties=false`
 - Forbidden request body fields checked: `4 fields across 2 operations`
 - diff whitespace check: pass
 
@@ -117,11 +117,52 @@ uv run ruff check .
 
 결과:
 
-- Dev OpenAPI gate: pass, `231 fields across 21 operations with additionalProperties=false`
+- Dev OpenAPI gate: pass, `232 fields across 22 operations with additionalProperties=false`
 - Frontend contract tests: pass
 - Frontend typecheck/lint: pass
 - Frontend production build: pass
 - Backend targeted pytest: `1 passed, 371 deselected`
+- Backend ruff: pass
+
+
+## 2026-06-08 후속 보강 — Ingestion token lifecycle request bodies
+
+> [!success]
+> Settings의 token create/rotate/revoke 경로도 Backend strict schema와 Frontend exact request contract가 같은 route/body를 사용하도록 보강했다. 특히 rotate는 Backend가 optional `name` request body를 지원하므로 Dev OpenAPI gate에서 `additionalProperties=false`와 `bodyRequired=false`를 함께 확인한다.
+
+### 추가로 잠근 계약
+
+- `POST /v1/me/ingestion-tokens/{token_id}/rotate`
+  - `name?: string | null`
+  - request body optional
+  - root schema `additionalProperties=false`
+- Frontend exact request regression
+  - `me.createIngestionToken('CLI: MacBook')` → `POST /v1/me/ingestion-tokens`, body `{ "name": "CLI: MacBook" }`
+  - `me.rotateIngestionToken('token/id')` → `POST /v1/me/ingestion-tokens/token%2Fid/rotate`, body `{}`
+  - `me.revokeIngestionToken('token/id')` → `DELETE /v1/me/ingestion-tokens/token%2Fid`, no body
+
+### 최신 검증 evidence
+
+```bash
+cd /Users/downing/PersonalProjects/agentfeed-dev
+node scripts/check-openapi-contract.mjs
+
+cd /Users/downing/PersonalProjects/agentfeed-frontend
+npm run test:contracts
+npm run lint
+
+cd /Users/downing/PersonalProjects/agentfeed-backend
+uv run pytest -q tests/test_contracts.py \
+  -k "frontend_and_cli_request_schemas_fail_closed_for_unknown_fields or rotate_managed_ingestion_token_uses_existing_name_by_default"
+uv run ruff check .
+```
+
+결과:
+
+- Dev OpenAPI gate: pass, `232 fields across 22 operations with additionalProperties=false`
+- Frontend contract tests: pass
+- Frontend typecheck/lint: pass
+- Backend targeted pytest: `2 passed, 370 deselected`
 - Backend ruff: pass
 
 ## 남은 리스크

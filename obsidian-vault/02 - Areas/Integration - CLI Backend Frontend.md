@@ -9,7 +9,7 @@ tags:
   - agentfeed/cli
   - agentfeed/backend
   - agentfeed/frontend
-updated: 2026-06-04
+updated: 2026-06-08
 ---
 
 # Integration - CLI Backend Frontend
@@ -41,6 +41,19 @@ updated: 2026-06-04
 DB column name을 기준으로 Backend schema와 Frontend adapter를 맞춘다.
 
 예: DB/Backend가 `name`이면 Frontend도 `name`을 canonical로 사용하고, `tag` 같은 UI-local 별칭은 adapter 내부에서만 제한적으로 쓴다.
+
+## Setup guide command contract
+
+Backend `/v1/integrations/{integration_type}/setup-guide`의 `code` snippet은 실제 shipped CLI command만 사용한다.
+
+현재 source별 안내 기준:
+
+- Claude Code: `agentfeed login`, `agentfeed hook install claude-code`, `agentfeed share --dry`
+- Codex: `agentfeed collect --source codex --explain`
+- Cursor: `agentfeed collect --source cursor --explain`
+- Gemini CLI: `agentfeed collect --source gemini-cli --explain`
+
+`agentfeed configure ...` 또는 `agentfeed connect ...`처럼 존재하지 않는 onboarding command는 API guide에 다시 넣지 않는다. 자세한 수정 evidence는 [[Backend Integration Guide CLI Contract 2026-06-08]] 참조.
 
 ## 현재 CI/readiness 구조
 

@@ -205,3 +205,4 @@ updated: 2026-06-08
 - [[Hosted Smoke Server Test Env Forwarding 2026-06-08]] — IP-only 개인서버 smoke에서 Frontend compatibility runner가 server-test HTTP 허용 env를 유지하도록 보완하고 hosted compatibility smoke 통과를 확인함.
 - [[Account Project Mutation Response Guard 2026-06-08]] — project/profile/username/settings mutation 응답을 Frontend boundary에서 fail-closed 검증하도록 보강 완료.
 - [[Remaining Mutation Response Guard 2026-06-08]] — worklog create/update/comment, moderation status update, notification read mutation 응답을 Frontend boundary에서 fail-closed 검증하도록 보강 완료.
+- [[CLI Auth Approval Response Guard 2026-06-08]] — Frontend CLI browser approval session/approve 응답을 runtime guard로 fail-closed 처리 완료.

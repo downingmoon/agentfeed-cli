@@ -183,3 +183,6 @@ updated: 2026-06-08
 - [x] [[CLI Auth Ingest Avatar Contract 2026-06-08]] — CLI auth exchange, ingestion status, managed token rotate, saved credentials, OpenAPI gate, and OAuth smoke now preserve GitHub `avatar_url`.
 - [x] [[User Avatar Owner Review Coverage 2026-06-08]] — Dashboard recent worklogs, Worklog Review public preview, and project owner adapters now preserve GitHub avatars even when public username is missing.
 - [x] [[Frontend Profile Link Identity Guard 2026-06-08]] — Header, Feed, Search, Explore, Leaderboard, and Worklog Detail now avoid backend-id profile links for username-missing users.
+
+## Completed
+- [[GitHub Avatar Fallback Refresh 2026-06-08]] — 기존 GitHub 계정 avatar refresh 및 frontend github_url-only avatar fallback 완료.

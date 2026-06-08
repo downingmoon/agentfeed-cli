@@ -69,10 +69,19 @@ function handleHealthyIngestionToken(req: IncomingMessage, res: ServerResponse):
   res.end(JSON.stringify({
     data: {
       ok: true,
+      user: {
+        id: 'user_collect_test',
+        username: 'downingmoon',
+        display_name: 'Downing Moon',
+        avatar_url: 'https://avatars.githubusercontent.com/u/4242?v=4'
+      },
       token: {
         id: 'token_collect_test',
         name: 'CLI collect test token',
+        created_at: '2026-06-01T00:00:00.000Z',
+        last_used_at: null,
         expires_at: '2026-06-15T00:00:00.000Z',
+        expires_in_seconds: 604800,
         expiring_soon: false
       }
     }

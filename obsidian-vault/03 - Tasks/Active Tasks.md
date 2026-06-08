@@ -103,6 +103,7 @@ updated: 2026-06-08
 - [x] [[Frontend Collection Evidence Guard 2026-06-08]] — Worklog review collection evidence helper의 `filter(Boolean)`/blank-agent row drop을 제거해 malformed models/agent metrics/source evidence를 fail-closed 처리 완료.
 - [x] [[Frontend Worklog Review Payload Guard 2026-06-08]] — WorklogReviewPage render guard가 status/visibility/metrics/source/preview safety/public_fields를 확인해 malformed review payload가 publish UI까지 들어오지 않도록 보강 완료.
 - [x] [[Frontend Project Mutation Route Guard 2026-06-08]] — Project create success에서 owner username이 없으면 `/projects/:id` legacy route로 이동한다는 계약을 source/contract regression으로 보강 완료.
+- [x] [[CLI Ingest Status Test Mock Contract 2026-06-08]] — CLI release preflight에서 stale `/ingest/status` healthy mocks가 strict token/user lifecycle contract를 만족하지 않아 collect/share upload tests가 실패하던 문제를 수정 완료.
 
 - [x] CLI subcommand `--help`가 수집/상태파일 작성 side effect 없이 종료되도록 수정.
 - [x] CLI 주요 명령 회귀: `release:preflight`로 `login`, `collect`, `share`, `publish`, `open`, `doctor`, `status` 관련 테스트 통과.

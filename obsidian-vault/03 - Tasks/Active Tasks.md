@@ -188,7 +188,7 @@ updated: 2026-06-08
 - [[Frontend Request Strict Contract 2026-06-08]] — Frontend/CLI mutating request schemas가 계약 밖 필드를 조용히 무시하지 않도록 Backend extra-forbid와 Dev additionalProperties gate 추가 완료. 2026-06-08 후속으로 comment/report/privacy resolution/publish/unpublish 및 ingestion token create/rotate/revoke exact request body guard까지 보강 완료.
 - [[Backend Ingest Strict Contract 2026-06-08]] — Backend ingest request가 계약 밖 privacy/sample/raw fields를 조용히 무시하지 않도록 fail-closed schema와 Dev forbidden-field gate 추가 완료.
 - [[CLI Privacy Sample Upload Strip 2026-06-08]] — CLI local privacy sample은 유지하되 Backend contract 밖 `sample_redacted`는 upload payload에서 제거 완료.
-- [[CLI Ingest Request Contract Guard 2026-06-08]] — CLI 멀티에이전트 ingest request body의 metrics/source/privacy field contract와 upload response `created_at` contract를 Dev OpenAPI gate에 추가 완료.
+- [[CLI Ingest Request Contract Guard 2026-06-08]] — CLI 멀티에이전트 ingest request body의 metrics/source/privacy field contract와 upload response `created_at`/`status`/`visibility` contract를 Dev OpenAPI gate에 추가 완료.
 - [[Human Checklist Release Metadata Refresh 2026-06-08]] — owner action checklist의 stale CLI homepage 결정 문구를 현재 GitHub README canonical homepage 상태로 정리 완료.
 - [[Dev Smoke Homepage Fixture Guard 2026-06-08]] — cross-repo smoke fixture와 product brief도 GitHub README homepage 기준으로 동기화하고 `agentfeed.dev` homepage fixture 재도입 guard 추가 완료.
 - [[CLI Release Metadata Homepage Guard 2026-06-08]] — 준비되지 않은 `agentfeed.dev` 대신 GitHub README를 CLI npm homepage로 사용하고 release preflight guard를 동기화 완료.

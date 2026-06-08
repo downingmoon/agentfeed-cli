@@ -89,4 +89,51 @@ uv run pytest -q tests/test_contracts.py \
 > [!note]
 > 이번 작업은 CLI가 이미 필수로 기대하는 Backend upload response timestamp를 contract gate에 반영한 것이다. 신규 응답 필드나 status/visibility enum 강제는 기능/스키마 정책 변경에 해당하므로 별도 설계 후 진행한다.
 
-- [ ] `IngestResponse.status`/`visibility`를 Backend schema enum으로 좁힐지 검토한다. 현재 CLI는 private-review 상태만 수용하지만 Backend schema는 `str`로 열려 있다.
+- [x] `IngestResponse.status`/`visibility`를 Backend schema enum으로 좁혔다. CLI private-review upload parser와 Backend OpenAPI schema가 이제 `needs_review` / `private`로 일치한다.
+
+
+## 2026-06-08 후속 보강 — CLI upload status/visibility enum contract
+
+> [!success]
+> Backend ingest upload 응답은 실제 구현상 private review draft만 반환한다. CLI도 `status=needs_review`, `visibility=private`만 성공 upload로 수용하므로, Backend schema와 Dev OpenAPI gate를 같은 enum 계약으로 좁혔다.
+
+### 변경
+
+- `agentfeed-backend/app/schemas/ingestion.py`
+  - `IngestResponse.status`: `Literal["needs_review"]`
+  - `IngestResponse.visibility`: `Literal["private"]`
+- `agentfeed-backend/tests/test_contracts.py`
+  - `_ingest_response` 결과가 `IngestResponse`로 validate되는지 확인
+  - `status="public"`, `visibility="public"`는 validation error로 fail-closed 확인
+- `agentfeed-dev/scripts/check-openapi-contract.mjs`
+  - CLI upload response `data.status` enum: `needs_review`
+  - CLI upload response `data.visibility` enum: `private`
+
+### 검증 evidence
+
+```bash
+cd /Users/downing/PersonalProjects/agentfeed-backend
+uv run pytest -q tests/test_contracts.py \
+  -k "ingest_response_marks_existing_worklog_reuse or route_response_models_use_explicit_contract_schemas"
+uv run ruff check app/schemas/ingestion.py tests/test_contracts.py
+
+cd /Users/downing/PersonalProjects/AgentFeed-CLI
+npx vitest run tests/api-hook.test.ts --reporter=verbose
+
+cd /Users/downing/PersonalProjects/agentfeed-dev
+node scripts/check-openapi-contract.mjs
+```
+
+결과:
+
+- Backend targeted contract: `1 passed, 371 deselected`
+- Backend ruff: pass
+- CLI API client regression: `89 passed`
+- Dev OpenAPI gate: pass
+
+## 남은 리스크
+
+> [!note]
+> `already_uploaded`는 CLI local cache/duplicate reconciliation 내부 상태이며 Backend 정상 upload response schema에는 포함하지 않았다. Backend duplicate reuse도 기존 worklog를 `needs_review`/`private`로 반환하고 `reused_existing=true`를 함께 제공한다.
+
+- [ ] 향후 Backend가 public/unlisted direct-ingest 기능을 제공하려면 CLI parser, Backend schema, Frontend review flow, privacy gate를 함께 설계해야 한다.

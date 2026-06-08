@@ -435,9 +435,17 @@ async function withTransientRetry<T>(operation: () => Promise<T>): Promise<T> {
   throw lastError;
 }
 
+export interface RemotePreviewPayload {
+  title: string;
+  summary: string;
+  user_note: string | null;
+  model: string | null;
+  metrics_row: string;
+}
+
 export interface RemotePreviewResult {
   valid: boolean;
-  preview: Record<string, unknown>;
+  preview: RemotePreviewPayload;
   warnings: string[];
 }
 
@@ -462,6 +470,38 @@ function stringField(value: unknown): string | null {
 function optionalStringField(value: unknown): string | null | undefined {
   if (value == null) return value as null | undefined;
   return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+function nullableStringField(value: unknown): string | null | undefined {
+  if (value === null) return null;
+  return typeof value === 'string' ? value : undefined;
+}
+
+function remotePreviewContractError(): AgentFeedApiError {
+  return new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API remote preview response contract mismatch. Local draft was kept.');
+}
+
+function parseRemotePreviewResult(value: unknown): RemotePreviewResult {
+  if (!isRecord(value) || typeof value.valid !== 'boolean' || !isRecord(value.preview) || !Array.isArray(value.warnings)) {
+    throw remotePreviewContractError();
+  }
+
+  const title = stringField(value.preview.title);
+  const summary = stringField(value.preview.summary);
+  const userNote = nullableStringField(value.preview.user_note);
+  const model = nullableStringField(value.preview.model);
+  const metricsRow = stringField(value.preview.metrics_row);
+  const warnings = value.warnings.every(item => typeof item === 'string') ? value.warnings : null;
+
+  if (!title || !summary || userNote === undefined || model === undefined || !metricsRow || !warnings) {
+    throw remotePreviewContractError();
+  }
+
+  return {
+    valid: value.valid,
+    preview: { title, summary, user_note: userNote, model, metrics_row: metricsRow },
+    warnings
+  };
 }
 
 function validOptionalDateString(value: unknown): string | null | undefined {
@@ -877,7 +917,7 @@ async function postIngest<T>(path: string, draft: LocalDraft, credentials: Agent
 
 
 export async function previewDraftRemote(draft: LocalDraft, credentials: AgentFeedCredentials): Promise<RemotePreviewResult> {
-  return postIngest<RemotePreviewResult>('/ingest/worklogs/preview', draft, credentials);
+  return parseRemotePreviewResult(await postIngest<unknown>('/ingest/worklogs/preview', draft, credentials));
 }
 
 export async function uploadDraft(draft: LocalDraft, credentials: AgentFeedCredentials, reviewBaseUrl?: string | null): Promise<PublishDraftResult> {

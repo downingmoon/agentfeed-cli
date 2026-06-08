@@ -163,7 +163,7 @@ describe('preview CLI command', () => {
         res.end(JSON.stringify({
           data: {
             valid: true,
-            preview: { title: 'Remote JSON preview', metrics_row: '1 file' },
+            preview: { title: 'Remote JSON preview', summary: 'Remote JSON summary', user_note: null, model: 'gpt-5.5', metrics_row: '1 file' },
             warnings: ['check privacy wording']
           }
         }));
@@ -195,10 +195,14 @@ describe('preview CLI command', () => {
       });
 
       expect(stderr).toBe('');
-      const output = JSON.parse(stdout) as { draft_id?: string; valid: boolean; preview: { title?: string }; warnings: string[]; next_actions?: string[] };
+      const output = JSON.parse(stdout) as { draft_id?: string; valid: boolean; preview: { title?: string; summary?: string; user_note?: string | null; model?: string | null; metrics_row?: string }; warnings: string[]; next_actions?: string[] };
       expect(output.draft_id).toBe(draft.id);
       expect(output.valid).toBe(true);
       expect(output.preview.title).toBe('Remote JSON preview');
+      expect(output.preview.summary).toBe('Remote JSON summary');
+      expect(output.preview.user_note).toBeNull();
+      expect(output.preview.model).toBe('gpt-5.5');
+      expect(output.preview.metrics_row).toBe('1 file');
       expect(output.warnings).toEqual(['check privacy wording']);
       expect(output.next_actions).toEqual([
         `agentfeed publish --id ${draft.id} --yes`,
@@ -225,7 +229,7 @@ describe('preview CLI command', () => {
         res.end(JSON.stringify({
           data: {
             valid: false,
-            preview: { title: 'Remote invalid preview' },
+            preview: { title: 'Remote invalid preview', summary: 'Remote invalid summary', user_note: null, model: null, metrics_row: '0 files' },
             warnings: ['summary is too short']
           }
         }));

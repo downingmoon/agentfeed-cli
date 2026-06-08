@@ -289,16 +289,16 @@ export async function checkIngestionToken(credentials: AgentFeedCredentials): Pr
       headers: { authorization: `Bearer ${credentials.ingestion_token}` },
       signal: controller.signal
     });
-    const data = await parseIngestionTokenStatusData(response);
-    if (response.ok && data === null) {
+    const parsed = await parseIngestionTokenStatusResponse(response);
+    if (response.ok && !parsed.data) {
       return {
         ok: false,
         url,
         status: response.status,
-        error: 'AgentFeed API returned an invalid ingestion token status response.'
+        error: parsed.error ?? 'AgentFeed API returned an invalid ingestion token status response.'
       };
     }
-    return { ok: response.ok, url, status: response.status, data: data ?? undefined };
+    return { ok: response.ok, url, status: response.status, data: parsed.data };
   } catch (error) {
     return { ok: false, url, error: describeNetworkFailure(error, url, API_CHECK_TIMEOUT_MS) };
   } finally {
@@ -537,15 +537,25 @@ function parseIngestionTokenStatus(value: unknown): IngestionTokenStatus | null 
   };
 }
 
-async function parseIngestionTokenStatusData(response: Response): Promise<IngestionTokenStatus | null | undefined> {
+interface ParsedIngestionTokenStatusResponse {
+  data?: IngestionTokenStatus;
+  error?: string;
+}
+
+async function parseIngestionTokenStatusResponse(response: Response): Promise<ParsedIngestionTokenStatusResponse> {
   const contentType = response.headers.get('content-type') ?? '';
-  if (!contentType.includes('application/json')) return response.ok ? null : undefined;
+  if (!contentType.includes('application/json')) {
+    return response.ok ? { error: 'AgentFeed API ingestion status response is not JSON.' } : {};
+  }
   try {
     const parsed = await response.json() as { data?: unknown };
-    if (!Object.hasOwn(parsed, 'data')) return response.ok ? null : undefined;
-    return parseIngestionTokenStatus(parsed.data);
+    if (!Object.hasOwn(parsed, 'data')) {
+      return response.ok ? { error: 'AgentFeed API ingestion status response is missing the data envelope.' } : {};
+    }
+    const data = parseIngestionTokenStatus(parsed.data);
+    return data ? { data } : { error: 'AgentFeed API returned an invalid ingestion token status response.' };
   } catch {
-    return response.ok ? null : undefined;
+    return response.ok ? { error: 'AgentFeed API ingestion status response contains invalid JSON.' } : {};
   }
 }
 

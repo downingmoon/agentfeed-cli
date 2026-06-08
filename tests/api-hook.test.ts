@@ -1020,6 +1020,34 @@ describe('api client', () => {
   });
 
   it.each([
+    {
+      label: 'non-json status response',
+      response: new Response('<html>not status</html>', { status: 200, headers: { 'content-type': 'text/html' } }),
+      error: 'AgentFeed API ingestion status response is not JSON.'
+    },
+    {
+      label: 'invalid-json status response',
+      response: new Response('{not-valid-json', { status: 200, headers: { 'content-type': 'application/json' } }),
+      error: 'AgentFeed API ingestion status response contains invalid JSON.'
+    },
+    {
+      label: 'missing data envelope',
+      response: new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'content-type': 'application/json' } }),
+      error: 'AgentFeed API ingestion status response is missing the data envelope.'
+    }
+  ])('reports malformed ingestion status responses clearly: $label', async ({ response, error }) => {
+    vi.stubGlobal('fetch', vi.fn(async () => response));
+
+    await expect(checkIngestionToken({ ingestion_token: 'af_live_bad_status', api_base_url: 'http://localhost:8001/v1', created_at: 'now' }))
+      .resolves.toMatchObject({
+        ok: false,
+        status: 200,
+        url: 'http://localhost:8001/v1/ingest/status',
+        error
+      });
+  });
+
+  it.each([
     { data: { ok: true, token: { id: 'token-1', name: 'CLI: MacBook', created_at: '2026-06-01T00:00:00Z', expires_at: '2026-06-15T00:00:00Z', expires_in_seconds: 100, expiring_soon: false } }, label: 'missing user' },
     { data: { ok: true, user: { id: 'user-1' }, token: { id: 'token-1', name: 'CLI: MacBook', expires_at: '2026-06-15T00:00:00Z', expires_in_seconds: 100, expiring_soon: false } }, label: 'missing created_at' },
     { data: { ok: true, user: { id: 'user-1' }, token: { id: 'token-1', name: 'CLI: MacBook', created_at: '2026-06-01T00:00:00Z', expires_at: 'not-a-date', expires_in_seconds: 100, expiring_soon: false } }, label: 'invalid expires_at' },

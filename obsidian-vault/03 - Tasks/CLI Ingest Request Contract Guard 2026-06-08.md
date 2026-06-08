@@ -46,6 +46,5 @@ node scripts/check-openapi-contract.mjs
 > [!warning]
 > CLI local draft에는 `privacy_scan.findings[].sample_redacted`가 있지만 Backend/Frontend public contract에는 없다. 이 값은 redacted sample이라도 민감정보 샘플 정책과 연결되므로, 지금은 기능 변경하지 않고 별도 product/security decision으로 남긴다.
 
-- [ ] `sample_redacted`를 서버에 저장/리뷰 화면에 표시할지 결정한다.
-- [ ] 저장한다면 Backend schema, persistence, Frontend review copy, privacy wording을 함께 설계한다.
-- [ ] 저장하지 않는다면 CLI upload sanitizer에서 서버 전송 전 명시적으로 제거하거나 문서화한다.
+- [x] `sample_redacted`는 서버에 저장/리뷰 화면에 표시하지 않고 CLI upload sanitizer에서 서버 전송 전 명시적으로 제거한다: [[CLI Privacy Sample Upload Strip 2026-06-08]].
+- [ ] 나중에 웹 리뷰에서 redacted sample 표시가 필요하면 Backend schema, persistence, Frontend review copy, privacy wording을 함께 설계한다.

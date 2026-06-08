@@ -410,7 +410,10 @@ describe('api client', () => {
     expect(ingestPayload?.worklog.public_prompt).toBe('Use [REDACTED_SECRET] carefully');
     expect(ingestPayload?.project.repository_url).toBeNull();
     expect(ingestPayload?.privacy_scan.status).toBe('danger');
+    expect(ingestPayload?.privacy_scan.findings.length).toBeGreaterThan(0);
+    expect(ingestPayload?.privacy_scan.findings.some((finding: Record<string, unknown>) => Object.hasOwn(finding, 'sample_redacted'))).toBe(false);
     const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+    expect(saved.privacy_scan.findings.some((finding: Record<string, unknown>) => Object.hasOwn(finding, 'sample_redacted'))).toBe(true);
     expect(saved.worklog.summary).toBe('Deploy with [REDACTED_SECRET]');
     expect(saved.worklog.public_prompt).toBe('Use [REDACTED_SECRET] carefully');
     expect(saved.project.repository_url).toBe('[REDACTED_URL]');

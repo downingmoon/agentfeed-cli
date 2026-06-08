@@ -42,6 +42,14 @@ export function applyRedactedPublicFields(draft: LocalDraft, redacted: PublicSca
   }
 }
 
+
+function stripUploadOnlyPrivacySamples(scan: PrivacyScanResult): PrivacyScanResult {
+  return {
+    ...scan,
+    findings: scan.findings.map(({ sample_redacted: _sampleRedacted, ...finding }) => finding),
+  };
+}
+
 export function scanAndRedactDraftPublicFields(draft: LocalDraft, options: { preserveResolvedFindings?: boolean } = {}): PrivacyScanResult {
   const previousScan = draft.privacy_scan;
   const { redacted, scan } = scanAndRedactFields(publicScanFieldsFromDraft(draft));
@@ -55,5 +63,6 @@ export function scanAndRedactDraftPublicFields(draft: LocalDraft, options: { pre
 export function sanitizedDraftForUpload(draft: LocalDraft): LocalDraft {
   const safeDraft = structuredClone(draft) as LocalDraft;
   scanAndRedactDraftPublicFields(safeDraft, { preserveResolvedFindings: true });
+  safeDraft.privacy_scan = stripUploadOnlyPrivacySamples(safeDraft.privacy_scan);
   return safeDraft;
 }

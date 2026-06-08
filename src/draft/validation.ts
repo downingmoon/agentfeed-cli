@@ -3,7 +3,7 @@ import type { AgentMetricSummary, AgentType, CollectionQuality, CollectionSource
 const AGENT_TYPES = new Set(['claude_code', 'codex', 'cursor', 'gemini_cli', 'other']);
 const WORKLOG_CATEGORIES = new Set(['web_app', 'bot', 'automation', 'trading', 'devops', 'data', 'ai_tool', 'open_source', 'other']);
 const PRIVACY_STATUSES = new Set(['safe', 'warning', 'danger']);
-const PRIVACY_SEVERITIES = new Set(['low', 'medium', 'high']);
+const PRIVACY_SEVERITIES = new Set(['info', 'low', 'medium', 'high', 'critical', 'unknown']);
 const PRIVACY_FINDING_TYPES = new Set(['possible_secret', 'private_url', 'email_address', 'api_key_pattern', 'env_file_reference', 'sensitive_path', 'database_url', 'other']);
 const PRIVACY_RESOLUTIONS = new Set(['ignored', 'redacted', 'removed']);
 const TIMELINE_STATUSES = new Set(['success', 'warning', 'failed', 'info']);

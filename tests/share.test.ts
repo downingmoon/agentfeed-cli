@@ -143,7 +143,7 @@ describe('share command helpers', () => {
     expect(output).toContain('- agent_session: codex (high)');
   });
 
-  it('explains that high-severity findings block public publishing but not private review upload', () => {
+  it('explains that high/critical-severity findings block public publishing but not private review upload', () => {
     const draft = createEmptyDraft({ projectName: 'agentfeed-cli', projectRoot: '/tmp/agentfeed-cli', source: 'codex' });
     draft.privacy_scan = {
       status: 'danger',
@@ -162,7 +162,7 @@ describe('share command helpers', () => {
 
     expect(output).toContain('Privacy: danger · findings 1');
     expect(output).toContain('Privacy review: required before public publishing.');
-    expect(output).toContain('Public/unlisted publishing is blocked in AgentFeed until high-severity findings are resolved.');
+    expect(output).toContain('Public/unlisted publishing is blocked in AgentFeed until high/critical-severity findings are resolved.');
     expect(output).toContain('Private review upload is allowed so you can resolve findings in the web review.');
     expect(formatPrivacyPolicyLines(draft)).toHaveLength(3);
     expect(privacyPolicySummary(draft)).toEqual({
@@ -170,6 +170,31 @@ describe('share command helpers', () => {
       public_publish_blocked: true,
       review_required: true,
     });
+  });
+
+  it('treats unresolved critical privacy findings as public publish blockers even when status is warning', () => {
+    const draft = createEmptyDraft({ projectName: 'agentfeed-cli', projectRoot: '/tmp/agentfeed-cli', source: 'codex' });
+    draft.privacy_scan = {
+      status: 'warning',
+      findings: [{
+        id: 'finding-critical',
+        type: 'possible_secret',
+        severity: 'critical',
+        message: 'Critical secret signal',
+        field: 'worklog.summary',
+        resolved: false,
+      }],
+    };
+
+    expect(privacyPolicySummary(draft)).toEqual({
+      private_review_upload: 'allowed',
+      public_publish_blocked: true,
+      review_required: true,
+    });
+    expect(formatSharePreview(draft)).toContain('Public/unlisted publishing is blocked in AgentFeed until high/critical-severity findings are resolved.');
+
+    draft.privacy_scan.findings[0].resolved = true;
+    expect(privacyPolicySummary(draft).public_publish_blocked).toBe(false);
   });
 
   it('warns when share preview has no agent collection evidence', () => {

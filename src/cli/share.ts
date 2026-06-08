@@ -67,7 +67,7 @@ function formatAgentMetricLines(draft: LocalDraft): string[] {
 
 export function privacyPublicPublishBlocked(draft: LocalDraft): boolean {
   return draft.privacy_scan.status === 'danger'
-    || draft.privacy_scan.findings.some((finding) => finding.severity === 'high' && !finding.resolved);
+    || draft.privacy_scan.findings.some((finding) => (finding.severity === 'high' || finding.severity === 'critical') && !finding.resolved);
 }
 
 export interface PrivacyPolicySummary {
@@ -91,7 +91,7 @@ export function formatPrivacyPolicyLines(draft: LocalDraft): string[] {
 
   const lines = ['Privacy review: required before public publishing.'];
   if (policy.public_publish_blocked) {
-    lines.push('Public/unlisted publishing is blocked in AgentFeed until high-severity findings are resolved.');
+    lines.push('Public/unlisted publishing is blocked in AgentFeed until high/critical-severity findings are resolved.');
   }
   lines.push('Private review upload is allowed so you can resolve findings in the web review.');
   return lines;

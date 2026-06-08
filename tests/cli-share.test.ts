@@ -2339,7 +2339,7 @@ describe('share CLI command', () => {
 
       expect(publish.stdout).toContain('Private review draft already uploaded; reusing existing review URL.');
       expect(publish.stdout).toContain('Privacy review: required before public publishing.');
-      expect(publish.stdout).toContain('Public/unlisted publishing is blocked in AgentFeed until high-severity findings are resolved.');
+      expect(publish.stdout).toContain('Public/unlisted publishing is blocked in AgentFeed until high/critical-severity findings are resolved.');
       expect(publish.stdout).toContain('Private review upload is allowed so you can resolve findings in the web review.');
       const saved = await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8');
       expect(saved).not.toContain(secret);

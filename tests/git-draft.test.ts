@@ -396,6 +396,32 @@ describe('git collector and drafts', () => {
     expect(loaded.privacy_scan.findings).toEqual(draft.privacy_scan.findings);
   });
 
+  it('accepts backend-supported privacy severity values in local draft validation', async () => {
+    await initProject({ cwd: dir, projectName: 'Draft Guard', noGitCheck: false });
+    const draft = await collectDraft({ cwd: dir, source: 'codex' });
+    const draftPath = join(dir, '.agentfeed', 'drafts', `${draft.id}.json`);
+
+    for (const severity of ['info', 'low', 'medium', 'high', 'critical', 'unknown'] as const) {
+      const mutated = {
+        ...draft,
+        privacy_scan: {
+          status: severity === 'high' || severity === 'critical' ? 'danger' : 'warning',
+          findings: [{
+            id: `finding-${severity}`,
+            type: 'possible_secret',
+            severity,
+            message: `Backend-supported ${severity} privacy severity`,
+            field: 'worklog.summary',
+            resolved: false,
+          }],
+        },
+      };
+      await writeFile(draftPath, JSON.stringify(mutated, null, 2));
+      const loaded = await readDraft(dir, draft.id);
+      expect(loaded.privacy_scan.findings[0]?.severity).toBe(severity);
+    }
+  });
+
   it('rejects corrupted local draft shapes with actionable field guidance', async () => {
     await initProject({ cwd: dir, projectName: 'Draft Guard', noGitCheck: false });
     const draft = await collectDraft({ cwd: dir, source: 'codex' });
@@ -405,6 +431,7 @@ describe('git collector and drafts', () => {
       { name: 'missing worklog', mutate: (value) => ({ ...value, worklog: undefined }), expected: /AgentFeed draft is invalid.*worklog must be an object.*agentfeed collect/is },
       { name: 'missing upload', mutate: (value) => ({ ...value, upload: undefined }), expected: /AgentFeed draft is invalid.*upload must be an object.*agentfeed collect/is },
       { name: 'invalid findings', mutate: (value) => ({ ...value, privacy_scan: { status: 'safe', findings: { id: 'not-array' } } }), expected: /AgentFeed draft is invalid.*privacy_scan\.findings must be an array.*agentfeed collect/is },
+      { name: 'invalid privacy severity', mutate: (value) => ({ ...value, privacy_scan: { status: 'warning', findings: [{ id: 'finding-1', type: 'possible_secret', severity: 'blocker', message: 'Invalid severity', resolved: false }] } }), expected: /AgentFeed draft is invalid.*privacy_scan\.findings\[0\]\.severity has an unsupported value.*agentfeed collect/is },
       { name: 'invalid source created_at', mutate: (value) => ({ ...value, source: { ...(value.source as Record<string, unknown>), created_at: 'not-a-date' } }), expected: /AgentFeed draft is invalid.*source\.created_at must be a valid timestamp.*agentfeed collect/is },
       { name: 'invalid collection window since', mutate: (value) => ({ ...value, source: { ...(value.source as Record<string, unknown>), collection_window: { since: 'not-a-date', until: '2026-06-01T00:00:00.000Z' } } }), expected: /AgentFeed draft is invalid.*source\.collection_window\.since must be a valid timestamp or null.*agentfeed collect/is },
       { name: 'invalid upload uploaded_at', mutate: (value) => ({ ...value, upload: { ...(value.upload as Record<string, unknown>), uploaded_at: 'not-a-date' } }), expected: /AgentFeed draft is invalid.*upload\.uploaded_at must be a valid timestamp or null.*agentfeed collect/is },

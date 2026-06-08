@@ -203,6 +203,7 @@ updated: 2026-06-08
 - [[Worklog Card List Response Guard 2026-06-08]] — feed/profile/project/explore/me worklog card list rows를 Frontend API boundary에서 fail-closed 검증하도록 보강 완료.
 - [[Search Explore Nested Response Guard 2026-06-08]] — search/explore nested worklog/project/user/prompt/category arrays를 Frontend API boundary에서 fail-closed 검증하도록 보강 완료.
 - [[Remaining Read Response Guard 2026-06-08]] — dashboard/activity/moderation/notifications/suggestions/tags read payload를 Frontend API boundary에서 fail-closed 검증하도록 보강 완료.
+- [[Project Leaderboard Integration Guard 2026-06-08]] — projects/users.projects/leaderboard/me.integrations/ok action 응답을 Frontend API boundary에서 fail-closed 검증하도록 보강 완료.
 - [[Worklog Action Response Guard 2026-06-08]] — review publish/unpublish/privacy resolution action responses now fail closed at the Frontend boundary, and Backend/OpenAPI schemas expose the narrower actual return enums.
 - [[Backend Integration Guide CLI Contract 2026-06-08]] — setup guide API에서 stale `configure`/`connect` CLI command 제거 및 contract test 추가 완료.
 - [[Backend Public Username Discovery Guard 2026-06-08]] — search/explore/leaderboard profile entry API에서 username 없는 user 노출 방지 완료.

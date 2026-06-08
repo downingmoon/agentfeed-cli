@@ -123,7 +123,7 @@ Frontend 최소 env 후보:
 - Version: `0.2.0`
 - Runtime: Node.js `>=20`
 - Repository: `github.com/downingmoon/agentfeed-cli`
-- Current metadata issue: `homepage`가 아직 `https://agentfeed.dev` placeholder다.
+- Current homepage: `https://github.com/downingmoon/agentfeed-cli#readme`로 정리 완료. Production domain이 준비되기 전까지 GitHub README를 canonical docs URL로 사용한다.
 - Current license: `UNLICENSED`
 - Current publish config: public access + provenance enabled
 
@@ -140,7 +140,7 @@ Frontend 최소 env 후보:
   - `UNLICENSED` 유지 시 공개적으로 “사용권을 주지 않음”에 가깝다.
   - 오픈소스라면 MIT/Apache-2.0 등 SPDX license를 선택해야 한다.
   - proprietary 공개 배포라면 `SEE LICENSE IN LICENSE` + 별도 LICENSE 문서가 더 명확하다.
-- [ ] `package.json.homepage`를 실제 landing/docs/GitHub URL로 변경할지 정한다.
+- [x] `package.json.homepage`는 production domain 전까지 GitHub README로 확정: [[CLI Release Metadata Homepage Guard 2026-06-08]].
 - [ ] npm trusted publishing을 사용할지 정한다.
 
 ### npm trusted publishing 요약
@@ -169,7 +169,7 @@ Frontend 최소 env 후보:
 - 공개 배포 직전 아래만 다시 확정한다.
   1. npm package name/scope
   2. license 정책
-  3. homepage/docs URL
+  3. production domain 준비 후 homepage/docs URL 전환 여부
   4. repo 공개/비공개 유지 여부
   5. trusted publishing workflow
 

@@ -64,7 +64,7 @@ bash -n scripts/test-all.sh scripts/check-openapi-contract.mjs
 - Backend ruff: pass
 - Backend targeted pytest: `3 passed, 369 deselected`
 - Dev OpenAPI gate: pass
-- Request body field contracts checked: `223 fields across 15 operations with additionalProperties=false`
+- Request body field contracts checked: `231 fields across 21 operations with additionalProperties=false`
 - Forbidden request body fields checked: `4 fields across 2 operations`
 - diff whitespace check: pass
 
@@ -75,3 +75,58 @@ bash -n scripts/test-all.sh scripts/check-openapi-contract.mjs
 
 - [ ] response schema strictness는 legacy stored JSON normalization 정책이 정해진 뒤 별도 audit에서 검토한다.
 - [ ] 신규 mutating endpoint가 추가되면 Dev OpenAPI `REQUEST_BODY_FIELD_CONTRACTS`에 포함하고 `additionalProperties=false` evidence를 확인한다.
+
+
+## 2026-06-08 후속 보강 — Frontend mutating action request bodies
+
+> [!success]
+> comment/report/privacy resolution/publish/unpublish처럼 UI에서 자주 발생하는 mutating action도 Backend strict schema와 Dev OpenAPI gate가 같은 필드명을 검증하도록 추가로 잠갔다.
+
+### 추가로 잠근 request body 계약
+
+- `POST /v1/worklogs/{worklog_id}/comments` → `body`
+- `POST /v1/worklogs/{worklog_id}/privacy-findings/{finding_id}/resolve` → `resolution` (`ignored`, `redacted`, `removed`)
+- `POST /v1/worklogs/{worklog_id}/publish` → `visibility` (`private`, `unlisted`, `public`)
+- `POST /v1/worklogs/{worklog_id}/unpublish` → `visibility` (`private`, `unlisted`)
+- `POST /v1/worklogs/{worklog_id}/report` → `reason`, `description`
+- `POST /v1/comments/{comment_id}/report` → `reason`, `description`
+
+### Frontend client exact-body regression
+
+- `src/lib/api-contract.test.ts`에 `assertWorklogMutationBodyContracts`를 추가했다.
+- worklog/comment id에 `/`가 포함되어도 path segment가 `%2F`로 안전하게 encode되는지 확인한다.
+- Backend 컬럼/API 기준 필드명만 전송하는지 exact JSON body로 검증한다.
+
+### 최신 검증 evidence
+
+```bash
+cd /Users/downing/PersonalProjects/agentfeed-dev
+node scripts/check-openapi-contract.mjs
+
+cd /Users/downing/PersonalProjects/agentfeed-frontend
+npm run test:contracts
+npm run lint
+NEXT_PUBLIC_API_URL=http://161.33.171.81:18080 \
+  AGENTFEED_ALLOW_INSECURE_SERVER_TEST_API_BUILD=1 npm run build
+
+cd /Users/downing/PersonalProjects/agentfeed-backend
+uv run pytest -q tests/test_contracts.py \
+  -k "request_schemas_fail_closed or worklog_publish_visibility_request_contracts or social_contracts_reject_invalid_request_values"
+uv run ruff check .
+```
+
+결과:
+
+- Dev OpenAPI gate: pass, `231 fields across 21 operations with additionalProperties=false`
+- Frontend contract tests: pass
+- Frontend typecheck/lint: pass
+- Frontend production build: pass
+- Backend targeted pytest: `1 passed, 371 deselected`
+- Backend ruff: pass
+
+## 남은 리스크
+
+> [!note]
+> 이번 보강은 기존 기능의 계약 누락을 막는 회귀 가드이며 신규 기능은 추가하지 않았다.
+
+- [ ] 신규 mutating endpoint가 추가될 때 `CLIENT_ENDPOINTS`, `REQUEST_BODY_FIELD_CONTRACTS`, Frontend exact-body test 중 어느 하나라도 빠지지 않도록 PR checklist/runbook에 반영한다.

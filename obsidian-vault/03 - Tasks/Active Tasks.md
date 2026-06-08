@@ -79,6 +79,7 @@ updated: 2026-06-08
 
 - [x] Frontend user/account response guard가 malformed auth.me/profile/username-check 성공 payload를 fail-closed 처리하도록 보강.
 - [x] [[User Account Response Guard 2026-06-08]] — auth.me/users.get/users.checkUsername response guard 보강.
+- [x] [[Comment Response Guard 2026-06-08]] — worklog comment list/create response guard 보강.
 
 - [x] CLI subcommand `--help`가 수집/상태파일 작성 side effect 없이 종료되도록 수정.
 - [x] CLI 주요 명령 회귀: `release:preflight`로 `login`, `collect`, `share`, `publish`, `open`, `doctor`, `status` 관련 테스트 통과.

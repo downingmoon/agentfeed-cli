@@ -797,6 +797,31 @@ describe('api client', () => {
     expect(fetchMock).toHaveBeenCalledWith('https://api.agentfeed.dev/v1/ingest/worklogs/preview', expect.objectContaining({ method: 'POST' }));
   });
 
+  it.each([
+    {
+      label: 'invalid JSON',
+      response: () => new Response('{not-valid-json', { status: 200, headers: { 'content-type': 'application/json' } }),
+      message: 'AgentFeed API returned an invalid JSON upload response. Local draft was kept.'
+    },
+    {
+      label: 'missing data envelope',
+      response: () => new Response(JSON.stringify({ valid: true, preview: {} }), { status: 200, headers: { 'content-type': 'application/json' } }),
+      message: 'AgentFeed API upload response is missing the data envelope. Local draft was kept.'
+    }
+  ])('rejects malformed remote preview success envelopes clearly: $label', async ({ response, message }) => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    const fetchMock = vi.fn(async () => response());
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(previewDraftRemote(draft, { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' }))
+      .rejects.toMatchObject({
+        status: 502,
+        code: 'API_RESPONSE_INVALID',
+        message
+      });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('preserves collection window and fingerprint in ingest source payload', () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
     draft.source.host_label = 'Downing MacBook';
@@ -1123,6 +1148,28 @@ describe('api client', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://api.agentfeed.dev/v1/auth/cli/sessions/session-1/exchange', expect.objectContaining({ method: 'POST' }));
   });
 
+  it.each([
+    {
+      label: 'invalid JSON',
+      response: () => new Response('{not-valid-json', { status: 200, headers: { 'content-type': 'application/json' } }),
+      message: 'AgentFeed API returned an invalid JSON response.'
+    },
+    {
+      label: 'missing data envelope',
+      response: () => new Response(JSON.stringify({ session_id: 'session-missing-envelope' }), { status: 200, headers: { 'content-type': 'application/json' } }),
+      message: 'AgentFeed API response is missing the data envelope.'
+    }
+  ])('rejects malformed CLI auth success envelopes clearly: $label', async ({ response, message }) => {
+    vi.stubGlobal('fetch', vi.fn(async () => response()));
+
+    await expect(createCliAuthSession('https://api.agentfeed.dev/v1', { verifier: 'verifier-1', deviceName: 'devbox' }))
+      .rejects.toMatchObject({
+        status: 502,
+        code: 'API_RESPONSE_INVALID',
+        message
+      });
+  });
+
   it('rejects browser login authorize URLs with unexpected query parameters', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
       data: {
@@ -1339,6 +1386,35 @@ describe('api client', () => {
 
     await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
       .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
+
+    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+    expect(saved.upload.uploaded).toBe(false);
+  });
+
+  it.each([
+    {
+      label: 'invalid JSON',
+      response: () => new Response('{not-valid-json', { status: 200, headers: { 'content-type': 'application/json' } }),
+      message: 'AgentFeed API returned an invalid JSON upload response. Local draft was kept.'
+    },
+    {
+      label: 'missing data envelope',
+      response: () => new Response(JSON.stringify({ id: 'worklog_missing_envelope' }), { status: 200, headers: { 'content-type': 'application/json' } }),
+      message: 'AgentFeed API upload response is missing the data envelope. Local draft was kept.'
+    }
+  ])('rejects malformed upload success envelopes and keeps the draft pending: $label', async ({ response, message }) => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    await writeDraft(dir, draft);
+    const fetchMock = vi.fn(async () => response());
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
+      .rejects.toMatchObject({
+        status: 502,
+        code: 'API_RESPONSE_INVALID',
+        message
+      });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
 
     const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
     expect(saved.upload.uploaded).toBe(false);

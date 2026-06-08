@@ -409,6 +409,7 @@ function retryAfterMs(details?: Record<string, unknown>): number | null {
 
 function isRetryableApiError(error: unknown): error is AgentFeedApiError {
   return error instanceof AgentFeedApiError
+    && error.code !== 'API_RESPONSE_INVALID'
     && (error.status === 0 || error.status === 408 || error.status === 429 || error.status === 500 || error.status === 502 || error.status === 503 || error.status === 504);
 }
 
@@ -796,20 +797,44 @@ function parseCliAuthExchangeResult(value: unknown): CliAuthExchangeResult {
   };
 }
 
+async function readResponseJson(response: Response, options: { successMessage: string; localDraftKept?: boolean }): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch {
+    if (!response.ok) return {};
+    throw new AgentFeedApiError(
+      502,
+      'API_RESPONSE_INVALID',
+      options.localDraftKept ? `${options.successMessage} Local draft was kept.` : options.successMessage
+    );
+  }
+}
+
+function responseDataEnvelope<T>(value: unknown, options: { successMessage: string; localDraftKept?: boolean }): T {
+  if (!isRecord(value) || !Object.hasOwn(value, 'data')) {
+    throw new AgentFeedApiError(
+      502,
+      'API_RESPONSE_INVALID',
+      options.localDraftKept ? `${options.successMessage} Local draft was kept.` : options.successMessage
+    );
+  }
+  return value.data as T;
+}
+
 async function postJson<T>(apiBaseUrl: string, path: string, body: Record<string, unknown>): Promise<T> {
   const response = await fetchWithTimeout(`${apiBaseUrl.replace(/\/$/, '')}${path}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body)
   });
-  const data = await response.json().catch(() => ({}));
+  const data = await readResponseJson(response, { successMessage: 'AgentFeed API returned an invalid JSON response.' });
   if (!response.ok) {
     const api = data as { error?: { code?: string; message?: string; details?: Record<string, unknown> } };
     const code = api.error?.code ?? `HTTP_${response.status}`;
     const msg = friendlyError(response.status, code, api.error?.message ?? response.statusText, api.error?.details);
     throw new AgentFeedApiError(response.status, code, msg, api.error?.details);
   }
-  return (data as { data: T }).data;
+  return responseDataEnvelope<T>(data, { successMessage: 'AgentFeed API response is missing the data envelope.' });
 }
 
 export async function createCliAuthSession(apiBaseUrl: string, input: { verifier: string; deviceName?: string; replaceTokenId?: string }): Promise<CliAuthSession> {
@@ -835,7 +860,7 @@ async function postIngest<T>(path: string, draft: LocalDraft, credentials: Agent
       headers: { authorization: `Bearer ${credentials.ingestion_token}`, 'content-type': 'application/json' },
       body
     }, { localDraftKept: true });
-    const data = await response.json().catch(() => ({}));
+    const data = await readResponseJson(response, { successMessage: 'AgentFeed API returned an invalid JSON upload response.', localDraftKept: true });
     if (!response.ok) {
       const api = data as { error?: { code?: string; message?: string; details?: Record<string, unknown> } };
       const retryAfterHeader = Number(response.headers.get('retry-after'));
@@ -846,7 +871,7 @@ async function postIngest<T>(path: string, draft: LocalDraft, credentials: Agent
       const msg = friendlyError(response.status, code, api.error?.message ?? response.statusText, details);
       throw new AgentFeedApiError(response.status, code, msg, details);
     }
-    return (data as { data: T }).data;
+    return responseDataEnvelope<T>(data, { successMessage: 'AgentFeed API upload response is missing the data envelope.', localDraftKept: true });
   });
 }
 

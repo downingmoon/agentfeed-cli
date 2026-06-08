@@ -199,6 +199,7 @@ updated: 2026-06-08
 - [[Frontend Token Response Guard 2026-06-08]] — Settings ingestion token list/create/rotate response를 runtime guard로 fail-closed 처리하고 Dev OpenAPI token lifecycle gate를 확장 완료.
 - [[Frontend Social Response Guard 2026-06-08]] — like/bookmark/follow mutation responses are runtime-guarded and Dev OpenAPI gate now covers social count fields.
 - [[Worklog Review Response Guard 2026-06-08]] — publish review payload를 Frontend API boundary에서 fail-closed 검증하도록 보강 완료.
+- [[Worklog Detail Response Guard 2026-06-08]] — public worklog detail payload와 multi-agent evidence를 Frontend API boundary에서 fail-closed 검증하도록 보강 완료.
 - [[Worklog Action Response Guard 2026-06-08]] — review publish/unpublish/privacy resolution action responses now fail closed at the Frontend boundary, and Backend/OpenAPI schemas expose the narrower actual return enums.
 - [[Backend Integration Guide CLI Contract 2026-06-08]] — setup guide API에서 stale `configure`/`connect` CLI command 제거 및 contract test 추가 완료.
 - [[Backend Public Username Discovery Guard 2026-06-08]] — search/explore/leaderboard profile entry API에서 username 없는 user 노출 방지 완료.

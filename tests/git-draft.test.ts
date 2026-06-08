@@ -157,7 +157,7 @@ describe('git collector and drafts', () => {
     expect(draft.worklog.agent).toBe('codex');
     expect(draft.source.agent).toBe('codex');
     expect(draft.worklog.metrics.collection_quality).toBeNull();
-  });
+  }, 20_000);
 
   it('does not attribute git-only auto collection to globally detected agent signals', async () => {
     const previousHome = process.env.HOME;

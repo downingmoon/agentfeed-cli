@@ -58,7 +58,7 @@ describe('CLI version metadata', () => {
       'gemini-cli',
       'cursor'
     ]));
-    expect(packageJson.homepage).toBe('https://agentfeed.dev');
+    expect(packageJson.homepage).toBe('https://github.com/downingmoon/agentfeed-cli#readme');
     expect(packageJson.repository).toEqual({
       type: 'git',
       url: 'git+https://github.com/downingmoon/agentfeed-cli.git'

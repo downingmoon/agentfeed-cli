@@ -167,7 +167,7 @@ updated: 2026-06-08
 
 ## Public release 메모
 
-- [ ] CLI `package.json.homepage`가 실제 domain 또는 GitHub/docs URL을 가리키도록 정리.
+- [x] CLI `package.json.homepage`가 실제 domain 또는 GitHub/docs URL을 가리키도록 정리: [[CLI Release Metadata Homepage Guard 2026-06-08]].
 - [ ] `license: UNLICENSED` 유지 여부 결정. public npm 배포 전 owner가 정책을 확정해야 한다.
 - [ ] npm package 이름/README/install command 최종 확인.
 - [x] npm tarball 설치 후 첫 사용자 CLI UX smoke를 release preflight에 포함.
@@ -185,6 +185,7 @@ updated: 2026-06-08
 - [x] [[Frontend Profile Link Identity Guard 2026-06-08]] — Header, Feed, Search, Explore, Leaderboard, and Worklog Detail now avoid backend-id profile links for username-missing users.
 
 ## Completed
+- [[CLI Release Metadata Homepage Guard 2026-06-08]] — 준비되지 않은 `agentfeed.dev` 대신 GitHub README를 CLI npm homepage로 사용하고 release preflight guard를 동기화 완료.
 - [[Frontend Setup Guide Payload Guard 2026-06-08]] — malformed integration setup-guide payload가 Settings render crash로 이어지지 않도록 Frontend API boundary runtime guard 추가 완료.
 - [[Frontend Integration Compatibility Probe 2026-06-08]] — Settings가 소비하는 `/me/integrations`와 `/integrations/{type}/setup-guide`를 Frontend mock/hosted compatibility 및 Dev OpenAPI gate에 포함 완료.
 - [[Frontend Integration Setup Guide Surface 2026-06-08]] — Settings integrations card가 Backend setup-guide API를 실제로 소비하고 CLI command snippets를 표시하도록 연결 완료.

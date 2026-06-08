@@ -86,7 +86,7 @@ export function validatePackageMetadata(pkg) {
   assert(pkg.scripts?.prepack === 'npm run clean && npm run build && npm run typecheck && npm test -- --run', 'prepack must keep build, typecheck, and test gates.');
   assert(pkg.scripts?.['release:preflight'] === 'npm run prepack && node scripts/release-preflight.mjs', 'release:preflight must run prepack before tarball smoke so local release gates cannot use stale dist.');
   assert(pkg.repository?.type === 'git' && pkg.repository?.url === 'git+https://github.com/downingmoon/agentfeed-cli.git', 'repository metadata must point at the canonical GitHub repo.');
-  assert(pkg.homepage === 'https://agentfeed.dev', 'homepage must stay https://agentfeed.dev.');
+  assert(pkg.homepage === 'https://github.com/downingmoon/agentfeed-cli#readme', 'homepage must point at the canonical GitHub README until a production domain is ready.');
   assert(pkg.bugs?.url === 'https://github.com/downingmoon/agentfeed-cli/issues', 'bugs URL must point at GitHub issues.');
   assert(pkg.publishConfig?.access === 'public', 'publishConfig.access must be public for the unscoped npm package.');
   assert(pkg.publishConfig?.provenance === true, 'publishConfig.provenance must stay true so npm publish fails closed without provenance support.');

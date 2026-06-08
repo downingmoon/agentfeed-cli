@@ -12,7 +12,7 @@
     "gemini-cli",
     "cursor"
   ],
-  "homepage": "https://agentfeed.dev",
+  "homepage": "https://github.com/downingmoon/agentfeed-cli#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/downingmoon/agentfeed-cli.git"

@@ -38,7 +38,7 @@ const validPackageJson = {
     type: 'git',
     url: 'git+https://github.com/downingmoon/agentfeed-cli.git'
   },
-  homepage: 'https://agentfeed.dev',
+  homepage: 'https://github.com/downingmoon/agentfeed-cli#readme',
   bugs: {
     url: 'https://github.com/downingmoon/agentfeed-cli/issues'
   },

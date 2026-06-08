@@ -647,29 +647,34 @@ function parsePublishDraftResult(value: unknown, apiBaseUrl: string, reviewBaseU
 function parseCliAuthExchangeResult(value: unknown): CliAuthExchangeResult {
   if (!isRecord(value)) throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid CLI auth exchange response.');
   const token = stringField(value.token);
-  const tokenId = optionalStringField(value.token_id);
-  const hasTokenExpiresAt = Object.hasOwn(value, 'token_expires_at');
-  const tokenExpiresAt = hasTokenExpiresAt ? validOptionalDateString(value.token_expires_at) : undefined;
+  const tokenId = stringField(value.token_id);
+  const tokenExpiresAt = validOptionalDateString(value.token_expires_at);
   const rotatedFrom = optionalStringField(value.rotated_from);
   const rotatedAt = optionalStringField(value.rotated_at);
   const user = parseOptionalUser(value.user);
   if (
     !token
-    || (Object.hasOwn(value, 'token_id') && tokenId === undefined)
-    || (hasTokenExpiresAt && tokenExpiresAt === undefined)
+    || !tokenId
+    || !tokenExpiresAt
     || (Object.hasOwn(value, 'rotated_from') && rotatedFrom === undefined)
     || (Object.hasOwn(value, 'rotated_at') && (rotatedAt === undefined || (rotatedAt !== null && !Number.isFinite(Date.parse(rotatedAt)))))
-    || user === null
+    || !user?.id
+    || !user.display_name
   ) {
     throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid CLI auth exchange response.');
   }
   return {
     token,
-    token_id: tokenId ?? undefined,
+    token_id: tokenId,
     token_expires_at: tokenExpiresAt,
     rotated_from: rotatedFrom ?? undefined,
     rotated_at: rotatedAt ?? undefined,
-    user
+    user: {
+      id: user.id,
+      username: user.username,
+      display_name: user.display_name,
+      avatar_url: user.avatar_url,
+    }
   };
 }
 

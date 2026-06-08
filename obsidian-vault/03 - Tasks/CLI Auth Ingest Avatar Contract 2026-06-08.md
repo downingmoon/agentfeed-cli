@@ -60,3 +60,33 @@ aliases:
 
 - [ ] 실제 사용자 브라우저에서 GitHub credential 입력까지 포함한 live login을 한 번 더 수행한다.
 - [ ] production domain이 생기면 hosted compatibility smoke에도 avatar contract evidence를 포함한다.
+
+## 2026-06-08 추가: CLI auth exchange 필수 필드 fail-closed
+
+`avatar_url` 보존 이후 계약을 다시 비교하면서 CLI browser login exchange parser가 Backend schema보다 느슨한 필드를 허용하던 gap을 확인했다. Backend 기준 `token_id`, `token_expires_at`, `user.id`, `user.display_name`은 필수인데, CLI는 일부 필드를 optional로 저장할 수 있었다.
+
+> [!success] 완료
+> CLI는 `/v1/auth/cli/sessions/{session_id}/exchange` 응답에서 `token_id`, `token_expires_at`, `user.id`, `user.display_name`이 빠진 경우 credential 저장 전에 `API_RESPONSE_INVALID`로 실패한다. Dev OpenAPI gate도 `data.user.display_name` 필수 계약을 감시한다.
+
+### 변경 범위
+
+- CLI
+  - `CliAuthExchangeResult.token_id`, `token_expires_at`, `user`, `user.id`, `user.display_name`을 required 타입으로 승격.
+  - browser login exchange parser가 필수 token binding/user identity 필드 누락을 fail-closed 처리.
+  - browser login save/no-save credential path가 nullable fallback 없이 required `token_id`를 사용.
+  - browser login/rotate 테스트 fixture를 Backend 응답 계약에 맞게 보강.
+- Dev contract
+  - OpenAPI schema gate에 CLI auth exchange `data.user.display_name` required string 필드 추가.
+
+### Evidence
+
+- CLI: `npm run typecheck` → passed.
+- CLI: `npx vitest run tests/api-hook.test.ts --reporter=verbose` → `93 passed`.
+- CLI: `npx vitest run tests/cli-status-doctor.test.ts --reporter=verbose --hookTimeout=30000` → `37 passed`.
+- Dev: `node scripts/check-openapi-contract.mjs` → OpenAPI contract gate passed, schema field contracts `131 fields across 26 operations`.
+- Backend: `uv run pytest -q tests/test_contracts.py -k "route_response_models_use_explicit_contract_schemas or cli_auth"` → `12 passed, 360 deselected`.
+- Backend: `uv run ruff check app/schemas/auth.py tests/test_contracts.py` → All checks passed.
+
+### 후행 과제
+
+- [ ] 실제 GitHub OAuth login으로 personal server auth exchange 응답에 `token_id`/`token_expires_at`/`display_name`/`avatar_url`이 모두 저장되는지 smoke한다.

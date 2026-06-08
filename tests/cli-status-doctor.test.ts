@@ -438,8 +438,9 @@ describe('status and doctor provenance output', () => {
         res.end(JSON.stringify({
           data: {
             token: 'af_live_cli_ux_secret',
+            token_id: 'token-cli-ux',
             token_expires_at: '2026-06-15T00:00:00Z',
-            user: { id: 'user-cli-ux', username: 'cli-ux-user' }
+            user: { id: 'user-cli-ux', username: 'cli-ux-user', display_name: 'CLI UX User' }
           }
         }));
         return;
@@ -1059,7 +1060,7 @@ describe('status and doctor provenance output', () => {
               token_expires_at: newExpiry,
               rotated_from: 'token-old',
               rotated_at: '2026-05-30T00:01:00Z',
-              user: { id: 'user-1', username: 'downingmoon' }
+              user: { id: 'user-1', username: 'downingmoon', display_name: 'Downing Moon' }
             }
           }));
         });

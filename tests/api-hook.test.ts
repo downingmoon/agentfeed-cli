@@ -730,11 +730,15 @@ describe('api client', () => {
 
   it.each([
     { data: { token: '' }, label: 'empty token' },
+    { data: { token: 'af_live_missing_token_id', token_expires_at: '2026-06-15T00:00:00Z', user: { id: 'user-1', display_name: 'User One' } }, label: 'missing token_id' },
+    { data: { token: 'af_live_missing_expiry', token_id: 'token-1', user: { id: 'user-1', display_name: 'User One' } }, label: 'missing token_expires_at' },
+    { data: { token: 'af_live_missing_user', token_id: 'token-1', token_expires_at: '2026-06-15T00:00:00Z' }, label: 'missing user' },
+    { data: { token: 'af_live_missing_display_name', token_id: 'token-1', token_expires_at: '2026-06-15T00:00:00Z', user: { id: 'user-1' } }, label: 'missing user display_name' },
     { data: { token: 'af_live_test', token_id: 123 }, label: 'invalid token_id' },
-    { data: { token: 'af_live_bad_expiry', token_expires_at: 'not-a-date' }, label: 'invalid token_expires_at' },
-    { data: { token: 'af_live_test', rotated_from: ['token-old'] }, label: 'invalid rotated_from' },
-    { data: { token: 'af_live_test', rotated_at: 'tomorrow-ish' }, label: 'invalid rotated_at' },
-    { data: { token: 'af_live_bad_user', user: { id: 123 } }, label: 'unsafe user object' }
+    { data: { token: 'af_live_bad_expiry', token_id: 'token-1', token_expires_at: 'not-a-date', user: { id: 'user-1', display_name: 'User One' } }, label: 'invalid token_expires_at' },
+    { data: { token: 'af_live_test', token_id: 'token-1', token_expires_at: '2026-06-15T00:00:00Z', user: { id: 'user-1', display_name: 'User One' }, rotated_from: ['token-old'] }, label: 'invalid rotated_from' },
+    { data: { token: 'af_live_test', token_id: 'token-1', token_expires_at: '2026-06-15T00:00:00Z', user: { id: 'user-1', display_name: 'User One' }, rotated_at: 'tomorrow-ish' }, label: 'invalid rotated_at' },
+    { data: { token: 'af_live_bad_user', token_id: 'token-1', token_expires_at: '2026-06-15T00:00:00Z', user: { id: 123, display_name: 'User One' } }, label: 'unsafe user object' }
   ])('rejects malformed browser exchange responses before credentials can be saved: $label', async ({ data }) => {
     await saveCredentials('af_live_existing', {
       apiBaseUrl: 'https://api.agentfeed.dev/v1',
@@ -1014,6 +1018,7 @@ describe('api client', () => {
           user: {
             id: 'user-1',
             username: 'downingmoon',
+            display_name: 'Downing Moon',
             avatar_url: 'https://avatars.githubusercontent.com/u/4242?v=4'
           }
         }
@@ -1394,10 +1399,12 @@ describe('api client', () => {
         return new Response(JSON.stringify({
           data: {
             token: 'af_live_no_open',
+            token_id: 'token-no-open',
             token_expires_at: '2026-06-15T00:00:00Z',
             user: {
               id: 'user-no-open',
               username: 'cli-user',
+              display_name: 'CLI User',
               avatar_url: 'https://avatars.githubusercontent.com/u/4242?v=4'
             }
           }
@@ -1413,10 +1420,12 @@ describe('api client', () => {
     expect(creds).toMatchObject({
       api_base_url: 'https://api.agentfeed.dev/v1',
       ingestion_token: 'af_live_no_open',
+      token_id: 'token-no-open',
       token_expires_at: '2026-06-15T00:00:00Z',
       user: {
         id: 'user-no-open',
         username: 'cli-user',
+        display_name: 'CLI User',
         avatar_url: 'https://avatars.githubusercontent.com/u/4242?v=4'
       }
     });
@@ -1426,10 +1435,12 @@ describe('api client', () => {
     await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8').then(JSON.parse)).resolves.toMatchObject({
       api_base_url: 'https://api.agentfeed.dev/v1',
       ingestion_token: 'af_live_no_open',
+      token_id: 'token-no-open',
       token_expires_at: '2026-06-15T00:00:00Z',
       user: {
         id: 'user-no-open',
         username: 'cli-user',
+        display_name: 'CLI User',
         avatar_url: 'https://avatars.githubusercontent.com/u/4242?v=4'
       }
     });
@@ -1470,8 +1481,9 @@ describe('api client', () => {
         return new Response(JSON.stringify({
           data: {
             token: 'af_live_ephemeral',
+            token_id: 'token-ephemeral',
             token_expires_at: '2026-06-15T00:00:00Z',
-            user: { id: 'user-ephemeral', username: 'no-save-user' }
+            user: { id: 'user-ephemeral', username: 'no-save-user', display_name: 'No Save User' }
           }
         }), { status: 200, headers: { 'content-type': 'application/json' } });
       }
@@ -1485,8 +1497,9 @@ describe('api client', () => {
     expect(creds).toMatchObject({
       api_base_url: 'https://api.agentfeed.dev/v1',
       ingestion_token: 'af_live_ephemeral',
+      token_id: 'token-ephemeral',
       token_expires_at: '2026-06-15T00:00:00Z',
-      user: { id: 'user-ephemeral', username: 'no-save-user' }
+      user: { id: 'user-ephemeral', username: 'no-save-user', display_name: 'No Save User' }
     });
     await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
   });
@@ -1507,7 +1520,7 @@ describe('api client', () => {
         }), { status: 200, headers: { 'content-type': 'application/json' } });
       }
       if (url.endsWith('/auth/cli/sessions/session-default-api/exchange')) {
-        return new Response(JSON.stringify({ data: { token: 'af_live_default_api' } }), { status: 200, headers: { 'content-type': 'application/json' } });
+        return new Response(JSON.stringify({ data: { token: 'af_live_default_api', token_id: 'token-default-api', token_expires_at: '2026-06-15T00:00:00Z', user: { id: 'user-default-api', display_name: 'Default API User' } } }), { status: 200, headers: { 'content-type': 'application/json' } });
       }
       return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404, headers: { 'content-type': 'application/json' } });
     });
@@ -1535,7 +1548,7 @@ describe('api client', () => {
         }), { status: 200, headers: { 'content-type': 'application/json' } });
       }
       if (url.endsWith('/auth/cli/sessions/session-trusted-api/exchange')) {
-        return new Response(JSON.stringify({ data: { token: 'af_live_trusted_api' } }), { status: 200, headers: { 'content-type': 'application/json' } });
+        return new Response(JSON.stringify({ data: { token: 'af_live_trusted_api', token_id: 'token-trusted-api', token_expires_at: '2026-06-15T00:00:00Z', user: { id: 'user-trusted-api', display_name: 'Trusted API User' } } }), { status: 200, headers: { 'content-type': 'application/json' } });
       }
       return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404, headers: { 'content-type': 'application/json' } });
     });
@@ -1554,7 +1567,7 @@ describe('api client', () => {
       if (attempts === 1) {
         throw new Error('pending');
       }
-      return { token: 'af_live_after_approval', user: { id: 'user-1' } };
+      return { token: 'af_live_after_approval', token_id: 'token-after-approval', token_expires_at: '2026-06-15T00:00:00Z', user: { id: 'user-1', display_name: 'User One' } };
     });
 
     const result = await waitForCliAuthExchange({
@@ -1581,7 +1594,7 @@ describe('api client', () => {
       if (exchange.mock.calls.length === 1) {
         throw new AgentFeedApiError(503, 'SERVICE_UNAVAILABLE', 'AgentFeed API is temporarily unavailable.');
       }
-      return { token: 'af_live_after_transient_exchange', user: { id: 'user-1' } };
+      return { token: 'af_live_after_transient_exchange', token_id: 'token-after-transient', token_expires_at: '2026-06-15T00:00:00Z', user: { id: 'user-1', display_name: 'User One' } };
     });
 
     const result = await waitForCliAuthExchange({

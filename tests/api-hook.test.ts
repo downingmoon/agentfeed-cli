@@ -961,9 +961,17 @@ describe('api client', () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({
       data: {
         ok: true,
+        user: {
+          id: 'user-1',
+          username: 'downingmoon',
+          display_name: 'Downing Moon',
+          avatar_url: 'https://avatars.githubusercontent.com/u/4242?v=4'
+        },
         token: {
           id: 'token-1',
           name: 'CLI: MacBook',
+          created_at: '2026-06-01T00:00:00Z',
+          last_used_at: null,
           expires_at: '2026-06-15T00:00:00Z',
           expires_in_seconds: 1_000_000,
           expiring_soon: false
@@ -981,6 +989,23 @@ describe('api client', () => {
       method: 'GET',
       headers: { authorization: 'Bearer af_live_test' }
     }));
+  });
+
+  it.each([
+    { data: { ok: true, token: { id: 'token-1', name: 'CLI: MacBook', created_at: '2026-06-01T00:00:00Z', expires_at: '2026-06-15T00:00:00Z', expires_in_seconds: 100, expiring_soon: false } }, label: 'missing user' },
+    { data: { ok: true, user: { id: 'user-1' }, token: { id: 'token-1', name: 'CLI: MacBook', expires_at: '2026-06-15T00:00:00Z', expires_in_seconds: 100, expiring_soon: false } }, label: 'missing created_at' },
+    { data: { ok: true, user: { id: 'user-1' }, token: { id: 'token-1', name: 'CLI: MacBook', created_at: '2026-06-01T00:00:00Z', expires_at: 'not-a-date', expires_in_seconds: 100, expiring_soon: false } }, label: 'invalid expires_at' },
+    { data: { ok: true, user: { id: 'user-1' }, token: { id: 'token-1', name: 'CLI: MacBook', created_at: '2026-06-01T00:00:00Z', expires_at: '2026-06-15T00:00:00Z', expires_in_seconds: -1, expiring_soon: false } }, label: 'negative expires_in_seconds' },
+    { data: { ok: true, user: { id: 'user-1' }, token: { id: 'token-1', name: 'CLI: MacBook', created_at: '2026-06-01T00:00:00Z', expires_at: '2026-06-15T00:00:00Z', expires_in_seconds: 100, expiring_soon: 'no' } }, label: 'invalid expiring_soon' }
+  ])('treats malformed ingestion status responses as unhealthy: $label', async ({ data }) => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ data }), { status: 200, headers: { 'content-type': 'application/json' } })));
+
+    await expect(checkIngestionToken({ ingestion_token: 'af_live_bad_contract', api_base_url: 'http://localhost:8001/v1', created_at: 'now' }))
+      .resolves.toMatchObject({
+        ok: false,
+        status: 200,
+        error: 'AgentFeed API returned an invalid ingestion token status response.'
+      });
   });
 
   it('reports invalid ingestion token as an unhealthy token check', async () => {

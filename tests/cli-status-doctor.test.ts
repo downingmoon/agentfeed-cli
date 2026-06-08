@@ -1515,9 +1515,17 @@ describe('status and doctor provenance output', () => {
         res.end(JSON.stringify({
           data: {
             ok: true,
+            user: {
+              id: 'user-1',
+              username: 'downingmoon',
+              display_name: 'Downing Moon',
+              avatar_url: null
+            },
             token: {
               id: 'token-1',
               name: 'CLI: test',
+              created_at: '2026-06-01T00:00:00Z',
+              last_used_at: null,
               expires_at: soon,
               expires_in_seconds: 86_400,
               expiring_soon: true

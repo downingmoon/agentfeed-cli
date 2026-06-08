@@ -104,16 +104,16 @@ function healthUrl(apiBaseUrl: string): string {
 }
 
 export interface IngestionTokenStatus {
-  ok?: boolean;
-  user?: { id?: string; username?: string | null; display_name?: string | null; avatar_url?: string | null };
-  token?: {
-    id?: string;
-    name?: string;
-    created_at?: string;
+  ok: boolean;
+  user: { id: string; username?: string | null; display_name?: string | null; avatar_url?: string | null };
+  token: {
+    id: string;
+    name: string;
+    created_at: string;
     last_used_at?: string | null;
-    expires_at?: string;
-    expires_in_seconds?: number;
-    expiring_soon?: boolean;
+    expires_at: string;
+    expires_in_seconds: number;
+    expiring_soon: boolean;
   };
 }
 
@@ -272,10 +272,30 @@ export async function checkApiCompatibility(apiBaseUrl: string): Promise<ApiComp
 }
 
 export async function checkIngestionToken(credentials: AgentFeedCredentials): Promise<ApiCheckResult> {
-  return fetchCheck(apiUrl(credentials.api_base_url, '/ingest/status'), {
-    method: 'GET',
-    headers: { authorization: `Bearer ${credentials.ingestion_token}` }
-  });
+  const url = apiUrl(credentials.api_base_url, '/ingest/status');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), API_CHECK_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { authorization: `Bearer ${credentials.ingestion_token}` },
+      signal: controller.signal
+    });
+    const data = await parseIngestionTokenStatusData(response);
+    if (response.ok && data === null) {
+      return {
+        ok: false,
+        url,
+        status: response.status,
+        error: 'AgentFeed API returned an invalid ingestion token status response.'
+      };
+    }
+    return { ok: response.ok, url, status: response.status, data: data ?? undefined };
+  } catch (error) {
+    return { ok: false, url, error: describeNetworkFailure(error, url, API_CHECK_TIMEOUT_MS) };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export function draftToIngestRequest(draft: LocalDraft): IngestWorklogRequest {
@@ -439,6 +459,86 @@ function validOptionalDateString(value: unknown): string | null | undefined {
   const text = optionalStringField(value);
   if (text === undefined || text === null) return text;
   return Number.isFinite(Date.parse(text)) ? text : undefined;
+}
+
+function validDateString(value: unknown): string | null {
+  const text = stringField(value);
+  return text && Number.isFinite(Date.parse(text)) ? text : null;
+}
+
+function optionalDateString(value: unknown): string | null | undefined {
+  if (value === null) return null;
+  if (value === undefined) return undefined;
+  return validDateString(value) ?? undefined;
+}
+
+function parseIngestionTokenStatus(value: unknown): IngestionTokenStatus | null {
+  if (!isRecord(value)) return null;
+  if (typeof value.ok !== 'boolean') return null;
+  const userValue = value.user;
+  const tokenValue = value.token;
+  if (!isRecord(userValue) || !isRecord(tokenValue)) return null;
+
+  const userId = stringField(userValue.id);
+  const username = Object.hasOwn(userValue, 'username') ? optionalStringField(userValue.username) : undefined;
+  const displayName = Object.hasOwn(userValue, 'display_name') ? optionalStringField(userValue.display_name) : undefined;
+  const avatarUrl = Object.hasOwn(userValue, 'avatar_url') ? optionalStringField(userValue.avatar_url) : undefined;
+  const tokenId = stringField(tokenValue.id);
+  const tokenName = stringField(tokenValue.name);
+  const createdAt = validDateString(tokenValue.created_at);
+  const lastUsedAt = Object.hasOwn(tokenValue, 'last_used_at') ? optionalDateString(tokenValue.last_used_at) : undefined;
+  const expiresAt = validDateString(tokenValue.expires_at);
+  const expiresInSeconds = tokenValue.expires_in_seconds;
+  const expiringSoon = tokenValue.expiring_soon;
+
+  if (
+    !userId
+    || (Object.hasOwn(userValue, 'username') && username === undefined)
+    || (Object.hasOwn(userValue, 'display_name') && displayName === undefined)
+    || (Object.hasOwn(userValue, 'avatar_url') && avatarUrl === undefined)
+    || !tokenId
+    || !tokenName
+    || !createdAt
+    || (Object.hasOwn(tokenValue, 'last_used_at') && lastUsedAt === undefined)
+    || !expiresAt
+    || typeof expiresInSeconds !== 'number'
+    || !Number.isInteger(expiresInSeconds)
+    || expiresInSeconds < 0
+    || typeof expiringSoon !== 'boolean'
+  ) {
+    return null;
+  }
+
+  return {
+    ok: value.ok,
+    user: {
+      id: userId,
+      username: username ?? undefined,
+      display_name: displayName ?? undefined,
+      avatar_url: avatarUrl ?? undefined,
+    },
+    token: {
+      id: tokenId,
+      name: tokenName,
+      created_at: createdAt,
+      last_used_at: lastUsedAt ?? undefined,
+      expires_at: expiresAt,
+      expires_in_seconds: expiresInSeconds,
+      expiring_soon: expiringSoon,
+    }
+  };
+}
+
+async function parseIngestionTokenStatusData(response: Response): Promise<IngestionTokenStatus | null | undefined> {
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.includes('application/json')) return response.ok ? null : undefined;
+  try {
+    const parsed = await response.json() as { data?: unknown };
+    if (!Object.hasOwn(parsed, 'data')) return response.ok ? null : undefined;
+    return parseIngestionTokenStatus(parsed.data);
+  } catch {
+    return response.ok ? null : undefined;
+  }
 }
 
 function parseOptionalUser(value: unknown): AgentFeedCredentials['user'] | null | undefined {

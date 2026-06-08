@@ -147,6 +147,8 @@ updated: 2026-06-08
 - [x] 오래된 `docs/todo/*`와 backend `docs/fixes-required.md`가 현재 TODO로 오해되지 않도록 historical 문서로 표시.
 - [x] 개발/테스트 배포 방향을 개인 서버 IP-only로 확정하고 Obsidian handoff 문서에 반영.
 
+- [x] [[Search Leaderboard Query Contract Guard 2026-06-08]] — Search/Leaderboard discovery query type과 leaderboard response type을 Backend Literal/Frontend source guard로 일치시키고 unknown query silent fallback을 제거 완료.
+
 ## P0 — 다음 실제 작업: 개인 서버 IP-only smoke
 
 상세 체크리스트는 [[Human Action Checklist]]를 기준으로 한다.

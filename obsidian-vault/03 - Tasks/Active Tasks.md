@@ -203,3 +203,4 @@ updated: 2026-06-08
 - [[Backend Public Username Discovery Guard 2026-06-08]] — search/explore/leaderboard profile entry API에서 username 없는 user 노출 방지 완료.
 - [[GitHub Avatar Fallback Refresh 2026-06-08]] — 기존 GitHub 계정 avatar refresh 및 frontend github_url-only avatar fallback 완료.
 - [[Hosted Smoke Server Test Env Forwarding 2026-06-08]] — IP-only 개인서버 smoke에서 Frontend compatibility runner가 server-test HTTP 허용 env를 유지하도록 보완하고 hosted compatibility smoke 통과를 확인함.
+- [[Account Project Mutation Response Guard 2026-06-08]] — project/profile/username/settings mutation 응답을 Frontend boundary에서 fail-closed 검증하도록 보강 완료.

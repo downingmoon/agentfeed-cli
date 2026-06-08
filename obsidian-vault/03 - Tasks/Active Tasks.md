@@ -106,6 +106,7 @@ updated: 2026-06-08
 - [x] [[CLI Ingest Status Test Mock Contract 2026-06-08]] — CLI release preflight에서 stale `/ingest/status` healthy mocks가 strict token/user lifecycle contract를 만족하지 않아 collect/share upload tests가 실패하던 문제를 수정 완료.
 - [x] [[Frontend Worklog Detail Array Contract Guard 2026-06-08]] — Worklog detail API boundary가 `outcome`/`timeline` missing/null을 빈 배열로 합성하지 않고 contract mismatch로 fail-closed 하도록 보강 완료.
 - [x] [[Frontend Worklog Review Privacy Finding Guard 2026-06-08]] — Worklog Review page-local privacy finding helper가 malformed row를 drop하거나 fallback 값으로 합성하지 않고 fail-closed 하도록 보강 완료.
+- [x] [[Frontend Worklog Review Public Fields Guard 2026-06-08]] — Worklog Review page-local `public_fields` helper가 비배열/blank row를 빈 목록으로 숨기지 않고 fail-closed 하도록 보강 완료.
 
 - [x] CLI subcommand `--help`가 수집/상태파일 작성 side effect 없이 종료되도록 수정.
 - [x] CLI 주요 명령 회귀: `release:preflight`로 `login`, `collect`, `share`, `publish`, `open`, `doctor`, `status` 관련 테스트 통과.

@@ -233,6 +233,7 @@ updated: 2026-06-08
 - [x] [[Frontend Profile Link Identity Guard 2026-06-08]] — Header, Feed, Search, Explore, Leaderboard, and Worklog Detail now avoid backend-id profile links for username-missing users.
 
 ## Completed
+- [x] [[CLI Visibility Contract Guard 2026-06-08]] — CLI에 남아 있던 서버 미지원 `team` visibility를 제거하고 upload success result 타입을 private-review contract로 축소 완료.
 - [[Frontend Request Strict Contract 2026-06-08]] — Frontend/CLI mutating request schemas가 계약 밖 필드를 조용히 무시하지 않도록 Backend extra-forbid와 Dev additionalProperties gate 추가 완료. 2026-06-08 후속으로 comment/report/privacy resolution/publish/unpublish 및 ingestion token create/rotate/revoke exact request body guard까지 보강 완료.
 - [[Backend Ingest Strict Contract 2026-06-08]] — Backend ingest request가 계약 밖 privacy/sample/raw fields를 조용히 무시하지 않도록 fail-closed schema와 Dev forbidden-field gate 추가 완료.
 - [[CLI Privacy Sample Upload Strip 2026-06-08]] — CLI local privacy sample은 유지하되 Backend contract 밖 `sample_redacted`는 upload payload에서 제거 완료.

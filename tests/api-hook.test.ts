@@ -68,6 +68,16 @@ function responseAfterAbort(init?: RequestInit): Promise<Response> {
   });
 }
 
+it('keeps CLI visibility contract aligned with backend-supported values', async () => {
+  const typesSource = await readFile(join(process.cwd(), 'src', 'types.ts'), 'utf8');
+  const clientSource = await readFile(join(process.cwd(), 'src', 'api', 'client.ts'), 'utf8');
+
+  expect(typesSource).toContain("export type Visibility = 'private' | 'unlisted' | 'public';");
+  expect(typesSource).not.toContain("'team'");
+  expect(clientSource).toContain("export type PublishDraftVisibility = 'private';");
+  expect(clientSource).not.toContain("Visibility, WorklogStatus");
+});
+
 beforeEach(async () => {
   dir = await mkdtemp(join(tmpdir(), 'agentfeed-api-'));
   home = await mkdtemp(join(tmpdir(), 'agentfeed-home-'));

@@ -1,5 +1,5 @@
 export type AgentType = 'claude_code' | 'codex' | 'cursor' | 'gemini_cli' | 'other';
-export type Visibility = 'private' | 'unlisted' | 'public' | 'team';
+export type Visibility = 'private' | 'unlisted' | 'public';
 export type WorklogStatus = 'draft' | 'needs_review' | 'private' | 'unlisted' | 'public' | 'rejected' | 'deleted';
 export type WorklogCategory = 'web_app' | 'bot' | 'automation' | 'trading' | 'devops' | 'data' | 'ai_tool' | 'open_source' | 'other';
 export type PrivacyStatus = 'safe' | 'warning' | 'danger';

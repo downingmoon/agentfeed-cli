@@ -1,4 +1,4 @@
-import type { AgentFeedCredentials, CliAuthExchangeResult, CliAuthSession, IngestWorklogRequest, LocalDraft, Visibility, WorklogStatus } from '../types.js';
+import type { AgentFeedCredentials, CliAuthExchangeResult, CliAuthSession, IngestWorklogRequest, LocalDraft } from '../types.js';
 import { randomUUID } from 'node:crypto';
 import { open, readFile, rm, stat, utimes, type FileHandle } from 'node:fs/promises';
 import { isIP } from 'node:net';
@@ -449,10 +449,13 @@ export interface RemotePreviewResult {
   warnings: string[];
 }
 
+export type PublishDraftStatus = 'draft' | 'needs_review' | 'private' | 'already_uploaded';
+export type PublishDraftVisibility = 'private';
+
 export interface PublishDraftResult {
   id: string;
-  status: WorklogStatus | 'already_uploaded';
-  visibility: Visibility;
+  status: PublishDraftStatus;
+  visibility: PublishDraftVisibility;
   review_url: string;
   review_base_url?: string | null;
   created_at: string;
@@ -763,14 +766,18 @@ function parseCliAuthSession(value: unknown, apiBaseUrl: string): CliAuthSession
   };
 }
 
-const VALID_PRIVATE_REVIEW_UPLOAD_STATUSES = new Set<string>([
+const VALID_PRIVATE_REVIEW_UPLOAD_STATUSES: ReadonlySet<PublishDraftStatus> = new Set([
   'draft',
   'needs_review',
   'private',
   'already_uploaded'
 ]);
 
-const VALID_PRIVATE_REVIEW_VISIBILITY = 'private';
+const VALID_PRIVATE_REVIEW_VISIBILITY: PublishDraftVisibility = 'private';
+
+function isPublishDraftStatus(value: string): value is PublishDraftStatus {
+  return VALID_PRIVATE_REVIEW_UPLOAD_STATUSES.has(value as PublishDraftStatus);
+}
 
 function parsePublishDraftResult(value: unknown, apiBaseUrl: string, reviewBaseUrl?: string | null): PublishDraftResult {
   if (!isRecord(value)) throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid upload response.');
@@ -782,7 +789,7 @@ function parsePublishDraftResult(value: unknown, apiBaseUrl: string, reviewBaseU
   if (
     !id
     || !status
-    || !VALID_PRIVATE_REVIEW_UPLOAD_STATUSES.has(status)
+    || !isPublishDraftStatus(status)
     || visibility !== VALID_PRIVATE_REVIEW_VISIBILITY
     || !reviewUrl
     || !createdAt
@@ -794,7 +801,7 @@ function parsePublishDraftResult(value: unknown, apiBaseUrl: string, reviewBaseU
   }
   return {
     id,
-    status: status as PublishDraftResult['status'],
+    status,
     visibility: visibility as PublishDraftResult['visibility'],
     review_url: reviewUrl,
     review_base_url: trustedReviewOrigin(reviewBaseUrl),

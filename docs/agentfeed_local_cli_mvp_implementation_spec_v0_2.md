@@ -401,10 +401,10 @@ type AgentType =
 ## 6.2 Visibility
 
 ```ts
-type Visibility = "private" | "unlisted" | "public" | "team";
+type Visibility = "private" | "unlisted" | "public";
 ```
 
-MVP must not send `team`.
+MVP/server contract does not support `team`; future team-scoped sharing must be introduced as a new cross-repo contract, not a CLI-only value.
 
 ## 6.3 WorklogStatus
 

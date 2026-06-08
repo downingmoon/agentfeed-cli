@@ -196,6 +196,7 @@ updated: 2026-06-08
 - [[Frontend Setup Guide Payload Guard 2026-06-08]] — malformed integration setup-guide payload가 Settings render crash로 이어지지 않도록 Frontend API boundary runtime guard 추가 완료.
 - [[Frontend Integration Compatibility Probe 2026-06-08]] — Settings가 소비하는 `/me/integrations`와 `/integrations/{type}/setup-guide`를 Frontend mock/hosted compatibility 및 Dev OpenAPI gate에 포함 완료.
 - [[Frontend Integration Setup Guide Surface 2026-06-08]] — Settings integrations card가 Backend setup-guide API를 실제로 소비하고 CLI command snippets를 표시하도록 연결 완료.
+- [[Frontend Token Response Guard 2026-06-08]] — Settings ingestion token list/create/rotate response를 runtime guard로 fail-closed 처리하고 Dev OpenAPI token lifecycle gate를 확장 완료.
 - [[Backend Integration Guide CLI Contract 2026-06-08]] — setup guide API에서 stale `configure`/`connect` CLI command 제거 및 contract test 추가 완료.
 - [[Backend Public Username Discovery Guard 2026-06-08]] — search/explore/leaderboard profile entry API에서 username 없는 user 노출 방지 완료.
 - [[GitHub Avatar Fallback Refresh 2026-06-08]] — 기존 GitHub 계정 avatar refresh 및 frontend github_url-only avatar fallback 완료.

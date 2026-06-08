@@ -113,6 +113,7 @@ updated: 2026-06-08
 - [x] [[Backend Ok Response Contract Guard 2026-06-08]] — Backend 공통 `OkResponse`를 `{data:{ok:true}}` strict schema로 잠가 frontend mutation success normalizer와 계약을 일치시키고 mutable default를 제거 완료.
 - [x] [[Backend Schema Mutable Default Guard 2026-06-08]] — Backend response schema의 literal mutable defaults를 `Field(default_factory=...)`로 교체하고 `app/schemas` 재발 방지 source contract를 추가 완료.
 - [x] [[Ingest Remote Preview Contract Guard 2026-06-08]] — `/ingest/worklogs/preview` 응답을 Backend typed payload와 CLI fail-closed parser 양쪽에서 고정 완료.
+- [x] [[Ingestion Status True Ok Guard 2026-06-08]] — `/ingest/status` 성공 payload의 `ok`를 Backend `Literal[True]`와 CLI `ok === true` parser로 일치시켜 false/string ok drift를 차단 완료.
 
 - [x] CLI subcommand `--help`가 수집/상태파일 작성 side effect 없이 종료되도록 수정.
 - [x] CLI 주요 명령 회귀: `release:preflight`로 `login`, `collect`, `share`, `publish`, `open`, `doctor`, `status` 관련 테스트 통과.

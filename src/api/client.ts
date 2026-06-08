@@ -523,7 +523,7 @@ function optionalDateString(value: unknown): string | null | undefined {
 
 function parseIngestionTokenStatus(value: unknown): IngestionTokenStatus | null {
   if (!isRecord(value)) return null;
-  if (typeof value.ok !== 'boolean') return null;
+  if (value.ok !== true) return null;
   const userValue = value.user;
   const tokenValue = value.token;
   if (!isRecord(userValue) || !isRecord(tokenValue)) return null;
@@ -559,7 +559,7 @@ function parseIngestionTokenStatus(value: unknown): IngestionTokenStatus | null 
   }
 
   return {
-    ok: value.ok,
+    ok: true,
     user: {
       id: userId,
       username: username ?? undefined,

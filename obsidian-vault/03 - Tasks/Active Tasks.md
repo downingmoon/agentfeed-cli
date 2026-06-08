@@ -115,6 +115,7 @@ updated: 2026-06-08
 - [x] [[Ingest Remote Preview Contract Guard 2026-06-08]] — `/ingest/worklogs/preview` 응답을 Backend typed payload와 CLI fail-closed parser 양쪽에서 고정 완료.
 - [x] [[Ingestion Status True Ok Guard 2026-06-08]] — `/ingest/status` 성공 payload의 `ok`를 Backend `Literal[True]`와 CLI `ok === true` parser로 일치시켜 false/string ok drift를 차단 완료.
 - [x] [[Cli Auth Approve True Ok Guard 2026-06-08]] — CLI browser approval 성공 payload를 Backend `Literal[True]`/`Literal["approved"]` schema와 Frontend strict parser로 일치시켜 false/pending approval drift를 차단 완료.
+- [x] [[Cli Auth Session Status Enum Guard 2026-06-08]] — CLI auth session metadata status를 Backend `Literal` enum과 Frontend strict parser/type으로 일치시켜 unknown status drift를 차단 완료.
 
 - [x] CLI subcommand `--help`가 수집/상태파일 작성 side effect 없이 종료되도록 수정.
 - [x] CLI 주요 명령 회귀: `release:preflight`로 `login`, `collect`, `share`, `publish`, `open`, `doctor`, `status` 관련 테스트 통과.

@@ -77,6 +77,9 @@ updated: 2026-06-08
 
 ## 완료됨 — 로컬/CI/contract/UI 품질
 
+- [x] Frontend user/account response guard가 malformed auth.me/profile/username-check 성공 payload를 fail-closed 처리하도록 보강.
+- [x] [[User Account Response Guard 2026-06-08]] — auth.me/users.get/users.checkUsername response guard 보강.
+
 - [x] CLI subcommand `--help`가 수집/상태파일 작성 side effect 없이 종료되도록 수정.
 - [x] CLI 주요 명령 회귀: `release:preflight`로 `login`, `collect`, `share`, `publish`, `open`, `doctor`, `status` 관련 테스트 통과.
 - [x] CLI release preflight가 npm tarball 설치 후 첫 사용자 플로우(`init` → `status` → `share --dry` → `drafts`)를 installed binary로 검증하도록 보강.

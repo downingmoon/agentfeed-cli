@@ -45,7 +45,7 @@ DB column name을 기준으로 Backend schema와 Frontend adapter를 맞춘다.
 ## Setup guide command contract
 
 Backend `/v1/integrations/{integration_type}/setup-guide`의 `code` snippet은 실제 shipped CLI command만 사용한다.
-Frontend Settings는 `/me/integrations` status와 `/integrations/{type}/setup-guide` guide를 함께 소비한다.
+Frontend Settings는 `/me/integrations` status와 `/integrations/{type}/setup-guide` guide를 함께 소비한다. Frontend compatibility runner와 dev OpenAPI gate도 이 두 endpoint와 guide response shape를 검증한다.
 
 현재 source별 안내 기준:
 
@@ -54,7 +54,7 @@ Frontend Settings는 `/me/integrations` status와 `/integrations/{type}/setup-gu
 - Cursor: `agentfeed collect --source cursor --explain`
 - Gemini CLI: `agentfeed collect --source gemini-cli --explain`
 
-`agentfeed configure ...` 또는 `agentfeed connect ...`처럼 존재하지 않는 onboarding command는 API guide에 다시 넣지 않는다. Backend stale command guard는 [[Backend Integration Guide CLI Contract 2026-06-08]], Frontend 소비 surface는 [[Frontend Integration Setup Guide Surface 2026-06-08]] 참조.
+`agentfeed configure ...` 또는 `agentfeed connect ...`처럼 존재하지 않는 onboarding command는 API guide에 다시 넣지 않는다. Backend stale command guard는 [[Backend Integration Guide CLI Contract 2026-06-08]], Frontend 소비 surface는 [[Frontend Integration Setup Guide Surface 2026-06-08]], compatibility probe 확장은 [[Frontend Integration Compatibility Probe 2026-06-08]] 참조.
 
 ## 현재 CI/readiness 구조
 

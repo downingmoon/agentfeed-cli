@@ -118,6 +118,7 @@ updated: 2026-06-08
 - [x] [[Cli Auth Session Status Enum Guard 2026-06-08]] — CLI auth session metadata status를 Backend `Literal` enum과 Frontend strict parser/type으로 일치시켜 unknown status drift를 차단 완료.
 - [x] [[Integration Status Enum Guard 2026-06-08]] — `/me/integrations` status를 Backend `Literal` enum과 Frontend strict parser/exported type으로 일치시켜 unknown integration status drift를 차단 완료.
 - [x] [[Worklog Timeline Status Enum Guard 2026-06-08]] — worklog timeline status를 Backend `Literal` enum, Frontend strict parser, CLI draft validation과 일치시켜 unknown timeline status drift를 차단 완료.
+- [x] [[Frontend Worklog Status Type Guard 2026-06-08]] — Frontend exported worklog status type을 Backend `WorklogStatus`/strict parser와 일치시켜 Dashboard/card/create consumer의 `string` fallback drift를 차단 완료.
 
 - [x] CLI subcommand `--help`가 수집/상태파일 작성 side effect 없이 종료되도록 수정.
 - [x] CLI 주요 명령 회귀: `release:preflight`로 `login`, `collect`, `share`, `publish`, `open`, `doctor`, `status` 관련 테스트 통과.

@@ -43,11 +43,19 @@ Backend `PublicUser.avatar_url` was already available, and `adaptUser()` correct
     - explore popular prompt authors and rising builders
     - notification actors
     - project owners
+- 2026-06-08 final visual pass:
+  - Shared `Avatar` now renders initials only when no `avatarUrl` is available or the remote image has failed.
+  - This prevents GitHub profile images from being visually polluted by fallback initials on feed cards, profile cards, leaderboard rows, notification actors, and project owner rows.
+  - Added source contracts requiring:
+    - worklog feed cards A/B/C to render the hydrated author `Avatar`
+    - notification actor rows to render actor `Avatar`
+    - valid avatar images not to render initials on top of the image
 
 ## Regression coverage
 
 - Added `src/lib/worklog-author-avatar.contract.test.ts`.
 - Extended `src/lib/page-source-contract.test.ts` to require `Avatar` usage in profile project cards and the settings identity panel.
+- Extended `src/lib/page-source-contract.test.ts` to guard shared `Avatar` image/fallback exclusivity plus worklog card and notification actor avatar usage.
 - Extended API/source contracts for:
   - worklog author avatar preservation
   - project owner avatar preservation
@@ -63,6 +71,8 @@ Backend `PublicUser.avatar_url` was already available, and `adaptUser()` correct
 - Frontend:
   - `npm test` ✅
   - `npm run lint` ✅
+  - `npm run test:contracts` ✅
+  - `NEXT_PUBLIC_API_URL=http://161.33.171.81:18080 AGENTFEED_ALLOW_INSECURE_SERVER_TEST_API_BUILD=1 npm run build` ✅
 - Backend:
   - `uv run pytest -q` ✅ — 398 passed, 1 warning
   - `uv run ruff check .` ✅

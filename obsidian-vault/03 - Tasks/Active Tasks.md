@@ -129,6 +129,7 @@ updated: 2026-06-08
 - [x] Backend/Frontend를 서버에서 구동.
 - [x] 로컬 CLI에서 `AGENTFEED_ALLOW_INSECURE_API=1 AGENTFEED_API_BASE_URL=http://161.33.171.81:18080/v1 agentfeed status` smoke.
 - [x] 브라우저에서 `http://161.33.171.81:13030/feed` smoke. Signed-out `/v1/auth/me` 401 resource entry는 public page에서 예상되는 상태.
+- [x] [[Personal Server Deploy Smoke 2026-06-08]] — CLI success envelope guard 반영 후 개인서버 stack 재기동 및 hosted compatibility smoke 통과.
 - [x] CLI login compatibility가 IP-only server-test review/authorize origin을 명시 flag 아래에서 통과하도록 수정.
 - [x] CLI → API → Frontend review → public feed E2E를 임시 user/session으로 검증.
 - [x] 서버 검증 데이터 reset 완료: users/tokens/worklogs/projects/cli_sessions `0`.

@@ -42,7 +42,7 @@ agentfeed share --yes --open-review
 - 주요 검증: `npm run build`, `npm test -- --run`, `npm run typecheck`, `npm run release:preflight`, `npm audit --audit-level=high`
 
 > [!note]
-> `package.json.homepage`는 아직 `https://agentfeed.dev`로 남아 있다. 실제 도메인 또는 public docs URL이 정해지기 전 public npm metadata를 최종 확정하지 않는다.
+> `package.json.homepage`는 production domain 준비 전까지 `https://github.com/downingmoon/agentfeed-cli#readme`를 가리킨다. `agentfeed.dev`는 실제 도메인 준비와 owner 승인 후에만 release metadata로 복귀한다.
 
 ## Backend
 

@@ -148,6 +148,7 @@ updated: 2026-06-08
 - [x] [[Personal Server Deploy Smoke 2026-06-08]] — CLI success envelope guard 반영 후 개인서버 stack 재기동 및 hosted compatibility smoke 통과.
 - [x] [[Personal Server Deploy Shared Adapter 2026-06-08]] — Shared adapter fail-closed frontend 변경을 개인 서버 IP-only stack에 재배포하고 API/frontend/CLI doctor smoke 통과.
 - [x] [[Personal Server Deploy Worklog Source Viewer 2026-06-08]] — Worklog source/viewer_state frontend guard를 개인 서버 IP-only stack에 배포하고 API/frontend/CLI doctor smoke 통과.
+- [x] [[Hosted Smoke Insecure Server Test Flag 2026-06-08]] — IP-only 개인서버 smoke에서 Frontend diagnostic child process에 insecure server-test flag가 전달되지 않아 compatibility probe가 실패하던 문제를 수정하고 hosted smoke 통과 확인.
 - [x] CLI login compatibility가 IP-only server-test review/authorize origin을 명시 flag 아래에서 통과하도록 수정.
 - [x] CLI → API → Frontend review → public feed E2E를 임시 user/session으로 검증.
 - [x] 서버 검증 데이터 reset 완료: users/tokens/worklogs/projects/cli_sessions `0`.

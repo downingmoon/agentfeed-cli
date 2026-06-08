@@ -43,6 +43,10 @@ git diff --check
 - TypeScript typecheck: pass
 - whitespace diff check: pass
 
+## 연계 작업
+
+- [[Backend Ingest Strict Contract 2026-06-08]] — Backend ingest boundary도 `sample_redacted` 같은 계약 밖 필드를 fail-closed로 거부하도록 보강했다.
+
 ## 후행 과제
 
 > [!note]

@@ -65,3 +65,35 @@ npm run test -- --run tests/api-hook.test.ts tests/privacy.test.ts tests/git-dra
 - [[Backend Ingest Strict Contract 2026-06-08]]
 - [[Frontend Request Strict Contract 2026-06-08]]
 - [[Active Tasks]]
+
+## 개인서버 배포 Evidence
+
+> [!success] 2026-06-08 개인서버 배포 완료
+> 이번 contract hardening 변경 후 `agentfeed-dev` 배포 스크립트로 개인서버 `161.33.171.81`에 동기화/재시작했고, Backend/Frontend/Postgres health와 hosted compatibility smoke를 확인했다.
+
+```text
+make server-up
+=> agentfeed-server-backend-1 healthy, 0.0.0.0:18080->8000
+=> agentfeed-server-frontend-1 healthy, 0.0.0.0:13030->3000
+=> agentfeed-server-postgres-1 healthy, 127.0.0.1:15432->5432
+
+curl http://161.33.171.81:18080/health/ready
+=> {"status":"ready","database":{"connected":true,"revision":"027_browser_session_version"},"migration":{"up_to_date":true}}
+
+curl http://161.33.171.81:18080/v1/metadata
+=> service=agentfeed-api, api_version=v1, contract_version=2026-06-03, review_base_url=http://161.33.171.81:13030
+
+curl -I http://161.33.171.81:13030/feed
+=> HTTP/1.1 200 OK
+
+server container schema smoke
+=> nested-extra-rejected
+
+AGENTFEED_HOSTED_FRONTEND_URL=http://161.33.171.81:13030 \
+AGENTFEED_HOSTED_API_BASE_URL=http://161.33.171.81:18080/v1 \
+AGENTFEED_ALLOW_INSECURE_API=1 \
+AGENTFEED_ALLOW_INSECURE_SERVER_TEST_API=1 \
+NEXT_PUBLIC_AGENTFEED_ALLOW_INSECURE_SERVER_TEST_API=1 \
+make smoke-hosted-compatibility
+=> HOSTED_COMPATIBILITY_SMOKE_PASSED
+```

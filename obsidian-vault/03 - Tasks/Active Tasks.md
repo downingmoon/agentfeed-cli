@@ -150,6 +150,7 @@ updated: 2026-06-08
 - [x] [[Search Leaderboard Query Contract Guard 2026-06-08]] — Search/Leaderboard discovery query type과 leaderboard response type을 Backend Literal/Frontend source guard로 일치시키고 unknown query silent fallback을 제거 완료.
 - [x] [[Notification Type Contract Guard 2026-06-08]] — Notification list `type`/`target.type`을 Backend enum/Literal과 Frontend closed union/parser로 일치시켜 unknown notification drift를 fail-closed 처리 완료.
 - [x] [[Health Readiness Status Contract Guard 2026-06-08]] — Backend `/health`와 `/health/ready` status를 `ok` 및 `ready|not_ready` Literal schema로 고정해 readiness contract drift를 차단 완료.
+- [x] [[Username Check Reason Contract Guard 2026-06-08]] — `/users/check-username` reason을 Backend `Literal["already_taken"]`과 Frontend closed union/parser로 일치시켜 unknown username-check reason drift를 차단 완료.
 
 ## P0 — 다음 실제 작업: 개인 서버 IP-only smoke
 

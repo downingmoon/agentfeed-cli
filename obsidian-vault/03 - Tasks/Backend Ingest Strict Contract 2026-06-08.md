@@ -60,5 +60,5 @@ bash -n scripts/test-all.sh scripts/check-openapi-contract.mjs
 > [!note]
 > 이번 작업은 ingest request boundary만 strict 처리했다. 오래된 public worklog metrics/response JSON이 있을 수 있으므로 shared response schema 전체에 `extra=forbid`를 일괄 적용하지 않았다.
 
-- [ ] 필요 시 별도 audit에서 Frontend form request schemas도 endpoint별 extra-field fail-closed 정책을 검토한다.
+- [x] Frontend/CLI mutating request schemas도 endpoint별 extra-field fail-closed 정책을 적용했다: [[Frontend Request Strict Contract 2026-06-08]].
 - [ ] 오래된 저장 데이터 migration/normalization 정책이 생기면 shared response schema strict 적용 가능성을 다시 검토한다.

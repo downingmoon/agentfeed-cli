@@ -111,6 +111,7 @@ updated: 2026-06-08
 - [x] [[Frontend Worklog Review Action Routing Guard 2026-06-08]] — Worklog Review resolve/publish/unpublish mutation이 typed API client action response guard를 우회하지 않도록 source contract 보강 완료.
 - [x] [[Frontend UI API Boundary Guard 2026-06-08]] — Frontend production UI surface가 raw `fetch`/private `apiFetch`로 typed API boundary를 우회하지 못하도록 recursive source contract 보강 완료.
 - [x] [[Backend Ok Response Contract Guard 2026-06-08]] — Backend 공통 `OkResponse`를 `{data:{ok:true}}` strict schema로 잠가 frontend mutation success normalizer와 계약을 일치시키고 mutable default를 제거 완료.
+- [x] [[Backend Schema Mutable Default Guard 2026-06-08]] — Backend response schema의 literal mutable defaults를 `Field(default_factory=...)`로 교체하고 `app/schemas` 재발 방지 source contract를 추가 완료.
 
 - [x] CLI subcommand `--help`가 수집/상태파일 작성 side effect 없이 종료되도록 수정.
 - [x] CLI 주요 명령 회귀: `release:preflight`로 `login`, `collect`, `share`, `publish`, `open`, `doctor`, `status` 관련 테스트 통과.

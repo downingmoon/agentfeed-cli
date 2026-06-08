@@ -155,6 +155,7 @@ updated: 2026-06-08
 - [x] [[Privacy Finding Enum Contract Guard 2026-06-08]] — Backend privacy finding `type`/`severity` Literal과 Frontend API parser/type을 일치시켜 unknown privacy finding drift를 review/detail boundary에서 fail-closed 처리 완료.
 - [x] [[Leaderboard Period Type Contract Guard 2026-06-08]] — Frontend `ApiLeaderboardResponse.period`를 Backend `LeaderboardPeriod`와 동일한 closed union으로 좁혀 parser output이 downstream에서 `string`으로 재개방되지 않도록 완료.
 - [x] [[CLI Privacy Severity Contract Guard 2026-06-08]] — CLI local draft/ingest `PrivacySeverity`를 Backend/Frontend `info|low|medium|high|critical|unknown` contract와 일치시키고 unresolved `critical` finding도 publish blocker로 처리 완료.
+- [x] [[CLI Ingest Upload Status Contract Guard 2026-06-08]] — CLI remote ingest success response를 Backend `IngestResponse(status=needs_review, visibility=private)` contract로 좁히고 `already_uploaded`는 로컬 캐시/duplicate reconciliation 전용 상태로 분리 완료.
 
 ## P0 — 다음 실제 작업: 개인 서버 IP-only smoke
 

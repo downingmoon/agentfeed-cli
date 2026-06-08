@@ -449,7 +449,7 @@ export interface RemotePreviewResult {
   warnings: string[];
 }
 
-export type PublishDraftStatus = 'draft' | 'needs_review' | 'private' | 'already_uploaded';
+export type PublishDraftStatus = 'needs_review' | 'already_uploaded';
 export type PublishDraftVisibility = 'private';
 
 export interface PublishDraftResult {
@@ -766,20 +766,15 @@ function parseCliAuthSession(value: unknown, apiBaseUrl: string): CliAuthSession
   };
 }
 
-const VALID_PRIVATE_REVIEW_UPLOAD_STATUSES: ReadonlySet<PublishDraftStatus> = new Set([
-  'draft',
-  'needs_review',
-  'private',
-  'already_uploaded'
-]);
-
+const REMOTE_PRIVATE_REVIEW_UPLOAD_STATUS = 'needs_review' satisfies PublishDraftStatus;
+const CACHED_PRIVATE_REVIEW_UPLOAD_STATUS = 'already_uploaded' satisfies PublishDraftStatus;
 const VALID_PRIVATE_REVIEW_VISIBILITY: PublishDraftVisibility = 'private';
 
-function isPublishDraftStatus(value: string): value is PublishDraftStatus {
-  return VALID_PRIVATE_REVIEW_UPLOAD_STATUSES.has(value as PublishDraftStatus);
+function isPublishDraftStatus(value: string, options: { allowCachedStatus?: boolean } = {}): value is PublishDraftStatus {
+  return value === REMOTE_PRIVATE_REVIEW_UPLOAD_STATUS || (options.allowCachedStatus === true && value === CACHED_PRIVATE_REVIEW_UPLOAD_STATUS);
 }
 
-function parsePublishDraftResult(value: unknown, apiBaseUrl: string, reviewBaseUrl?: string | null): PublishDraftResult {
+function parsePublishDraftResult(value: unknown, apiBaseUrl: string, reviewBaseUrl?: string | null, options: { allowCachedStatus?: boolean } = {}): PublishDraftResult {
   if (!isRecord(value)) throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid upload response.');
   const id = stringField(value.id);
   const status = stringField(value.status);
@@ -789,7 +784,7 @@ function parsePublishDraftResult(value: unknown, apiBaseUrl: string, reviewBaseU
   if (
     !id
     || !status
-    || !isPublishDraftStatus(status)
+    || !isPublishDraftStatus(status, options)
     || visibility !== VALID_PRIVATE_REVIEW_VISIBILITY
     || !reviewUrl
     || !createdAt
@@ -977,12 +972,12 @@ export function cachedUploadReusableForCredentials(draft: LocalDraft, credential
 function parseCachedUploadResult(draft: LocalDraft, apiBaseUrl: string): PublishDraftResult {
   return parsePublishDraftResult({
     id: draft.upload.worklog_id,
-    status: 'already_uploaded',
+    status: CACHED_PRIVATE_REVIEW_UPLOAD_STATUS,
     visibility: 'private',
     review_url: draft.upload.review_url,
     created_at: draft.upload.uploaded_at ?? draft.source.created_at,
     reused_existing: true
-  }, apiBaseUrl, draft.upload.review_base_url);
+  }, apiBaseUrl, draft.upload.review_base_url, { allowCachedStatus: true });
 }
 
 function staleCachedUploadError(draft: LocalDraft): AgentFeedApiError {
@@ -1042,14 +1037,14 @@ function duplicateIngestResult(error: AgentFeedApiError, fallbackCreatedAt: stri
   if (!worklogId) return null;
   const result = {
     id: worklogId,
-    status: 'already_uploaded',
+    status: CACHED_PRIVATE_REVIEW_UPLOAD_STATUS,
     visibility: 'private',
     review_url: reviewUrl,
     created_at: detailString(error.details, 'created_at') ?? fallbackCreatedAt,
     reused_existing: true
   };
   try {
-    return parsePublishDraftResult(result, apiBaseUrl, reviewBaseUrl);
+    return parsePublishDraftResult(result, apiBaseUrl, reviewBaseUrl, { allowCachedStatus: true });
   } catch {
     return null;
   }

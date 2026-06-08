@@ -75,6 +75,9 @@ it('keeps CLI visibility contract aligned with backend-supported values', async 
   expect(typesSource).toContain("export type Visibility = 'private' | 'unlisted' | 'public';");
   expect(typesSource).not.toContain("'team'");
   expect(clientSource).toContain("export type PublishDraftVisibility = 'private';");
+  expect(clientSource).toContain("const REMOTE_PRIVATE_REVIEW_UPLOAD_STATUS = 'needs_review' satisfies PublishDraftStatus;");
+  expect(clientSource).toContain("const CACHED_PRIVATE_REVIEW_UPLOAD_STATUS = 'already_uploaded' satisfies PublishDraftStatus;");
+  expect(clientSource).not.toContain("const VALID_PRIVATE_REVIEW_UPLOAD_STATUSES");
   expect(clientSource).not.toContain("Visibility, WorklogStatus");
 });
 
@@ -456,6 +459,29 @@ describe('api client', () => {
     const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
     expect(saved.worklog.summary).toBe('Already uploaded but still contains [REDACTED_SECRET]');
     expect(saved.privacy_scan.status).toBe('danger');
+  });
+
+  it('rejects remote ingest upload statuses outside the backend needs_review contract', async () => {
+    for (const status of ['draft', 'private', 'already_uploaded'] as const) {
+      const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+      draft.id = `draft_remote_status_${status}`;
+      await writeDraft(dir, draft);
+      vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+        data: {
+          id: `worklog_remote_status_${status}`,
+          status,
+          visibility: 'private',
+          review_url: `https://agentfeed.dev/worklogs/worklog_remote_status_${status}/review`,
+          created_at: '2026-05-20T00:00:00Z'
+        }
+      }), { status: 200, headers: { 'content-type': 'application/json' } })));
+
+      await expect(publishDraft({ cwd: dir, id: draft.id, credentials: defaultPublishCredentials }))
+        .rejects.toMatchObject({ status: 502, code: 'API_RESPONSE_INVALID' });
+
+      const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+      expect(saved.upload.uploaded).toBe(false);
+    }
   });
 
   it('does not reuse an uploaded draft cache from a different credential binding', async () => {

@@ -233,6 +233,7 @@ updated: 2026-06-08
 - [x] [[Frontend Profile Link Identity Guard 2026-06-08]] — Header, Feed, Search, Explore, Leaderboard, and Worklog Detail now avoid backend-id profile links for username-missing users.
 
 ## Completed
+- [x] [[Integration Type Contract Guard 2026-06-08]] — Backend/Frontend integration type을 `github|claude_code|codex|cursor|gemini_cli|tokscale` contract로 축소하고 setup-guide type mismatch를 fail-closed 처리 완료.
 - [x] [[Worklog Filter Action Type Guard 2026-06-08]] — Backend `/me/worklogs` filter와 Frontend worklog/CLI-auth helper가 status·visibility를 broad string으로 재개방하지 않도록 축소 완료.
 - [x] [[Visibility Type Surface Guard 2026-06-08]] — Backend explore schema와 Frontend API/UI 타입 표면의 visibility를 `private|unlisted|public` contract로 축소 완료.
 - [x] [[CLI Visibility Contract Guard 2026-06-08]] — CLI에 남아 있던 서버 미지원 `team` visibility를 제거하고 upload success result 타입을 private-review contract로 축소 완료.

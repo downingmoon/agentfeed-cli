@@ -925,6 +925,34 @@ describe('api client', () => {
     expect(apiMetadataCompatible({ ...result.data, review_base_url: 'https://review.internal.example/path' })).toBe(false);
   });
 
+  it.each([
+    {
+      label: 'non-json metadata response',
+      response: new Response('<html>not metadata</html>', { status: 200, headers: { 'content-type': 'text/html' } }),
+      error: 'AgentFeed API metadata response is not JSON.'
+    },
+    {
+      label: 'invalid-json metadata response',
+      response: new Response('{not-valid-json', { status: 200, headers: { 'content-type': 'application/json' } }),
+      error: 'AgentFeed API metadata response contains invalid JSON.'
+    },
+    {
+      label: 'missing data envelope',
+      response: new Response(JSON.stringify({ service: 'agentfeed-api' }), { status: 200, headers: { 'content-type': 'application/json' } }),
+      error: 'AgentFeed API metadata response is missing the data envelope.'
+    }
+  ])('reports malformed API compatibility metadata clearly: $label', async ({ response, error }) => {
+    vi.stubGlobal('fetch', vi.fn(async () => response));
+
+    await expect(checkApiCompatibility('http://localhost:8001/v1')).resolves.toMatchObject({
+      ok: true,
+      compatible: false,
+      status: 200,
+      url: 'http://localhost:8001/v1/metadata',
+      error
+    });
+  });
+
   it('accepts public IPv4 HTTP review origins only under the explicit insecure API override', () => {
     const metadata = {
       service: 'agentfeed-api',

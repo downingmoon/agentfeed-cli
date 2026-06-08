@@ -128,14 +128,22 @@ async function parseCheckData(response: Response): Promise<IngestionTokenStatus 
   }
 }
 
-async function parseMetadataData(response: Response): Promise<ApiMetadata | undefined> {
+interface ParsedApiMetadataResponse {
+  data?: ApiMetadata;
+  error?: string;
+}
+
+async function parseMetadataResponse(response: Response): Promise<ParsedApiMetadataResponse> {
   const contentType = response.headers.get('content-type') ?? '';
-  if (!contentType.includes('application/json')) return undefined;
+  if (!contentType.includes('application/json')) {
+    return { error: 'AgentFeed API metadata response is not JSON.' };
+  }
   try {
     const parsed = await response.json() as { data?: ApiMetadata };
-    return parsed.data;
+    if (!Object.hasOwn(parsed, 'data')) return { error: 'AgentFeed API metadata response is missing the data envelope.' };
+    return { data: parsed.data };
   } catch {
-    return undefined;
+    return { error: 'AgentFeed API metadata response contains invalid JSON.' };
   }
 }
 
@@ -249,15 +257,15 @@ export async function checkApiCompatibility(apiBaseUrl: string): Promise<ApiComp
   const timer = setTimeout(() => controller.abort(), API_CHECK_TIMEOUT_MS);
   try {
     const response = await fetch(url, { method: 'GET', signal: controller.signal });
-    const data = await parseMetadataData(response);
-    const compatible = response.ok && apiMetadataCompatible(data);
+    const parsed = await parseMetadataResponse(response);
+    const compatible = response.ok && apiMetadataCompatible(parsed.data);
     return {
       ok: response.ok,
       compatible,
       url,
       status: response.status,
-      data,
-      error: compatible ? undefined : 'AgentFeed API compatibility metadata is missing or unsupported.'
+      data: parsed.data,
+      error: compatible ? undefined : parsed.error ?? 'AgentFeed API compatibility metadata is missing or unsupported.'
     };
   } catch (error) {
     return {

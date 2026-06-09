@@ -69,6 +69,22 @@ function optionalNumberOrNull(value: unknown, field: string, path: string): numb
   return value;
 }
 
+function optionalNonNegativeNumberOrNull(value: unknown, field: string, path: string): number | null | undefined {
+  const number = optionalNumberOrNull(value, field, path);
+  if (number !== undefined && number !== null && number < 0) {
+    throw draftError(path, `${field} must be a non-negative number or null`);
+  }
+  return number;
+}
+
+function requireNonNegativeInteger(value: unknown, field: string, path: string): number {
+  const number = requireNumber(value, field, path);
+  if (!Number.isInteger(number) || number < 0) {
+    throw draftError(path, `${field} must be a non-negative integer`);
+  }
+  return number;
+}
+
 function requireStringArray(value: unknown, field: string, path: string): string[] {
   if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
     throw draftError(path, `${field} must be an array of strings`);
@@ -111,7 +127,7 @@ function validateAgentMetricSummary(value: unknown, index: number, path: string)
   const sessionId = optionalStringOrNull(metric.session_id, `${field}.session_id`, path);
   if (sessionId !== undefined) output.session_id = sessionId;
   for (const key of ['tokens_used', 'estimated_cost_usd', 'duration_seconds', 'files_changed', 'lines_added', 'lines_removed', 'tests_run', 'tests_passed', 'failed_commands', 'commands_run', 'tool_calls', 'skills_used', 'subagents_spawned', 'subagents_completed', 'agent_turns'] as const) {
-    const normalized = optionalNumberOrNull(metric[key], `${field}.${key}`, path);
+    const normalized = optionalNonNegativeNumberOrNull(metric[key], `${field}.${key}`, path);
     if (normalized !== undefined) output[key] = normalized;
   }
   const agentModes = optionalStringArrayOrNull(metric.agent_modes, `${field}.agent_modes`, path);
@@ -123,7 +139,7 @@ function validateMetrics(value: unknown, path: string): WorklogMetrics {
   const metrics = requireRecord(value, 'worklog.metrics', path);
   const output: WorklogMetrics = {};
   for (const field of ['tokens_used', 'estimated_cost_usd', 'duration_seconds', 'files_changed', 'lines_added', 'lines_removed', 'tests_run', 'tests_passed', 'commits_created', 'failed_commands', 'commands_run', 'tool_calls', 'skills_used', 'subagents_spawned', 'subagents_completed', 'agent_turns'] as const) {
-    const normalized = optionalNumberOrNull(metrics[field], `worklog.metrics.${field}`, path);
+    const normalized = optionalNonNegativeNumberOrNull(metrics[field], `worklog.metrics.${field}`, path);
     if (normalized !== undefined) output[field] = normalized;
   }
   const modelsUsed = optionalStringArrayOrNull(metrics.models_used, 'worklog.metrics.models_used', path);
@@ -163,7 +179,7 @@ function validateTimeline(value: unknown, path: string): WorklogTimelineItem[] {
     const row = requireRecord(item, `worklog.timeline[${index}]`, path);
     const status = row.status === undefined ? undefined : requireEnum<NonNullable<WorklogTimelineItem['status']>>(row.status, `worklog.timeline[${index}].status`, TIMELINE_STATUSES, path);
     return {
-      order: requireNumber(row.order, `worklog.timeline[${index}].order`, path),
+      order: requireNonNegativeInteger(row.order, `worklog.timeline[${index}].order`, path),
       title: requireString(row.title, `worklog.timeline[${index}].title`, path),
       ...(row.description === undefined ? {} : { description: requireString(row.description, `worklog.timeline[${index}].description`, path) }),
       ...(status === undefined ? {} : { status }),

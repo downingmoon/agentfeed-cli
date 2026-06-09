@@ -13,6 +13,7 @@ import { scanAndRedactFields } from '../privacy/scan.js';
 import { randomSuffix, shortHash } from '../utils/hash.js';
 import { AGENTFEED_TOOL_VERSION } from '../version.js';
 import { writeDraft } from './write.js';
+import { pathExists } from '../utils/fs.js';
 import { listDrafts, readDraft } from './read.js';
 
 function draftId(date = new Date()): string {
@@ -432,6 +433,7 @@ function explicitSessionProbeSources(enabledSources: AgentType[], sessionFile: s
 export interface CollectDraftStatus {
   draft: LocalDraft;
   reusedExisting: boolean;
+  warnings: string[];
 }
 
 export interface CollectDraftOptions {
@@ -458,6 +460,7 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
   const git = await collectGitMetrics(root);
   const window = collectionWindow(options);
   const inferIdleGap = options.inferIdleGap ?? (!options.force && !window?.since);
+  const warnings: string[] = [];
   let sessionFingerprintIdentity: string | null = null;
   let session = options.source
     ? await collectAgentSessionMetrics({ cwd: root, source, sessionFile, since: window?.since, until: window?.until, inferIdleGap })
@@ -491,6 +494,13 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
     }
   }
   const sessionFileRel = relativeProjectPath(root, sessionFile);
+  if (sessionFile && !session) {
+    const displayPath = sessionFileRel ?? sessionFile;
+    const exists = await pathExists(sessionFile);
+    warnings.push(exists
+      ? `Agent session file did not produce usable metrics: ${displayPath}. The file may be unreadable, outside the collection window, unrelated to this project, or unsupported for the selected source. Retry with --source <source> and --all, or run agentfeed doctor.`
+      : `Agent session file was not found: ${displayPath}. Check the path or rerun without --session-file to use auto-discovery.`);
+  }
   const gitChangedFiles = sessionFileRel ? git.changed_files.filter((file) => file.path !== sessionFileRel) : git.changed_files;
   const changedFiles = mergeChangedFiles(gitChangedFiles, session?.changed_files ?? []);
   const linesAdded = sumChangedFileLines(changedFiles, 'lines_added');
@@ -516,7 +526,7 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
   });
   if (fingerprint && !options.force && !configuredCommandIntent) {
     const existing = await findDraftByFingerprint(root, fingerprint);
-    if (existing) return { draft: existing, reusedExisting: true };
+    if (existing) return { draft: existing, reusedExisting: true, warnings };
   }
   const configuredCommandMetrics = configuredCommandIntent
     ? await collectConfiguredCommandMetrics(root, config)
@@ -586,7 +596,7 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
     upload: { uploaded: false }
   };
   await writeDraft(root, draft);
-  return { draft, reusedExisting: false };
+  return { draft, reusedExisting: false, warnings };
 }
 
 export async function collectDraft(options: CollectDraftOptions): Promise<LocalDraft> {

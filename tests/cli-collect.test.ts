@@ -184,6 +184,55 @@ describe('collect CLI command', () => {
     expect(stdout).toContain('agentfeed publish --id');
   });
 
+  it('surfaces explicit session-file misses in human collect output', async () => {
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = "missing-session-warning";\n');
+
+    const { stdout, stderr } = await execFileAsync(process.execPath, [
+      cliPath,
+      'collect',
+      '--source',
+      'codex',
+      '--session-file',
+      'missing-codex-session.jsonl',
+      '--all',
+      '--no-save-cursor'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    expect(stderr).toBe('');
+    expect(stdout).toContain('Warnings');
+    expect(stdout).toContain('Agent session file was not found: missing-codex-session.jsonl');
+    expect(stdout).toContain('without --session-file to use auto-discovery');
+  });
+
+  it('surfaces explicit session-file parse misses in JSON collect output', async () => {
+    await writeFile(join(dir, 'codex-session.jsonl'), 'not-json\n');
+
+    const { stdout, stderr } = await execFileAsync(process.execPath, [
+      cliPath,
+      'collect',
+      '--source',
+      'codex',
+      '--session-file',
+      'codex-session.jsonl',
+      '--json',
+      '--all',
+      '--no-save-cursor'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    expect(stderr).toBe('');
+    const output = JSON.parse(stdout) as { warnings?: string[] };
+    expect(output.warnings?.join('\n')).toContain('Agent session file did not produce usable metrics: codex-session.jsonl');
+    expect(output.warnings?.join('\n')).toContain('outside the collection window, unrelated to this project, or unsupported for the selected source');
+  });
+
   it('rejects contradictory collect dry-run upload flags before creating a draft', async () => {
     const { stderr } = await execFileAsync(process.execPath, [
       cliPath,

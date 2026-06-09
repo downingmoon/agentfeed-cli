@@ -1537,6 +1537,7 @@ async function cmdCollect(args: string[]) {
   if (uploadRequested && !uploadCredentials) throw new Error(missingTokenMessage());
   const collection = await collectDraftWithStatus({ cwd: process.cwd(), source, sessionFile: option(args, '--session-file') ?? null, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all'), runConfiguredCommands: flag(args, '--run-configured-commands') });
   let draft = await sanitizeDraftForCliOutput(process.cwd(), collection.draft);
+  const warnings = [...collectionWindow.warnings, ...collection.warnings];
   if (flag(args, '--json')) {
     if (uploadRequested && uploadCredentials) {
       const creds = uploadCredentials;
@@ -1548,14 +1549,14 @@ async function cmdCollect(args: string[]) {
       }
     }
     if (!flag(args, '--no-save-cursor')) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
-    print(JSON.stringify({ ...draft, warnings: collectionWindow.warnings, next_actions: collectJsonNextActions(draft) }, null, 2));
+    print(JSON.stringify({ ...draft, warnings, next_actions: collectJsonNextActions(draft) }, null, 2));
     return;
   }
   print(ui.heading(collection.reusedExisting ? 'AgentFeed draft reused' : 'AgentFeed draft ready'));
   print(collection.reusedExisting ? 'Existing matching draft reused.\n' : 'Draft created.\n');
-  if (collectionWindow.warnings.length) {
+  if (warnings.length) {
     print(ui.section('Warnings'));
-    printWarningLines(collectionWindow.warnings);
+    printWarningLines(warnings);
     print();
   }
   print(ui.section('Summary'));
@@ -1599,6 +1600,7 @@ async function cmdShare(args: string[]) {
 
   const collection = await collectDraftWithStatus({ cwd: process.cwd(), source: opts.source, sessionFile: opts.sessionFile, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all'), note: opts.note, runConfiguredCommands: opts.runConfiguredCommands, skipConfiguredCommands: opts.dryRun });
   let draft = await sanitizeDraftForCliOutput(process.cwd(), collection.draft);
+  const warnings = [...collectionWindow.warnings, ...collection.warnings];
 
   if (opts.json) {
     if (opts.dryRun || !creds) {
@@ -1609,7 +1611,7 @@ async function cmdShare(args: string[]) {
         reused_existing_draft: collection.reusedExisting,
         draft,
         privacy_policy: privacyPolicySummary(draft),
-        warnings: collectionWindow.warnings,
+        warnings,
         next_actions: shareDryRunNextActions(draft.id, hasCredentials),
         ...(opts.explain ? { collection_explain: formatCollectionExplain(draft) } : {})
       }, null, 2));
@@ -1633,7 +1635,7 @@ async function cmdShare(args: string[]) {
       upload: result,
       privacy_policy: privacyPolicySummary(draft),
       handoff,
-      warnings: collectionWindow.warnings,
+      warnings,
       next_actions: uploadNextActions(draft.id),
       ...(opts.explain ? { collection_explain: formatCollectionExplain(draft) } : {})
     }, null, 2));
@@ -1641,9 +1643,9 @@ async function cmdShare(args: string[]) {
   }
 
   if (collection.reusedExisting) print(`Reusing existing matching draft: ${draft.id}\n`);
-  if (collectionWindow.warnings.length) {
+  if (warnings.length) {
     print(ui.section('Warnings'));
-    printWarningLines(collectionWindow.warnings);
+    printWarningLines(warnings);
     print();
   }
   print(formatSharePreview(draft, { explainDetailsFollow: opts.explain }));

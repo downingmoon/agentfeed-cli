@@ -70,12 +70,34 @@ export function createEmptyDraft(input: { projectName: string; projectRoot: stri
 }
 
 
-async function findDraftByFingerprint(cwd: string, fingerprint: string): Promise<LocalDraft | null> {
+function compactDraftReadFailure(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return message
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join(' ')
+    .slice(0, 360);
+}
+
+async function findDraftByFingerprint(cwd: string, fingerprint: string): Promise<{ draft: LocalDraft | null; warnings: string[] }> {
+  const warnings: string[] = [];
   for (const row of await listDrafts(cwd)) {
-    const draft = await readDraft(cwd, row.id).catch(() => null);
-    if (draft?.source.collection_fingerprint === fingerprint) return draft;
+    let draft: LocalDraft;
+    try {
+      draft = await readDraft(cwd, row.id);
+    } catch (error) {
+      warnings.push([
+        `Existing AgentFeed draft could not be read and was skipped during duplicate detection: ${row.id}.`,
+        compactDraftReadFailure(error),
+        'Inspect saved drafts with: agentfeed drafts',
+        'Remove the malformed draft or create a fresh draft with: agentfeed collect --explain'
+      ].filter(Boolean).join(' '));
+      continue;
+    }
+    if (draft.source.collection_fingerprint === fingerprint) return { draft, warnings };
   }
-  return null;
+  return { draft: null, warnings };
 }
 
 function normalizedChangedFilesForFingerprint(files: ChangedFileSummary[]): Array<Pick<ChangedFileSummary, 'path' | 'status' | 'lines_added' | 'lines_removed'>> {
@@ -526,7 +548,8 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
   });
   if (fingerprint && !options.force && !configuredCommandIntent) {
     const existing = await findDraftByFingerprint(root, fingerprint);
-    if (existing) return { draft: existing, reusedExisting: true, warnings };
+    warnings.push(...existing.warnings);
+    if (existing.draft) return { draft: existing.draft, reusedExisting: true, warnings };
   }
   const configuredCommandMetrics = configuredCommandIntent
     ? await collectConfiguredCommandMetrics(root, config)

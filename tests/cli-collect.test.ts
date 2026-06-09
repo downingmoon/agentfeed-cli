@@ -304,6 +304,33 @@ describe('collect CLI command', () => {
     expect(draft.warnings).toEqual(expect.arrayContaining([expect.stringContaining('AgentFeed collection cursor is unreadable')]));
   });
 
+  it('warns when malformed saved drafts are skipped during duplicate detection', async () => {
+    await mkdir(join(dir, '.agentfeed', 'drafts'), { recursive: true });
+    await writeFile(join(dir, '.agentfeed', 'drafts', 'draft_malformed.json'), '{not-json');
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = "malformed-draft-warning";\n');
+
+    const stdout = execFileSync(process.execPath, [
+      cliPath,
+      'collect',
+      '--json',
+      '--until',
+      '2026-05-20T02:00:00Z',
+      '--no-save-cursor'
+    ], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home }
+    });
+
+    const draft = JSON.parse(stdout);
+    expect(draft.id).toMatch(/^draft_/);
+    expect(draft.warnings).toEqual(expect.arrayContaining([
+      expect.stringContaining('Existing AgentFeed draft could not be read and was skipped during duplicate detection: draft_malformed')
+    ]));
+    expect(draft.warnings.join('\n')).toContain('agentfeed drafts');
+    expect(draft.warnings.join('\n')).toContain('agentfeed collect --explain');
+  });
+
   it('fails malformed project config with actionable recovery guidance', async () => {
     await writeFile(join(dir, '.agentfeed', 'config.json'), '{not-json');
 

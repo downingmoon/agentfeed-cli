@@ -49,3 +49,31 @@ related:
 
 > [!info]
 > 이번 작업은 contract/schema hardening이다. 사용자가 이번 continuation에서 개인서버 배포를 명시했으므로 commit/push 이후 1회 배포한다.
+
+## Personal server deploy evidence
+
+> [!success]
+> User explicitly requested one personal-server deploy after this pass, so the no-deploy default was overridden for this continuation.
+
+- Deploy command:
+  - `make server-up`
+- Server containers after deploy:
+  - `agentfeed-server-postgres-1`: healthy
+  - `agentfeed-server-backend-1`: healthy, `0.0.0.0:18080->8000/tcp`
+  - `agentfeed-server-frontend-1`: healthy, `0.0.0.0:13030->3000/tcp`
+- Backend readiness:
+  - `curl -fsS http://161.33.171.81:18080/health/ready`
+  - Result: `status=ready`, DB connected, migration head `027_browser_session_version`, up-to-date.
+- Backend metadata:
+  - `curl -fsS http://161.33.171.81:18080/v1/metadata`
+  - Result: `api_version=v1`, `contract_version=2026-06-03`, `review_base_url=http://161.33.171.81:13030`.
+- Frontend route smoke:
+  - `curl -fsSI http://161.33.171.81:13030/feed`
+  - Result: `HTTP/1.1 200 OK`.
+- Hosted OpenAPI smoke:
+  - `GET http://161.33.171.81:18080/openapi.json`
+  - Result: `POST /v1/ingest/token/rotate` `403` response references `#/components/schemas/ErrorResponse`.
+  - `ErrorDetail.required`: `code`, `message`, `details`.
+- Hosted compatibility smoke:
+  - `AGENTFEED_ALLOW_INSECURE_API=1 AGENTFEED_HOSTED_FRONTEND_URL=http://161.33.171.81:13030 AGENTFEED_HOSTED_API_BASE_URL=http://161.33.171.81:18080/v1 make smoke-hosted-compatibility`
+  - Result: `HOSTED_COMPATIBILITY_SMOKE_PASSED`.

@@ -62,5 +62,5 @@ Evidence:
 ## Follow-ups
 
 - [[Backend Module Split Follow-up]]: `app/main.py` and `tests/test_contracts.py` are still oversized existing files; split middleware/OpenAPI helpers and contract fixtures when refactor scope is explicitly opened.
-- [[TrustedHost Error Envelope Review]]: Starlette `TrustedHostMiddleware` may still emit framework-level 400 responses outside the app-level `ErrorResponse` funnel; decide whether to wrap or document it before public domain hardening.
+- [[Trusted Host ErrorResponse Envelope 2026-06-09]]: completed follow-up; Host-header rejection now uses the strict `ErrorResponse` envelope and common `400` OpenAPI coverage.
 - [[Auth Permission Error Documentation]]: add more precise per-route `401`/`403` descriptions later if API docs need user-facing clarity beyond the shared strict schema.

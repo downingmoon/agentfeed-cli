@@ -49,3 +49,30 @@ node scripts/check-openapi-contract.mjs
 
 - 실제 브라우저에서 알림 읽음 API를 실패시키는 E2E fault-injection은 이번 국소 변경 범위에서는 수행하지 않았다.
 - 추후 Playwright/API mocking 기반으로 notification mutation failure UX 회귀 테스트를 추가할 수 있다.
+
+## 개인서버 배포 결과
+
+> [!success] 배포 완료
+> 2026-06-09에 개인서버 `161.33.171.81` 대상으로 `agentfeed-dev` 배포 스크립트를 실행했고, frontend 컨테이너를 강제 재생성해 최신 main 빌드가 반영되도록 했다.
+
+```bash
+cd /Users/downing/PersonalProjects/agentfeed-dev
+make server-up
+ssh trading-bot "cd ~/agentfeed/agentfeed-dev && docker compose --env-file .env up -d --force-recreate frontend && docker compose --env-file .env ps"
+AGENTFEED_ALLOW_INSECURE_API=1 \
+  AGENTFEED_HOSTED_FRONTEND_URL=http://161.33.171.81:13030 \
+  AGENTFEED_HOSTED_API_BASE_URL=http://161.33.171.81:18080/v1 \
+  ./scripts/smoke-hosted-compatibility.sh
+```
+
+검증 결과:
+
+- Backend metadata: `v1 / 2026-06-03` 통과
+- Backend readiness: 통과
+- Frontend deployment check: 통과
+- CLI doctor hosted API compatibility: 통과
+- Frontend API compatibility helper: 통과
+- Hosted compatibility smoke: `HOSTED_COMPATIBILITY_SMOKE_PASSED`
+
+> [!warning] HTTP 테스트 환경
+> 현재 개인서버는 도메인/HTTPS 없이 IP + HTTP 기반 테스트 환경이다. CLI/Frontend 검증에는 `AGENTFEED_ALLOW_INSECURE_API=1` 또는 서버 테스트용 insecure override가 필요하다.

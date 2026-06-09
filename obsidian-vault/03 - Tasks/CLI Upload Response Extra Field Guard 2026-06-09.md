@@ -65,7 +65,24 @@ node scripts/check-openapi-contract.mjs
 
 ## 배포
 
-요청에 따라 이 작업 완료 후 개인서버 배포 1회를 진행할 예정이다.
+요청에 따라 개인서버 배포 1회를 진행했다.
+
+```bash
+cd /Users/downing/PersonalProjects/agentfeed-dev
+make server-up
+# agentfeed-server-postgres-1 Running / Healthy
+# agentfeed-server-backend-1 Running / Healthy, 0.0.0.0:18080->8000
+# agentfeed-server-frontend-1 Running / Healthy, 0.0.0.0:13030->3000
+
+AGENTFEED_ALLOW_INSECURE_API=1 \
+AGENTFEED_HOSTED_API_BASE_URL=http://161.33.171.81:18080/v1 \
+AGENTFEED_HOSTED_FRONTEND_URL=http://161.33.171.81:13030 \
+make smoke-hosted-compatibility
+# HOSTED_COMPATIBILITY_SMOKE_PASSED
+```
+
+> [!info] 참고
+> 첫 `make smoke-hosted-compatibility`는 `AGENTFEED_HOSTED_API_BASE_URL` 미설정으로 실패했고, 서버 IP 기반 환경변수를 명시해 재실행한 결과 통과했다.
 
 ## 후행 과제
 

@@ -737,7 +737,7 @@ describe('api client', () => {
     const oldRetryDelay = process.env.AGENTFEED_API_RETRY_BASE_DELAY_MS;
     process.env.AGENTFEED_API_RETRY_BASE_DELAY_MS = '0';
     const fetchMock = vi.fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({ error: { code: 'SERVICE_UNAVAILABLE', message: 'try again' } }), { status: 503, headers: { 'content-type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: { code: 'SERVICE_UNAVAILABLE', message: 'try again', details: {} } }), { status: 503, headers: { 'content-type': 'application/json' } }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ data: { id: 'worklog_retry', status: 'needs_review', visibility: 'private', review_url: 'https://agentfeed.dev/worklogs/worklog_retry/review', created_at: '2026-05-19T00:00:00Z' } }), { status: 200, headers: { 'content-type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchMock);
 
@@ -757,11 +757,32 @@ describe('api client', () => {
   it('does not retry validation errors during ingest upload', async () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
     await writeDraft(dir, draft);
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ error: { code: 'VALIDATION_ERROR', message: 'bad draft' } }), { status: 422, headers: { 'content-type': 'application/json' } }));
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ error: { code: 'VALIDATION_ERROR', message: 'bad draft', details: {} } }), { status: 422, headers: { 'content-type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
       .rejects.toThrow(/validation/i);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    { label: 'unexpected error envelope field', body: { error: { code: 'VALIDATION_ERROR', message: 'bad draft', details: {} }, debug: true } },
+    { label: 'unexpected error detail field', body: { error: { code: 'VALIDATION_ERROR', message: 'bad draft', details: {}, debug: true } } },
+    { label: 'missing details field', body: { error: { code: 'VALIDATION_ERROR', message: 'bad draft' } } }
+  ])('rejects malformed ingest error responses and keeps the draft pending: $label', async ({ body }) => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    await writeDraft(dir, draft);
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(body), { status: 422, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
+      .rejects.toMatchObject({
+        status: 502,
+        code: 'API_RESPONSE_INVALID',
+        message: 'AgentFeed API returned an invalid error response. Local draft was kept.'
+      });
+    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+    expect(saved.upload).toMatchObject({ uploaded: false });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -1186,12 +1207,26 @@ describe('api client', () => {
   });
 
   it('reports invalid ingestion token as an unhealthy token check', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid ingestion token' } }), { status: 401, headers: { 'content-type': 'application/json' } })));
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid ingestion token', details: {} } }), { status: 401, headers: { 'content-type': 'application/json' } })));
 
     await expect(checkIngestionToken({ ingestion_token: 'af_live_bad', api_base_url: 'http://localhost:8001/v1', created_at: 'now' })).resolves.toMatchObject({
       ok: false,
       status: 401,
       error: 'INGESTION_TOKEN_INVALID: Invalid ingestion token'
+    });
+  });
+
+  it.each([
+    { label: 'unexpected error envelope field', body: { error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid ingestion token', details: {} }, debug: true } },
+    { label: 'unexpected error detail field', body: { error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid ingestion token', details: {}, debug: true } } },
+    { label: 'missing details field', body: { error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid ingestion token' } } }
+  ])('reports malformed ingestion token error responses clearly: $label', async ({ body }) => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(body), { status: 401, headers: { 'content-type': 'application/json' } })));
+
+    await expect(checkIngestionToken({ ingestion_token: 'af_live_bad_error', api_base_url: 'http://localhost:8001/v1', created_at: 'now' })).resolves.toMatchObject({
+      ok: false,
+      status: 401,
+      error: 'AgentFeed API ingestion status error response is missing the error envelope.'
     });
   });
 
@@ -1665,7 +1700,7 @@ describe('api client', () => {
         }), { status: 200, headers: { 'content-type': 'application/json' } });
       }
 
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404, headers: { 'content-type': 'application/json' } });
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found', details: {} } }), { status: 404, headers: { 'content-type': 'application/json' } });
     });
     vi.stubGlobal('fetch', fetchMock);
 
@@ -1705,7 +1740,7 @@ describe('api client', () => {
       if (url.endsWith('/metadata')) {
         return new Response(JSON.stringify({ data: { service: 'agentfeed-api', api_version: 'v0' } }), { status: 200, headers: { 'content-type': 'application/json' } });
       }
-      return new Response(JSON.stringify({ error: { code: 'UNEXPECTED_SESSION_REQUEST' } }), { status: 500, headers: { 'content-type': 'application/json' } });
+      return new Response(JSON.stringify({ error: { code: 'UNEXPECTED_SESSION_REQUEST', message: 'Unexpected session request', details: {} } }), { status: 500, headers: { 'content-type': 'application/json' } });
     });
     vi.stubGlobal('fetch', fetchMock);
 
@@ -1742,7 +1777,7 @@ describe('api client', () => {
         }), { status: 200, headers: { 'content-type': 'application/json' } });
       }
 
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404, headers: { 'content-type': 'application/json' } });
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found', details: {} } }), { status: 404, headers: { 'content-type': 'application/json' } });
     });
     vi.stubGlobal('fetch', fetchMock);
 
@@ -1776,7 +1811,7 @@ describe('api client', () => {
       if (url.endsWith('/auth/cli/sessions/session-default-api/exchange')) {
         return new Response(JSON.stringify({ data: { token: 'af_live_default_api', token_id: 'token-default-api', token_expires_at: '2026-06-15T00:00:00Z', user: { id: 'user-default-api', display_name: 'Default API User' } } }), { status: 200, headers: { 'content-type': 'application/json' } });
       }
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404, headers: { 'content-type': 'application/json' } });
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found', details: {} } }), { status: 404, headers: { 'content-type': 'application/json' } });
     });
     vi.stubGlobal('fetch', fetchMock);
 
@@ -1804,7 +1839,7 @@ describe('api client', () => {
       if (url.endsWith('/auth/cli/sessions/session-trusted-api/exchange')) {
         return new Response(JSON.stringify({ data: { token: 'af_live_trusted_api', token_id: 'token-trusted-api', token_expires_at: '2026-06-15T00:00:00Z', user: { id: 'user-trusted-api', display_name: 'Trusted API User' } } }), { status: 200, headers: { 'content-type': 'application/json' } });
       }
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404, headers: { 'content-type': 'application/json' } });
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found', details: {} } }), { status: 404, headers: { 'content-type': 'application/json' } });
     });
     vi.stubGlobal('fetch', fetchMock);
 

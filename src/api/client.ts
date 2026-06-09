@@ -603,16 +603,30 @@ interface ParsedIngestionTokenStatusResponse {
   error?: string;
 }
 
+interface ParsedApiErrorEnvelope {
+  readonly code: string;
+  readonly message: string;
+  readonly details: Record<string, unknown>;
+}
+
 function apiErrorField(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
 }
 
-function apiErrorResponseSummary(value: unknown, status: number): string | undefined {
-  if (!isRecord(value) || !isRecord(value.error)) return undefined;
+function parseApiErrorEnvelope(value: unknown): ParsedApiErrorEnvelope | null {
+  if (!isRecord(value) || !hasOnlyExpectedFields(value, ERROR_RESPONSE_ENVELOPE_FIELDS) || !isRecord(value.error)) return null;
+  if (!hasOnlyExpectedFields(value.error, ERROR_DETAIL_FIELDS)) return null;
   const code = apiErrorField(value.error.code);
   const message = apiErrorField(value.error.message);
-  if (code && message) return `${code}: ${message}`;
-  return code ?? message ?? `HTTP ${status}`;
+  const details = value.error.details;
+  if (!code || !message || !isRecord(details)) return null;
+  return { code, message, details };
+}
+
+function apiErrorResponseSummary(value: unknown): string | undefined {
+  const parsed = parseApiErrorEnvelope(value);
+  if (!parsed) return undefined;
+  return `${parsed.code}: ${parsed.message}`;
 }
 
 async function parseIngestionTokenStatusResponse(response: Response): Promise<ParsedIngestionTokenStatusResponse> {
@@ -625,7 +639,7 @@ async function parseIngestionTokenStatusResponse(response: Response): Promise<Pa
   try {
     const parsed = await response.json() as unknown;
     if (!response.ok) {
-      return { error: apiErrorResponseSummary(parsed, response.status) ?? 'AgentFeed API ingestion status error response is missing the error envelope.' };
+      return { error: apiErrorResponseSummary(parsed) ?? 'AgentFeed API ingestion status error response is missing the error envelope.' };
     }
     if (!isRecord(parsed) || !Object.hasOwn(parsed, 'data')) {
       return { error: 'AgentFeed API ingestion status response is missing the data envelope.' };
@@ -809,6 +823,8 @@ const REMOTE_PRIVATE_REVIEW_UPLOAD_STATUS = 'needs_review' satisfies PublishDraf
 const CACHED_PRIVATE_REVIEW_UPLOAD_STATUS = 'already_uploaded' satisfies PublishDraftStatus;
 const VALID_PRIVATE_REVIEW_VISIBILITY: PublishDraftVisibility = 'private';
 const DATA_RESPONSE_ENVELOPE_FIELDS = new Set(['data']);
+const ERROR_RESPONSE_ENVELOPE_FIELDS = new Set(['error']);
+const ERROR_DETAIL_FIELDS = new Set(['code', 'message', 'details']);
 const INGESTION_TOKEN_STATUS_FIELDS = new Set(['ok', 'user', 'token']);
 const INGESTION_TOKEN_STATUS_USER_FIELDS = new Set(['id', 'username', 'display_name', 'avatar_url']);
 const INGESTION_TOKEN_STATUS_TOKEN_FIELDS = new Set(['id', 'name', 'created_at', 'last_used_at', 'expires_at', 'expires_in_seconds', 'expiring_soon']);
@@ -933,10 +949,12 @@ async function postJson<T>(apiBaseUrl: string, path: string, body: Record<string
   });
   const data = await readResponseJson(response, { successMessage: 'AgentFeed API returned an invalid JSON response.' });
   if (!response.ok) {
-    const api = data as { error?: { code?: string; message?: string; details?: Record<string, unknown> } };
-    const code = api.error?.code ?? `HTTP_${response.status}`;
-    const msg = friendlyError(response.status, code, api.error?.message ?? response.statusText, api.error?.details);
-    throw new AgentFeedApiError(response.status, code, msg, api.error?.details);
+    const api = parseApiErrorEnvelope(data);
+    if (!api) {
+      throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid error response.');
+    }
+    const msg = friendlyError(response.status, api.code, api.message, api.details);
+    throw new AgentFeedApiError(response.status, api.code, msg, api.details);
   }
   return responseDataEnvelope<T>(data, {
     successMessage: 'AgentFeed API response is missing the data envelope.',
@@ -969,14 +987,16 @@ async function postIngest<T>(path: string, draft: LocalDraft, credentials: Agent
     }, { localDraftKept: true });
     const data = await readResponseJson(response, { successMessage: 'AgentFeed API returned an invalid JSON upload response.', localDraftKept: true });
     if (!response.ok) {
-      const api = data as { error?: { code?: string; message?: string; details?: Record<string, unknown> } };
+      const api = parseApiErrorEnvelope(data);
+      if (!api) {
+        throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid error response. Local draft was kept.');
+      }
       const retryAfterHeader = Number(response.headers.get('retry-after'));
-      const details = Number.isFinite(retryAfterHeader) && retryAfterHeader >= 0 && api.error?.details?.retry_after_seconds == null
-        ? { ...(api.error?.details ?? {}), retry_after_seconds: retryAfterHeader }
-        : api.error?.details;
-      const code = api.error?.code ?? `HTTP_${response.status}`;
-      const msg = friendlyError(response.status, code, api.error?.message ?? response.statusText, details);
-      throw new AgentFeedApiError(response.status, code, msg, details);
+      const details = Number.isFinite(retryAfterHeader) && retryAfterHeader >= 0 && api.details.retry_after_seconds == null
+        ? { ...api.details, retry_after_seconds: retryAfterHeader }
+        : api.details;
+      const msg = friendlyError(response.status, api.code, api.message, details);
+      throw new AgentFeedApiError(response.status, api.code, msg, details);
     }
     return responseDataEnvelope<T>(data, {
       successMessage: 'AgentFeed API upload response is missing the data envelope.',

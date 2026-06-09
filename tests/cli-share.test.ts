@@ -613,7 +613,7 @@ describe('share CLI command', () => {
       if (req.method === 'GET' && req.url === '/v1/ingest/status') {
         tokenStatusCount += 1;
         res.writeHead(401, { 'content-type': 'application/json' });
-        res.end(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid ingestion token' } }));
+        res.end(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid ingestion token', details: {} } }));
         return;
       }
       if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
@@ -670,7 +670,7 @@ describe('share CLI command', () => {
       if (req.method === 'GET' && req.url === '/v1/ingest/status') {
         tokenStatusCount += 1;
         res.writeHead(401, { 'content-type': 'application/json' });
-        res.end(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid ingestion token' } }));
+        res.end(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid ingestion token', details: {} } }));
         return;
       }
       if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
@@ -2226,7 +2226,7 @@ describe('share CLI command', () => {
       if (req.method === 'GET' && req.url === '/v1/ingest/status') {
         tokenStatusCount += 1;
         res.writeHead(401, { 'content-type': 'application/json' });
-        res.end(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid ingestion token' } }));
+        res.end(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid ingestion token', details: {} } }));
         return;
       }
       if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {

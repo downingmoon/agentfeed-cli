@@ -659,7 +659,7 @@ describe('collect CLI command', () => {
         return;
       }
       res.writeHead(404, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ error: { code: 'NOT_FOUND' } }));
+      res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found', details: {} } }));
     });
     await new Promise<void>((resolve, reject) => {
       server.once('error', reject);
@@ -732,7 +732,7 @@ describe('collect CLI command', () => {
       if (req.method === 'GET' && req.url === '/v1/ingest/status') {
         tokenStatusCount += 1;
         res.writeHead(401, { 'content-type': 'application/json' });
-        res.end(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid ingestion token' } }));
+        res.end(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid ingestion token', details: {} } }));
         return;
       }
       if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
@@ -743,7 +743,7 @@ describe('collect CLI command', () => {
         return;
       }
       res.writeHead(404, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ error: { code: 'NOT_FOUND' } }));
+      res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found', details: {} } }));
     });
     await new Promise<void>((resolve, reject) => {
       server.once('error', reject);
@@ -790,7 +790,7 @@ describe('collect CLI command', () => {
       if (handleCompatibleMetadata(req, res)) return;
       if (req.method === 'GET' && req.url === '/v1/ingest/status') {
         res.writeHead(401, { 'content-type': 'application/json' });
-        res.end(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid ingestion token' } }));
+        res.end(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid ingestion token', details: {} } }));
         return;
       }
       if (req.method === 'POST' && req.url === '/v1/ingest/worklogs') {
@@ -800,7 +800,7 @@ describe('collect CLI command', () => {
         return;
       }
       res.writeHead(404, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ error: { code: 'NOT_FOUND' } }));
+      res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found', details: {} } }));
     });
     await new Promise<void>((resolve, reject) => {
       server.once('error', reject);
@@ -855,7 +855,7 @@ describe('collect CLI command', () => {
         return;
       }
       res.writeHead(404, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ error: { code: 'NOT_FOUND' } }));
+      res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found', details: {} } }));
     });
     await new Promise<void>((resolve, reject) => {
       server.once('error', reject);
@@ -917,7 +917,7 @@ describe('collect CLI command', () => {
         return;
       }
       res.writeHead(404, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ error: { code: 'NOT_FOUND' } }));
+      res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found', details: {} } }));
     });
     await new Promise<void>((resolve, reject) => {
       server.once('error', reject);

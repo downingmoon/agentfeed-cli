@@ -861,7 +861,7 @@ describe('status and doctor provenance output', () => {
     const server = await import('node:http').then(({ createServer }) => createServer((_req, res) => {
       requestCount += 1;
       res.writeHead(500, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ error: { code: 'UNEXPECTED_BROWSER_SESSION_REQUEST' } }));
+      res.end(JSON.stringify({ error: { code: 'UNEXPECTED_BROWSER_SESSION_REQUEST', message: 'Unexpected browser session request', details: {} } }));
     }));
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     const address = server.address();
@@ -904,7 +904,7 @@ describe('status and doctor provenance output', () => {
     const server = await import('node:http').then(({ createServer }) => createServer((_req, res) => {
       requestCount += 1;
       res.writeHead(500, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ error: { code: 'UNEXPECTED_BROWSER_SESSION_REQUEST' } }));
+      res.end(JSON.stringify({ error: { code: 'UNEXPECTED_BROWSER_SESSION_REQUEST', message: 'Unexpected browser session request', details: {} } }));
     }));
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     const address = server.address();
@@ -953,7 +953,7 @@ describe('status and doctor provenance output', () => {
     const server = await import('node:http').then(({ createServer }) => createServer((_req, res) => {
       requestCount += 1;
       res.writeHead(500, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ error: { code: 'UNEXPECTED_BROWSER_SESSION_REQUEST' } }));
+      res.end(JSON.stringify({ error: { code: 'UNEXPECTED_BROWSER_SESSION_REQUEST', message: 'Unexpected browser session request', details: {} } }));
     }));
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     const address = server.address();
@@ -1155,7 +1155,7 @@ describe('status and doctor provenance output', () => {
       }
       if (req.url === '/v1/auth/cli/sessions') sessionRequests += 1;
       res.writeHead(500, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ error: { code: 'UNEXPECTED_SESSION_REQUEST' } }));
+      res.end(JSON.stringify({ error: { code: 'UNEXPECTED_SESSION_REQUEST', message: 'Unexpected session request', details: {} } }));
     }));
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     const address = server.address();

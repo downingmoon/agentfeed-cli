@@ -870,6 +870,11 @@ describe('api client', () => {
       message: 'AgentFeed API upload response is missing the data envelope. Local draft was kept.'
     },
     {
+      label: 'unexpected data envelope field',
+      response: () => new Response(JSON.stringify({ data: { valid: true, preview: { title: 'Draft title', summary: 'Draft summary', user_note: null, model: null, metrics_row: '0 files' }, warnings: [] }, debug: true }), { status: 200, headers: { 'content-type': 'application/json' } }),
+      message: 'AgentFeed API upload response has unexpected data envelope fields. Local draft was kept.'
+    },
+    {
       label: 'missing preview metrics row',
       response: () => new Response(JSON.stringify({ data: { valid: true, preview: { title: 'Draft title', summary: 'Draft summary', user_note: null, model: null }, warnings: [] } }), { status: 200, headers: { 'content-type': 'application/json' } }),
       message: 'AgentFeed API remote preview response contract mismatch. Local draft was kept.'
@@ -1041,6 +1046,11 @@ describe('api client', () => {
       label: 'missing data envelope',
       response: new Response(JSON.stringify({ service: 'agentfeed-api' }), { status: 200, headers: { 'content-type': 'application/json' } }),
       error: 'AgentFeed API metadata response is missing the data envelope.'
+    },
+    {
+      label: 'unexpected metadata envelope field',
+      response: new Response(JSON.stringify({ data: { service: 'agentfeed-api' }, debug: true }), { status: 200, headers: { 'content-type': 'application/json' } }),
+      error: 'AgentFeed API metadata response has unexpected data envelope fields.'
     }
   ])('reports malformed API compatibility metadata clearly: $label', async ({ response, error }) => {
     vi.stubGlobal('fetch', vi.fn(async () => response));
@@ -1135,6 +1145,11 @@ describe('api client', () => {
       label: 'missing data envelope',
       response: new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'content-type': 'application/json' } }),
       error: 'AgentFeed API ingestion status response is missing the data envelope.'
+    },
+    {
+      label: 'unexpected data envelope field',
+      response: new Response(JSON.stringify({ data: { ok: true }, debug: true }), { status: 200, headers: { 'content-type': 'application/json' } }),
+      error: 'AgentFeed API ingestion status response has unexpected data envelope fields.'
     }
   ])('reports malformed ingestion status responses clearly: $label', async ({ response, error }) => {
     vi.stubGlobal('fetch', vi.fn(async () => response));

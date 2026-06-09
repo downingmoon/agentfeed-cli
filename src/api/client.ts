@@ -139,9 +139,12 @@ async function parseMetadataResponse(response: Response): Promise<ParsedApiMetad
     return { error: 'AgentFeed API metadata response is not JSON.' };
   }
   try {
-    const parsed = await response.json() as { data?: ApiMetadata };
-    if (!Object.hasOwn(parsed, 'data')) return { error: 'AgentFeed API metadata response is missing the data envelope.' };
-    return { data: parsed.data };
+    const parsed = await response.json() as unknown;
+    if (!isRecord(parsed) || !Object.hasOwn(parsed, 'data')) return { error: 'AgentFeed API metadata response is missing the data envelope.' };
+    if (!hasOnlyExpectedFields(parsed, DATA_RESPONSE_ENVELOPE_FIELDS)) {
+      return { error: 'AgentFeed API metadata response has unexpected data envelope fields.' };
+    }
+    return { data: parsed.data as ApiMetadata };
   } catch {
     return { error: 'AgentFeed API metadata response contains invalid JSON.' };
   }
@@ -620,12 +623,15 @@ async function parseIngestionTokenStatusResponse(response: Response): Promise<Pa
       : { error: 'AgentFeed API ingestion status error response is not JSON.' };
   }
   try {
-    const parsed = await response.json() as { data?: unknown };
+    const parsed = await response.json() as unknown;
     if (!response.ok) {
       return { error: apiErrorResponseSummary(parsed, response.status) ?? 'AgentFeed API ingestion status error response is missing the error envelope.' };
     }
-    if (!Object.hasOwn(parsed, 'data')) {
+    if (!isRecord(parsed) || !Object.hasOwn(parsed, 'data')) {
       return { error: 'AgentFeed API ingestion status response is missing the data envelope.' };
+    }
+    if (!hasOnlyExpectedFields(parsed, DATA_RESPONSE_ENVELOPE_FIELDS)) {
+      return { error: 'AgentFeed API ingestion status response has unexpected data envelope fields.' };
     }
     const data = parseIngestionTokenStatus(parsed.data);
     return data ? { data } : { error: 'AgentFeed API returned an invalid ingestion token status response.' };
@@ -802,6 +808,7 @@ function parseCliAuthSession(value: unknown, apiBaseUrl: string): CliAuthSession
 const REMOTE_PRIVATE_REVIEW_UPLOAD_STATUS = 'needs_review' satisfies PublishDraftStatus;
 const CACHED_PRIVATE_REVIEW_UPLOAD_STATUS = 'already_uploaded' satisfies PublishDraftStatus;
 const VALID_PRIVATE_REVIEW_VISIBILITY: PublishDraftVisibility = 'private';
+const DATA_RESPONSE_ENVELOPE_FIELDS = new Set(['data']);
 const INGESTION_TOKEN_STATUS_FIELDS = new Set(['ok', 'user', 'token']);
 const INGESTION_TOKEN_STATUS_USER_FIELDS = new Set(['id', 'username', 'display_name', 'avatar_url']);
 const INGESTION_TOKEN_STATUS_TOKEN_FIELDS = new Set(['id', 'name', 'created_at', 'last_used_at', 'expires_at', 'expires_in_seconds', 'expiring_soon']);
@@ -899,12 +906,20 @@ async function readResponseJson(response: Response, options: { successMessage: s
   }
 }
 
-function responseDataEnvelope<T>(value: unknown, options: { successMessage: string; localDraftKept?: boolean }): T {
+function responseDataEnvelope<T>(value: unknown, options: { successMessage: string; unexpectedFieldsMessage?: string; localDraftKept?: boolean }): T {
   if (!isRecord(value) || !Object.hasOwn(value, 'data')) {
     throw new AgentFeedApiError(
       502,
       'API_RESPONSE_INVALID',
       options.localDraftKept ? `${options.successMessage} Local draft was kept.` : options.successMessage
+    );
+  }
+  if (!hasOnlyExpectedFields(value, DATA_RESPONSE_ENVELOPE_FIELDS)) {
+    const message = options.unexpectedFieldsMessage ?? 'AgentFeed API response has unexpected data envelope fields.';
+    throw new AgentFeedApiError(
+      502,
+      'API_RESPONSE_INVALID',
+      options.localDraftKept ? `${message} Local draft was kept.` : message
     );
   }
   return value.data as T;
@@ -923,7 +938,10 @@ async function postJson<T>(apiBaseUrl: string, path: string, body: Record<string
     const msg = friendlyError(response.status, code, api.error?.message ?? response.statusText, api.error?.details);
     throw new AgentFeedApiError(response.status, code, msg, api.error?.details);
   }
-  return responseDataEnvelope<T>(data, { successMessage: 'AgentFeed API response is missing the data envelope.' });
+  return responseDataEnvelope<T>(data, {
+    successMessage: 'AgentFeed API response is missing the data envelope.',
+    unexpectedFieldsMessage: 'AgentFeed API response has unexpected data envelope fields.'
+  });
 }
 
 export async function createCliAuthSession(apiBaseUrl: string, input: { verifier: string; deviceName?: string; replaceTokenId?: string }): Promise<CliAuthSession> {
@@ -960,7 +978,11 @@ async function postIngest<T>(path: string, draft: LocalDraft, credentials: Agent
       const msg = friendlyError(response.status, code, api.error?.message ?? response.statusText, details);
       throw new AgentFeedApiError(response.status, code, msg, details);
     }
-    return responseDataEnvelope<T>(data, { successMessage: 'AgentFeed API upload response is missing the data envelope.', localDraftKept: true });
+    return responseDataEnvelope<T>(data, {
+      successMessage: 'AgentFeed API upload response is missing the data envelope.',
+      unexpectedFieldsMessage: 'AgentFeed API upload response has unexpected data envelope fields.',
+      localDraftKept: true
+    });
   });
 }
 

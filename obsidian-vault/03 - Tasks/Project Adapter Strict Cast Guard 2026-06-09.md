@@ -56,3 +56,29 @@ node scripts/check-openapi-contract.mjs
 
 - 이번 패스는 새 기능 추가가 아니라 기존 adapter boundary의 완성도 보강이다.
 - 사용자가 명시적으로 요청하여, 작업 완료 후 개인서버 배포를 1회 진행한다.
+
+## 개인서버 배포 증거
+
+> [!success] 배포 완료
+> 사용자의 명시 요청에 따라 개인서버 `161.33.171.81`에 1회 배포했다.
+
+```bash
+cd /Users/downing/PersonalProjects/agentfeed-dev
+make server-up
+ssh trading-bot "cd ~/agentfeed/agentfeed-dev && docker compose --env-file .env up -d --force-recreate frontend"
+```
+
+### 배포 후 확인
+
+```bash
+curl -fsS http://161.33.171.81:13030/
+curl -fsS http://161.33.171.81:18080/v1/metadata
+curl -fsS http://161.33.171.81:18080/health/ready
+curl -fsS http://161.33.171.81:18080/v1/health/ready
+NEXT_PUBLIC_AGENTFEED_ALLOW_INSECURE_SERVER_TEST_API=1 \
+NEXT_PUBLIC_API_URL=http://161.33.171.81:18080 \
+npm run check:api-compatibility
+```
+
+> [!note] 결과
+> Frontend root `200 OK`, Backend readiness 정상, metadata `v1 / 2026-06-03`, Frontend API compatibility probe 전체 통과. 서버의 synced source에서도 `PROJECT_STATS_FIELDS` strict guard를 확인했다.

@@ -797,13 +797,20 @@ function parseCliAuthSession(value: unknown, apiBaseUrl: string): CliAuthSession
 const REMOTE_PRIVATE_REVIEW_UPLOAD_STATUS = 'needs_review' satisfies PublishDraftStatus;
 const CACHED_PRIVATE_REVIEW_UPLOAD_STATUS = 'already_uploaded' satisfies PublishDraftStatus;
 const VALID_PRIVATE_REVIEW_VISIBILITY: PublishDraftVisibility = 'private';
+const PUBLISH_DRAFT_RESULT_FIELDS = new Set(['id', 'status', 'visibility', 'review_url', 'created_at', 'reused_existing']);
+
+function hasOnlyExpectedFields(value: Record<string, unknown>, allowedFields: ReadonlySet<string>): boolean {
+  return Object.keys(value).every(key => allowedFields.has(key));
+}
 
 function isPublishDraftStatus(value: string, options: { allowCachedStatus?: boolean } = {}): value is PublishDraftStatus {
   return value === REMOTE_PRIVATE_REVIEW_UPLOAD_STATUS || (options.allowCachedStatus === true && value === CACHED_PRIVATE_REVIEW_UPLOAD_STATUS);
 }
 
 function parsePublishDraftResult(value: unknown, apiBaseUrl: string, reviewBaseUrl?: string | null, options: { allowCachedStatus?: boolean } = {}): PublishDraftResult {
-  if (!isRecord(value)) throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid upload response.');
+  if (!isRecord(value) || !hasOnlyExpectedFields(value, PUBLISH_DRAFT_RESULT_FIELDS)) {
+    throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid upload response. Local draft was kept.');
+  }
   const id = stringField(value.id);
   const status = stringField(value.status);
   const visibility = stringField(value.visibility);

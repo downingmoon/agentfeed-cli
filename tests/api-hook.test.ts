@@ -77,6 +77,7 @@ it('keeps CLI visibility contract aligned with backend-supported values', async 
   expect(clientSource).toContain("export type PublishDraftVisibility = 'private';");
   expect(clientSource).toContain("const REMOTE_PRIVATE_REVIEW_UPLOAD_STATUS = 'needs_review' satisfies PublishDraftStatus;");
   expect(clientSource).toContain("const CACHED_PRIVATE_REVIEW_UPLOAD_STATUS = 'already_uploaded' satisfies PublishDraftStatus;");
+  expect(clientSource).toContain("const PUBLISH_DRAFT_RESULT_FIELDS = new Set(['id', 'status', 'visibility', 'review_url', 'created_at', 'reused_existing']);");
   expect(clientSource).not.toContain("const VALID_PRIVATE_REVIEW_UPLOAD_STATUSES");
   expect(clientSource).not.toContain("Visibility, WorklogStatus");
 });
@@ -394,6 +395,27 @@ describe('api client', () => {
         visibility,
         review_url: `https://agentfeed.dev/worklogs/worklog_${visibility}/review`,
         created_at: '2026-05-19T00:00:00Z'
+      }
+    }), { status: 200, headers: { 'content-type': 'application/json' } })));
+
+    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
+      .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
+
+    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
+    expect(saved.upload.uploaded).toBe(false);
+  });
+
+  it('rejects upload success responses with unexpected fields', async () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
+    await writeDraft(dir, draft);
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      data: {
+        id: 'worklog_extra_field',
+        status: 'needs_review',
+        visibility: 'private',
+        review_url: 'https://agentfeed.dev/worklogs/worklog_extra_field/review',
+        created_at: '2026-05-19T00:00:00Z',
+        raw_debug_payload: { hidden: true }
       }
     }), { status: 200, headers: { 'content-type': 'application/json' } })));
 

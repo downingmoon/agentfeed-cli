@@ -57,3 +57,36 @@ node scripts/check-openapi-contract.mjs
 
 - [ ] 장기적으로 server deploy smoke가 container creation timestamp 또는 served build id까지 확인하도록 강화한다.
 - [ ] IP-only 서버 테스트 환경이 아닌 정식 HTTPS 환경으로 전환할 때 compose 배포 방식과 cache invalidation 정책을 다시 검토한다.
+
+## 실제 배포 결과
+
+- 실행일: 2026-06-09
+- 실행 명령:
+
+```bash
+cd /Users/downing/PersonalProjects/agentfeed-dev
+make server-up
+```
+
+- 결과:
+  - `agentfeed-server-backend-1` 재생성 후 healthy.
+  - `agentfeed-server-frontend-1` 재생성 후 healthy.
+  - `agentfeed-server-postgres-1` 기존 volume 유지, healthy.
+- 배포 후 검증:
+
+```bash
+NEXT_PUBLIC_API_URL=http://161.33.171.81:18080/v1 \
+  AGENTFEED_HOSTED_FRONTEND_URL=http://161.33.171.81:13030 \
+  AGENTFEED_ALLOW_INSECURE_SERVER_TEST_API_BUILD=1 \
+  NEXT_PUBLIC_AGENTFEED_ALLOW_INSECURE_SERVER_TEST_API=1 \
+  npm run check:api-compatibility
+curl -fsS http://161.33.171.81:18080/v1/metadata
+curl -fsSI http://161.33.171.81:13030
+ssh trading-bot "cd ~/agentfeed/agentfeed-dev && docker compose --env-file .env ps"
+```
+
+- Evidence:
+  - `FRONTEND_API_COMPATIBILITY_PASSED v1 2026-06-03`.
+  - API metadata HTTP 200, `contract_version: 2026-06-03`.
+  - Frontend HTTP 200 with security headers/CSP.
+  - Remote compose ps shows backend/frontend/postgres all healthy.

@@ -13,13 +13,15 @@ export function formatCollectionGuidanceLines(metrics: WorklogMetrics): string[]
 
   const lines = [
     'Collection guidance:',
+    '- Agent evidence is incomplete; tokens, tool calls, commands, models, and per-agent attribution may be missing.',
     '- Run `agentfeed doctor` to verify Claude/Codex/Cursor/Gemini session and plugin detection.',
     '- Retry with `agentfeed collect --explain --session-file <path>` if your agent log is stored outside the default locations.'
   ];
   if (sources.length === 0) {
-    lines.push('- Without agent evidence, this draft may be mostly git-diff based.');
+    lines.push('- Without agent evidence, this draft may be mostly git-diff based instead of full agent-session based.');
+    lines.push('- If you used multiple agents, confirm each agent appears under `Sources` or rerun with an explicit `--source`/`--session-file`.');
   } else {
-    lines.push('- Low-quality agent evidence can miss token, tool-call, or command details.');
+    lines.push('- Low-quality agent evidence can miss token, tool-call, command, or secondary-agent details.');
   }
   return lines;
 }

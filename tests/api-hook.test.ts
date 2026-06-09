@@ -1144,11 +1144,12 @@ describe('api client', () => {
   });
 
   it('reports invalid ingestion token as an unhealthy token check', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID' } }), { status: 401, headers: { 'content-type': 'application/json' } })));
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid ingestion token' } }), { status: 401, headers: { 'content-type': 'application/json' } })));
 
     await expect(checkIngestionToken({ ingestion_token: 'af_live_bad', api_base_url: 'http://localhost:8001/v1', created_at: 'now' })).resolves.toMatchObject({
       ok: false,
-      status: 401
+      status: 401,
+      error: 'INGESTION_TOKEN_INVALID: Invalid ingestion token'
     });
   });
 

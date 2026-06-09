@@ -596,6 +596,7 @@ describe('share CLI command', () => {
       }
       const output = JSON.parse(failure?.stdout ?? '{}') as { error: { message: string }; next_actions: string[] };
       expect(output.error.message).toContain('API compatibility check failed');
+      expect(output.error.message).toContain('HTTP 200: AgentFeed API compatibility metadata is missing or unsupported.');
       expect(output.next_actions).toEqual(['agentfeed doctor', 'agentfeed status']);
       expect(failure?.stderr ?? '').toBe('');
       expect(ingestRequestCount).toBe(0);
@@ -651,6 +652,7 @@ describe('share CLI command', () => {
       }
       const output = JSON.parse(failure?.stdout ?? '{}') as { error: { message: string }; next_actions?: string[] };
       expect(output.error.message).toContain('Ingestion token check failed');
+      expect(output.error.message).toContain('HTTP 401: INGESTION_TOKEN_INVALID: Invalid ingestion token');
       expect(output.next_actions).toEqual(['agentfeed login', 'agentfeed rotate', 'agentfeed status']);
       expect(failure?.stderr ?? '').toBe('');
       expect(tokenStatusCount).toBe(1);
@@ -705,6 +707,7 @@ describe('share CLI command', () => {
       }
       expect(humanFailure?.stdout ?? '').toBe('');
       expect(humanFailure?.stderr ?? '').toContain('Ingestion token check failed');
+      expect(humanFailure?.stderr ?? '').toContain('HTTP 401: INGESTION_TOKEN_INVALID: Invalid ingestion token');
       expect(humanFailure?.stderr ?? '').toContain('Fix first');
       expect(humanFailure?.stderr ?? '').toContain('Run: agentfeed login');
       expect(humanFailure?.stderr ?? '').toContain('Run: agentfeed rotate');
@@ -730,6 +733,7 @@ describe('share CLI command', () => {
       const jsonOutput = JSON.parse(jsonFailure?.stdout ?? '{}') as { error?: { message?: string }; next_actions?: string[] };
       expect(jsonFailure?.stderr ?? '').toBe('');
       expect(jsonOutput.error?.message).toContain('Ingestion token check failed');
+      expect(jsonOutput.error?.message).toContain('HTTP 401: INGESTION_TOKEN_INVALID: Invalid ingestion token');
       expect(jsonOutput.next_actions).toEqual([
         'agentfeed login',
         'agentfeed rotate',

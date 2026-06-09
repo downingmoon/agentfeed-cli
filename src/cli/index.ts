@@ -393,15 +393,17 @@ function printUploadResult(options: {
 }
 
 function apiCompatibilityFailureDetail(result: Awaited<ReturnType<typeof checkApiCompatibility>>): string {
-  return result.status != null
-    ? `HTTP ${result.status}`
-    : result.error ?? 'unknown compatibility failure';
+  if (result.status != null) {
+    return result.error ? `HTTP ${result.status}: ${result.error}` : `HTTP ${result.status}`;
+  }
+  return result.error ?? 'unknown compatibility failure';
 }
 
 function apiCheckFailureDetail(result: Awaited<ReturnType<typeof checkIngestionToken>>): string {
-  return result.status != null
-    ? `HTTP ${result.status}`
-    : result.error ?? 'unknown token check failure';
+  if (result.status != null) {
+    return result.error ? `HTTP ${result.status}: ${result.error}` : `HTTP ${result.status}`;
+  }
+  return result.error ?? 'unknown token check failure';
 }
 
 const SAFE_TOKEN_STDIN_COMMAND = 'printf %s "$TOKEN" | agentfeed login --token-stdin';

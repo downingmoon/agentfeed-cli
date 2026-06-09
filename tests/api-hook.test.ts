@@ -1155,7 +1155,10 @@ describe('api client', () => {
     { data: { ok: false, user: { id: 'user-1' }, token: { id: 'token-1', name: 'CLI: MacBook', created_at: '2026-06-01T00:00:00Z', expires_at: '2026-06-15T00:00:00Z', expires_in_seconds: 100, expiring_soon: false } }, label: 'false ok flag' },
     { data: { ok: 'true', user: { id: 'user-1' }, token: { id: 'token-1', name: 'CLI: MacBook', created_at: '2026-06-01T00:00:00Z', expires_at: '2026-06-15T00:00:00Z', expires_in_seconds: 100, expiring_soon: false } }, label: 'string ok flag' },
     { data: { ok: true, user: { id: 'user-1' }, token: { id: 'token-1', name: 'CLI: MacBook', created_at: '2026-06-01T00:00:00Z', expires_at: '2026-06-15T00:00:00Z', expires_in_seconds: -1, expiring_soon: false } }, label: 'negative expires_in_seconds' },
-    { data: { ok: true, user: { id: 'user-1' }, token: { id: 'token-1', name: 'CLI: MacBook', created_at: '2026-06-01T00:00:00Z', expires_at: '2026-06-15T00:00:00Z', expires_in_seconds: 100, expiring_soon: 'no' } }, label: 'invalid expiring_soon' }
+    { data: { ok: true, user: { id: 'user-1' }, token: { id: 'token-1', name: 'CLI: MacBook', created_at: '2026-06-01T00:00:00Z', expires_at: '2026-06-15T00:00:00Z', expires_in_seconds: 100, expiring_soon: 'no' } }, label: 'invalid expiring_soon' },
+    { data: { ok: true, user: { id: 'user-1' }, token: { id: 'token-1', name: 'CLI: MacBook', created_at: '2026-06-01T00:00:00Z', expires_at: '2026-06-15T00:00:00Z', expires_in_seconds: 100, expiring_soon: false }, extra: 'unexpected' }, label: 'unexpected status root field' },
+    { data: { ok: true, user: { id: 'user-1', role: 'admin' }, token: { id: 'token-1', name: 'CLI: MacBook', created_at: '2026-06-01T00:00:00Z', expires_at: '2026-06-15T00:00:00Z', expires_in_seconds: 100, expiring_soon: false } }, label: 'unexpected user field' },
+    { data: { ok: true, user: { id: 'user-1' }, token: { id: 'token-1', name: 'CLI: MacBook', created_at: '2026-06-01T00:00:00Z', expires_at: '2026-06-15T00:00:00Z', expires_in_seconds: 100, expiring_soon: false, raw_token_hash: 'secret' } }, label: 'unexpected token field' }
   ])('treats malformed ingestion status responses as unhealthy: $label', async ({ data }) => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ data }), { status: 200, headers: { 'content-type': 'application/json' } })));
 

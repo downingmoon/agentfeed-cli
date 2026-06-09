@@ -534,11 +534,16 @@ function optionalDateString(value: unknown): string | null | undefined {
 }
 
 function parseIngestionTokenStatus(value: unknown): IngestionTokenStatus | null {
-  if (!isRecord(value)) return null;
+  if (!isRecord(value) || !hasOnlyExpectedFields(value, INGESTION_TOKEN_STATUS_FIELDS)) return null;
   if (value.ok !== true) return null;
   const userValue = value.user;
   const tokenValue = value.token;
-  if (!isRecord(userValue) || !isRecord(tokenValue)) return null;
+  if (
+    !isRecord(userValue)
+    || !hasOnlyExpectedFields(userValue, INGESTION_TOKEN_STATUS_USER_FIELDS)
+    || !isRecord(tokenValue)
+    || !hasOnlyExpectedFields(tokenValue, INGESTION_TOKEN_STATUS_TOKEN_FIELDS)
+  ) return null;
 
   const userId = stringField(userValue.id);
   const username = Object.hasOwn(userValue, 'username') ? optionalStringField(userValue.username) : undefined;
@@ -797,6 +802,9 @@ function parseCliAuthSession(value: unknown, apiBaseUrl: string): CliAuthSession
 const REMOTE_PRIVATE_REVIEW_UPLOAD_STATUS = 'needs_review' satisfies PublishDraftStatus;
 const CACHED_PRIVATE_REVIEW_UPLOAD_STATUS = 'already_uploaded' satisfies PublishDraftStatus;
 const VALID_PRIVATE_REVIEW_VISIBILITY: PublishDraftVisibility = 'private';
+const INGESTION_TOKEN_STATUS_FIELDS = new Set(['ok', 'user', 'token']);
+const INGESTION_TOKEN_STATUS_USER_FIELDS = new Set(['id', 'username', 'display_name', 'avatar_url']);
+const INGESTION_TOKEN_STATUS_TOKEN_FIELDS = new Set(['id', 'name', 'created_at', 'last_used_at', 'expires_at', 'expires_in_seconds', 'expiring_soon']);
 const CLI_AUTH_EXCHANGE_USER_FIELDS = new Set(['id', 'username', 'display_name', 'avatar_url']);
 const CLI_AUTH_EXCHANGE_RESULT_FIELDS = new Set(['token', 'token_id', 'token_expires_at', 'user', 'rotated_from', 'rotated_at']);
 const PUBLISH_DRAFT_RESULT_FIELDS = new Set(['id', 'status', 'visibility', 'review_url', 'created_at', 'reused_existing']);

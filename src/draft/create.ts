@@ -401,6 +401,7 @@ function mergeAgentSessions(candidates: AgentSessionCandidate[], requestedWindow
 interface AutoAgentSources {
   enabled: AgentType[];
   attributable: AgentType[];
+  warnings: string[];
 }
 
 async function autoAgentSources(cwd: string, config: AgentFeedProjectConfig): Promise<AutoAgentSources> {
@@ -409,8 +410,23 @@ async function autoAgentSources(cwd: string, config: AgentFeedProjectConfig): Pr
   if (config.agents.codex.enabled) sources.push('codex');
   if (config.agents.cursor.enabled) sources.push('cursor');
   if (config.agents.gemini_cli.enabled) sources.push('gemini_cli');
-  const signals = await detectAgentSignals({ cwd }).catch(() => null);
-  if (!signals) return { enabled: sources, attributable: [] };
+  let signals: Awaited<ReturnType<typeof detectAgentSignals>>;
+  try {
+    signals = await detectAgentSignals({ cwd });
+  } catch (error) {
+    return {
+      enabled: sources,
+      attributable: [],
+      warnings: [
+        [
+          'Agent signal auto-detection failed; collection fell back to enabled project agents only.',
+          compactDraftReadFailure(error),
+          'Run: agentfeed doctor',
+          'Retry with an explicit source if needed: agentfeed collect --source <source> --explain'
+        ].filter(Boolean).join(' ')
+      ]
+    };
+  }
   const hasProjectLocalSignal = (paths: string[]): boolean => {
     if (!paths.length) return false;
     const root = resolve(cwd);
@@ -440,7 +456,8 @@ async function autoAgentSources(cwd: string, config: AgentFeedProjectConfig): Pr
   const enabled = [...sources].sort((a, b) => scores[b] - scores[a]);
   return {
     enabled,
-    attributable: enabled.filter((source) => localScores[source] > 0)
+    attributable: enabled.filter((source) => localScores[source] > 0),
+    warnings: []
   };
 }
 
@@ -482,7 +499,7 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
   const git = await collectGitMetrics(root);
   const window = collectionWindow(options);
   const inferIdleGap = options.inferIdleGap ?? (!options.force && !window?.since);
-  const warnings: string[] = [];
+  const warnings: string[] = [...autoSources.warnings];
   let sessionFingerprintIdentity: string | null = null;
   let session = options.source
     ? await collectAgentSessionMetrics({ cwd: root, source, sessionFile, since: window?.since, until: window?.until, inferIdleGap })

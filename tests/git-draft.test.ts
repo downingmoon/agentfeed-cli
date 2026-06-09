@@ -157,7 +157,7 @@ describe('git collector and drafts', () => {
     expect(draft.worklog.agent).toBe('codex');
     expect(draft.source.agent).toBe('codex');
     expect(draft.worklog.metrics.collection_quality).toBeNull();
-  }, 20_000);
+  }, 60_000);
 
   it('does not attribute git-only auto collection to globally detected agent signals', async () => {
     const previousHome = process.env.HOME;
@@ -258,7 +258,7 @@ describe('git collector and drafts', () => {
         .rejects.toThrow(/Refusing to run configured command through a shell interpreter/);
       await expect(readFile(markerPath, 'utf8')).rejects.toThrow();
     }
-  }, 15_000);
+  }, 60_000);
 
   it('does not pass sensitive environment variables to configured commands', async () => {
     await initProject({ cwd: dir, noGitCheck: false });

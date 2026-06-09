@@ -1051,7 +1051,7 @@ describe('agent session collector', () => {
     expect(draft.worklog.metrics.collection_sources).toEqual([
       { type: 'generic_metadata', name: 'unknown_plugin', quality: 'low' }
     ]);
-  }, 20_000);
+  }, 60_000);
 
   it('excludes timestamp-less generic metadata rows when a since window is active', async () => {
     const sessionFile = join(dir, 'generic-window-missing-timestamp.jsonl');

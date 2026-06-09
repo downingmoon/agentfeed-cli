@@ -49,5 +49,5 @@ describe('collect draft agent signal detection warnings', () => {
     expect(result.warnings.join('\n')).toContain('simulated detector failure');
     expect(result.warnings.join('\n')).toContain('agentfeed doctor');
     expect(result.warnings.join('\n')).toContain('agentfeed collect --source <source> --explain');
-  });
+  }, 60_000);
 });

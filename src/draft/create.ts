@@ -4,7 +4,7 @@ import type { AgentFeedProjectConfig, AgentMetricSummary, AgentType, ChangedFile
 import { loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { collectAgentSessionMetrics, type AgentSessionMetrics } from '../collectors/agent-session.js';
-import { collectConfiguredCommandMetrics } from '../collectors/test-command.js';
+import { collectConfiguredCommandMetricsWithStatus } from '../collectors/test-command.js';
 import { detectAgentSignals } from '../collectors/agent-discovery.js';
 import { shouldIgnoreEvidencePath } from '../collectors/path-filter.js';
 import { changedAreas } from '../summary/changed-areas.js';
@@ -568,9 +568,11 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
     warnings.push(...existing.warnings);
     if (existing.draft) return { draft: existing.draft, reusedExisting: true, warnings };
   }
-  const configuredCommandMetrics = configuredCommandIntent
-    ? await collectConfiguredCommandMetrics(root, config)
-    : null;
+  const configuredCommandStatus = configuredCommandIntent
+    ? await collectConfiguredCommandMetricsWithStatus(root, config)
+    : { metrics: null, warnings: [] };
+  warnings.push(...configuredCommandStatus.warnings);
+  const configuredCommandMetrics = configuredCommandStatus.metrics;
   const includeFileStats = config.collection.include_file_stats;
   const modelsUsed = sessionModelsUsed(session);
   const agentMetrics = configFilteredAgentMetrics(agentMetricsForSession(source, session), config);

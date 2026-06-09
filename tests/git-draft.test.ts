@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { initProject } from '../src/config/project-config.js';
 import { collectGitMetrics } from '../src/collectors/git.js';
-import { collectDraft } from '../src/draft/create.js';
+import { collectDraft, collectDraftWithStatus } from '../src/draft/create.js';
 import { findLatestDraft, readDraft } from '../src/draft/read.js';
 import { writeDraft } from '../src/draft/write.js';
 import { draftToIngestRequest } from '../src/api/client.js';
@@ -345,6 +345,25 @@ describe('git collector and drafts', () => {
     expect(draft.worklog.metrics.tests_run).toBe(5);
     expect(draft.worklog.metrics.tests_passed).toBe(5);
     expect(draft.worklog.metrics.commands_run).toBe(1);
+  });
+
+  it('warns when auto command inference skips malformed package json', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.collection.run_tests_on_collect = true;
+    config.commands.test = 'auto';
+    config.commands.build = 'auto';
+    await writeFile(configPath, JSON.stringify(config, null, 2));
+    await writeFile(join(dir, 'package.json'), '{not-json');
+
+    const result = await collectDraftWithStatus({ cwd: dir, source: 'claude_code', runConfiguredCommands: true });
+
+    expect(result.draft.worklog.metrics.commands_run).toBeNull();
+    expect(result.draft.worklog.metrics.tests_run).toBeNull();
+    expect(result.warnings.join('\n')).toContain('Could not read package.json while inferring the test command');
+    expect(result.warnings.join('\n')).toContain('Could not read package.json while inferring the build command');
+    expect(result.warnings.join('\n')).toContain('Fix package.json or configure .agentfeed/config.json commands explicitly.');
   });
 
   it('records configured build command failures as command metrics without counting them as tests', async () => {

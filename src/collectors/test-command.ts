@@ -16,6 +16,16 @@ interface ResolvedCommand {
   args: string[];
 }
 
+interface ResolvedCommandSet {
+  commands: { test: ResolvedCommand | null; build: ResolvedCommand | null } | null;
+  warnings: string[];
+}
+
+interface ConfiguredCommandMetricStatus {
+  metrics: Pick<WorklogMetrics, 'tests_run' | 'tests_passed' | 'failed_commands' | 'commands_run'> | null;
+  warnings: string[];
+}
+
 interface TestCommandCounts {
   testsRun: number;
   testsPassed: number;
@@ -117,53 +127,87 @@ function splitCommandLine(commandLine: string): string[] {
   return parts.map((part) => part.replace(/^(['"])(.*)\1$/, '$2')).filter(Boolean);
 }
 
-async function inferTestCommand(cwd: string): Promise<ResolvedCommand | null> {
+function compactCommandInferenceFailure(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return message
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join(' ')
+    .slice(0, 240);
+}
+
+async function readPackageScriptsForInference(cwd: string, purpose: 'test' | 'build', warnings: string[]): Promise<Record<string, string> | null> {
   const packageJsonPath = join(cwd, 'package.json');
   if (await pathExists(packageJsonPath)) {
-    const pkg = await readJson<{ scripts?: Record<string, string> }>(packageJsonPath).catch(() => null);
-    if (pkg?.scripts?.test) return { command: 'npm', args: ['test'] };
+    try {
+      const pkg = await readJson<{ scripts?: Record<string, string> }>(packageJsonPath);
+      return pkg && typeof pkg === 'object' && pkg.scripts && typeof pkg.scripts === 'object' ? pkg.scripts : null;
+    } catch (error) {
+      warnings.push([
+        `Could not read package.json while inferring the ${purpose} command; automatic command collection skipped npm ${purpose}.`,
+        compactCommandInferenceFailure(error),
+        'Fix package.json or configure .agentfeed/config.json commands explicitly.'
+      ].filter(Boolean).join(' '));
+    }
   }
+  return null;
+}
+
+async function readMakefileForInference(cwd: string, purpose: 'test' | 'build', warnings: string[]): Promise<string | null> {
+  const makefilePath = join(cwd, 'Makefile');
+  if (!(await pathExists(makefilePath))) return null;
+  try {
+    return await readFile(makefilePath, 'utf8');
+  } catch (error) {
+    warnings.push([
+      `Could not read Makefile while inferring the ${purpose} command; automatic command collection skipped make ${purpose}.`,
+      compactCommandInferenceFailure(error),
+      'Fix Makefile permissions or configure .agentfeed/config.json commands explicitly.'
+    ].filter(Boolean).join(' '));
+  }
+  return null;
+}
+
+async function inferTestCommand(cwd: string, warnings: string[]): Promise<ResolvedCommand | null> {
+  const scripts = await readPackageScriptsForInference(cwd, 'test', warnings);
+  if (scripts?.test) return { command: 'npm', args: ['test'] };
   if (await pathExists(join(cwd, 'pyproject.toml')) || await pathExists(join(cwd, 'pytest.ini'))) return { command: 'pytest', args: [] };
   if (await pathExists(join(cwd, 'go.mod'))) return { command: 'go', args: ['test', './...'] };
   if (await pathExists(join(cwd, 'Cargo.toml'))) return { command: 'cargo', args: ['test'] };
-  const makefilePath = join(cwd, 'Makefile');
-  if (await pathExists(makefilePath)) {
-    const makefile = await readFile(makefilePath, 'utf8').catch(() => '');
-    if (/^test:/m.test(makefile)) return { command: 'make', args: ['test'] };
-  }
+  const makefile = await readMakefileForInference(cwd, 'test', warnings);
+  if (makefile && /^test:/m.test(makefile)) return { command: 'make', args: ['test'] };
   return null;
 }
 
-async function inferBuildCommand(cwd: string): Promise<ResolvedCommand | null> {
-  const packageJsonPath = join(cwd, 'package.json');
-  if (await pathExists(packageJsonPath)) {
-    const pkg = await readJson<{ scripts?: Record<string, string> }>(packageJsonPath).catch(() => null);
-    if (pkg?.scripts?.build) return { command: 'npm', args: ['run', 'build'] };
-  }
+async function inferBuildCommand(cwd: string, warnings: string[]): Promise<ResolvedCommand | null> {
+  const scripts = await readPackageScriptsForInference(cwd, 'build', warnings);
+  if (scripts?.build) return { command: 'npm', args: ['run', 'build'] };
   if (await pathExists(join(cwd, 'go.mod'))) return { command: 'go', args: ['build', './...'] };
   if (await pathExists(join(cwd, 'Cargo.toml'))) return { command: 'cargo', args: ['build'] };
-  const makefilePath = join(cwd, 'Makefile');
-  if (await pathExists(makefilePath)) {
-    const makefile = await readFile(makefilePath, 'utf8').catch(() => '');
-    if (/^build:/m.test(makefile)) return { command: 'make', args: ['build'] };
-  }
+  const makefile = await readMakefileForInference(cwd, 'build', warnings);
+  if (makefile && /^build:/m.test(makefile)) return { command: 'make', args: ['build'] };
   return null;
 }
 
-async function resolveConfiguredCommand(cwd: string, configured: 'auto' | string | null, infer: (cwd: string) => Promise<ResolvedCommand | null>): Promise<ResolvedCommand | null> {
+async function resolveConfiguredCommand(cwd: string, configured: 'auto' | string | null, infer: (cwd: string, warnings: string[]) => Promise<ResolvedCommand | null>, warnings: string[]): Promise<ResolvedCommand | null> {
   if (!configured) return null;
-  if (configured === 'auto') return infer(cwd);
+  if (configured === 'auto') return infer(cwd, warnings);
   const [command, ...args] = splitCommandLine(configured);
   if (!command) return null;
   assertSafeConfiguredCommand(command, args);
   return { command, args };
 }
 
-async function resolveConfiguredCommands(cwd: string, config: AgentFeedProjectConfig): Promise<{ test: ResolvedCommand | null; build: ResolvedCommand | null } | null> {
-  if (!config.collection.run_tests_on_collect || !config.collection.include_test_results) return null;
+async function resolveConfiguredCommands(cwd: string, config: AgentFeedProjectConfig): Promise<ResolvedCommandSet> {
+  if (!config.collection.run_tests_on_collect || !config.collection.include_test_results) return { commands: null, warnings: [] };
+  const warnings: string[] = [];
   return {
-    test: await resolveConfiguredCommand(cwd, config.commands.test, inferTestCommand),
-    build: await resolveConfiguredCommand(cwd, config.commands.build, inferBuildCommand)
+    commands: {
+      test: await resolveConfiguredCommand(cwd, config.commands.test, inferTestCommand, warnings),
+      build: await resolveConfiguredCommand(cwd, config.commands.build, inferBuildCommand, warnings)
+    },
+    warnings
   };
 }
 
@@ -254,9 +298,10 @@ export function parseTestCommandOutput(stdout: string, stderr: string): TestComm
   return null;
 }
 
-export async function collectConfiguredCommandMetrics(cwd: string, config: AgentFeedProjectConfig): Promise<Pick<WorklogMetrics, 'tests_run' | 'tests_passed' | 'failed_commands' | 'commands_run'> | null> {
-  const commands = await resolveConfiguredCommands(cwd, config);
-  if (!commands) return null;
+export async function collectConfiguredCommandMetricsWithStatus(cwd: string, config: AgentFeedProjectConfig): Promise<ConfiguredCommandMetricStatus> {
+  const resolved = await resolveConfiguredCommands(cwd, config);
+  const commands = resolved.commands;
+  if (!commands) return { metrics: null, warnings: resolved.warnings };
   const commandEnv = createScrubbedCommandEnv();
   const timeoutMs = configuredCommandTimeoutMs();
   let testsRun: number | null = null;
@@ -276,11 +321,18 @@ export async function collectConfiguredCommandMetrics(cwd: string, config: Agent
     commandsRun += 1;
     if (!result.ok) failedCommands += 1;
   }
-  if (!commandsRun) return null;
+  if (!commandsRun) return { metrics: null, warnings: resolved.warnings };
   return {
-    tests_run: testsRun,
-    tests_passed: testsPassed,
-    failed_commands: failedCommands || null,
-    commands_run: commandsRun
+    metrics: {
+      tests_run: testsRun,
+      tests_passed: testsPassed,
+      failed_commands: failedCommands || null,
+      commands_run: commandsRun
+    },
+    warnings: resolved.warnings
   };
+}
+
+export async function collectConfiguredCommandMetrics(cwd: string, config: AgentFeedProjectConfig): Promise<Pick<WorklogMetrics, 'tests_run' | 'tests_passed' | 'failed_commands' | 'commands_run'> | null> {
+  return (await collectConfiguredCommandMetricsWithStatus(cwd, config)).metrics;
 }

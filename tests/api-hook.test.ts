@@ -796,7 +796,9 @@ describe('api client', () => {
     { data: { token: 'af_live_bad_expiry', token_id: 'token-1', token_expires_at: 'not-a-date', user: { id: 'user-1', display_name: 'User One' } }, label: 'invalid token_expires_at' },
     { data: { token: 'af_live_test', token_id: 'token-1', token_expires_at: '2026-06-15T00:00:00Z', user: { id: 'user-1', display_name: 'User One' }, rotated_from: ['token-old'] }, label: 'invalid rotated_from' },
     { data: { token: 'af_live_test', token_id: 'token-1', token_expires_at: '2026-06-15T00:00:00Z', user: { id: 'user-1', display_name: 'User One' }, rotated_at: 'tomorrow-ish' }, label: 'invalid rotated_at' },
-    { data: { token: 'af_live_bad_user', token_id: 'token-1', token_expires_at: '2026-06-15T00:00:00Z', user: { id: 123, display_name: 'User One' } }, label: 'unsafe user object' }
+    { data: { token: 'af_live_bad_user', token_id: 'token-1', token_expires_at: '2026-06-15T00:00:00Z', user: { id: 123, display_name: 'User One' } }, label: 'unsafe user object' },
+    { data: { token: 'af_live_extra_root', token_id: 'token-1', token_expires_at: '2026-06-15T00:00:00Z', user: { id: 'user-1', display_name: 'User One' }, extra: 'unexpected' }, label: 'unexpected root field' },
+    { data: { token: 'af_live_extra_user', token_id: 'token-1', token_expires_at: '2026-06-15T00:00:00Z', user: { id: 'user-1', display_name: 'User One', role: 'admin' } }, label: 'unexpected user field' }
   ])('rejects malformed browser exchange responses before credentials can be saved: $label', async ({ data }) => {
     await saveCredentials('af_live_existing', {
       apiBaseUrl: 'https://api.agentfeed.dev/v1',

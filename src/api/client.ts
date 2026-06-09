@@ -633,7 +633,7 @@ async function parseIngestionTokenStatusResponse(response: Response): Promise<Pa
 
 function parseOptionalUser(value: unknown): AgentFeedCredentials['user'] | null | undefined {
   if (value === undefined) return undefined;
-  if (!isRecord(value)) return null;
+  if (!isRecord(value) || !hasOnlyExpectedFields(value, CLI_AUTH_EXCHANGE_USER_FIELDS)) return null;
   const id = Object.hasOwn(value, 'id') ? optionalStringField(value.id) : undefined;
   const username = Object.hasOwn(value, 'username') ? optionalStringField(value.username) : undefined;
   const displayName = Object.hasOwn(value, 'display_name') ? optionalStringField(value.display_name) : undefined;
@@ -797,6 +797,8 @@ function parseCliAuthSession(value: unknown, apiBaseUrl: string): CliAuthSession
 const REMOTE_PRIVATE_REVIEW_UPLOAD_STATUS = 'needs_review' satisfies PublishDraftStatus;
 const CACHED_PRIVATE_REVIEW_UPLOAD_STATUS = 'already_uploaded' satisfies PublishDraftStatus;
 const VALID_PRIVATE_REVIEW_VISIBILITY: PublishDraftVisibility = 'private';
+const CLI_AUTH_EXCHANGE_USER_FIELDS = new Set(['id', 'username', 'display_name', 'avatar_url']);
+const CLI_AUTH_EXCHANGE_RESULT_FIELDS = new Set(['token', 'token_id', 'token_expires_at', 'user', 'rotated_from', 'rotated_at']);
 const PUBLISH_DRAFT_RESULT_FIELDS = new Set(['id', 'status', 'visibility', 'review_url', 'created_at', 'reused_existing']);
 
 function hasOnlyExpectedFields(value: Record<string, unknown>, allowedFields: ReadonlySet<string>): boolean {
@@ -841,7 +843,9 @@ function parsePublishDraftResult(value: unknown, apiBaseUrl: string, reviewBaseU
 }
 
 function parseCliAuthExchangeResult(value: unknown): CliAuthExchangeResult {
-  if (!isRecord(value)) throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid CLI auth exchange response.');
+  if (!isRecord(value) || !hasOnlyExpectedFields(value, CLI_AUTH_EXCHANGE_RESULT_FIELDS)) {
+    throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid CLI auth exchange response.');
+  }
   const token = stringField(value.token);
   const tokenId = stringField(value.token_id);
   const tokenExpiresAt = validOptionalDateString(value.token_expires_at);

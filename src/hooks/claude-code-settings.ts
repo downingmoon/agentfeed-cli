@@ -61,7 +61,7 @@ async function readSettings(path: string): Promise<JsonObj> {
   if (!(await pathExists(path))) return {};
   let parsed: unknown;
   try {
-    parsed = JSON.parse(await readFile(path, 'utf8')) as unknown;
+    parsed = JSON.parse(await readFile(path, 'utf8'));
   } catch (error) {
     const reason = error instanceof Error && error.message ? ` ${error.message}` : '';
     throw new Error(`Claude Code settings could not be parsed at ${path}.${reason} Fix the JSON or move the file aside, then rerun agentfeed hook install claude-code.`);
@@ -82,12 +82,29 @@ async function backupSettings(projectRoot: string, path: string): Promise<string
   return backupPath;
 }
 
-function stopEntries(settings: JsonObj): unknown[] {
-  const hooks = settings.hooks as JsonObj | undefined;
-  if (!hooks) settings.hooks = {};
-  const root = settings.hooks as JsonObj;
-  if (!Array.isArray(root.Stop)) root.Stop = [];
-  return root.Stop as unknown[];
+function settingsShapeError(path: string, field: string, shape: string): Error {
+  return new Error(`Claude Code settings ${field} must be ${shape} at ${path}. Fix the file or move it aside, then rerun agentfeed hook install claude-code.`);
+}
+
+function hooksObject(settings: JsonObj, path: string): JsonObj {
+  if (settings.hooks === undefined) {
+    const hooks: JsonObj = {};
+    settings.hooks = hooks;
+    return hooks;
+  }
+  if (!isJsonObject(settings.hooks)) throw settingsShapeError(path, 'hooks', 'a JSON object');
+  return settings.hooks;
+}
+
+function stopEntries(settings: JsonObj, path: string): unknown[] {
+  const hooks = hooksObject(settings, path);
+  if (hooks.Stop === undefined) {
+    const stop: unknown[] = [];
+    hooks.Stop = stop;
+    return stop;
+  }
+  if (!Array.isArray(hooks.Stop)) throw settingsShapeError(path, 'hooks.Stop', 'an array');
+  return hooks.Stop;
 }
 
 function isJsonObject(value: unknown): value is JsonObj {
@@ -110,7 +127,8 @@ function containsAgentFeedCommandHook(value: unknown): boolean {
 }
 
 export function hasAgentFeedHook(settings: JsonObj): boolean {
-  const hooks = (settings.hooks as JsonObj | undefined)?.Stop;
+  if (!isJsonObject(settings.hooks)) return false;
+  const hooks = settings.hooks.Stop;
   if (!Array.isArray(hooks)) return false;
   return containsAgentFeedCommandHook(hooks);
 }
@@ -119,7 +137,7 @@ export async function installClaudeCodeHook(options: { projectRoot: string; scop
   const path = resolveClaudeSettingsPath(options);
   const settings = await readSettings(path);
   if (!hasAgentFeedHook(settings)) {
-    stopEntries(settings).push({ matcher: '*', hooks: [{ type: 'command', command: buildClaudeCodeStopHookCommand() }] });
+    stopEntries(settings, path).push({ matcher: '*', hooks: [{ type: 'command', command: buildClaudeCodeStopHookCommand() }] });
   }
   if (options.dryRun) return { path, settings, backupPath: null };
   await ensureDir(dirname(path));
@@ -130,19 +148,28 @@ export async function installClaudeCodeHook(options: { projectRoot: string; scop
 
 function removeAgentFeedFromHookList(value: unknown): unknown {
   if (Array.isArray(value)) {
-    return value
-      .map((item) => {
-        if (isJsonObject(item) || Array.isArray(item)) return removeAgentFeedFromHookList(item);
-        return item;
-      })
-      .filter((item) => !isAgentFeedCommandHook(item));
+    const retained: unknown[] = [];
+    for (const item of value) {
+      if (isAgentFeedCommandHook(item)) continue;
+      retained.push(isJsonObject(item) || Array.isArray(item) ? removeAgentFeedFromHookList(item) : item);
+    }
+    return retained;
   }
   if (isJsonObject(value)) {
-    const copy: JsonObj = { ...(value as JsonObj) };
+    const copy: JsonObj = { ...value };
     for (const [key, child] of Object.entries(copy)) copy[key] = removeAgentFeedFromHookList(child);
     return copy;
   }
   return value;
+}
+
+function removeAgentFeedFromStopEntries(value: readonly unknown[]): unknown[] {
+  const retained: unknown[] = [];
+  for (const item of value) {
+    if (isAgentFeedCommandHook(item)) continue;
+    retained.push(isJsonObject(item) || Array.isArray(item) ? removeAgentFeedFromHookList(item) : item);
+  }
+  return retained;
 }
 
 export async function uninstallClaudeCodeHook(options: { projectRoot: string; scope?: 'project' | 'global'; settingsPath?: string }) {
@@ -151,9 +178,8 @@ export async function uninstallClaudeCodeHook(options: { projectRoot: string; sc
   const settings = await readSettings(path);
   if (!hasAgentFeedHook(settings)) return { path, settings, backupPath: null };
   const backupPath = await backupSettings(options.projectRoot, path);
-  if (settings.hooks && typeof settings.hooks === 'object') {
-    const hooks = settings.hooks as JsonObj;
-    hooks.Stop = removeAgentFeedFromHookList(hooks.Stop) as unknown[];
+  if (isJsonObject(settings.hooks) && Array.isArray(settings.hooks.Stop)) {
+    settings.hooks.Stop = removeAgentFeedFromStopEntries(settings.hooks.Stop);
   }
   await ensureDir(dirname(path));
   await writeJson(path, settings);

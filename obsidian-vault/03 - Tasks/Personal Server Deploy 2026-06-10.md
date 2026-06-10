@@ -2,67 +2,58 @@
 title: Personal Server Deploy 2026-06-10
 date: 2026-06-10
 tags:
-  - agentfeed/deploy
-  - agentfeed/server-test
+  - agentfeed
+  - deployment
+  - personal-server
 status: done
 ---
 
 # Personal Server Deploy 2026-06-10
 
-> [!success]
-> 개인서버 `161.33.171.81` 배포를 수행했고, Frontend/Backend 컨테이너와 hosted compatibility smoke가 통과했다.
+> [!success] Result
+> 개인서버 `161.33.171.81`에 현재 CLI / Frontend / Backend / Dev orchestration 상태를 동기화하고 backend/frontend 컨테이너를 재기동했다.
 
-## 배포 대상
+## Scope
 
-- Frontend: `http://161.33.171.81:13030`
-- Backend API: `http://161.33.171.81:18080/v1`
-- Postgres host port: `127.0.0.1:15432`
+- Target frontend: `http://161.33.171.81:13030`
+- Target API: `http://161.33.171.81:18080/v1`
 - SSH host alias: `trading-bot`
+- Deploy runner: `agentfeed-dev/scripts/server-deploy.sh --execute --up`
 
-## 수행 내용
+## Deployed refs
 
-1. `AgentFeed-CLI` 문서 커밋 `c6aaaf7` push 완료.
-2. 4개 레포 상태 확인:
-   - `AgentFeed-CLI` `main...origin/main`
-   - `agentfeed-frontend` `main...origin/main`
-   - `agentfeed-backend` `master...origin/master`
-   - `agentfeed-dev` `main...origin/main`
-3. `agentfeed-dev/scripts/server-deploy.sh --execute`로 서버에 소스 동기화.
-4. `agentfeed-dev/scripts/server-deploy.sh --execute --up`로 app 컨테이너 force-recreate.
-5. Frontend Next production build 완료 후 `healthy` 상태 확인.
+- CLI docs repo: `f8e61e4` — `Document search query normalization split`
+- Backend: `e097edd` — `Split search query normalization contract`
+- Frontend: `46828e1` — `Reject malformed frontend error envelopes`
+- Dev orchestration: `622293e` — `Gate strict client error response schemas`
 
-## 검증 증거
+## Verification Evidence
 
 ```text
-agentfeed-server-backend-1    Up About a minute (healthy)   0.0.0.0:18080->8000/tcp
-agentfeed-server-frontend-1   Up About a minute (healthy)   0.0.0.0:13030->3000/tcp
-agentfeed-server-postgres-1   Up 4 days (healthy)           127.0.0.1:15432->5432/tcp
+local compose config OK
+agentfeed-server-backend-1    healthy    0.0.0.0:18080->8000/tcp
+agentfeed-server-frontend-1   healthy    0.0.0.0:13030->3000/tcp
+agentfeed-server-postgres-1   healthy    127.0.0.1:15432->5432/tcp
 ```
-
-Backend metadata:
-
-```json
-{
-  "service": "agentfeed-api",
-  "api_version": "v1",
-  "backend_version": "0.1.0",
-  "contract_version": "2026-06-03",
-  "review_base_url": "http://161.33.171.81:13030"
-}
-```
-
-Hosted smoke:
 
 ```text
-FRONTEND_DEPLOYMENT_COMPATIBILITY_PASSED
-BACKEND_METADATA_COMPATIBILITY_PASSED v1 2026-06-03
-BACKEND_READINESS_COMPATIBILITY_PASSED
-FRONTEND_API_COMPATIBILITY_PASSED v1 2026-06-03
-HOSTED_COMPATIBILITY_SMOKE_PASSED
+Backend readiness: ready
+Database revision: 027_browser_session_version
+Migration up_to_date: true
+Backend metadata: v1 / 2026-06-03
+Frontend root: HTTP 200
+Hosted compatibility smoke: HOSTED_COMPATIBILITY_SMOKE_PASSED
+Frontend API probes: metadata feed auth-me me-settings me-notifications me-integrations integration-setup-guide projects check-username search tags explore
 ```
 
-## 참고
+## Notes
 
-> [!warning]
-> 현재는 도메인/HTTPS 없는 개인서버 테스트 배포다. CLI나 브라우저 테스트 시 insecure server-test 설정이 필요할 수 있다.
+- `agentfeed doctor` in smoke used a temp HOME, so `token missing` is expected and did not block API compatibility.
+- Evidence artifact was generated under `agentfeed-dev/.commercial-readiness-evidence/20260610T032025Z-personal-server-deploy/` and is intentionally ignored by git.
+- This is still IP-only server-test deployment, not production/domain deployment.
 
+## Follow-up
+
+- [ ] 직접 브라우저에서 GitHub OAuth 로그인 흐름 확인.
+- [ ] 실제 `agentfeed login → collect → publish`를 개인 계정 토큰으로 end-to-end 확인.
+- [ ] 도메인/HTTPS 준비 후 insecure server-test flags 제거.

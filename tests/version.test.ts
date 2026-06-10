@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { createEmptyDraft } from '../src/draft/create.js';
-import { AGENTFEED_CLI_VERSION, AGENTFEED_TOOL_VERSION } from '../src/version.js';
+import { AGENTFEED_CLI_VERSION, AGENTFEED_TOOL_VERSION, packageVersionFromMetadata } from '../src/version.js';
 
 const packageJson = JSON.parse(readFileSync(resolve('package.json'), 'utf8')) as {
   name: string;
@@ -31,11 +31,18 @@ describe('CLI version metadata', () => {
   it('uses package.json as the single source for emitted tool metadata', () => {
     expect(AGENTFEED_CLI_VERSION).toBe(packageVersion);
     expect(AGENTFEED_TOOL_VERSION).toBe(`agentfeed-cli/${packageVersion}`);
+    expect(packageVersionFromMetadata({ version: packageVersion })).toBe(packageVersion);
     expect(createEmptyDraft({
       projectName: 'agentfeed-cli',
       projectRoot: '/tmp/agentfeed-cli',
       source: 'codex'
     }).source.tool_version).toBe(AGENTFEED_TOOL_VERSION);
+  });
+
+  it('fails closed when package metadata cannot provide a real CLI version', () => {
+    for (const metadata of [{}, { version: '' }, { version: '0.2' }, { version: 'latest' }, null]) {
+      expect(() => packageVersionFromMetadata(metadata)).toThrow('AgentFeed package metadata is missing a valid semver version');
+    }
   });
 
   it('builds dist before npm packaging', () => {

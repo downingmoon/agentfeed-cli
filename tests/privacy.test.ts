@@ -1,7 +1,22 @@
 import { describe, expect, it } from 'vitest';
+import { createEmptyDraft } from '../src/draft/create.js';
+import { applyRedactedPublicFields } from '../src/privacy/draft-sanitizer.js';
 import { scanAndRedactFields } from '../src/privacy/scan.js';
 
 describe('privacy scanner', () => {
+
+  it('rejects malformed redacted public fields instead of mutating the draft', () => {
+    // Given: a valid local draft and a malformed redaction payload at the public-field boundary.
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: '/tmp/proj', source: 'codex' });
+    const originalOutcome = [...draft.worklog.outcome];
+
+    // When / Then: applying the malformed payload raises a clear error and leaves the draft intact.
+    expect(() => applyRedactedPublicFields(draft, { outcome: ['Reviewed code', 42] })).toThrow(
+      'Invalid redacted public field outcome: expected an array of strings.'
+    );
+    expect(draft.worklog.outcome).toEqual(originalOutcome);
+  });
+
   it.each([
     ['OpenAI key', 'sk-abcdefghijklmnopqrstuvwxyz1234567890', 'api_key_pattern'],
     ['Anthropic key', 'sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890', 'api_key_pattern'],

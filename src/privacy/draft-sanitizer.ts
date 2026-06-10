@@ -1,13 +1,9 @@
 import type { LocalDraft, PrivacyScanResult } from '../types.js';
+import { parseRedactedPatch, type PublicScanFields } from './redacted-public-fields.js';
 import { scanAndRedactFields } from './scan.js';
 import { stripUrlUserInfo } from './url.js';
 
-export type PublicScanFields = Record<string, unknown>;
-
-function normalizeDraftRepositoryUrl(value?: string | null): string | null {
-  if (value === '[REDACTED_URL]') return value;
-  return stripUrlUserInfo(value);
-}
+export type { PublicScanFields } from './redacted-public-fields.js';
 
 export function publicScanFieldsFromDraft(draft: LocalDraft): PublicScanFields {
   return {
@@ -26,22 +22,19 @@ export function publicScanFieldsFromDraft(draft: LocalDraft): PublicScanFields {
 }
 
 export function applyRedactedPublicFields(draft: LocalDraft, redacted: PublicScanFields): void {
-  if (typeof redacted.title === 'string') draft.worklog.title = redacted.title;
-  if (typeof redacted.summary === 'string') draft.worklog.summary = redacted.summary;
-  if (typeof redacted.user_note === 'string' || redacted.user_note == null) draft.worklog.user_note = redacted.user_note as string | null;
-  if (typeof redacted.model === 'string' || redacted.model == null) draft.worklog.model = redacted.model as string | null;
-  if (redacted.metrics && typeof redacted.metrics === 'object') draft.worklog.metrics = redacted.metrics as LocalDraft['worklog']['metrics'];
-  if (typeof redacted.public_prompt === 'string' || redacted.public_prompt == null) draft.worklog.public_prompt = redacted.public_prompt as string | null;
-  if (Array.isArray(redacted.outcome)) draft.worklog.outcome = redacted.outcome as string[];
-  if (Array.isArray(redacted.timeline)) draft.worklog.timeline = redacted.timeline as LocalDraft['worklog']['timeline'];
-  if (Array.isArray(redacted.changed_areas)) draft.worklog.changed_areas = redacted.changed_areas as string[];
-  if (Array.isArray(redacted.tags)) draft.worklog.tags = redacted.tags as string[];
-  if (redacted.project && typeof redacted.project === 'object') {
-    draft.project = redacted.project as LocalDraft['project'];
-    draft.project.repository_url = normalizeDraftRepositoryUrl(draft.project.repository_url);
-  }
+  const patch = parseRedactedPatch(redacted);
+  if (patch.title !== undefined) draft.worklog.title = patch.title;
+  if (patch.summary !== undefined) draft.worklog.summary = patch.summary;
+  if (patch.user_note !== undefined) draft.worklog.user_note = patch.user_note;
+  if (patch.model !== undefined) draft.worklog.model = patch.model;
+  if (patch.metrics !== undefined) draft.worklog.metrics = patch.metrics;
+  if (patch.public_prompt !== undefined) draft.worklog.public_prompt = patch.public_prompt;
+  if (patch.outcome !== undefined) draft.worklog.outcome = patch.outcome;
+  if (patch.timeline !== undefined) draft.worklog.timeline = patch.timeline;
+  if (patch.changed_areas !== undefined) draft.worklog.changed_areas = patch.changed_areas;
+  if (patch.tags !== undefined) draft.worklog.tags = patch.tags;
+  if (patch.project !== undefined) draft.project = patch.project;
 }
-
 
 function stripUploadOnlyPrivacySamples(scan: PrivacyScanResult): PrivacyScanResult {
   return {
@@ -61,7 +54,7 @@ export function scanAndRedactDraftPublicFields(draft: LocalDraft, options: { pre
 }
 
 export function sanitizedDraftForUpload(draft: LocalDraft): LocalDraft {
-  const safeDraft = structuredClone(draft) as LocalDraft;
+  const safeDraft: LocalDraft = structuredClone(draft);
   scanAndRedactDraftPublicFields(safeDraft, { preserveResolvedFindings: true });
   safeDraft.privacy_scan = stripUploadOnlyPrivacySamples(safeDraft.privacy_scan);
   return safeDraft;

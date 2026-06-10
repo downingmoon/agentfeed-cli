@@ -1,4 +1,6 @@
 import type { AgentFeedCredentials, CliAuthExchangeResult, CliAuthSession, IngestWorklogRequest, LocalDraft } from '../types.js';
+import { parseApiMetadata, type ApiMetadata } from './metadata.js';
+export type { ApiMetadata } from './metadata.js';
 import { randomUUID } from 'node:crypto';
 import { open, readFile, rm, stat, utimes, type FileHandle } from 'node:fs/promises';
 import { isIP } from 'node:net';
@@ -23,24 +25,6 @@ export interface ApiCheckResult {
   status?: number;
   error?: string;
   data?: IngestionTokenStatus;
-}
-
-export interface ApiMetadata {
-  service?: string;
-  api_version?: string;
-  backend_version?: string;
-  contract_version?: string;
-  review_base_url?: string;
-  supported_clients?: {
-    cli?: {
-      min_version?: string;
-      contract_version?: string;
-    };
-    frontend?: {
-      min_version?: string;
-      contract_version?: string;
-    };
-  };
 }
 
 export interface ApiCompatibilityCheckResult {
@@ -121,8 +105,9 @@ async function parseCheckData(response: Response): Promise<IngestionTokenStatus 
   const contentType = response.headers.get('content-type') ?? '';
   if (!contentType.includes('application/json')) return undefined;
   try {
-    const parsed = await response.json() as { data?: IngestionTokenStatus };
-    return parsed.data;
+    const parsed: unknown = await response.json();
+    if (!isRecord(parsed) || !Object.hasOwn(parsed, 'data')) return undefined;
+    return parseIngestionTokenStatus(parsed.data) ?? undefined;
   } catch {
     return undefined;
   }
@@ -139,12 +124,13 @@ async function parseMetadataResponse(response: Response): Promise<ParsedApiMetad
     return { error: 'AgentFeed API metadata response is not JSON.' };
   }
   try {
-    const parsed = await response.json() as unknown;
+    const parsed: unknown = await response.json();
     if (!isRecord(parsed) || !Object.hasOwn(parsed, 'data')) return { error: 'AgentFeed API metadata response is missing the data envelope.' };
     if (!hasOnlyExpectedFields(parsed, DATA_RESPONSE_ENVELOPE_FIELDS)) {
       return { error: 'AgentFeed API metadata response has unexpected data envelope fields.' };
     }
-    return { data: parsed.data as ApiMetadata };
+    const metadata = parseApiMetadata(parsed.data);
+    return metadata ? { data: metadata } : { error: 'AgentFeed API metadata response data is invalid.' };
   } catch {
     return { error: 'AgentFeed API metadata response contains invalid JSON.' };
   }
@@ -637,7 +623,7 @@ async function parseIngestionTokenStatusResponse(response: Response): Promise<Pa
       : { error: 'AgentFeed API ingestion status error response is not JSON.' };
   }
   try {
-    const parsed = await response.json() as unknown;
+    const parsed: unknown = await response.json();
     if (!response.ok) {
       return { error: apiErrorResponseSummary(parsed) ?? 'AgentFeed API ingestion status error response is missing the error envelope.' };
     }

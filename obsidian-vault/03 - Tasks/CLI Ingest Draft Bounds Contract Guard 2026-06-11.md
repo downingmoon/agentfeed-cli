@@ -29,6 +29,7 @@ CLI `LocalDraft` validator는 enum/type 형식은 확인했지만, hand-edit 또
 - `src/draft/validation-primitives.ts`
   - `requireStringMax()` / `optionalStringOrNullMax()` 추가
   - `requireArrayMax()` / `requireStringArrayMax()` / `optionalStringArrayOrNullMax()` 추가
+  - Backend `min_length=1` 필드를 위한 빈 문자열/빈 array item 거부 옵션 추가
 - `src/draft/validation.ts`
   - Backend ingest schema와 맞춘 제한을 로컬 draft 검증에 반영
   - 대표 범위:
@@ -39,9 +40,11 @@ CLI `LocalDraft` validator는 enum/type 형식은 확인했지만, hand-edit 또
     - timeline title 200자, description 1000자
     - privacy findings 50개, id 100자, field 100자, message 2000자
     - metrics `models_used`/`agent_metrics`/`agent_modes` 및 per-agent `agent_modes` 20개
+  - Backend에서 `min_length=1`인 필드(`project.name`, worklog `title`/`summary`, timeline title, privacy id/message/field, tag/changed_area item)는 빈 문자열도 로컬에서 거부
 - `tests/draft-validation.test.ts`
   - oversized backend-bound string fields가 `readDraft()`에서 거부되는지 검증
   - oversized backend-bound arrays가 `readDraft()`에서 거부되는지 검증
+  - empty backend-required strings / empty bounded string-array items가 `readDraft()`에서 거부되는지 검증
 
 ## 검증
 
@@ -62,7 +65,7 @@ npm test -- --run
 git diff --check
 ```
 
-결과: 모두 통과.
+결과: 모두 통과. 최종 전체 테스트는 34개 파일 / 606개 테스트 통과.
 
 추가 확인:
 

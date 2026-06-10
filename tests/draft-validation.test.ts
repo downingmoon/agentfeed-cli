@@ -89,4 +89,38 @@ describe('local draft validation', () => {
       }));
     }, 'privacy_scan.findings must contain at most 50 items');
   });
+
+  it('rejects backend-ingest required strings that are empty before upload', async () => {
+    await expectDraftReadFailure((draft) => {
+      draft.project.name = '';
+    }, 'project.name must not be empty');
+
+    await expectDraftReadFailure((draft) => {
+      draft.worklog.summary = '';
+    }, 'worklog.summary must not be empty');
+
+    await expectDraftReadFailure((draft) => {
+      draft.worklog.timeline = [{ order: 0, title: '' }];
+    }, 'worklog.timeline[0].title must not be empty');
+
+    await expectDraftReadFailure((draft) => {
+      draft.privacy_scan.findings = [{
+        id: '',
+        type: 'possible_secret',
+        severity: 'high',
+        message: 'Missing id',
+        resolved: false
+      }];
+    }, 'privacy_scan.findings[0].id must not be empty');
+  });
+
+  it('rejects backend-ingest string array items that are empty before upload', async () => {
+    await expectDraftReadFailure((draft) => {
+      draft.worklog.tags = [''];
+    }, 'worklog.tags[0] must not be empty');
+
+    await expectDraftReadFailure((draft) => {
+      draft.worklog.changed_areas = [''];
+    }, 'worklog.changed_areas[0] must not be empty');
+  });
 });

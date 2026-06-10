@@ -97,7 +97,7 @@ function validateTimeline(value: unknown, path: string): WorklogTimelineItem[] {
     const status = row.status === undefined ? undefined : requireTimelineStatus(row.status, `worklog.timeline[${index}].status`, path);
     return {
       order: requireNonNegativeInteger(row.order, `worklog.timeline[${index}].order`, path),
-      title: requireStringMax(row.title, `worklog.timeline[${index}].title`, path, WORKLOG_TIMELINE_TITLE_MAX_LENGTH),
+      title: requireStringMax(row.title, `worklog.timeline[${index}].title`, path, WORKLOG_TIMELINE_TITLE_MAX_LENGTH, false),
       ...(row.description === undefined ? {} : { description: requireStringMax(row.description, `worklog.timeline[${index}].description`, path, WORKLOG_TIMELINE_DESCRIPTION_MAX_LENGTH) }),
       ...(status === undefined ? {} : { status }),
     };
@@ -134,11 +134,11 @@ function validatePrivacyScan(value: unknown, path: string): PrivacyScanResult {
         ? undefined
         : requirePrivacyResolution(finding.resolution, `privacy_scan.findings[${index}].resolution`, path);
       return {
-        id: requireStringMax(finding.id, `privacy_scan.findings[${index}].id`, path, PRIVACY_FINDING_ID_MAX_LENGTH),
+        id: requireStringMax(finding.id, `privacy_scan.findings[${index}].id`, path, PRIVACY_FINDING_ID_MAX_LENGTH, false),
         type: requirePrivacyFindingType(finding.type, `privacy_scan.findings[${index}].type`, path),
         severity: requirePrivacySeverity(finding.severity, `privacy_scan.findings[${index}].severity`, path),
-        message: requireStringMax(finding.message, `privacy_scan.findings[${index}].message`, path, PRIVACY_FINDING_MESSAGE_MAX_LENGTH),
-        ...(finding.field === undefined ? {} : { field: requireStringMax(finding.field, `privacy_scan.findings[${index}].field`, path, PRIVACY_FINDING_FIELD_MAX_LENGTH) }),
+        message: requireStringMax(finding.message, `privacy_scan.findings[${index}].message`, path, PRIVACY_FINDING_MESSAGE_MAX_LENGTH, false),
+        ...(finding.field === undefined ? {} : { field: requireStringMax(finding.field, `privacy_scan.findings[${index}].field`, path, PRIVACY_FINDING_FIELD_MAX_LENGTH, false) }),
         ...(finding.sample_redacted === undefined ? {} : { sample_redacted: requireString(finding.sample_redacted, `privacy_scan.findings[${index}].sample_redacted`, path) }),
         resolved: requireBoolean(finding.resolved, `privacy_scan.findings[${index}].resolved`, path),
         ...(resolution === undefined ? {} : { resolution }),
@@ -187,21 +187,21 @@ export function validateLocalDraft(value: unknown, path: string): LocalDraft {
     schema_version: '0.2',
     id,
     project: {
-      name: requireStringMax(project.name, 'project.name', path, PROJECT_NAME_MAX_LENGTH),
+      name: requireStringMax(project.name, 'project.name', path, PROJECT_NAME_MAX_LENGTH, false),
       ...(repositoryUrl === undefined ? {} : { repository_url: repositoryUrl }),
       ...(localPathHash === undefined ? {} : { local_path_hash: localPathHash }),
     },
     worklog: {
-      title: requireStringMax(worklog.title, 'worklog.title', path, WORKLOG_TITLE_MAX_LENGTH),
-      summary: requireStringMax(worklog.summary, 'worklog.summary', path, WORKLOG_SUMMARY_MAX_LENGTH),
+      title: requireStringMax(worklog.title, 'worklog.title', path, WORKLOG_TITLE_MAX_LENGTH, false),
+      summary: requireStringMax(worklog.summary, 'worklog.summary', path, WORKLOG_SUMMARY_MAX_LENGTH, false),
       ...(userNote === undefined ? {} : { user_note: userNote }),
       agent: requireAgentType(worklog.agent, 'worklog.agent', path),
       ...(model === undefined ? {} : { model }),
       category: requireWorklogCategory(worklog.category, 'worklog.category', path),
-      tags: requireStringArrayMax(worklog.tags, 'worklog.tags', path, WORKLOG_TAGS_MAX_ITEMS, WORKLOG_TAG_MAX_LENGTH),
+      tags: requireStringArrayMax(worklog.tags, 'worklog.tags', path, WORKLOG_TAGS_MAX_ITEMS, WORKLOG_TAG_MAX_LENGTH, false),
       visibility: requirePrivateVisibility(worklog.visibility, 'worklog.visibility', path),
       metrics: validateMetrics(worklog.metrics, path),
-      changed_areas: requireStringArrayMax(worklog.changed_areas, 'worklog.changed_areas', path, WORKLOG_CHANGED_AREAS_MAX_ITEMS, WORKLOG_CHANGED_AREA_MAX_LENGTH),
+      changed_areas: requireStringArrayMax(worklog.changed_areas, 'worklog.changed_areas', path, WORKLOG_CHANGED_AREAS_MAX_ITEMS, WORKLOG_CHANGED_AREA_MAX_LENGTH, false),
       ...(publicPrompt === undefined ? {} : { public_prompt: publicPrompt }),
       outcome: requireStringArrayMax(worklog.outcome, 'worklog.outcome', path, WORKLOG_OUTCOME_MAX_ITEMS),
       timeline: validateTimeline(worklog.timeline, path),

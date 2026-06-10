@@ -22,13 +22,14 @@ export function requireString(value: unknown, field: string, path: string): stri
   return value;
 }
 
-function enforceStringMax(value: string, field: string, path: string, maxLength: number): string {
+function enforceStringMax(value: string, field: string, path: string, maxLength: number, allowEmpty = true): string {
+  if (!allowEmpty && value.length === 0) throw draftError(path, `${field} must not be empty`);
   if (value.length > maxLength) throw draftError(path, `${field} must be at most ${maxLength} characters`);
   return value;
 }
 
-export function requireStringMax(value: unknown, field: string, path: string, maxLength: number): string {
-  return enforceStringMax(requireString(value, field, path), field, path, maxLength);
+export function requireStringMax(value: unknown, field: string, path: string, maxLength: number, allowEmpty = true): string {
+  return enforceStringMax(requireString(value, field, path), field, path, maxLength, allowEmpty);
 }
 
 export function requireBoolean(value: unknown, field: string, path: string): boolean {
@@ -106,15 +107,21 @@ function enforceStringItemsMax(items: readonly string[], field: string, path: st
   if (index !== -1) throw draftError(path, `${field}[${index}] must be at most ${maxLength} characters`);
 }
 
+function enforceStringItemsNotEmpty(items: readonly string[], field: string, path: string): void {
+  const index = items.findIndex((item) => item.length === 0);
+  if (index !== -1) throw draftError(path, `${field}[${index}] must not be empty`);
+}
+
 export function requireArrayMax(value: unknown, field: string, path: string, maxItems: number): unknown[] {
   if (!Array.isArray(value)) throw draftError(path, `${field} must be an array`);
   enforceArrayMax(value, field, path, maxItems);
   return [...value];
 }
 
-export function requireStringArrayMax(value: unknown, field: string, path: string, maxItems: number, itemMaxLength?: number): string[] {
+export function requireStringArrayMax(value: unknown, field: string, path: string, maxItems: number, itemMaxLength?: number, allowEmptyItems = true): string[] {
   const items = requireStringArray(value, field, path);
   enforceArrayMax(items, field, path, maxItems);
+  if (!allowEmptyItems) enforceStringItemsNotEmpty(items, field, path);
   if (itemMaxLength !== undefined) enforceStringItemsMax(items, field, path, itemMaxLength);
   return items;
 }

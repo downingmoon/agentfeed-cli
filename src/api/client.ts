@@ -1,5 +1,6 @@
 import type { AgentFeedCredentials, CliAuthExchangeResult, CliAuthSession, IngestWorklogRequest, LocalDraft } from '../types.js';
 import { parseApiMetadata, type ApiMetadata } from './metadata.js';
+import { nonJsonErrorResponseDetails, nonJsonErrorResponseMessage, responseContentTypeIsJson } from './response-diagnostics.js';
 export type { ApiMetadata } from './metadata.js';
 import { randomUUID } from 'node:crypto';
 import { open, readFile, rm, stat, utimes, type FileHandle } from 'node:fs/promises';
@@ -896,6 +897,14 @@ function parseCliAuthExchangeResult(value: unknown): CliAuthExchangeResult {
 }
 
 async function readResponseJson(response: Response, options: { successMessage: string; localDraftKept?: boolean }): Promise<unknown> {
+  if (!response.ok && !responseContentTypeIsJson(response.headers.get('content-type'))) {
+    throw new AgentFeedApiError(
+      502,
+      'API_RESPONSE_INVALID',
+      await nonJsonErrorResponseMessage(response, { localDraftKept: options.localDraftKept }),
+      nonJsonErrorResponseDetails(response)
+    );
+  }
   try {
     return await response.json();
   } catch {

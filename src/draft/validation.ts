@@ -1,111 +1,6 @@
 import type { AgentMetricSummary, AgentType, CollectionQuality, CollectionSource, CollectionWindow, CollectionWindowReason, LocalDraft, PrivacyFinding, PrivacyScanResult, PrivacySeverity, PrivacyStatus, ReviewUrlHandoffChannel, WorklogCategory, WorklogMetrics, WorklogTimelineItem } from '../types.js';
 
-const AGENT_TYPES = new Set(['claude_code', 'codex', 'cursor', 'gemini_cli', 'other']);
-const WORKLOG_CATEGORIES = new Set(['web_app', 'bot', 'automation', 'trading', 'devops', 'data', 'ai_tool', 'open_source', 'other']);
-const PRIVACY_STATUSES = new Set(['safe', 'warning', 'danger']);
-const PRIVACY_SEVERITIES = new Set(['info', 'low', 'medium', 'high', 'critical', 'unknown']);
-const PRIVACY_FINDING_TYPES = new Set(['possible_secret', 'private_url', 'email_address', 'api_key_pattern', 'env_file_reference', 'sensitive_path', 'database_url', 'other']);
-const PRIVACY_RESOLUTIONS = new Set(['ignored', 'redacted', 'removed']);
-const TIMELINE_STATUSES = new Set(['success', 'warning', 'failed', 'info']);
-const COLLECTION_QUALITIES = new Set(['high', 'medium', 'low']);
-const COLLECTION_SOURCE_TYPES = new Set(['agent_session', 'plugin_metadata', 'generic_metadata']);
-const COLLECTION_WINDOW_REASONS = new Set(['idle_gap']);
-
-function draftError(path: string, message: string): Error {
-  return new Error(
-    `AgentFeed draft is invalid at ${path}: ${message}. ` +
-    'This usually means the local .agentfeed/drafts JSON was corrupted or hand-edited. ' +
-    'Restore the draft from backup or run agentfeed collect to create a fresh draft.'
-  );
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function requireRecord(value: unknown, field: string, path: string): Record<string, unknown> {
-  if (!isRecord(value)) throw draftError(path, `${field} must be an object`);
-  return value;
-}
-
-function requireString(value: unknown, field: string, path: string): string {
-  if (typeof value !== 'string') throw draftError(path, `${field} must be a string`);
-  return value;
-}
-
-function requireBoolean(value: unknown, field: string, path: string): boolean {
-  if (typeof value !== 'boolean') throw draftError(path, `${field} must be a boolean`);
-  return value;
-}
-
-function requireNumber(value: unknown, field: string, path: string): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) throw draftError(path, `${field} must be a finite number`);
-  return value;
-}
-
-function optionalStringOrNull(value: unknown, field: string, path: string): string | null | undefined {
-  if (value === undefined || value === null) return value;
-  if (typeof value !== 'string') throw draftError(path, `${field} must be a string or null`);
-  return value;
-}
-
-function requireTimestamp(value: unknown, field: string, path: string): string {
-  const timestamp = requireString(value, field, path);
-  if (!Number.isFinite(Date.parse(timestamp))) throw draftError(path, `${field} must be a valid timestamp`);
-  return timestamp;
-}
-
-function optionalTimestampOrNull(value: unknown, field: string, path: string): string | null | undefined {
-  const timestamp = optionalStringOrNull(value, field, path);
-  if (timestamp !== undefined && timestamp !== null && !Number.isFinite(Date.parse(timestamp))) {
-    throw draftError(path, `${field} must be a valid timestamp or null`);
-  }
-  return timestamp;
-}
-
-function optionalNumberOrNull(value: unknown, field: string, path: string): number | null | undefined {
-  if (value === undefined || value === null) return value;
-  if (typeof value !== 'number' || !Number.isFinite(value)) throw draftError(path, `${field} must be a finite number or null`);
-  return value;
-}
-
-function optionalNonNegativeNumberOrNull(value: unknown, field: string, path: string): number | null | undefined {
-  const number = optionalNumberOrNull(value, field, path);
-  if (number !== undefined && number !== null && number < 0) {
-    throw draftError(path, `${field} must be a non-negative number or null`);
-  }
-  return number;
-}
-
-function requireNonNegativeInteger(value: unknown, field: string, path: string): number {
-  const number = requireNumber(value, field, path);
-  if (!Number.isInteger(number) || number < 0) {
-    throw draftError(path, `${field} must be a non-negative integer`);
-  }
-  return number;
-}
-
-function requireStringArray(value: unknown, field: string, path: string): string[] {
-  if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
-    throw draftError(path, `${field} must be an array of strings`);
-  }
-  return [...value];
-}
-
-function requireEnum<T extends string>(value: unknown, field: string, values: Set<string>, path: string): T {
-  if (typeof value !== 'string' || !values.has(value)) {
-    throw draftError(path, `${field} has an unsupported value`);
-  }
-  return value as T;
-}
-
-function optionalStringArrayOrNull(value: unknown, field: string, path: string): string[] | null | undefined {
-  if (value === undefined || value === null) return value;
-  if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
-    throw draftError(path, `${field} must be an array of strings or null`);
-  }
-  return [...value];
-}
+import { draftError, optionalNonNegativeNumberOrNull, optionalStringArrayOrNull, optionalStringOrNull, optionalTimestampOrNull, requireAgentType, requireBoolean, requireCollectionQuality, requireCollectionSourceType, requireCollectionWindowReason, requireNonNegativeInteger, requirePrivacyFindingType, requirePrivacyResolution, requirePrivacySeverity, requirePrivacyStatus, requirePrivateVisibility, requireRecord, requireString, requireStringArray, requireTimestamp, requireTimelineStatus, requireWorklogCategory } from './validation-primitives.js';
 
 function validateCollectionWindow(value: unknown, field: string, path: string): CollectionWindow | null | undefined {
   if (value === undefined || value === null) return value;
@@ -120,7 +15,7 @@ function validateAgentMetricSummary(value: unknown, index: number, path: string)
   const field = `worklog.metrics.agent_metrics[${index}]`;
   const metric = requireRecord(value, field, path);
   const output: AgentMetricSummary = {
-    agent: requireEnum<AgentType>(metric.agent, `${field}.agent`, AGENT_TYPES, path),
+    agent: requireAgentType(metric.agent, `${field}.agent`, path),
   };
   const model = optionalStringOrNull(metric.model, `${field}.model`, path);
   if (model !== undefined) output.model = model;
@@ -153,7 +48,7 @@ function validateMetrics(value: unknown, path: string): WorklogMetrics {
   const agentModes = optionalStringArrayOrNull(metrics.agent_modes, 'worklog.metrics.agent_modes', path);
   if (agentModes !== undefined) output.agent_modes = agentModes;
   if (metrics.collection_quality !== undefined && metrics.collection_quality !== null) {
-    output.collection_quality = requireEnum<CollectionQuality>(metrics.collection_quality, 'worklog.metrics.collection_quality', COLLECTION_QUALITIES, path);
+    output.collection_quality = requireCollectionQuality(metrics.collection_quality, 'worklog.metrics.collection_quality', path);
   } else if (metrics.collection_quality === null) {
     output.collection_quality = null;
   }
@@ -162,9 +57,9 @@ function validateMetrics(value: unknown, path: string): WorklogMetrics {
     output.collection_sources = metrics.collection_sources.map((item, index): CollectionSource => {
       const source = requireRecord(item, `worklog.metrics.collection_sources[${index}]`, path);
       return {
-        type: requireEnum<CollectionSource['type']>(source.type, `worklog.metrics.collection_sources[${index}].type`, COLLECTION_SOURCE_TYPES, path),
+        type: requireCollectionSourceType(source.type, `worklog.metrics.collection_sources[${index}].type`, path),
         name: requireString(source.name, `worklog.metrics.collection_sources[${index}].name`, path),
-        quality: requireEnum<CollectionQuality>(source.quality, `worklog.metrics.collection_sources[${index}].quality`, COLLECTION_QUALITIES, path),
+        quality: requireCollectionQuality(source.quality, `worklog.metrics.collection_sources[${index}].quality`, path),
       };
     });
   } else if (metrics.collection_sources === null) {
@@ -177,7 +72,7 @@ function validateTimeline(value: unknown, path: string): WorklogTimelineItem[] {
   if (!Array.isArray(value)) throw draftError(path, 'worklog.timeline must be an array');
   return value.map((item, index): WorklogTimelineItem => {
     const row = requireRecord(item, `worklog.timeline[${index}]`, path);
-    const status = row.status === undefined ? undefined : requireEnum<NonNullable<WorklogTimelineItem['status']>>(row.status, `worklog.timeline[${index}].status`, TIMELINE_STATUSES, path);
+    const status = row.status === undefined ? undefined : requireTimelineStatus(row.status, `worklog.timeline[${index}].status`, path);
     return {
       order: requireNonNegativeInteger(row.order, `worklog.timeline[${index}].order`, path),
       title: requireString(row.title, `worklog.timeline[${index}].title`, path),
@@ -211,16 +106,16 @@ function validatePrivacyScan(value: unknown, path: string): PrivacyScanResult {
   const scan = requireRecord(value, 'privacy_scan', path);
   if (!Array.isArray(scan.findings)) throw draftError(path, 'privacy_scan.findings must be an array');
   return {
-    status: requireEnum<PrivacyStatus>(scan.status, 'privacy_scan.status', PRIVACY_STATUSES, path),
+    status: requirePrivacyStatus(scan.status, 'privacy_scan.status', path),
     findings: scan.findings.map((item, index): PrivacyFinding => {
       const finding = requireRecord(item, `privacy_scan.findings[${index}]`, path);
       const resolution = finding.resolution === undefined
         ? undefined
-        : requireEnum<NonNullable<PrivacyFinding['resolution']>>(finding.resolution, `privacy_scan.findings[${index}].resolution`, PRIVACY_RESOLUTIONS, path);
+        : requirePrivacyResolution(finding.resolution, `privacy_scan.findings[${index}].resolution`, path);
       return {
         id: requireString(finding.id, `privacy_scan.findings[${index}].id`, path),
-        type: requireEnum<PrivacyFinding['type']>(finding.type, `privacy_scan.findings[${index}].type`, PRIVACY_FINDING_TYPES, path),
-        severity: requireEnum<PrivacySeverity>(finding.severity, `privacy_scan.findings[${index}].severity`, PRIVACY_SEVERITIES, path),
+        type: requirePrivacyFindingType(finding.type, `privacy_scan.findings[${index}].type`, path),
+        severity: requirePrivacySeverity(finding.severity, `privacy_scan.findings[${index}].severity`, path),
         message: requireString(finding.message, `privacy_scan.findings[${index}].message`, path),
         ...(finding.field === undefined ? {} : { field: requireString(finding.field, `privacy_scan.findings[${index}].field`, path) }),
         ...(finding.sample_redacted === undefined ? {} : { sample_redacted: requireString(finding.sample_redacted, `privacy_scan.findings[${index}].sample_redacted`, path) }),
@@ -240,50 +135,79 @@ export function validateLocalDraft(value: unknown, path: string): LocalDraft {
   const source = requireRecord(root.source, 'source', path);
   const upload = requireRecord(root.upload, 'upload', path);
 
-  requireString(root.id, 'id', path);
+  const id = requireString(root.id, 'id', path);
+  const repositoryUrl = optionalStringOrNull(project.repository_url, 'project.repository_url', path);
+  const localPathHash = project.local_path_hash === undefined ? undefined : requireString(project.local_path_hash, 'project.local_path_hash', path);
 
-  requireString(project.name, 'project.name', path);
-  optionalStringOrNull(project.repository_url, 'project.repository_url', path);
-  if (project.local_path_hash !== undefined) requireString(project.local_path_hash, 'project.local_path_hash', path);
+  const userNote = optionalStringOrNull(worklog.user_note, 'worklog.user_note', path);
+  const model = optionalStringOrNull(worklog.model, 'worklog.model', path);
+  const publicPrompt = optionalStringOrNull(worklog.public_prompt, 'worklog.public_prompt', path);
 
-  requireString(worklog.title, 'worklog.title', path);
-  requireString(worklog.summary, 'worklog.summary', path);
-  optionalStringOrNull(worklog.user_note, 'worklog.user_note', path);
-  requireEnum<AgentType>(worklog.agent, 'worklog.agent', AGENT_TYPES, path);
-  optionalStringOrNull(worklog.model, 'worklog.model', path);
-  requireEnum<WorklogCategory>(worklog.category, 'worklog.category', WORKLOG_CATEGORIES, path);
-  requireStringArray(worklog.tags, 'worklog.tags', path);
-  requireEnum<'private'>(worklog.visibility, 'worklog.visibility', new Set(['private']), path);
-  validateMetrics(worklog.metrics, path);
-  requireStringArray(worklog.changed_areas, 'worklog.changed_areas', path);
-  optionalStringOrNull(worklog.public_prompt, 'worklog.public_prompt', path);
-  requireStringArray(worklog.outcome, 'worklog.outcome', path);
-  validateTimeline(worklog.timeline, path);
+  const sessionId = optionalStringOrNull(source.session_id, 'source.session_id', path);
+  const hostLabel = optionalStringOrNull(source.host_label, 'source.host_label', path);
+  const sourceCollectionWindow = validateCollectionWindow(source.collection_window, 'source.collection_window', path);
+  const collectionWindowReason = source.collection_window_reason === undefined || source.collection_window_reason === null
+    ? source.collection_window_reason
+    : requireCollectionWindowReason(source.collection_window_reason, 'source.collection_window_reason', path);
+  const collectionFingerprint = optionalStringOrNull(source.collection_fingerprint, 'source.collection_fingerprint', path);
 
-  validatePrivacyScan(root.privacy_scan, path);
+  const worklogId = optionalStringOrNull(upload.worklog_id, 'upload.worklog_id', path);
+  const reviewUrl = optionalStringOrNull(upload.review_url, 'upload.review_url', path);
+  const uploadedAt = optionalTimestampOrNull(upload.uploaded_at, 'upload.uploaded_at', path);
+  const payloadHash = optionalStringOrNull(upload.payload_hash, 'upload.payload_hash', path);
+  const apiBaseUrl = optionalStringOrNull(upload.api_base_url, 'upload.api_base_url', path);
+  const reviewBaseUrl = optionalStringOrNull(upload.review_base_url, 'upload.review_base_url', path);
+  const credentialBindingHash = optionalStringOrNull(upload.credential_binding_hash, 'upload.credential_binding_hash', path);
+  const tokenId = optionalStringOrNull(upload.token_id, 'upload.token_id', path);
+  const userId = optionalStringOrNull(upload.user_id, 'upload.user_id', path);
+  const handoff = validateHandoff(upload.handoff, path);
 
-  requireEnum<AgentType>(source.agent, 'source.agent', AGENT_TYPES, path);
-  optionalStringOrNull(source.session_id, 'source.session_id', path);
-  requireString(source.tool_version, 'source.tool_version', path);
-  optionalStringOrNull(source.host_label, 'source.host_label', path);
-  requireTimestamp(source.created_at, 'source.created_at', path);
-  validateCollectionWindow(source.collection_window, 'source.collection_window', path);
-  if (source.collection_window_reason !== undefined && source.collection_window_reason !== null) {
-    requireEnum<CollectionWindowReason>(source.collection_window_reason, 'source.collection_window_reason', COLLECTION_WINDOW_REASONS, path);
-  }
-  optionalStringOrNull(source.collection_fingerprint, 'source.collection_fingerprint', path);
-
-  requireBoolean(upload.uploaded, 'upload.uploaded', path);
-  optionalStringOrNull(upload.worklog_id, 'upload.worklog_id', path);
-  optionalStringOrNull(upload.review_url, 'upload.review_url', path);
-  optionalTimestampOrNull(upload.uploaded_at, 'upload.uploaded_at', path);
-  optionalStringOrNull(upload.payload_hash, 'upload.payload_hash', path);
-  optionalStringOrNull(upload.api_base_url, 'upload.api_base_url', path);
-  optionalStringOrNull(upload.review_base_url, 'upload.review_base_url', path);
-  optionalStringOrNull(upload.credential_binding_hash, 'upload.credential_binding_hash', path);
-  optionalStringOrNull(upload.token_id, 'upload.token_id', path);
-  optionalStringOrNull(upload.user_id, 'upload.user_id', path);
-  validateHandoff(upload.handoff, path);
-
-  return root as unknown as LocalDraft;
+  return {
+    schema_version: '0.2',
+    id,
+    project: {
+      name: requireString(project.name, 'project.name', path),
+      ...(repositoryUrl === undefined ? {} : { repository_url: repositoryUrl }),
+      ...(localPathHash === undefined ? {} : { local_path_hash: localPathHash }),
+    },
+    worklog: {
+      title: requireString(worklog.title, 'worklog.title', path),
+      summary: requireString(worklog.summary, 'worklog.summary', path),
+      ...(userNote === undefined ? {} : { user_note: userNote }),
+      agent: requireAgentType(worklog.agent, 'worklog.agent', path),
+      ...(model === undefined ? {} : { model }),
+      category: requireWorklogCategory(worklog.category, 'worklog.category', path),
+      tags: requireStringArray(worklog.tags, 'worklog.tags', path),
+      visibility: requirePrivateVisibility(worklog.visibility, 'worklog.visibility', path),
+      metrics: validateMetrics(worklog.metrics, path),
+      changed_areas: requireStringArray(worklog.changed_areas, 'worklog.changed_areas', path),
+      ...(publicPrompt === undefined ? {} : { public_prompt: publicPrompt }),
+      outcome: requireStringArray(worklog.outcome, 'worklog.outcome', path),
+      timeline: validateTimeline(worklog.timeline, path),
+    },
+    privacy_scan: validatePrivacyScan(root.privacy_scan, path),
+    source: {
+      agent: requireAgentType(source.agent, 'source.agent', path),
+      ...(sessionId === undefined ? {} : { session_id: sessionId }),
+      tool_version: requireString(source.tool_version, 'source.tool_version', path),
+      ...(hostLabel === undefined ? {} : { host_label: hostLabel }),
+      created_at: requireTimestamp(source.created_at, 'source.created_at', path),
+      ...(sourceCollectionWindow === undefined ? {} : { collection_window: sourceCollectionWindow }),
+      ...(collectionWindowReason === undefined ? {} : { collection_window_reason: collectionWindowReason }),
+      ...(collectionFingerprint === undefined ? {} : { collection_fingerprint: collectionFingerprint }),
+    },
+    upload: {
+      uploaded: requireBoolean(upload.uploaded, 'upload.uploaded', path),
+      ...(worklogId === undefined ? {} : { worklog_id: worklogId }),
+      ...(reviewUrl === undefined ? {} : { review_url: reviewUrl }),
+      ...(uploadedAt === undefined ? {} : { uploaded_at: uploadedAt }),
+      ...(payloadHash === undefined ? {} : { payload_hash: payloadHash }),
+      ...(apiBaseUrl === undefined ? {} : { api_base_url: apiBaseUrl }),
+      ...(reviewBaseUrl === undefined ? {} : { review_base_url: reviewBaseUrl }),
+      ...(credentialBindingHash === undefined ? {} : { credential_binding_hash: credentialBindingHash }),
+      ...(tokenId === undefined ? {} : { token_id: tokenId }),
+      ...(userId === undefined ? {} : { user_id: userId }),
+      ...(handoff === undefined ? {} : { handoff }),
+    },
+  };
 }

@@ -22,6 +22,15 @@ export function requireString(value: unknown, field: string, path: string): stri
   return value;
 }
 
+function enforceStringMax(value: string, field: string, path: string, maxLength: number): string {
+  if (value.length > maxLength) throw draftError(path, `${field} must be at most ${maxLength} characters`);
+  return value;
+}
+
+export function requireStringMax(value: unknown, field: string, path: string, maxLength: number): string {
+  return enforceStringMax(requireString(value, field, path), field, path, maxLength);
+}
+
 export function requireBoolean(value: unknown, field: string, path: string): boolean {
   if (typeof value !== 'boolean') throw draftError(path, `${field} must be a boolean`);
   return value;
@@ -36,6 +45,12 @@ export function optionalStringOrNull(value: unknown, field: string, path: string
   if (value === undefined || value === null) return value;
   if (typeof value !== 'string') throw draftError(path, `${field} must be a string or null`);
   return value;
+}
+
+export function optionalStringOrNullMax(value: unknown, field: string, path: string, maxLength: number): string | null | undefined {
+  const stringValue = optionalStringOrNull(value, field, path);
+  if (stringValue === undefined || stringValue === null) return stringValue;
+  return enforceStringMax(stringValue, field, path, maxLength);
 }
 
 export function requireTimestamp(value: unknown, field: string, path: string): string {
@@ -81,12 +96,43 @@ export function requireStringArray(value: unknown, field: string, path: string):
   return [...value];
 }
 
+function enforceArrayMax<T>(items: readonly T[], field: string, path: string, maxItems: number): readonly T[] {
+  if (items.length > maxItems) throw draftError(path, `${field} must contain at most ${maxItems} items`);
+  return items;
+}
+
+function enforceStringItemsMax(items: readonly string[], field: string, path: string, maxLength: number): void {
+  const index = items.findIndex((item) => item.length > maxLength);
+  if (index !== -1) throw draftError(path, `${field}[${index}] must be at most ${maxLength} characters`);
+}
+
+export function requireArrayMax(value: unknown, field: string, path: string, maxItems: number): unknown[] {
+  if (!Array.isArray(value)) throw draftError(path, `${field} must be an array`);
+  enforceArrayMax(value, field, path, maxItems);
+  return [...value];
+}
+
+export function requireStringArrayMax(value: unknown, field: string, path: string, maxItems: number, itemMaxLength?: number): string[] {
+  const items = requireStringArray(value, field, path);
+  enforceArrayMax(items, field, path, maxItems);
+  if (itemMaxLength !== undefined) enforceStringItemsMax(items, field, path, itemMaxLength);
+  return items;
+}
+
 export function optionalStringArrayOrNull(value: unknown, field: string, path: string): string[] | null | undefined {
   if (value === undefined || value === null) return value;
   if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
     throw draftError(path, `${field} must be an array of strings or null`);
   }
   return [...value];
+}
+
+export function optionalStringArrayOrNullMax(value: unknown, field: string, path: string, maxItems: number, itemMaxLength?: number): string[] | null | undefined {
+  const items = optionalStringArrayOrNull(value, field, path);
+  if (items === undefined || items === null) return items;
+  enforceArrayMax(items, field, path, maxItems);
+  if (itemMaxLength !== undefined) enforceStringItemsMax(items, field, path, itemMaxLength);
+  return items;
 }
 
 export function requireAgentType(value: unknown, field: string, path: string): AgentType {

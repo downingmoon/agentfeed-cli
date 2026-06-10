@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import type { LocalDraft } from '../src/types.js';
 import { initProject } from '../src/config/project-config.js';
 import { createEmptyDraft } from '../src/draft/create.js';
 import { readDraft } from '../src/draft/read.js';
@@ -18,6 +19,17 @@ beforeEach(async () => {
 afterEach(async () => {
   await rm(dir, { recursive: true, force: true });
 });
+
+async function expectDraftReadFailure(mutator: (draft: LocalDraft) => void, expectedMessage: string): Promise<void> {
+  const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'codex' });
+  await writeDraft(dir, draft);
+  const draftPath = join(dir, '.agentfeed', 'drafts', `${draft.id}.json`);
+
+  mutator(draft);
+  await writeFile(draftPath, `${JSON.stringify(draft, null, 2)}\n`);
+
+  await expect(readDraft(dir, draft.id)).rejects.toThrow(expectedMessage);
+}
 
 describe('local draft validation', () => {
   it('returns a reconstructed LocalDraft without unknown persisted fields', async () => {
@@ -42,5 +54,39 @@ describe('local draft validation', () => {
     expect(Object.hasOwn(loaded.worklog, 'unexpected_worklog')).toBe(false);
     expect(Object.hasOwn(loaded.source, 'unexpected_source')).toBe(false);
     expect(Object.hasOwn(loaded.upload, 'unexpected_upload')).toBe(false);
+  });
+
+  it('rejects backend-ingest string fields that are too long before upload', async () => {
+    await expectDraftReadFailure((draft) => {
+      draft.project.name = 'p'.repeat(101);
+    }, 'project.name must be at most 100 characters');
+
+    await expectDraftReadFailure((draft) => {
+      draft.source.tool_version = 'v'.repeat(101);
+    }, 'source.tool_version must be at most 100 characters');
+
+    await expectDraftReadFailure((draft) => {
+      draft.worklog.title = 't'.repeat(201);
+    }, 'worklog.title must be at most 200 characters');
+  });
+
+  it('rejects backend-ingest arrays that are too large before upload', async () => {
+    await expectDraftReadFailure((draft) => {
+      draft.worklog.tags = Array.from({ length: 21 }, (_, index) => `tag-${index}`);
+    }, 'worklog.tags must contain at most 20 items');
+
+    await expectDraftReadFailure((draft) => {
+      draft.worklog.timeline = Array.from({ length: 101 }, (_, index) => ({ order: index, title: `Step ${index}` }));
+    }, 'worklog.timeline must contain at most 100 items');
+
+    await expectDraftReadFailure((draft) => {
+      draft.privacy_scan.findings = Array.from({ length: 51 }, (_, index) => ({
+        id: `finding-${index}`,
+        type: 'possible_secret',
+        severity: 'high',
+        message: `Finding ${index}`,
+        resolved: false
+      }));
+    }, 'privacy_scan.findings must contain at most 50 items');
   });
 });

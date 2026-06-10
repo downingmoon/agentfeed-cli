@@ -2,6 +2,7 @@ import type { PrivacyFinding, PrivacyScanResult } from '../types.js';
 import { shortHash } from '../utils/hash.js';
 
 type ScanInput = Record<string, unknown>;
+type RedactionContainer = Record<string, unknown> | unknown[];
 
 interface PatternRule {
   type: PrivacyFinding['type'];
@@ -34,34 +35,79 @@ const patterns: PatternRule[] = [
   { type: 'env_file_reference', severity: 'low', regex: /(?:^|\b)(?:\.env|id_rsa|credentials\.json)(?:\b|$)/gi, replacement: '[REDACTED_PATH]', message: 'Sensitive filename reference detected.' }
 ];
 
+function isScanInput(value: unknown): value is ScanInput {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 function flatten(input: ScanInput, prefix = ''): Array<[string, string]> {
   const entries: Array<[string, string]> = [];
   for (const [key, value] of Object.entries(input)) {
     const field = prefix ? `${prefix}.${key}` : key;
     if (typeof value === 'string') entries.push([field, value]);
-    else if (Array.isArray(value)) value.forEach((item, i) => {
-      if (typeof item === 'string') entries.push([`${field}.${i}`, item]);
-      else if (item && typeof item === 'object') entries.push(...flatten(item as ScanInput, `${field}.${i}`));
+    else if (Array.isArray(value)) value.forEach((item, index) => {
+      if (typeof item === 'string') entries.push([`${field}.${index}`, item]);
+      else if (isScanInput(item)) entries.push(...flatten(item, `${field}.${index}`));
     });
-    else if (value && typeof value === 'object') entries.push(...flatten(value as ScanInput, field));
+    else if (isScanInput(value)) entries.push(...flatten(value, field));
   }
   return entries;
 }
 
+function numericSegment(segment: string): number | null {
+  if (!/^\d+$/.test(segment)) return null;
+  return Number(segment);
+}
+
+function childFor(container: RedactionContainer, segment: string): unknown {
+  if (!Array.isArray(container)) return container[segment];
+  const index = numericSegment(segment);
+  return index === null ? undefined : container[index];
+}
+
+function setChild(container: RedactionContainer, segment: string, value: unknown): void {
+  if (!Array.isArray(container)) {
+    container[segment] = value;
+    return;
+  }
+  const index = numericSegment(segment);
+  if (index === null) throw new Error(`Invalid redaction array path segment: ${segment}`);
+  container[index] = value;
+}
+
+function isRedactionContainer(value: unknown): value is RedactionContainer {
+  return Array.isArray(value) || isScanInput(value);
+}
+
+function containerFor(nextSegment: string): RedactionContainer {
+  return numericSegment(nextSegment) === null ? {} : [];
+}
+
 function setDeep(target: Record<string, unknown>, dotted: string, value: string): void {
   const parts = dotted.split('.');
-  let current: any = target;
-  for (let i = 0; i < parts.length - 1; i++) {
-    const part = Array.isArray(current) ? Number(parts[i]) : parts[i];
-    const next = parts[i + 1];
-    if (current[part] == null) current[part] = /^\d+$/.test(next) ? [] : {};
-    current = current[part];
+  let current: RedactionContainer = target;
+  for (let index = 0; index < parts.length; index += 1) {
+    const segment = parts[index];
+    if (segment === undefined) throw new Error(`Invalid redaction path: ${dotted}`);
+    const isLeaf = index === parts.length - 1;
+    if (isLeaf) {
+      setChild(current, segment, value);
+      return;
+    }
+    const nextSegment = parts[index + 1];
+    if (nextSegment === undefined) throw new Error(`Invalid redaction path: ${dotted}`);
+    const existing = childFor(current, segment);
+    if (isRedactionContainer(existing)) {
+      current = existing;
+      continue;
+    }
+    const created = containerFor(nextSegment);
+    setChild(current, segment, created);
+    current = created;
   }
-  current[Array.isArray(current) ? Number(parts.at(-1)!) : parts.at(-1)!] = value;
 }
 
 export function scanAndRedactFields<T extends ScanInput>(input: T): { scan: PrivacyScanResult; redacted: T } {
-  const redacted = structuredClone(input) as T;
+  const redacted: T = structuredClone(input);
   const findings: PrivacyFinding[] = [];
   for (const [field, value] of flatten(input)) {
     let replaced = value;

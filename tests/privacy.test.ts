@@ -17,6 +17,31 @@ describe('privacy scanner', () => {
     expect(draft.worklog.outcome).toEqual(originalOutcome);
   });
 
+
+  it('redacts nested array and object public fields without changing sibling values', () => {
+    const secret = 'sk-abcdefghijklmnopqrstuvwxyz1234567890';
+    const result = scanAndRedactFields({
+      timeline: [
+        { order: 1, title: `Used ${secret}`, status: 'success' },
+        { order: 2, title: 'Left untouched', description: `Path /Users/downing/private/file.ts` }
+      ],
+      metrics: {
+        agent_modes: [`mode-${secret}`, 'safe-mode'],
+        tokens_used: 10
+      }
+    });
+
+    expect(result.redacted.timeline).toEqual([
+      { order: 1, title: 'Used [REDACTED_SECRET]', status: 'success' },
+      { order: 2, title: 'Left untouched', description: 'Path [REDACTED_PATH]' }
+    ]);
+    expect(result.redacted.metrics).toEqual({
+      agent_modes: ['mode-[REDACTED_SECRET]', 'safe-mode'],
+      tokens_used: 10
+    });
+    expect(result.scan.status).toBe('danger');
+  });
+
   it.each([
     ['OpenAI key', 'sk-abcdefghijklmnopqrstuvwxyz1234567890', 'api_key_pattern'],
     ['Anthropic key', 'sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890', 'api_key_pattern'],

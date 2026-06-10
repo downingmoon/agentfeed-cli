@@ -10,7 +10,7 @@ import { readDraft } from '../draft/read.js';
 import { draftPaths } from '../draft/paths.js';
 import { writeDraft } from '../draft/write.js';
 import { sanitizedDraftForUpload, scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
-import { stripUrlUserInfo } from '../privacy/url.js';
+import { repositoryUrlForUpload } from '../privacy/url.js';
 import { shortHash } from '../utils/hash.js';
 import { AGENTFEED_CLI_VERSION } from '../version.js';
 
@@ -320,7 +320,7 @@ export function draftToIngestRequest(draft: LocalDraft): IngestWorklogRequest {
     source,
     project: {
       name: safeDraft.project.name,
-      repository_url: stripUrlUserInfo(safeDraft.project.repository_url),
+      repository_url: repositoryUrlForUpload(safeDraft.project.repository_url),
       local_path_hash: safeDraft.project.local_path_hash
     },
     worklog: {

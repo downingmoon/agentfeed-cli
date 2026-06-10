@@ -10,6 +10,7 @@ import { shouldIgnoreEvidencePath } from '../collectors/path-filter.js';
 import { changedAreas } from '../summary/changed-areas.js';
 import { generateOutcome, generateSummary, generateTimeline, generateTitle } from '../summary/rule-based.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
+import { parseRequiredRedactedDraftFields } from './redacted-draft-fields.js';
 import { randomSuffix, shortHash } from '../utils/hash.js';
 import { AGENTFEED_TOOL_VERSION } from '../version.js';
 import { writeDraft } from './write.js';
@@ -58,11 +59,12 @@ export function createEmptyDraft(input: { projectName: string; projectRoot: stri
   const summary = generateSummary(areas, metrics);
   const publicFields = { title, summary, user_note: null, outcome: generateOutcome(areas), timeline: generateTimeline(), changed_areas: areas, tags: [], project: { name: input.projectName, repository_url: null } };
   const { redacted, scan } = scanAndRedactFields(publicFields);
+  const fields = parseRequiredRedactedDraftFields(redacted);
   return {
     schema_version: '0.2',
     id: draftId(),
-    project: { name: String((redacted.project as { name: string }).name), repository_url: null, local_path_hash: shortHash(input.projectRoot, 16) },
-    worklog: { title: String(redacted.title), summary: String(redacted.summary), user_note: redacted.user_note as string | null, agent: input.source, model: null, category: 'ai_tool', tags: [], visibility: 'private', metrics, changed_areas: redacted.changed_areas as string[], public_prompt: null, outcome: redacted.outcome as string[], timeline: redacted.timeline as LocalDraft['worklog']['timeline'] },
+    project: { name: fields.project.name, repository_url: null, local_path_hash: shortHash(input.projectRoot, 16) },
+    worklog: { title: fields.title, summary: fields.summary, user_note: fields.user_note, agent: input.source, model: null, category: 'ai_tool', tags: fields.tags, visibility: 'private', metrics, changed_areas: fields.changed_areas, public_prompt: null, outcome: fields.outcome, timeline: fields.timeline },
     privacy_scan: scan,
     source: { agent: input.source, tool_version: AGENTFEED_TOOL_VERSION, host_label: hostname(), created_at: new Date().toISOString() },
     upload: { uploaded: false }
@@ -613,25 +615,25 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
     project: { name: config.project.name, repository_url: git.repository_url ?? config.project.repository_url ?? null }
   };
   const { redacted, scan } = scanAndRedactFields(publicFields);
-  const redProject = redacted.project as { name: string; repository_url?: string | null };
+  const fields = parseRequiredRedactedDraftFields(redacted);
   const draft: LocalDraft = {
     schema_version: '0.2',
     id: draftId(),
-    project: { name: redProject.name, repository_url: redProject.repository_url ?? null, local_path_hash: shortHash(root, 16) },
+    project: { name: fields.project.name, repository_url: fields.project.repository_url ?? null, local_path_hash: shortHash(root, 16) },
     worklog: {
-      title: String(redacted.title).slice(0, 120) || 'Explored project with AI agent',
-      summary: String(redacted.summary).slice(0, 2000) || 'The AI agent worked on the project.',
-      user_note: typeof redacted.user_note === 'string' ? redacted.user_note.slice(0, 500) : null,
+      title: fields.title.slice(0, 120) || 'Explored project with AI agent',
+      summary: fields.summary.slice(0, 2000) || 'The AI agent worked on the project.',
+      user_note: fields.user_note?.slice(0, 500) ?? null,
       agent: source,
       model: session?.model ?? null,
       category: 'ai_tool',
-      tags: (redacted.tags as string[]).slice(0, 10),
+      tags: fields.tags.slice(0, 10),
       visibility: 'private',
       metrics,
-      changed_areas: (redacted.changed_areas as string[]).slice(0, 8),
-      public_prompt: config.collection.include_public_prompt ? (redacted.public_prompt as string | null) : null,
-      outcome: (redacted.outcome as string[]).slice(0, 10),
-      timeline: (redacted.timeline as LocalDraft['worklog']['timeline']).slice(0, 8)
+      changed_areas: fields.changed_areas.slice(0, 8),
+      public_prompt: config.collection.include_public_prompt ? fields.public_prompt : null,
+      outcome: fields.outcome.slice(0, 10),
+      timeline: fields.timeline.slice(0, 8)
     },
     privacy_scan: scan,
     source: { agent: source, tool_version: AGENTFEED_TOOL_VERSION, host_label: hostname(), session_id: session?.session_id ?? null, created_at: new Date().toISOString(), collection_window: actualWindow, collection_window_reason: actualWindowReason, collection_fingerprint: fingerprint },

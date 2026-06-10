@@ -122,7 +122,11 @@ export function normalizeApiBaseUrl(value: string): string {
   if (url.search || url.hash) {
     throw new Error('Invalid AgentFeed API base URL: do not include query or hash fragments.');
   }
-  url.pathname = url.pathname.replace(/\/+$/, '');
+  const apiPath = url.pathname.replace(/\/+$/, '');
+  if (apiPath !== '/v1') {
+    throw new Error('Invalid AgentFeed API base URL: path must end with /v1 to match the Backend API contract.');
+  }
+  url.pathname = apiPath;
   return url.toString().replace(/\/$/, '');
 }
 

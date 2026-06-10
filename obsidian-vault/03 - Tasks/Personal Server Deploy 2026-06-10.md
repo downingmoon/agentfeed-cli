@@ -3,7 +3,7 @@ title: Personal Server Deploy 2026-06-10
 date: 2026-06-10
 tags:
   - agentfeed
-  - deploy
+  - deployment
   - personal-server
   - smoke-test
 status: done
@@ -12,85 +12,83 @@ status: done
 # Personal Server Deploy 2026-06-10
 
 > [!success] Result
-> Explicit user request에 따라 개인서버 `161.33.171.81`에 AgentFeed CLI/API/Frontend 최신 로컬 상태를 배포했다.
+> User override 요청에 따라 개인서버 `161.33.171.81`에 현재 CLI/Frontend/Backend/Dev 소스를 동기화하고 Docker Compose 서비스를 recreate 했다.
 
-## Deployment
+## Target
 
-- Command: `make server-up`
-- Script: `agentfeed-dev/scripts/server-deploy.sh --execute --up`
-- Remote host: `trading-bot`
+- Frontend: `http://161.33.171.81:13030`
+- Backend API: `http://161.33.171.81:18080/v1`
+- Postgres host port: `127.0.0.1:15432`
 - Remote root: `~/agentfeed`
-- Backend: `0.0.0.0:18080 -> 8000`
-- Frontend: `0.0.0.0:13030 -> 3000`
-- Postgres: `127.0.0.1:15432 -> 5432`
+- SSH host alias: `trading-bot`
 
-## Deployed revisions
+## Source SHAs
 
-- CLI/docs: `96bfb6d` — `Document user profile contract split`
-- Backend: `7f23e2c` — `Split user profile contract tests`
-- Frontend: `46828e1` — `Reject malformed frontend error envelopes`
-- Dev orchestration: `622293e` — `Gate strict client error response schemas`
+- CLI/docs: `87a0c76` — Document user stats activity contract split
+- Frontend: `46828e1` — Reject malformed frontend error envelopes
+- Backend: `1bd2e92` — Split user stats activity contracts
+- Dev orchestration: `622293e` — Gate strict client error response schemas
 
-## Pre-deploy verification
+## Deployment Command
 
 ```text
-uv run --locked --group dev pytest tests/test_user_profile_contracts.py
-# 2 passed
+./scripts/server-deploy.sh --execute --up
+```
+
+## Server Container Evidence
+
+```text
+agentfeed-server-backend-1    Up (healthy)   0.0.0.0:18080->8000/tcp
+agentfeed-server-frontend-1   Up (healthy)   0.0.0.0:13030->3000/tcp
+agentfeed-server-postgres-1   Up (healthy)   127.0.0.1:15432->5432/tcp
+```
+
+## HTTP Evidence
+
+```text
+GET http://161.33.171.81:18080/v1/metadata
+# service=agentfeed-api
+# api_version=v1
+# backend_version=0.1.0
+# contract_version=2026-06-03
+# review_base_url=http://161.33.171.81:13030
 ```
 
 ```text
-uv run --locked --group dev pytest
-# 428 passed, 1 warning
+HEAD http://161.33.171.81:13030/
+# HTTP/1.1 200 OK
 ```
 
-```text
-node scripts/check-openapi-contract.mjs
-# AgentFeed OpenAPI contract gate passed.
-# OpenAPI operations checked: 75
-# Client contracts checked: 70
-```
-
-```text
-bash scripts/test-all.sh
-# CLI: 591 passed, typecheck, release preflight, audit 0 vulnerabilities
-# Frontend: typecheck, mock API compatibility, production build, audit 0 vulnerabilities
-# Backend: ruff, 428 passed, alembic offline migration chain
-```
-
-## Post-deploy verification
-
-```text
-ssh trading-bot 'cd ~/agentfeed/agentfeed-dev && docker compose --env-file .env ps'
-# backend healthy
-# frontend healthy
-# postgres healthy
-```
+## Hosted Compatibility Smoke
 
 ```text
 AGENTFEED_HOSTED_API_BASE_URL=http://161.33.171.81:18080/v1 \
 AGENTFEED_HOSTED_FRONTEND_URL=http://161.33.171.81:13030 \
 AGENTFEED_ALLOW_INSECURE_API=1 \
-AGENTFEED_ALLOW_INSECURE_SERVER_TEST_API_BUILD=1 \
 NEXT_PUBLIC_AGENTFEED_ALLOW_INSECURE_SERVER_TEST_API=1 \
 bash scripts/smoke-hosted-compatibility.sh
-# HOSTED_COMPATIBILITY_SMOKE_PASSED
 ```
 
-Verified hosted checks:
+Result:
 
-- Frontend deployment compatibility passed.
-- Backend metadata compatibility passed: `v1 / 2026-06-03`.
-- Backend readiness passed at `/health/ready` and `/v1/health/ready`.
-- CLI doctor confirmed hosted API reachable and compatible.
-- Frontend diagnostic probes passed: `metadata`, `feed`, `auth-me`, `me-settings`, `me-notifications`, `me-integrations`, `integration-setup-guide`, `projects`, `check-username`, `search`, `tags`, `explore`.
+```text
+FRONTEND_DEPLOYMENT_COMPATIBILITY_PASSED
+BACKEND_METADATA_COMPATIBILITY_PASSED v1 2026-06-03
+BACKEND_READINESS_COMPATIBILITY_PASSED
+FRONTEND_API_COMPATIBILITY_PASSED v1 2026-06-03
+HOSTED_COMPATIBILITY_SMOKE_PASSED
+```
 
-## Known constraints
+## Notes
 
 > [!warning]
-> 현재 개인서버 테스트 배포는 IP 기반 HTTP 모드다. 프로덕션 공개 전에는 도메인, HTTPS, OAuth callback URL, secure cookie 설정을 별도 pass로 정리해야 한다.
+> 이 배포는 IP-only server-test 환경이다. HTTPS/DNS/production OAuth hardening은 별도 production 인프라 단계에서 진행해야 한다.
+
+> [!info]
+> CLI doctor의 `Account: token missing`은 임시 홈 디렉터리에서 실행한 smoke 특성상 정상적인 attention 항목이다. API reachable/compatible 항목은 통과했다.
 
 ## Follow-up
 
-- [ ] 도메인/HTTPS 준비 후 `AGENTFEED_ALLOW_INSECURE_*` 플래그 제거.
-- [ ] GitHub OAuth callback을 최종 도메인 기준으로 재설정.
-- [ ] 서버 배포 smoke에 로그인/게시까지 포함하는 authenticated flow를 별도 안전 데이터로 추가.
+- [ ] Production 전 HTTPS 도메인과 OAuth callback을 production URL로 재설정한다.
+- [ ] 운영 배포 방식은 개인서버 수동 deploy와 CI/CD 중 하나로 명확히 결정한다.
+- [ ] 서버 데이터 초기화가 필요한 테스트는 별도 reset 절차로만 수행한다.

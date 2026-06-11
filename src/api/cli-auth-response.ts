@@ -92,6 +92,7 @@ export function parseCliAuthExchangeResult(value: unknown): CliAuthExchangeResul
     || !tokenExpiresAt
     || (Object.hasOwn(value, 'rotated_from') && rotatedFrom === undefined)
     || (Object.hasOwn(value, 'rotated_at') && (rotatedAt === undefined || (rotatedAt !== null && !Number.isFinite(Date.parse(rotatedAt)))))
+    || ((rotatedFrom === undefined || rotatedFrom === null) !== (rotatedAt === undefined || rotatedAt === null))
     || !user?.id
     || !user.display_name
   ) {

@@ -22,6 +22,7 @@ import { hasAgentFeedHook, installClaudeCodeHook, uninstallClaudeCodeHook, resol
 import { flag, option } from './args.js';
 import { resolveStatusProject } from './status-project.js';
 import { setupProgressText, statusNextActions, statusReadinessItems, statusSummary, type StatusReadinessItem } from './status-readiness.js';
+import { doctorNextActions, doctorPriorityActions, doctorReadinessItems, doctorSummary, type DoctorPriorityAction, type DoctorReadinessItem } from './doctor-readiness.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -865,121 +866,6 @@ function printStatusReadiness(items: readonly StatusReadinessItem[]): void {
   }
 }
 
-interface DoctorReadinessItem {
-  name: string;
-  status: 'ready' | 'attention';
-  detail: string;
-  next_action?: string;
-}
-
-function detectedAgentSignalCount(lines: string[]): number {
-  return lines.filter((line) => /^.+: detected$/.test(line.trim())).length;
-}
-
-function doctorApiDetail(options: {
-  invalidApiBaseUrl: boolean;
-  apiReachability: Awaited<ReturnType<typeof checkApiReachability>> | null;
-  apiCompatibility: Awaited<ReturnType<typeof checkApiCompatibility>> | null;
-}): string {
-  if (options.invalidApiBaseUrl) return 'invalid API base URL';
-  if (!options.apiReachability?.ok) {
-    return `API not reachable (${options.apiReachability?.status ?? options.apiReachability?.error ?? 'unreachable'})`;
-  }
-  if (!options.apiCompatibility?.compatible) {
-    return `API contract mismatch (${options.apiCompatibility?.status ?? options.apiCompatibility?.error ?? 'unknown'})`;
-  }
-  return 'reachable and compatible';
-}
-
-function doctorReadinessItems(options: {
-  invalidApiBaseUrl: boolean;
-  projectConfigValid: boolean;
-  projectConfigError: string | null;
-  missingToken: boolean;
-  insideGitRepository: boolean;
-  tokenWarnings: string[];
-  apiReachability: Awaited<ReturnType<typeof checkApiReachability>> | null;
-  apiCompatibility: Awaited<ReturnType<typeof checkApiCompatibility>> | null;
-  agentSignalLines: string[];
-}): DoctorReadinessItem[] {
-  const apiReady = !options.invalidApiBaseUrl && Boolean(options.apiReachability?.ok && options.apiCompatibility?.compatible);
-  const agentSignalCount = detectedAgentSignalCount(options.agentSignalLines);
-  const projectInitAction = options.insideGitRepository ? 'agentfeed init' : 'git init && agentfeed init';
-  const projectItem: DoctorReadinessItem = options.projectConfigValid
-    ? { name: 'Project', status: 'ready', detail: 'initialized' }
-    : options.projectConfigError
-      ? { name: 'Project', status: 'attention', detail: 'config unreadable', next_action: 'agentfeed init --force' }
-      : { name: 'Project', status: 'attention', detail: 'not initialized', next_action: projectInitAction };
-  const collectionItem: DoctorReadinessItem = options.projectConfigValid
-    ? { name: 'Collection', status: 'ready', detail: 'cursor available' }
-    : options.projectConfigError
-      ? { name: 'Collection', status: 'attention', detail: 'unavailable because project config is unreadable', next_action: 'agentfeed init --force' }
-      : { name: 'Collection', status: 'attention', detail: 'unavailable until project is initialized', next_action: projectInitAction };
-  return [
-    options.missingToken
-      ? { name: 'Account', status: 'attention', detail: 'token missing', next_action: 'agentfeed login' }
-      : options.tokenWarnings.length
-      ? { name: 'Account', status: 'attention', detail: options.tokenWarnings[0], next_action: 'agentfeed rotate' }
-      : { name: 'Account', status: 'ready', detail: 'token configured' },
-    apiReady
-      ? { name: 'API', status: 'ready', detail: doctorApiDetail(options) }
-      : {
-        name: 'API',
-        status: 'attention',
-        detail: doctorApiDetail(options),
-        next_action: options.invalidApiBaseUrl ? 'unset AGENTFEED_API_BASE_URL' : 'agentfeed doctor'
-      },
-    projectItem,
-    options.insideGitRepository
-      ? { name: 'Git', status: 'ready', detail: 'repository detected' }
-      : { name: 'Git', status: 'attention', detail: 'repository not detected', next_action: 'git init' },
-    collectionItem,
-    agentSignalCount > 0
-      ? {
-        name: 'Agent signals',
-        status: 'ready',
-        detail: `${agentSignalCount} source${agentSignalCount === 1 ? '' : 's'} detected`
-      }
-      : {
-        name: 'Agent signals',
-        status: 'attention',
-        detail: 'no supported agent signals detected',
-        next_action: 'agentfeed collect --explain'
-      }
-  ];
-}
-
-function doctorSummary(readiness: DoctorReadinessItem[]): { status: 'ready' | 'attention_needed'; ready: number; attention: number } {
-  const attention = readiness.filter((item) => item.status === 'attention').length;
-  return {
-    status: attention > 0 ? 'attention_needed' : 'ready',
-    ready: readiness.length - attention,
-    attention
-  };
-}
-
-interface DoctorPriorityAction {
-  name: string;
-  detail: string;
-  command: string;
-}
-
-type DoctorReadinessActionItem = DoctorReadinessItem & {
-  readonly next_action: string;
-};
-
-function hasDoctorNextAction(item: DoctorReadinessItem): item is DoctorReadinessActionItem {
-  return item.status === 'attention' && typeof item.next_action === 'string' && item.next_action.length > 0;
-}
-
-function doctorPriorityActions(readiness: DoctorReadinessItem[]): DoctorPriorityAction[] {
-  const priorityOrder = ['API', 'Project', 'Git', 'Account', 'Collection', 'Agent signals'];
-  return readiness
-    .filter(hasDoctorNextAction)
-    .sort((a, b) => priorityOrder.indexOf(a.name) - priorityOrder.indexOf(b.name))
-    .map((item) => ({ name: item.name, detail: item.detail, command: item.next_action }));
-}
-
 function printDoctorPriorityActions(actions: DoctorPriorityAction[]): void {
   if (!actions.length) return;
   print('Fix first:');
@@ -1000,40 +886,6 @@ function printDoctorSummary(readiness: DoctorReadinessItem[]): void {
   }
   printDoctorPriorityActions(priorityActions);
   print();
-}
-
-function doctorNextActions(options: {
-  invalidApiBaseUrl: boolean;
-  projectConfigValid: boolean;
-  projectConfigError: string | null;
-  missingToken: boolean;
-  insideGitRepository: boolean;
-  tokenWarnings: string[];
-  apiNeedsRecheck: boolean;
-}): string[] {
-  if (options.invalidApiBaseUrl) {
-    return uniqueNextCommands([
-      'unset AGENTFEED_API_BASE_URL',
-      'AGENTFEED_ALLOW_INSECURE_API=1 agentfeed doctor'
-    ]);
-  }
-  if (options.projectConfigError) {
-    return uniqueNextCommands([
-      'agentfeed init --force',
-      'agentfeed doctor',
-      ...(options.missingToken ? ['agentfeed login'] : [])
-    ]);
-  }
-  return uniqueNextCommands([
-    ...(!options.projectConfigValid
-      ? (options.insideGitRepository ? ['agentfeed init'] : ['git init && agentfeed init', 'agentfeed init --no-git-check'])
-      : []),
-    ...(options.missingToken ? ['agentfeed login'] : []),
-    ...(options.projectConfigValid && options.missingToken ? ['agentfeed share --dry'] : []),
-    ...(options.tokenWarnings.length ? ['agentfeed rotate'] : []),
-    ...(options.apiNeedsRecheck ? ['agentfeed doctor'] : []),
-    ...(options.projectConfigValid && !options.missingToken && !options.tokenWarnings.length && !options.apiNeedsRecheck ? ['agentfeed share --dry'] : [])
-  ]);
 }
 
 async function resolveDraftId(cwd: string, args: string[]): Promise<string> {

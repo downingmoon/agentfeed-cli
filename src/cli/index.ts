@@ -28,6 +28,7 @@ import { apiCheckFailureDetail, apiCompatibilityFailureDetail, apiCompatibilityR
 import { reviewUrlHandoffLines } from './review-handoff.js';
 import { collectJsonNextActions, previewNextActions, remotePreviewNextActions } from './draft-next-actions.js';
 import { discardCompleteNextActions, discardConfirmationNextActions, draftListNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
+import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -547,15 +548,6 @@ async function shouldOpenReviewAfterUpload(openFlag: boolean, options: { respect
   }
 }
 
-function privacyScanNextActions(options: { dryRun?: boolean; draftId?: string; path?: string } = {}): string[] {
-  if (options.draftId) {
-    return options.dryRun
-      ? [`agentfeed scan --id ${options.draftId}`]
-      : [`agentfeed preview --id ${options.draftId}`, `agentfeed publish --id ${options.draftId} --yes`];
-  }
-  if (options.path) return ['agentfeed collect --explain'];
-  return ['agentfeed status'];
-}
 
 function privacyScanJsonOutput(
   input: PublicScanFields,
@@ -579,12 +571,6 @@ function privacyScanJsonOutput(
     redacted_fields: redactedFieldPreviews(input, result.redacted),
     next_actions: privacyScanNextActions(options)
   };
-}
-
-function hookNextActions(action: 'install' | 'uninstall', dryRun = false): string[] {
-  if (action === 'install' && dryRun) return ['agentfeed hook install claude-code'];
-  if (action === 'install') return ['agentfeed status', 'agentfeed share --dry'];
-  return ['agentfeed status'];
 }
 
 
@@ -618,11 +604,6 @@ function printInitSetupChecklist(items: InitChecklistItem[]): void {
   }
 }
 
-function initNextActions(alreadyInitialized: boolean): string[] {
-  return alreadyInitialized
-    ? ['agentfeed status', 'agentfeed share --dry', 'agentfeed init --force']
-    : ['agentfeed login', 'agentfeed hook install claude-code', 'agentfeed share --dry'];
-}
 
 function formatPrivacyScanReport(input: PublicScanFields, redacted: PublicScanFields, scan: ReturnType<typeof scanAndRedactFields>['scan'], options: { dryRun?: boolean; draftId?: string; path?: string } = {}): string {
   const target = options.draftId ? `draft ${options.draftId}` : options.path ? `path ${options.path}` : 'current input';
@@ -2349,9 +2330,6 @@ async function cmdVersion(args: string[]) {
   print(AGENTFEED_CLI_VERSION);
 }
 
-function commandCatalogNextActions(): string[] {
-  return ['agentfeed init', 'agentfeed login', 'agentfeed share --dry'];
-}
 
 const COMMAND_WORKFLOWS: Array<{ name: string; description: string; commands: string[] }> = [
   {

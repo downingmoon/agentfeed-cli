@@ -273,6 +273,7 @@ updated: 2026-06-11
 - [x] [[Frontend Profile Link Identity Guard 2026-06-08]] — Header, Feed, Search, Explore, Leaderboard, and Worklog Detail now avoid backend-id profile links for username-missing users.
 
 ## Completed
+- [x] [[CLI General Guidance Actions Refactor 2026-06-11]] — privacy scan/hook/init/command catalog follow-up guidance를 `src/cli/guidance-actions.ts`로 분리하고 focused + full CLI suite 통과 확인.
 - [x] [[CLI Draft Navigation Actions Refactor 2026-06-11]] — share dry-run/drafts/discard/open follow-up command guidance를 `src/cli/draft-navigation-actions.ts`로 분리하고 focused + full CLI suite 통과 확인.
 - [x] [[CLI Draft Next Actions Refactor 2026-06-11]] — preview/collect/remote preview next-action 계산을 `src/cli/draft-next-actions.ts`로 분리하고 focused + full CLI suite 통과 확인.
 - [x] [[Integration Type Contract Guard 2026-06-08]] — Backend/Frontend integration type을 `github|claude_code|codex|cursor|gemini_cli|tokscale` contract로 축소하고 setup-guide type mismatch를 fail-closed 처리 완료.

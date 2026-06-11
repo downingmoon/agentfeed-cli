@@ -57,17 +57,16 @@ Backend에만 있는 경로는 다음 목적이라 정상으로 판단한다.
 
 ## 남은 구조 리스크
 
-> [!warning] Frontend API client size
-> `agentfeed-frontend/src/lib/api.ts`는 3,059 lines / 약 2,709 pure LOC로 과대하다. Contract tests가 충분히 있으므로 다음 refactor 단위에서 public export를 유지한 채 domain별 module로 분리하는 것이 좋다.
+> [!success] Frontend API facade split 반영됨
+> 이 문서가 처음 작성될 때의 `agentfeed-frontend/src/lib/api.ts` size warning은 2026-06-11 후속 split 작업으로 해소됐다. 현재 `src/lib/api.ts`는 public export를 유지하는 facade이며 `50 lines / 49 pure LOC`로 확인했다.
 
-권장 순서:
+현재 유지해야 할 기준:
 
-1. `api.ts`를 barrel/facade로 줄이고 public export contract를 유지한다.
-2. Transport/envelope parsing을 별도 module로 분리한다.
-3. Types/constants를 `api-types` 계층으로 분리한다.
-4. Worklog/project/user/discovery/settings normalizer를 domain별로 분리한다.
-5. Endpoint client 객체(`auth`, `worklogs`, `projects`, `me`, `search`, `explore`, `integrations`)를 route-group별 파일로 분리한다.
-6. 각 단계마다 `npm run lint && npm test`를 실행한다.
+1. `api.ts`는 barrel/facade 역할만 유지한다.
+2. Transport/envelope parsing은 `api-transport.ts`, `api-response.ts` 책임으로 유지한다.
+3. Worklog/project/user/discovery/settings normalizer는 domain별 module에서 fail-closed contract를 유지한다.
+4. 새 Frontend API surface를 추가해야 할 때는 Backend schema/route contract와 source-contract test를 먼저 맞춘다.
+5. 각 contract slice마다 `npm test`, `npm run lint`, production build 중 관련 검증을 실행한다.
 
 ## 관련 문서
 

@@ -14,11 +14,15 @@ updated: 2026-06-11
 
 ## 현재 결론
 
-로컬/CI/contract/UI/UX 기준 상용화 품질 goal은 **완료**됐다. CLI UX goal도 [[CLI UX Completion Audit 2026-06-06]] 기준으로 완료 판정한다. owner가 새로 정한 다음 방향은 **개인 서버에서 Frontend/Backend를 IP-only로 테스트 구동/운영 준비**하는 것이다.
+현재 active goal은 “잘 만든 MVP”가 아니라 **Enterprise급 완성도 검증과 보완**이다. 2026-06-04~06 사이의 로컬/CI/contract/UI/UX evidence는 중요한 historical baseline으로 유지하되, 지금은 CLI-Backend-Frontend contract drift, fail-closed error visibility, 문서 최신성, 그리고 각 repo 내부 품질을 계속 검증하는 단계다.
+
+> [!warning] 서버/배포 작업 상태
+> 개인 서버 IP-only smoke와 배포 evidence는 historical 기록으로 남긴다. 현재 goal에서는 서버/infra/CICD/deploy 작업을 진행하지 않는다.
 
 - 사람이 직접 해야 할 일: [[Human Action Checklist]]
 - 서버/env 기준: [[Runtime Configuration]]
 - 완료된 대량 hardening 요약: [[Commercial Readiness Completed Summary 2026-06-04]]
+- 현재 cross-repo contract 기준: [[Cross Repo Contract Audit 2026-06-11]]
 
 
 > [!success] 2026-06-06 Frontend UI/UX polish goal 완료
@@ -174,7 +178,7 @@ updated: 2026-06-11
 - [x] [[CLI Privacy Severity Contract Guard 2026-06-08]] — CLI local draft/ingest `PrivacySeverity`를 Backend/Frontend `info|low|medium|high|critical|unknown` contract와 일치시키고 unresolved `critical` finding도 publish blocker로 처리 완료.
 - [x] [[CLI Ingest Upload Status Contract Guard 2026-06-08]] — CLI remote ingest success response를 Backend `IngestResponse(status=needs_review, visibility=private)` contract로 좁히고 `already_uploaded`는 로컬 캐시/duplicate reconciliation 전용 상태로 분리 완료.
 
-## P0 — 다음 실제 작업: 개인 서버 IP-only smoke
+## Historical — 개인 서버 IP-only smoke evidence
 
 상세 체크리스트는 [[Human Action Checklist]]를 기준으로 한다.
 
@@ -198,7 +202,7 @@ updated: 2026-06-11
 - [x] CLI → API → Frontend review → public feed E2E를 임시 user/session으로 검증.
 - [x] 서버 검증 데이터 reset 완료: users/tokens/worklogs/projects/cli_sessions `0`.
 
-## P1 — 사람이 결정하면 agent가 이어서 할 일
+## Paused — 서버/릴리스 관련 사람이 결정하면 이어서 할 일
 
 - [ ] 개인 서버 정보 기준으로 `agentfeed-dev` 서버 runbook 작성.
 - [x] 서버용 `.env.server`를 실제 IP/port 기준으로 생성하되 git에는 제외.
@@ -210,7 +214,7 @@ updated: 2026-06-11
 - [ ] npm package 이름/license/homepage/trusted publishing 정책이 확정되면 release/publish 절차 준비.
 - [ ] npm trusted publishing을 실제 public repo/environment와 연결한 뒤, tag 기반 dry release 절차 점검.
 
-## Deferred — 지금은 스킵/대기
+## Deferred — 서버/릴리스/정책 결정 대기
 
 - [ ] 실제 Frontend production domain 결정.
 - [ ] 실제 Backend API production domain 결정.

@@ -25,6 +25,7 @@ import { setupProgressText, statusNextActions, statusReadinessItems, statusSumma
 import { doctorNextActions, doctorPriorityActions, doctorReadinessItems, doctorSummary, type DoctorPriorityAction, type DoctorReadinessItem } from './doctor-readiness.js';
 import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialResult, tokenLoginCredentialResult, type CredentialResultView } from './auth-result.js';
 import { apiCheckFailureDetail, apiCompatibilityFailureDetail, apiCompatibilityRecoveryCommands, formatUploadRecoveryMessage, ingestionTokenRecoveryCommands, uploadNextActions, type UploadPreflightOptions } from './upload-guidance.js';
+import { reviewUrlHandoffLines } from './review-handoff.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -282,30 +283,6 @@ async function handoffReviewUrl(reviewUrl: string, options: { copy: boolean; ope
   }
   await Promise.all(tasks);
   return handoff;
-}
-
-function reviewUrlHandoffLines(handoff: ReviewUrlHandoff, reviewUrl: string): string[] {
-  const lines: string[] = [];
-  let manualUrlNeeded = false;
-  if (handoff.clipboard.requested) {
-    if (handoff.clipboard.ok) lines.push('Review URL copied to clipboard.');
-    else {
-      lines.push(...formatWarningLines(handoff.clipboard.warning ?? 'Review URL was not copied to clipboard. Copy it manually.'));
-      manualUrlNeeded = true;
-    }
-  }
-  if (handoff.browser.requested) {
-    if (handoff.browser.ok) lines.push('Review URL opened in browser.');
-    else {
-      lines.push(...formatWarningLines(handoff.browser.warning ?? 'Review URL could not be opened automatically. Open it manually.'));
-      manualUrlNeeded = true;
-    }
-  }
-  if (manualUrlNeeded) {
-    lines.push('Manual review URL:');
-    lines.push(`  ${ui.command(reviewUrl)}`);
-  }
-  return lines;
 }
 
 

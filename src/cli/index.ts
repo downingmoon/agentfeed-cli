@@ -998,6 +998,7 @@ function doctorApiDetail(options: {
 function doctorReadinessItems(options: {
   invalidApiBaseUrl: boolean;
   projectConfigValid: boolean;
+  projectConfigError: string | null;
   missingToken: boolean;
   insideGitRepository: boolean;
   tokenWarnings: string[];
@@ -1008,6 +1009,16 @@ function doctorReadinessItems(options: {
   const apiReady = !options.invalidApiBaseUrl && Boolean(options.apiReachability?.ok && options.apiCompatibility?.compatible);
   const agentSignalCount = detectedAgentSignalCount(options.agentSignalLines);
   const projectInitAction = options.insideGitRepository ? 'agentfeed init' : 'git init && agentfeed init';
+  const projectItem: DoctorReadinessItem = options.projectConfigValid
+    ? { name: 'Project', status: 'ready', detail: 'initialized' }
+    : options.projectConfigError
+      ? { name: 'Project', status: 'attention', detail: 'config unreadable', next_action: 'agentfeed init --force' }
+      : { name: 'Project', status: 'attention', detail: 'not initialized', next_action: projectInitAction };
+  const collectionItem: DoctorReadinessItem = options.projectConfigValid
+    ? { name: 'Collection', status: 'ready', detail: 'cursor available' }
+    : options.projectConfigError
+      ? { name: 'Collection', status: 'attention', detail: 'unavailable because project config is unreadable', next_action: 'agentfeed init --force' }
+      : { name: 'Collection', status: 'attention', detail: 'unavailable until project is initialized', next_action: projectInitAction };
   return [
     options.missingToken
       ? { name: 'Account', status: 'attention', detail: 'token missing', next_action: 'agentfeed login' }
@@ -1022,15 +1033,11 @@ function doctorReadinessItems(options: {
         detail: doctorApiDetail(options),
         next_action: options.invalidApiBaseUrl ? 'unset AGENTFEED_API_BASE_URL' : 'agentfeed doctor'
       },
-    options.projectConfigValid
-      ? { name: 'Project', status: 'ready', detail: 'initialized' }
-      : { name: 'Project', status: 'attention', detail: 'not initialized', next_action: projectInitAction },
+    projectItem,
     options.insideGitRepository
       ? { name: 'Git', status: 'ready', detail: 'repository detected' }
       : { name: 'Git', status: 'attention', detail: 'repository not detected', next_action: 'git init' },
-    options.projectConfigValid
-      ? { name: 'Collection', status: 'ready', detail: 'cursor available' }
-      : { name: 'Collection', status: 'attention', detail: 'unavailable until project is initialized', next_action: projectInitAction },
+    collectionItem,
     agentSignalCount > 0
       ? {
         name: 'Agent signals',
@@ -1094,6 +1101,7 @@ function printDoctorSummary(readiness: DoctorReadinessItem[]): void {
 function doctorNextActions(options: {
   invalidApiBaseUrl: boolean;
   projectConfigValid: boolean;
+  projectConfigError: string | null;
   missingToken: boolean;
   insideGitRepository: boolean;
   tokenWarnings: string[];
@@ -1103,6 +1111,13 @@ function doctorNextActions(options: {
     return uniqueNextCommands([
       'unset AGENTFEED_API_BASE_URL',
       'AGENTFEED_ALLOW_INSECURE_API=1 agentfeed doctor'
+    ]);
+  }
+  if (options.projectConfigError) {
+    return uniqueNextCommands([
+      'agentfeed init --force',
+      'agentfeed doctor',
+      ...(options.missingToken ? ['agentfeed login'] : [])
     ]);
   }
   return uniqueNextCommands([
@@ -1964,10 +1979,10 @@ async function cmdDoctor(args: string[] = []) {
   }
   let collectionStateLabel = 'unavailable (project not initialized)';
   let nextCollectionSinceLabel = 'unavailable (project not initialized)';
-  let projectConfigValid = false;
-  try {
-    await loadProjectConfig(process.cwd());
-    projectConfigValid = true;
+  const projectResolution = await resolveStatusProject(process.cwd());
+  const projectConfigError = projectResolution.configError;
+  const projectConfigValid = Boolean(projectResolution.config);
+  if (projectConfigValid) {
     const collectionStateResult = await readCollectionStateWithDiagnostics(process.cwd());
     collectionStateLabel = collectionStateResult.valid
       ? formatCollectionCursor(collectionStateResult.state.last_collected_at)
@@ -1976,19 +1991,26 @@ async function cmdDoctor(args: string[] = []) {
       ? nextDefaultCollectionSince(collectionStateResult.state.last_collected_at)
       : 'beginning (cursor ignored)';
     tokenWarnings.push(...collectionStateResult.warnings);
-  } catch {
-    projectConfigValid = false;
+  } else if (projectConfigError) {
+    collectionStateLabel = 'unavailable (project config unreadable)';
+    nextCollectionSinceLabel = 'unavailable (project config unreadable)';
   }
   const git = await collectGitMetrics(process.cwd());
   const projectChecks: Array<[string, boolean | string]> = [
     ['project config valid', projectConfigValid ? 'yes' : 'no'],
+    ...(projectConfigError ? [['project config error', projectConfigError] satisfies [string, string]] : []),
     ['current directory is git repository', git.repository_root ? 'yes' : 'no']
   ];
   const collectionChecks: Array<[string, boolean | string]> = [
     ['last collection cursor', collectionStateLabel],
     ['next default collection since', nextCollectionSinceLabel]
   ];
-  const warnings = [...credentialResolution.warnings, ...(apiResolution?.warnings ?? []), ...tokenWarnings];
+  const warnings = [
+    ...credentialResolution.warnings,
+    ...(apiResolution?.warnings ?? []),
+    ...(projectConfigError ? [projectConfigError] : []),
+    ...tokenWarnings
+  ];
   const agentSignals = await detectAgentSignals({ cwd: process.cwd() });
   const agentSignalLines = formatAgentSignalLines(agentSignals);
   const agentSignalSummary = summarizeAgentSignals(agentSignals);
@@ -1997,6 +2019,7 @@ async function cmdDoctor(args: string[] = []) {
   const nextActions = doctorNextActions({
     invalidApiBaseUrl: diagnostics.invalidApiBaseUrl,
     projectConfigValid,
+    projectConfigError,
     missingToken,
     insideGitRepository: Boolean(git.repository_root),
     tokenWarnings,
@@ -2005,6 +2028,7 @@ async function cmdDoctor(args: string[] = []) {
   const readiness = doctorReadinessItems({
     invalidApiBaseUrl: diagnostics.invalidApiBaseUrl,
     projectConfigValid,
+    projectConfigError,
     missingToken,
     insideGitRepository: Boolean(git.repository_root),
     tokenWarnings,

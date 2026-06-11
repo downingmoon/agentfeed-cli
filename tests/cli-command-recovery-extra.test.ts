@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { flaglessOptionSuggestionLines, helpTopicError, hookUsageMessage, tokenUsageMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from '../src/cli/command-recovery.js';
+import { flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUsageMessage, tokenUsageMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from '../src/cli/command-recovery.js';
 
 describe('CLI help and hook recovery messages', () => {
   it('formats help topic recovery with closest known topic suggestions', () => {
@@ -11,6 +11,17 @@ describe('CLI help and hook recovery messages', () => {
     expect(helpTopicError('totally-unknown', ['status', 'share', 'scan'])).toBe([
       'Unknown help topic: totally-unknown',
       'Run: agentfeed help'
+    ].join('\n'));
+  });
+
+  it('formats unexpected help positional recovery', () => {
+    expect(helpUnexpectedArgumentMessage('extra')).toBe([
+      'Unexpected argument for help: extra',
+      'Run: agentfeed help --help'
+    ].join('\n'));
+    expect(helpUnexpectedTokenArgumentMessage('extra')).toBe([
+      'Unexpected argument for help token: extra',
+      'Run: agentfeed help --help'
     ].join('\n'));
   });
 

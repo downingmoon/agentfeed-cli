@@ -31,6 +31,14 @@ export function helpTopicError(topic: string, publicCommands: readonly string[])
   ].join('\n');
 }
 
+export function helpUnexpectedArgumentMessage(argument: string): string {
+  return commandUsageError(`Unexpected argument for help: ${argument}`, 'help');
+}
+
+export function helpUnexpectedTokenArgumentMessage(argument: string): string {
+  return commandUsageError(`Unexpected argument for help token: ${argument}`, 'help');
+}
+
 export function hookUsageMessage(): string {
   return [
     'Usage: agentfeed hook install|uninstall claude-code',

@@ -30,7 +30,7 @@ import { collectJsonNextActions, previewNextActions, remotePreviewNextActions } 
 import { discardCompleteNextActions, discardConfirmationNextActions, draftListNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
 import { jsonErrorFromMessage } from './error-output.js';
-import { commandHelpHint, commandUsageError, conflictingOptionsError, flaglessOptionSuggestionLines, helpTopicError, hookUsageMessage, tokenUsageMessage, unknownCommandErrorMessage, unknownHookActionMessage, unknownOptionErrorMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
+import { commandHelpHint, commandUsageError, conflictingOptionsError, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUsageMessage, tokenUsageMessage, unknownCommandErrorMessage, unknownHookActionMessage, unknownOptionErrorMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
 import { leadingOptionErrorMessage } from './leading-option-recovery.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
@@ -2545,9 +2545,9 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
       if (positionals[0] === 'token') {
         if (positionals.length === 1) return null;
         if (positionals.length === 2 && positionals[1] === 'rotate') return null;
-        return commandUsageError(`Unexpected argument for help token: ${positionals[1]}`, 'help');
+        return helpUnexpectedTokenArgumentMessage(positionals[1]);
       }
-      if (positionals.length > 1) return commandUsageError(`Unexpected argument for help: ${positionals[1]}`, 'help');
+      if (positionals.length > 1) return helpUnexpectedArgumentMessage(positionals[1]);
       return KNOWN_COMMANDS.has(positionals[0]) ? null : helpTopicError(positionals[0], PUBLIC_COMMANDS);
     }
   },

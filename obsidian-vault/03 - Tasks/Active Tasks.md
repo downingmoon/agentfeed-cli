@@ -15,6 +15,11 @@ updated: 2026-06-11
 ## 현재 결론
 
 
+> [!success] 2026-06-11 CLI help recovery refactor
+> `agentfeed help` unexpected positional argument 복구 메시지를 `helpUnexpectedArgumentMessage` / `helpUnexpectedTokenArgumentMessage`로 분리했다. `npm run build`, focused Vitest 46 tests, full `npm test -- --run` 656 tests, CLI surface smoke(`help status extra`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가.
+> - [[CLI Help Recovery Refactor 2026-06-11]]
+
+
 > [!success] 2026-06-11 CLI token recovery refactor
 > `agentfeed token` compatibility alias의 usage/unknown subcommand 복구 메시지를 `tokenUsageMessage` / `unknownTokenSubcommandMessage`로 분리했다. `npm run build`, focused Vitest 45 tests, full `npm test -- --run` 655 tests, CLI surface smoke(`token rotat`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가.
 > - [[CLI Token Recovery Refactor 2026-06-11]]

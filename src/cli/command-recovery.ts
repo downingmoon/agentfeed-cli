@@ -26,6 +26,10 @@ export function bareDoubleDashArgumentMessage(command: string): string {
   return commandUsageError(`Unexpected argument for ${command}: --`, command);
 }
 
+export function optionRequiresValueMessage(command: string, optionName: string): string {
+  return commandUsageError(`${optionName} requires a value.`, command);
+}
+
 export function helpTopicError(topic: string, publicCommands: readonly string[]): string {
   const suggestion = closestMatch(topic, publicCommands);
   return [

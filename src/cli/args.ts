@@ -1,4 +1,4 @@
-export function flag(args: string[], name: string): boolean {
+export function flag(args: readonly string[], name: string): boolean {
   return args.includes(name);
 }
 

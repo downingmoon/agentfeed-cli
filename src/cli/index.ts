@@ -40,6 +40,7 @@ import { createCompletionVocabulary } from './completion-vocabulary.js';
 import { createCompletionOptionMetadata } from './completion-option-metadata.js';
 import { createCompletionScriptRenderer } from './completion-script-renderer.js';
 import { completionCommandResult, unexpectedCompletionCommandResult } from './completion-command.js';
+import { versionCommandOutput } from './version-command.js';
 import { createCommandCatalog } from './command-catalog.js';
 import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
 import { COMMAND_WORKFLOWS, renderCommandCatalogLines, renderCommandWorkflowLines } from './command-catalog-renderer.js';
@@ -1998,11 +1999,7 @@ async function cmdCompletion(args: string[]) {
 }
 
 async function cmdVersion(args: string[]) {
-  if (flag(args, '--json')) {
-    print(JSON.stringify({ version: AGENTFEED_CLI_VERSION }, null, 2));
-    return;
-  }
-  print(AGENTFEED_CLI_VERSION);
+  print(versionCommandOutput({ args, version: AGENTFEED_CLI_VERSION }));
 }
 
 function commandWorkflowLines(): string[] {

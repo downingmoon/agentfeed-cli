@@ -4,10 +4,11 @@ export type { ApiMetadata } from './metadata.js';
 import { readDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 import { scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
-import { shortHash } from '../utils/hash.js';
 import { AgentFeedApiError } from './errors.js';
 import { parseCheckData, parseIngestionTokenStatusResponse, type IngestionTokenStatus } from './ingestion-token-status.js';
 import { draftToIngestRequest } from './ingest-request.js';
+import { draftUploadCredentialBindingHash, draftUploadPayloadHash } from './draft-upload-hash.js';
+export { draftUploadCredentialBindingHash, draftUploadPayloadHash } from './draft-upload-hash.js';
 import { apiErrorResponseSummary, parseApiErrorEnvelope, readResponseJson, responseDataEnvelope } from './response-contract.js';
 import { parseMetadataResponse } from './metadata-response.js';
 import { CACHED_PRIVATE_REVIEW_UPLOAD_STATUS, parsePublishDraftResult, parseRemotePreviewResult, worklogIdFromReviewUrl, type PublishDraftResult, type RemotePreviewResult } from './publish-response.js';
@@ -242,19 +243,6 @@ export async function checkIngestionToken(credentials: AgentFeedCredentials): Pr
 }
 
 export { draftToIngestRequest } from './ingest-request.js';
-
-export function draftUploadPayloadHash(draft: LocalDraft): string {
-  return shortHash(JSON.stringify(draftToIngestRequest(draft)), 32);
-}
-
-export function draftUploadCredentialBindingHash(credentials: AgentFeedCredentials): string {
-  return shortHash(JSON.stringify({
-    api_base_url: credentials.api_base_url,
-    token_id: credentials.token_id ?? null,
-    user_id: credentials.user?.id ?? null,
-    token_fingerprint: shortHash(credentials.ingestion_token, 16)
-  }), 32);
-}
 
 function friendlyError(status: number, code: string, message: string, details?: Record<string, unknown>): string {
   if (status === 401 || code === 'INGESTION_TOKEN_INVALID') {

@@ -1,6 +1,5 @@
 import type { AgentFeedCredentials, CliAuthExchangeResult, CliAuthSession, LocalDraft } from '../types.js';
 import { parseApiMetadata, type ApiMetadata } from './metadata.js';
-import { nonJsonErrorResponseDetails, nonJsonErrorResponseMessage, responseContentTypeIsJson } from './response-diagnostics.js';
 export type { ApiMetadata } from './metadata.js';
 import { randomUUID } from 'node:crypto';
 import { open, readFile, rm, stat, utimes, type FileHandle } from 'node:fs/promises';
@@ -9,16 +8,14 @@ import { readDraft } from '../draft/read.js';
 import { draftPaths } from '../draft/paths.js';
 import { writeDraft } from '../draft/write.js';
 import { scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
+import { AgentFeedApiError } from './errors.js';
 import { draftToIngestRequest } from './ingest-request.js';
+import { DATA_RESPONSE_ENVELOPE_FIELDS, apiErrorResponseSummary, hasOnlyExpectedFields, parseApiErrorEnvelope, readResponseJson, responseDataEnvelope } from './response-contract.js';
 import { trustedReviewOrigin, validateAuthorizeUrl, validateReviewUrl } from './trusted-url.js';
 import { shortHash } from '../utils/hash.js';
 import { AGENTFEED_CLI_VERSION } from '../version.js';
 
-export class AgentFeedApiError extends Error {
-  constructor(public status: number, public code: string, message: string, public details?: Record<string, unknown>) {
-    super(message);
-  }
-}
+export { AgentFeedApiError } from './errors.js';
 
 export interface ApiCheckResult {
   ok: boolean;
@@ -557,32 +554,6 @@ interface ParsedIngestionTokenStatusResponse {
   error?: string;
 }
 
-interface ParsedApiErrorEnvelope {
-  readonly code: string;
-  readonly message: string;
-  readonly details: Record<string, unknown>;
-}
-
-function apiErrorField(value: unknown): string | undefined {
-  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
-}
-
-function parseApiErrorEnvelope(value: unknown): ParsedApiErrorEnvelope | null {
-  if (!isRecord(value) || !hasOnlyExpectedFields(value, ERROR_RESPONSE_ENVELOPE_FIELDS) || !isRecord(value.error)) return null;
-  if (!hasOnlyExpectedFields(value.error, ERROR_DETAIL_FIELDS)) return null;
-  const code = apiErrorField(value.error.code);
-  const message = apiErrorField(value.error.message);
-  const details = value.error.details;
-  if (!code || !message || !isRecord(details)) return null;
-  return { code, message, details };
-}
-
-function apiErrorResponseSummary(value: unknown): string | undefined {
-  const parsed = parseApiErrorEnvelope(value);
-  if (!parsed) return undefined;
-  return `${parsed.code}: ${parsed.message}`;
-}
-
 async function parseIngestionTokenStatusResponse(response: Response): Promise<ParsedIngestionTokenStatusResponse> {
   const contentType = response.headers.get('content-type') ?? '';
   if (!contentType.includes('application/json')) {
@@ -662,19 +633,12 @@ function parseCliAuthSession(value: unknown, apiBaseUrl: string): CliAuthSession
 const REMOTE_PRIVATE_REVIEW_UPLOAD_STATUS = 'needs_review' satisfies PublishDraftStatus;
 const CACHED_PRIVATE_REVIEW_UPLOAD_STATUS = 'already_uploaded' satisfies PublishDraftStatus;
 const VALID_PRIVATE_REVIEW_VISIBILITY: PublishDraftVisibility = 'private';
-const DATA_RESPONSE_ENVELOPE_FIELDS = new Set(['data']);
-const ERROR_RESPONSE_ENVELOPE_FIELDS = new Set(['error']);
-const ERROR_DETAIL_FIELDS = new Set(['code', 'message', 'details']);
 const INGESTION_TOKEN_STATUS_FIELDS = new Set(['ok', 'user', 'token']);
 const INGESTION_TOKEN_STATUS_USER_FIELDS = new Set(['id', 'username', 'display_name', 'avatar_url']);
 const INGESTION_TOKEN_STATUS_TOKEN_FIELDS = new Set(['id', 'name', 'created_at', 'last_used_at', 'expires_at', 'expires_in_seconds', 'expiring_soon']);
 const CLI_AUTH_EXCHANGE_USER_FIELDS = new Set(['id', 'username', 'display_name', 'avatar_url']);
 const CLI_AUTH_EXCHANGE_RESULT_FIELDS = new Set(['token', 'token_id', 'token_expires_at', 'user', 'rotated_from', 'rotated_at']);
 const PUBLISH_DRAFT_RESULT_FIELDS = new Set(['id', 'status', 'visibility', 'review_url', 'created_at', 'reused_existing']);
-
-function hasOnlyExpectedFields(value: Record<string, unknown>, allowedFields: ReadonlySet<string>): boolean {
-  return Object.keys(value).every(key => allowedFields.has(key));
-}
 
 function isPublishDraftStatus(value: string, options: { allowCachedStatus?: boolean } = {}): value is PublishDraftStatus {
   return value === REMOTE_PRIVATE_REVIEW_UPLOAD_STATUS || (options.allowCachedStatus === true && value === CACHED_PRIVATE_REVIEW_UPLOAD_STATUS);
@@ -747,46 +711,6 @@ function parseCliAuthExchangeResult(value: unknown): CliAuthExchangeResult {
       avatar_url: user.avatar_url,
     }
   };
-}
-
-async function readResponseJson(response: Response, options: { successMessage: string; localDraftKept?: boolean }): Promise<unknown> {
-  if (!response.ok && !responseContentTypeIsJson(response.headers.get('content-type'))) {
-    throw new AgentFeedApiError(
-      502,
-      'API_RESPONSE_INVALID',
-      await nonJsonErrorResponseMessage(response, { localDraftKept: options.localDraftKept }),
-      nonJsonErrorResponseDetails(response)
-    );
-  }
-  try {
-    return await response.json();
-  } catch {
-    if (!response.ok) return {};
-    throw new AgentFeedApiError(
-      502,
-      'API_RESPONSE_INVALID',
-      options.localDraftKept ? `${options.successMessage} Local draft was kept.` : options.successMessage
-    );
-  }
-}
-
-function responseDataEnvelope<T>(value: unknown, options: { successMessage: string; unexpectedFieldsMessage?: string; localDraftKept?: boolean }): T {
-  if (!isRecord(value) || !Object.hasOwn(value, 'data')) {
-    throw new AgentFeedApiError(
-      502,
-      'API_RESPONSE_INVALID',
-      options.localDraftKept ? `${options.successMessage} Local draft was kept.` : options.successMessage
-    );
-  }
-  if (!hasOnlyExpectedFields(value, DATA_RESPONSE_ENVELOPE_FIELDS)) {
-    const message = options.unexpectedFieldsMessage ?? 'AgentFeed API response has unexpected data envelope fields.';
-    throw new AgentFeedApiError(
-      502,
-      'API_RESPONSE_INVALID',
-      options.localDraftKept ? `${message} Local draft was kept.` : message
-    );
-  }
-  return value.data as T;
 }
 
 async function postJson<T>(apiBaseUrl: string, path: string, body: Record<string, unknown>): Promise<T> {

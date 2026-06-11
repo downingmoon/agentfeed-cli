@@ -48,6 +48,7 @@ import { createCompletionOptionMetadata } from './completion-option-metadata.js'
 import { createCompletionScriptRenderer } from './completion-script-renderer.js';
 import { createCommandCatalog } from './command-catalog.js';
 import { COMMAND_WORKFLOWS, renderCommandCatalogLines, renderCommandWorkflowLines } from './command-catalog-renderer.js';
+import { COMMAND_DESCRIPTIONS, COMMAND_EXAMPLES, COMMAND_GROUPS, COMMAND_USAGE_OVERRIDES, KNOWN_COMMANDS, PUBLIC_COMMANDS } from './command-definitions.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -2063,108 +2064,6 @@ async function cmdCommands(args: string[]) {
   printGuidedNextCommands(nextActions);
   print(`\nRun ${ui.command('agentfeed help <command>')} for command-specific options.`);
 }
-
-const PUBLIC_COMMANDS = [
-  'help',
-  'commands',
-  'init',
-  'login',
-  'share',
-  'collect',
-  'preview',
-  'publish',
-  'open',
-  'scan',
-  'status',
-  'doctor',
-  'version',
-  'hook',
-  'drafts',
-  'discard',
-  'rotate',
-  'logout',
-  'completion'
-] as const;
-
-const COMMAND_DESCRIPTIONS: Record<(typeof PUBLIC_COMMANDS)[number], string> = {
-  help: 'Show root or command-specific help',
-  commands: 'List available AgentFeed commands',
-  init: 'Initialize AgentFeed in the current project',
-  login: 'Connect this machine through browser approval',
-  share: 'Collect, preview, and optionally upload in one workflow',
-  collect: 'Collect local agent work into a private review draft',
-  preview: 'Preview a saved local draft',
-  publish: 'Upload a saved draft as a private review draft',
-  open: 'Open a trusted review URL from an uploaded draft',
-  scan: 'Scan and redact public draft fields',
-  status: 'Show credentials, project, and draft status',
-  doctor: 'Run local diagnostics',
-  version: 'Print the installed AgentFeed CLI version',
-  hook: 'Install or remove agent hooks',
-  drafts: 'List local draft summaries',
-  discard: 'Delete a local draft',
-  rotate: 'Replace the saved ingestion token',
-  logout: 'Remove saved credentials',
-  completion: 'Print shell completion script'
-};
-
-const COMMAND_EXAMPLES: Record<(typeof PUBLIC_COMMANDS)[number], string> = {
-  help: 'agentfeed help share',
-  commands: 'agentfeed commands',
-  init: 'agentfeed init',
-  login: 'agentfeed login',
-  share: 'agentfeed share --dry',
-  collect: 'agentfeed collect --explain',
-  preview: 'agentfeed preview --latest',
-  publish: 'agentfeed publish --latest --yes',
-  open: 'agentfeed open --latest',
-  scan: 'agentfeed scan --latest --dry-run',
-  status: 'agentfeed status',
-  doctor: 'agentfeed doctor',
-  version: 'agentfeed version',
-  hook: 'agentfeed hook install claude-code --dry-run',
-  drafts: 'agentfeed drafts',
-  discard: 'agentfeed discard --id <draft_id>',
-  rotate: 'agentfeed rotate',
-  logout: 'agentfeed logout',
-  completion: 'agentfeed completion zsh'
-};
-
-const COMMAND_USAGE_OVERRIDES: Partial<Record<(typeof PUBLIC_COMMANDS)[number], string>> = {
-  hook: 'agentfeed hook install|uninstall claude-code [options]',
-  completion: 'agentfeed completion <shell>'
-};
-
-const COMMAND_GROUPS: Array<{ title: string; commands: Array<(typeof PUBLIC_COMMANDS)[number]> }> = [
-  { title: 'Start', commands: ['help', 'commands', 'init', 'login', 'status'] },
-  { title: 'Share work', commands: ['share', 'collect', 'preview', 'publish', 'open'] },
-  { title: 'Privacy and drafts', commands: ['scan', 'drafts', 'discard'] },
-  { title: 'Automation', commands: ['hook', 'completion'] },
-  { title: 'Account and diagnostics', commands: ['doctor', 'version', 'rotate', 'logout'] }
-];
-
-const KNOWN_COMMANDS = new Set([
-  'help',
-  'commands',
-  'init',
-  'login',
-  'logout',
-  'status',
-  'rotate',
-  'version',
-  'token',
-  'collect',
-  'share',
-  'preview',
-  'publish',
-  'scan',
-  'hook',
-  'doctor',
-  'drafts',
-  'discard',
-  'open',
-  'completion'
-]);
 
 interface CommandArgSpec {
   flags?: readonly string[];

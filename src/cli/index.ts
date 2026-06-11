@@ -42,6 +42,7 @@ import { createCompletionScriptRenderer } from './completion-script-renderer.js'
 import { completionCommandResult, unexpectedCompletionCommandResult } from './completion-command.js';
 import { versionCommandOutput } from './version-command.js';
 import { discardCompletePayload, discardConfirmationPayload } from './discard-command.js';
+import { openJsonPayload } from './open-command.js';
 import { createCommandCatalog } from './command-catalog.js';
 import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
 import { COMMAND_WORKFLOWS, renderCommandCatalogLines, renderCommandWorkflowLines } from './command-catalog-renderer.js';
@@ -1925,13 +1926,12 @@ async function cmdOpen(args: string[]) {
     ...(!opened ? ['Review URL could not be opened automatically. Open review_url manually.'] : [])
   ];
   if (flag(args, '--json')) {
-    print(JSON.stringify({
-      draft_id: draft.id,
-      review_url: reviewUrl,
+    print(JSON.stringify(openJsonPayload({
+      draftId: draft.id,
+      reviewUrl,
       opened,
-      warnings: openWarnings,
-      next_actions: openNextActions(draft.id)
-    }, null, 2));
+      warnings: openWarnings
+    }), null, 2));
     return;
   }
   if (!opened) {

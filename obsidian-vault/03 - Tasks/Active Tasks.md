@@ -14,6 +14,11 @@ updated: 2026-06-11
 
 ## 현재 결론
 
+
+> [!success] 2026-06-11 CLI hook action recovery refactor
+> `hook` action typo 복구 메시지를 `unknownHookActionMessage`로 분리해 `src/cli/index.ts` inline recovery 조합을 줄였다. `npm run build`, focused Vitest 43 tests, full `npm test -- --run` 653 tests, CLI surface smoke(`hook instal claude-code`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가.
+> - [[CLI Hook Action Recovery Refactor 2026-06-11]]
+
 현재 active goal은 “잘 만든 MVP”가 아니라 **Enterprise급 완성도 검증과 보완**이다. 2026-06-04~06 사이의 로컬/CI/contract/UI/UX evidence는 중요한 historical baseline으로 유지하되, 지금은 CLI-Backend-Frontend contract drift, fail-closed error visibility, 문서 최신성, 그리고 각 repo 내부 품질을 계속 검증하는 단계다.
 
 > [!warning] 서버/배포 작업 상태

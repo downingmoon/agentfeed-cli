@@ -30,8 +30,7 @@ import { collectJsonNextActions, previewNextActions, remotePreviewNextActions } 
 import { discardCompleteNextActions, discardConfirmationNextActions, draftListNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
 import { jsonErrorFromMessage } from './error-output.js';
-import { closestMatch } from './closest-match.js';
-import { commandHelpHint, commandUsageError, conflictingOptionsError, helpTopicError, hookUsageMessage, unknownCommandErrorMessage, unknownOptionErrorMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
+import { commandHelpHint, commandUsageError, conflictingOptionsError, helpTopicError, hookUsageMessage, unknownCommandErrorMessage, unknownHookActionMessage, unknownOptionErrorMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
 import { leadingOptionErrorMessage } from './leading-option-recovery.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
@@ -2659,12 +2658,7 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
       if (positionals.length > 2) return commandUsageError(`Unexpected argument for hook: ${positionals[2]}`, 'hook');
       const [action, target] = positionals;
       if (action !== 'install' && action !== 'uninstall') {
-        const suggestion = closestMatch(action, ['install', 'uninstall']);
-        return [
-          `Unknown hook action: ${action}`,
-          ...(suggestion ? [`Did you mean: agentfeed hook ${suggestion} claude-code`] : []),
-          hookUsageMessage()
-        ].join('\n');
+        return unknownHookActionMessage(action, ['install', 'uninstall']);
       }
       if (target !== 'claude-code') return unsupportedHookTargetMessage(action, target);
       return null;

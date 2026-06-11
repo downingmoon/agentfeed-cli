@@ -39,6 +39,15 @@ export function hookUsageMessage(): string {
   ].join('\n');
 }
 
+export function unknownHookActionMessage(action: string, supportedActions: readonly string[]): string {
+  const suggestion = closestMatch(action, supportedActions);
+  return [
+    `Unknown hook action: ${action}`,
+    ...(suggestion ? [`Did you mean: agentfeed hook ${suggestion} claude-code`] : []),
+    hookUsageMessage()
+  ].join('\n');
+}
+
 export function unsupportedHookTargetMessage(action = 'install', target?: string): string {
   const suggestion = target && (target === 'claude' || target.startsWith('claude-'))
     ? `Did you mean: agentfeed hook ${action} claude-code`

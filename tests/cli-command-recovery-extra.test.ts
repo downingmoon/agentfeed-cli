@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { helpTopicError, hookUsageMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from '../src/cli/command-recovery.js';
+import { helpTopicError, hookUsageMessage, unknownHookActionMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from '../src/cli/command-recovery.js';
 
 describe('CLI help and hook recovery messages', () => {
   it('formats help topic recovery with closest known topic suggestions', () => {
@@ -16,6 +16,22 @@ describe('CLI help and hook recovery messages', () => {
 
   it('formats hook usage guidance', () => {
     expect(hookUsageMessage()).toBe([
+      'Usage: agentfeed hook install|uninstall claude-code',
+      'Run: agentfeed hook --help',
+      'Run: agentfeed hook install claude-code --dry-run'
+    ].join('\n'));
+  });
+
+  it('formats unknown hook action guidance with action suggestions', () => {
+    expect(unknownHookActionMessage('instal', ['install', 'uninstall'])).toBe([
+      'Unknown hook action: instal',
+      'Did you mean: agentfeed hook install claude-code',
+      'Usage: agentfeed hook install|uninstall claude-code',
+      'Run: agentfeed hook --help',
+      'Run: agentfeed hook install claude-code --dry-run'
+    ].join('\n'));
+    expect(unknownHookActionMessage('enable', ['install', 'uninstall'])).toBe([
+      'Unknown hook action: enable',
       'Usage: agentfeed hook install|uninstall claude-code',
       'Run: agentfeed hook --help',
       'Run: agentfeed hook install claude-code --dry-run'

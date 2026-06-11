@@ -27,6 +27,7 @@ import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialRes
 import { apiCheckFailureDetail, apiCompatibilityFailureDetail, apiCompatibilityRecoveryCommands, formatUploadRecoveryMessage, ingestionTokenRecoveryCommands, uploadNextActions, type UploadPreflightOptions } from './upload-guidance.js';
 import { reviewUrlHandoffLines } from './review-handoff.js';
 import { collectJsonNextActions, previewNextActions, remotePreviewNextActions } from './draft-next-actions.js';
+import { discardCompleteNextActions, discardConfirmationNextActions, draftListNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -727,13 +728,6 @@ function printUrlBlock(label: string, url: string): void {
   print(`  ${ui.command(url)}`);
 }
 
-function shareDryRunNextActions(draftId: string, hasCredentials: boolean): string[] {
-  return uniqueNextCommands([
-    `agentfeed preview --id ${draftId}`,
-    ...(!hasCredentials ? ['agentfeed login'] : []),
-    `agentfeed publish --id ${draftId} --yes`
-  ]);
-}
 
 function readinessMarker(status: StatusReadinessItem['status']): string {
   return status === 'ready' ? ui.good('✓') : ui.warn('!');
@@ -1744,13 +1738,6 @@ async function draftListRow(row: Awaited<ReturnType<typeof listDrafts>>[number])
   }
 }
 
-function discardConfirmationNextActions(id: string): string[] {
-  return [`agentfeed discard --id ${id} --yes`, `agentfeed preview --id ${id}`];
-}
-
-function discardCompleteNextActions(): string[] {
-  return ['agentfeed drafts', 'agentfeed collect --explain'];
-}
 
 interface DraftListSummary {
   total: number;
@@ -1808,21 +1795,6 @@ function formatDraftUpdatedAt(value: string): string {
   return `${new Date(parsed).toISOString()} (${formatRelativeTime(value)})`;
 }
 
-function draftListNextActions(rows: DraftListRow[]): string[] {
-  if (!rows.length) {
-    return ['agentfeed collect --explain', 'agentfeed share --dry'];
-  }
-
-  const latest = rows.find((row) => row.valid);
-  if (!latest) {
-    return ['agentfeed collect --explain'];
-  }
-
-  return uniqueNextCommands([
-    `agentfeed preview --id ${latest.id}`,
-    latest.status === 'uploaded' ? `agentfeed open --id ${latest.id}` : `agentfeed publish --id ${latest.id} --yes`
-  ]);
-}
 
 async function cmdDrafts(args: string[]) {
   await loadProjectConfig(process.cwd());
@@ -1964,12 +1936,6 @@ function noOpenableDraftsMessage(): string {
   ].join('\n');
 }
 
-function openNextActions(draftId: string): string[] {
-  return uniqueNextCommands([
-    `agentfeed preview --id ${draftId}`,
-    'agentfeed status'
-  ]);
-}
 
 async function resolveOpenDraft(args: string[]): Promise<LocalDraft> {
   await loadProjectConfig(process.cwd());

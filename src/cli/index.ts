@@ -20,6 +20,7 @@ import { detectAgentSignals, formatAgentSignalLines, summarizeAgentSignals } fro
 import { changedAreas } from '../summary/changed-areas.js';
 import { hasAgentFeedHook, installClaudeCodeHook, uninstallClaudeCodeHook, resolveClaudeSettingsPath } from '../hooks/claude-code-settings.js';
 import { flag, option } from './args.js';
+import { parseLongOptionToken } from './long-option-token.js';
 import { resolveStatusProject } from './status-project.js';
 import { setupProgressText, statusNextActions, statusReadinessItems, statusSummary, type StatusReadinessItem } from './status-readiness.js';
 import { doctorNextActions, doctorPriorityActions, doctorReadinessItems, doctorSummary, type DoctorPriorityAction, type DoctorReadinessItem } from './doctor-readiness.js';
@@ -2714,12 +2715,12 @@ function validateCommandArgs(command: string, args: string[]): void {
       throw new Error(bareDoubleDashArgumentMessage(command));
     }
     if (raw.startsWith('--')) {
-      const equalsIndex = raw.indexOf('=');
-      const name = equalsIndex >= 0 ? raw.slice(0, equalsIndex) : raw;
+      const optionToken = parseLongOptionToken(raw);
+      const name = optionToken.name;
       if (valueOptions.has(name)) {
         seenOptions.add(name);
-        if (equalsIndex >= 0) {
-          if (raw.slice(equalsIndex + 1).length === 0) throw new Error(optionRequiresValueMessage(command, name));
+        if (optionToken.inlineValue !== null) {
+          if (optionToken.inlineValue.length === 0) throw new Error(optionRequiresValueMessage(command, name));
         } else {
           const value = args[i + 1];
           if (!value || value.startsWith('--')) throw new Error(optionRequiresValueMessage(command, name));
@@ -2729,7 +2730,7 @@ function validateCommandArgs(command: string, args: string[]): void {
       }
       if (flags.has(name)) {
         seenOptions.add(name);
-        if (equalsIndex >= 0) throw new Error(optionDoesNotAcceptValueMessage(command, name));
+        if (optionToken.inlineValue !== null) throw new Error(optionDoesNotAcceptValueMessage(command, name));
         continue;
       }
       throw unknownOptionError(command, name, spec);

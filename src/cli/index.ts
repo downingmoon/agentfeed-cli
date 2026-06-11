@@ -44,6 +44,7 @@ import { bareDoubleDashError } from './bare-double-dash-error.js';
 import { hasHelpFlag } from './help-flag.js';
 import { isTrailingHelpAlias } from './trailing-help-alias.js';
 import { createCompletionVocabulary } from './completion-vocabulary.js';
+import { createCompletionOptionMetadata } from './completion-option-metadata.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -2000,144 +2001,8 @@ async function cmdOpen(args: string[]) {
   printGuidedNextCommands(openNextActions(draft.id));
 }
 
-const COMPLETION_OPTION_DESCRIPTIONS: Record<string, string> = {
-  '--all': 'Collect from the full available local history',
-  '--api-base-url': 'Override AgentFeed API base URL',
-  '--browser': 'Allow browser authorization in guarded environments',
-  '--clipboard': 'Copy the review URL to clipboard',
-  '--dry': 'Collect or preview without uploading',
-  '--dry-run': 'Collect or preview without uploading',
-  '--explain': 'Show how local work was collected',
-  '--force': 'Bypass the local draft reuse guard',
-  '--global': 'Use global Claude Code settings',
-  '--help': 'Show command help',
-  '-h': 'Show command help',
-  '--id': 'Use a specific draft ID',
-  '--json': 'Print machine-readable JSON output',
-  '--latest': 'Use the newest local draft',
-  '--no-clip': 'Do not copy the review URL',
-  '--no-clipboard': 'Do not copy the review URL',
-  '--no-git-check': 'Initialize even when no git repository is detected',
-  '--no-open': 'Print the authorization URL instead of opening a browser',
-  '--no-open-review': 'Do not open the private review URL',
-  '--no-save': 'Do not persist credentials after login',
-  '--no-save-cursor': 'Do not advance the collection cursor',
-  '--no-upload': 'Keep the draft local instead of uploading',
-  '--note': 'Attach a public-safe author note',
-  '--open-review': 'Open the private review URL after upload',
-  '--path': 'Scan a filesystem path',
-  '--project': 'Use project Claude Code settings',
-  '--project-name': 'Set the AgentFeed project name',
-  '--remote': 'Validate preview through the API',
-  '--run-configured-commands': 'Run trusted configured test/build commands',
-  '--session-file': 'Read agent session metadata from a file',
-  '--settings-path': 'Override the Claude Code settings path',
-  '--since': 'Start the collection window',
-  '--source': 'Select agent source',
-  '--token': 'Read ingestion token from a value or stdin when value is -',
-  '--token-stdin': 'Read ingestion token from stdin',
-  '--until': 'End the collection window',
-  '--upload': 'Upload after collecting',
-  '--yes': 'Confirm the action without an interactive prompt',
-  '-y': 'Confirm the action without an interactive prompt'
-};
-
-const COMMAND_COMPLETION_OPTION_DESCRIPTIONS: Record<string, Record<string, string>> = {
-  commands: {
-    '--json': 'Print a machine-readable command catalog'
-  },
-  login: {
-    '--json': 'Print machine-readable login status',
-    '--browser': 'Force browser authorization in guarded environments'
-  },
-  logout: {
-    '--json': 'Print machine-readable logout status'
-  },
-  status: {
-    '--json': 'Print machine-readable status diagnostics'
-  },
-  version: {
-    '--json': 'Print the version as JSON'
-  },
-  collect: {
-    '--json': 'Print machine-readable draft output',
-    '--upload': 'Upload immediately after collecting'
-  },
-  share: {
-    '--json': 'Print machine-readable share output',
-    '--yes': 'Upload without an interactive confirmation',
-    '-y': 'Upload without an interactive confirmation'
-  },
-  preview: {
-    '--json': 'Print machine-readable draft preview'
-  },
-  publish: {
-    '--json': 'Print machine-readable upload result',
-    '--yes': 'Upload without an interactive confirmation',
-    '-y': 'Upload without an interactive confirmation'
-  },
-  scan: {
-    '--json': 'Print machine-readable privacy scan output'
-  },
-  hook: {
-    '--dry-run': 'Preview hook changes without writing files',
-    '--json': 'Print machine-readable hook result'
-  },
-  doctor: {
-    '--json': 'Print machine-readable diagnostic checks'
-  },
-  drafts: {
-    '--json': 'Print machine-readable draft summaries'
-  },
-  discard: {
-    '--json': 'Print machine-readable discard result'
-  },
-  open: {
-    '--json': 'Print machine-readable review URL handoff'
-  }
-};
-
-function completionOptionDescription(command: string, optionName: string): string {
-  return COMMAND_COMPLETION_OPTION_DESCRIPTIONS[command]?.[optionName]
-    ?? COMPLETION_OPTION_DESCRIPTIONS[optionName]
-    ?? `Option for agentfeed ${command}`;
-}
-
-function completionOptionRequiresValue(command: string, optionName: string): boolean {
-  return COMMAND_ARG_SPECS[command]?.valueOptions?.includes(optionName) ?? false;
-}
-
 function fishQuote(value: string): string {
   return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
-}
-
-const COMPLETION_VALUE_PLACEHOLDERS: Record<string, string> = {
-  '--api-base-url': 'API URL',
-  '--id': 'draft ID',
-  '--note': 'note',
-  '--path': 'path',
-  '--project-name': 'project name',
-  '--session-file': 'path',
-  '--settings-path': 'path',
-  '--since': 'timestamp',
-  '--source': 'source',
-  '--token': 'token',
-  '--until': 'timestamp'
-};
-
-const COMPLETION_VALUE_CHOICES: Record<string, readonly string[]> = {
-  '--source': SUPPORTED_SOURCES,
-  '--token': ['-']
-};
-
-const COMPLETION_FILE_VALUE_OPTIONS = new Set(['--path', '--session-file', '--settings-path']);
-
-function completionValuePlaceholder(optionName: string): string {
-  return COMPLETION_VALUE_PLACEHOLDERS[optionName] ?? 'value';
-}
-
-function completionValueChoices(optionName: string): readonly string[] {
-  return COMPLETION_VALUE_CHOICES[optionName] ?? [];
 }
 
 function zshQuote(value: string): string {
@@ -2145,13 +2010,13 @@ function zshQuote(value: string): string {
 }
 
 function zshOptionArgument(command: string, optionName: string): string {
-  const description = completionOptionDescription(command, optionName).replace(/]/g, '\\]');
+  const description = COMPLETION_OPTION_METADATA.descriptionFor(command, optionName).replace(/]/g, '\\]');
   const base = `${optionName}[${description}]`;
-  if (!completionOptionRequiresValue(command, optionName)) return base;
-  const placeholder = completionValuePlaceholder(optionName);
-  const choices = completionValueChoices(optionName);
+  if (!COMPLETION_OPTION_METADATA.requiresValue(command, optionName)) return base;
+  const placeholder = COMPLETION_OPTION_METADATA.valuePlaceholderFor(optionName);
+  const choices = COMPLETION_OPTION_METADATA.valueChoicesFor(optionName);
   if (choices.length) return `${base}:${placeholder}:(${choices.join(' ')})`;
-  if (COMPLETION_FILE_VALUE_OPTIONS.has(optionName)) return `${base}:${placeholder}:_files`;
+  if (COMPLETION_OPTION_METADATA.isFileValueOption(optionName)) return `${base}:${placeholder}:_files`;
   return `${base}:${placeholder}:`;
 }
 
@@ -2250,11 +2115,11 @@ function fishCompletionScript(): string {
     'complete -c agentfeed -n "__fish_seen_subcommand_from completion" -a "zsh bash fish" -d "Completion shell"',
     `complete -c agentfeed -n "__fish_seen_subcommand_from help" -a "${helpTopics}" -d "Help topic"`,
     ...PUBLIC_COMMANDS.flatMap((command) => COMPLETION_VOCABULARY.optionsFor(command).map((optionName) => {
-      const description = fishQuote(completionOptionDescription(command, optionName));
-      const choices = completionValueChoices(optionName);
-      const valueHint = completionOptionRequiresValue(command, optionName) ? ' -r' : '';
+      const description = fishQuote(COMPLETION_OPTION_METADATA.descriptionFor(command, optionName));
+      const choices = COMPLETION_OPTION_METADATA.valueChoicesFor(optionName);
+      const valueHint = COMPLETION_OPTION_METADATA.requiresValue(command, optionName) ? ' -r' : '';
       const choiceHint = choices.length ? ` -a ${fishQuote(choices.join(' '))}` : '';
-      const fileHint = COMPLETION_FILE_VALUE_OPTIONS.has(optionName) ? ' -F' : '';
+      const fileHint = COMPLETION_OPTION_METADATA.isFileValueOption(optionName) ? ' -F' : '';
       if (optionName.startsWith('--')) {
         return `complete -c agentfeed -n "__fish_seen_subcommand_from ${command}" -l ${optionName.slice(2)}${valueHint}${choiceHint}${fileHint} -d ${description}`;
       }
@@ -2434,13 +2299,13 @@ interface CommandOptionDetail {
 
 function commandOptionDetails(command: string): CommandOptionDetail[] {
   return COMPLETION_VOCABULARY.optionsFor(command).map((optionName) => {
-    const requiresValue = completionOptionRequiresValue(command, optionName);
+    const requiresValue = COMPLETION_OPTION_METADATA.requiresValue(command, optionName);
     return {
       name: optionName,
-      description: completionOptionDescription(command, optionName),
+      description: COMPLETION_OPTION_METADATA.descriptionFor(command, optionName),
       requires_value: requiresValue,
-      ...(requiresValue ? { value_hint: completionValuePlaceholder(optionName) } : {}),
-      ...(completionValueChoices(optionName).length ? { value_choices: [...completionValueChoices(optionName)] } : {})
+      ...(requiresValue ? { value_hint: COMPLETION_OPTION_METADATA.valuePlaceholderFor(optionName) } : {}),
+      ...(COMPLETION_OPTION_METADATA.valueChoicesFor(optionName).length ? { value_choices: [...COMPLETION_OPTION_METADATA.valueChoicesFor(optionName)] } : {})
     };
   });
 }
@@ -2674,6 +2539,13 @@ const COMPLETION_VOCABULARY = createCompletionVocabulary({
   commandSpecs: COMMAND_ARG_SPECS,
   publicCommands: PUBLIC_COMMANDS,
   completionShells: SUPPORTED_COMPLETION_SHELLS
+});
+const COMPLETION_OPTION_METADATA = createCompletionOptionMetadata({
+  commandSpecs: COMMAND_ARG_SPECS,
+  valueChoices: {
+    '--source': SUPPORTED_SOURCES,
+    '--token': ['-']
+  }
 });
 
 function validateCommandArgs(command: string, args: string[]): void {

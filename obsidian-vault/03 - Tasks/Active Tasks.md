@@ -14,6 +14,12 @@ updated: 2026-06-12
 
 ## 현재 결론
 
+> [!success] 2026-06-12 CLI completion option metadata split
+> completion option description/value-required/placeholder/choices/file-hint metadata를 `completion-option-metadata` helper로 분리해 zsh/fish completion 및 `commands --json` option_details 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 39 tests, full `npm test -- --run` 690 tests, CLI smoke(`completion zsh`, `completion fish`, `commands --json` option_details) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Completion Option Metadata Split 2026-06-12]]
+
+
+
 > [!success] 2026-06-12 CLI completion vocabulary split
 > completion option/help-topic/command-word generation을 `completion-vocabulary` helper로 분리해 zsh/bash/fish completion 및 `commands --json` completion_words 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 39 tests, full `npm test -- --run` 689 tests, CLI smoke(`completion zsh`, `commands --json` completion_words) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Completion Vocabulary Split 2026-06-12]]

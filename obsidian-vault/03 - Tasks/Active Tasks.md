@@ -15,6 +15,12 @@ updated: 2026-06-11
 ## 현재 결론
 
 
+> [!success] 2026-06-11 CLI conflict validation refactor
+> command conflict validation 결과를 throw하는 책임을 `assertNoConflictingOptions`로 분리해 `validateCommandArgs`의 post-loop conflict branch를 줄였다. Red test 확인 후 `npm run build`, focused Vitest 42 tests, full `npm test -- --run` 676 tests, CLI smoke(`share --dry --yes`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Conflict Validation Refactor 2026-06-11]]
+
+
+
 > [!success] 2026-06-11 CLI positional validation refactor
 > command positional validation 결과를 throw하는 책임을 `assertValidPositionals`로 분리해 `validateCommandArgs`의 post-loop validation branch를 줄였다. Red test 확인 후 `npm run build`, focused Vitest 44 tests, full `npm test -- --run` 674 tests, CLI smoke(`status extra`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Positional Validation Refactor 2026-06-11]]

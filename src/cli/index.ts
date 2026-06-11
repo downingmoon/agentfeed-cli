@@ -22,6 +22,7 @@ import { hasAgentFeedHook, installClaudeCodeHook, uninstallClaudeCodeHook, resol
 import { flag, option } from './args.js';
 import { parseLongOptionToken } from './long-option-token.js';
 import { consumeFlagOption, consumeShortOption, consumeValueOption } from './option-consumption.js';
+import { assertNoConflictingOptions } from './conflict-validation.js';
 import { assertValidPositionals } from './positional-validation.js';
 import { resolveStatusProject } from './status-project.js';
 import { setupProgressText, statusNextActions, statusReadinessItems, statusSummary, type StatusReadinessItem } from './status-readiness.js';
@@ -33,7 +34,7 @@ import { collectJsonNextActions, previewNextActions, remotePreviewNextActions } 
 import { discardCompleteNextActions, discardConfirmationNextActions, draftListNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
 import { jsonErrorFromMessage } from './error-output.js';
-import { bareDoubleDashArgumentMessage, commandHelpHint, commandUsageError, completionUnexpectedArgumentMessage, conflictingOptionsMessage, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUnexpectedArgumentMessage, hookUsageMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownCommandErrorMessage, unknownCommandOptionMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
+import { bareDoubleDashArgumentMessage, commandHelpHint, commandUsageError, completionUnexpectedArgumentMessage, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUnexpectedArgumentMessage, hookUsageMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownCommandErrorMessage, unknownCommandOptionMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
 import { leadingOptionErrorMessage } from './leading-option-recovery.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
@@ -2740,8 +2741,7 @@ function validateCommandArgs(command: string, args: string[]): void {
 
   assertValidPositionals({ positionals, validatePositionals: spec.validatePositionals });
 
-  const conflictError = conflictingOptionsMessage(command, seenOptions, spec.conflicts ?? []);
-  if (conflictError) throw new Error(conflictError);
+  assertNoConflictingOptions({ command, seenOptions, conflicts: spec.conflicts ?? [] });
 }
 
 function printCommandCatalog(): void {

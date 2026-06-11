@@ -31,7 +31,7 @@ import { discardCompleteNextActions, discardConfirmationNextActions, draftListNe
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
 import { jsonErrorFromMessage } from './error-output.js';
 import { closestMatch } from './closest-match.js';
-import { commandHelpHint, commandUsageError, conflictingOptionsError, helpTopicError, hookUsageMessage, unknownCommandErrorMessage, unknownOptionErrorMessage, unsupportedHookTargetMessage } from './command-recovery.js';
+import { commandHelpHint, commandUsageError, conflictingOptionsError, helpTopicError, hookUsageMessage, unknownCommandErrorMessage, unknownOptionErrorMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
 import { leadingOptionErrorMessage } from './leading-option-recovery.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
@@ -2700,13 +2700,7 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
       if (positionals.length > 1) return commandUsageError(`Unexpected argument for completion: ${positionals[1]}`, 'completion');
       const supportedShells = ['zsh', 'bash', 'fish'];
       if (supportedShells.includes(positionals[0])) return null;
-      const suggestion = closestMatch(positionals[0], supportedShells);
-      return [
-          `Unsupported completion shell: ${positionals[0]}`,
-          'Supported shells: zsh, bash, fish',
-          ...(suggestion ? [`Did you mean: agentfeed completion ${suggestion}`] : []),
-          'Run: agentfeed completion --help'
-        ].join('\n');
+      return unsupportedCompletionShellMessage(positionals[0], supportedShells);
     }
   }
 };

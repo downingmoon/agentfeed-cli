@@ -68,3 +68,13 @@ export function unknownOptionErrorMessage(command: string, optionName: string, c
     commandHelpHint(command)
   ].join('\n');
 }
+
+export function unsupportedCompletionShellMessage(shell: string, supportedShells: readonly string[]): string {
+  const suggestion = closestMatch(shell, supportedShells);
+  return [
+    `Unsupported completion shell: ${shell}`,
+    `Supported shells: ${supportedShells.join(', ')}`,
+    ...(suggestion ? [`Did you mean: agentfeed completion ${suggestion}`] : []),
+    'Run: agentfeed completion --help'
+  ].join('\n');
+}

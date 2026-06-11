@@ -1,6 +1,7 @@
 import type { AgentMetricSummary, AgentType, CollectionQuality, CollectionSource, CollectionWindow, CollectionWindowReason, LocalDraft, PrivacyFinding, PrivacyScanResult, PrivacySeverity, PrivacyStatus, ReviewUrlHandoffChannel, WorklogCategory, WorklogMetrics, WorklogTimelineItem } from '../types.js';
 
-import { draftError, optionalNonNegativeNumberOrNull, optionalStringArrayOrNullMax, optionalStringOrNull, optionalStringOrNullMax, optionalTimestampOrNull, requireAgentType, requireArrayMax, requireBoolean, requireCollectionQuality, requireCollectionSourceType, requireCollectionWindowReason, requireNonNegativeInteger, requirePrivacyFindingType, requirePrivacyResolution, requirePrivacySeverity, requirePrivacyStatus, requirePrivateVisibility, requireRecord, rejectUnexpectedKeys, requireString, requireStringArrayMax, requireStringMax, requireTimestamp, requireTimelineStatus, requireWorklogCategory } from './validation-primitives.js';
+import { requireAgentType, requireCollectionQuality, requireCollectionSourceType, requireCollectionWindowReason, requirePrivacyFindingType, requirePrivacyResolution, requirePrivacySeverity, requirePrivacyStatus, requirePrivateVisibility, requireTimelineStatus, requireWorklogCategory } from './validation-enums.js';
+import { draftError, optionalNonNegativeNumberOrNull, optionalStringArrayOrNullMax, optionalStringOrNull, optionalStringOrNullMax, optionalTimestampOrNull, requireArrayMax, requireBoolean, requireNonNegativeInteger, requireRecord, rejectUnexpectedKeys, requireString, requireStringArrayMax, requireStringMax, requireTimestamp } from './validation-primitives.js';
 
 const PROJECT_NAME_MAX_LENGTH = 100;
 const SOURCE_TOOL_VERSION_MAX_LENGTH = 100;

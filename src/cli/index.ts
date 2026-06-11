@@ -47,6 +47,7 @@ import { createCompletionVocabulary } from './completion-vocabulary.js';
 import { createCompletionOptionMetadata } from './completion-option-metadata.js';
 import { createCompletionScriptRenderer } from './completion-script-renderer.js';
 import { createCommandCatalog } from './command-catalog.js';
+import { COMMAND_WORKFLOWS, renderCommandCatalogLines, renderCommandWorkflowLines } from './command-catalog-renderer.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -2029,40 +2030,12 @@ async function cmdVersion(args: string[]) {
 }
 
 
-const COMMAND_WORKFLOWS: Array<{ name: string; description: string; commands: string[] }> = [
-  {
-    name: 'Beginner setup',
-    description: 'Connect one project and confirm the CLI is ready.',
-    commands: ['agentfeed init', 'agentfeed login', 'agentfeed status']
-  },
-  {
-    name: 'Daily share',
-    description: 'Preview work first, then upload and open the private review.',
-    commands: ['agentfeed share --dry', 'agentfeed share --yes --open-review']
-  },
-  {
-    name: 'Draft review',
-    description: 'Inspect pending drafts and publish the one you trust.',
-    commands: ['agentfeed drafts', 'agentfeed preview --latest', 'agentfeed publish --latest --yes']
-  },
-  {
-    name: 'Power user',
-    description: 'Control source, window, and evidence before publishing.',
-    commands: ['agentfeed collect --explain', 'agentfeed collect --source codex --all', 'agentfeed publish --latest --yes']
-  },
-  {
-    name: 'Recovery',
-    description: 'Diagnose setup, token, API, or agent-detection problems.',
-    commands: ['agentfeed doctor', 'agentfeed status', 'agentfeed share --dry']
-  }
-];
-
 function printCommandWorkflows(): void {
-  print(`\n${ui.section('Guided workflows')}:`);
-  for (const workflow of COMMAND_WORKFLOWS) {
-    print(`  ${workflow.name}: ${workflow.description}`);
-    for (const command of workflow.commands) print(`    ${ui.command(command)}`);
-  }
+  for (const line of renderCommandWorkflowLines({
+    workflows: COMMAND_WORKFLOWS,
+    section: ui.section,
+    command: ui.command
+  })) print(line);
 }
 
 async function cmdCommands(args: string[]) {
@@ -2420,13 +2393,12 @@ function validateCommandArgs(command: string, args: string[]): void {
 }
 
 function printCommandCatalog(): void {
-  print(`\n${ui.section('Commands')}:`);
-  for (const group of COMMAND_GROUPS) {
-    print(`  ${group.title}:`);
-    for (const command of group.commands) {
-      print(`    ${ui.command(command.padEnd(10))} ${COMMAND_DESCRIPTIONS[command]}`);
-    }
-  }
+  for (const line of renderCommandCatalogLines({
+    groups: COMMAND_GROUPS,
+    descriptions: COMMAND_DESCRIPTIONS,
+    section: ui.section,
+    command: ui.command
+  })) print(line);
 }
 
 function printHelp(): void {

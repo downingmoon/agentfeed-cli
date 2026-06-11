@@ -15,6 +15,12 @@ updated: 2026-06-11
 ## 현재 결론
 
 
+> [!success] 2026-06-11 CLI positional validation refactor
+> command positional validation 결과를 throw하는 책임을 `assertValidPositionals`로 분리해 `validateCommandArgs`의 post-loop validation branch를 줄였다. Red test 확인 후 `npm run build`, focused Vitest 44 tests, full `npm test -- --run` 674 tests, CLI smoke(`status extra`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Positional Validation Refactor 2026-06-11]]
+
+
+
 > [!success] 2026-06-11 CLI short option consumption refactor
 > short option known-flag consumption 결정을 `consumeShortOption`으로 분리해 `validateCommandArgs`의 inline `flags.has(raw)` branch를 줄였다. Red test 확인 후 `npm run build`, focused Vitest 46 tests, full `npm test -- --run` 672 tests, CLI smoke(`status -x`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Short Option Consumption Refactor 2026-06-11]]

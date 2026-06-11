@@ -22,6 +22,7 @@ import { hasAgentFeedHook, installClaudeCodeHook, uninstallClaudeCodeHook, resol
 import { flag, option } from './args.js';
 import { parseLongOptionToken } from './long-option-token.js';
 import { consumeFlagOption, consumeShortOption, consumeValueOption } from './option-consumption.js';
+import { assertValidPositionals } from './positional-validation.js';
 import { resolveStatusProject } from './status-project.js';
 import { setupProgressText, statusNextActions, statusReadinessItems, statusSummary, type StatusReadinessItem } from './status-readiness.js';
 import { doctorNextActions, doctorPriorityActions, doctorReadinessItems, doctorSummary, type DoctorPriorityAction, type DoctorReadinessItem } from './doctor-readiness.js';
@@ -2737,8 +2738,7 @@ function validateCommandArgs(command: string, args: string[]): void {
     positionals.push(raw);
   }
 
-  const positionalError = spec.validatePositionals?.(positionals);
-  if (positionalError) throw new Error(positionalError);
+  assertValidPositionals({ positionals, validatePositionals: spec.validatePositionals });
 
   const conflictError = conflictingOptionsMessage(command, seenOptions, spec.conflicts ?? []);
   if (conflictError) throw new Error(conflictError);

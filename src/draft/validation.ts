@@ -21,6 +21,7 @@ const WORKLOG_TIMELINE_MAX_ITEMS = 100;
 const WORKLOG_TIMELINE_TITLE_MAX_LENGTH = 200;
 const WORKLOG_TIMELINE_DESCRIPTION_MAX_LENGTH = 1000;
 const WORKLOG_METRIC_COLLECTION_MAX_ITEMS = 20;
+const WORKLOG_COLLECTION_SOURCE_NAME_MAX_LENGTH = 100;
 const PRIVACY_FINDINGS_MAX_ITEMS = 50;
 const PRIVACY_FINDING_ID_MAX_LENGTH = 100;
 const PRIVACY_FINDING_FIELD_MAX_LENGTH = 100;
@@ -49,7 +50,7 @@ function validateAgentMetricSummary(value: unknown, index: number, path: string)
     const normalized = optionalNonNegativeNumberOrNull(metric[key], `${field}.${key}`, path);
     if (normalized !== undefined) output[key] = normalized;
   }
-  const agentModes = optionalStringArrayOrNullMax(metric.agent_modes, `${field}.agent_modes`, path, WORKLOG_METRIC_COLLECTION_MAX_ITEMS);
+  const agentModes = optionalStringArrayOrNullMax(metric.agent_modes, `${field}.agent_modes`, path, WORKLOG_METRIC_COLLECTION_MAX_ITEMS, undefined, false);
   if (agentModes !== undefined) output.agent_modes = agentModes;
   return output;
 }
@@ -61,14 +62,14 @@ function validateMetrics(value: unknown, path: string): WorklogMetrics {
     const normalized = optionalNonNegativeNumberOrNull(metrics[field], `worklog.metrics.${field}`, path);
     if (normalized !== undefined) output[field] = normalized;
   }
-  const modelsUsed = optionalStringArrayOrNullMax(metrics.models_used, 'worklog.metrics.models_used', path, WORKLOG_METRIC_COLLECTION_MAX_ITEMS, WORKLOG_MODEL_MAX_LENGTH);
+  const modelsUsed = optionalStringArrayOrNullMax(metrics.models_used, 'worklog.metrics.models_used', path, WORKLOG_METRIC_COLLECTION_MAX_ITEMS, WORKLOG_MODEL_MAX_LENGTH, false);
   if (modelsUsed !== undefined) output.models_used = modelsUsed;
   if (metrics.agent_metrics !== undefined && metrics.agent_metrics !== null) {
     output.agent_metrics = requireArrayMax(metrics.agent_metrics, 'worklog.metrics.agent_metrics', path, WORKLOG_METRIC_COLLECTION_MAX_ITEMS).map((item, index) => validateAgentMetricSummary(item, index, path));
   } else if (metrics.agent_metrics === null) {
     output.agent_metrics = null;
   }
-  const agentModes = optionalStringArrayOrNullMax(metrics.agent_modes, 'worklog.metrics.agent_modes', path, WORKLOG_METRIC_COLLECTION_MAX_ITEMS);
+  const agentModes = optionalStringArrayOrNullMax(metrics.agent_modes, 'worklog.metrics.agent_modes', path, WORKLOG_METRIC_COLLECTION_MAX_ITEMS, undefined, false);
   if (agentModes !== undefined) output.agent_modes = agentModes;
   if (metrics.collection_quality !== undefined && metrics.collection_quality !== null) {
     output.collection_quality = requireCollectionQuality(metrics.collection_quality, 'worklog.metrics.collection_quality', path);
@@ -81,7 +82,7 @@ function validateMetrics(value: unknown, path: string): WorklogMetrics {
       const source = requireRecord(item, `worklog.metrics.collection_sources[${index}]`, path);
       return {
         type: requireCollectionSourceType(source.type, `worklog.metrics.collection_sources[${index}].type`, path),
-        name: requireString(source.name, `worklog.metrics.collection_sources[${index}].name`, path),
+        name: requireStringMax(source.name, `worklog.metrics.collection_sources[${index}].name`, path, WORKLOG_COLLECTION_SOURCE_NAME_MAX_LENGTH, false),
         quality: requireCollectionQuality(source.quality, `worklog.metrics.collection_sources[${index}].quality`, path),
       };
     });

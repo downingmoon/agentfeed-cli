@@ -134,10 +134,11 @@ export function optionalStringArrayOrNull(value: unknown, field: string, path: s
   return [...value];
 }
 
-export function optionalStringArrayOrNullMax(value: unknown, field: string, path: string, maxItems: number, itemMaxLength?: number): string[] | null | undefined {
+export function optionalStringArrayOrNullMax(value: unknown, field: string, path: string, maxItems: number, itemMaxLength?: number, allowEmptyItems = true): string[] | null | undefined {
   const items = optionalStringArrayOrNull(value, field, path);
   if (items === undefined || items === null) return items;
   enforceArrayMax(items, field, path, maxItems);
+  if (!allowEmptyItems) enforceStringItemsNotEmpty(items, field, path);
   if (itemMaxLength !== undefined) enforceStringItemsMax(items, field, path, itemMaxLength);
   return items;
 }

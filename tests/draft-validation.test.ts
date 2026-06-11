@@ -122,5 +122,17 @@ describe('local draft validation', () => {
     await expectDraftReadFailure((draft) => {
       draft.worklog.changed_areas = [''];
     }, 'worklog.changed_areas[0] must not be empty');
+
+    await expectDraftReadFailure((draft) => {
+      draft.worklog.metrics.models_used = ['gpt-5.5', ''];
+    }, 'worklog.metrics.models_used[1] must not be empty');
+
+    await expectDraftReadFailure((draft) => {
+      draft.worklog.metrics.agent_modes = ['ultrawork', ''];
+    }, 'worklog.metrics.agent_modes[1] must not be empty');
+
+    await expectDraftReadFailure((draft) => {
+      draft.worklog.metrics.collection_sources = [{ type: 'agent_session', name: '', quality: 'high' }];
+    }, 'worklog.metrics.collection_sources[0].name must not be empty');
   });
 });

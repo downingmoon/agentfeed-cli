@@ -38,8 +38,10 @@ import { collectJsonNextActions, previewNextActions, remotePreviewNextActions } 
 import { discardCompleteNextActions, discardConfirmationNextActions, draftListNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
 import { jsonErrorFromMessage } from './error-output.js';
-import { bareDoubleDashArgumentMessage, commandHelpHint, commandUsageError, completionUnexpectedArgumentMessage, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUnexpectedArgumentMessage, hookUsageMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
+import { commandHelpHint, commandUsageError, completionUnexpectedArgumentMessage, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUnexpectedArgumentMessage, hookUsageMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
 import { leadingOptionError } from './leading-option-error.js';
+import { bareDoubleDashError } from './bare-double-dash-error.js';
+import { hasHelpFlag } from './help-flag.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -2683,11 +2685,6 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     }
   }
 };
-
-function hasHelpFlag(args: string[]): boolean {
-  return args.includes('--help') || args.includes('-h');
-}
-
 function validateCommandArgs(command: string, args: string[]): void {
   const spec = COMMAND_ARG_SPECS[command];
   if (!spec) throw unknownCommandError({ command, knownCommands: PUBLIC_COMMANDS });
@@ -2698,7 +2695,7 @@ function validateCommandArgs(command: string, args: string[]): void {
   for (let i = 0; i < args.length; i += 1) {
     const raw = args[i];
     if (raw === '--') {
-      throw new Error(bareDoubleDashArgumentMessage(command));
+      throw bareDoubleDashError(command);
     }
     if (raw.startsWith('--')) {
       const optionToken = parseLongOptionToken(raw);

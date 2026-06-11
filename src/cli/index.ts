@@ -30,7 +30,7 @@ import { collectJsonNextActions, previewNextActions, remotePreviewNextActions } 
 import { discardCompleteNextActions, discardConfirmationNextActions, draftListNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
 import { jsonErrorFromMessage } from './error-output.js';
-import { commandHelpHint, commandUsageError, conflictingOptionsError, flaglessOptionSuggestionLines, helpTopicError, hookUsageMessage, unknownCommandErrorMessage, unknownHookActionMessage, unknownOptionErrorMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
+import { commandHelpHint, commandUsageError, conflictingOptionsError, flaglessOptionSuggestionLines, helpTopicError, hookUsageMessage, tokenUsageMessage, unknownCommandErrorMessage, unknownHookActionMessage, unknownOptionErrorMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
 import { leadingOptionErrorMessage } from './leading-option-recovery.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
@@ -2582,8 +2582,8 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     flags: ['--browser', '--no-save', '--no-open'],
     valueOptions: ['--api-base-url'],
     validatePositionals: (positionals) => {
-      if (positionals.length === 0) return commandUsageError('Usage: agentfeed token rotate', 'token');
-      if (positionals[0] !== 'rotate') return commandUsageError(`Unknown token subcommand: ${positionals[0]}`, 'token');
+      if (positionals.length === 0) return tokenUsageMessage();
+      if (positionals[0] !== 'rotate') return unknownTokenSubcommandMessage(positionals[0]);
       if (positionals.length > 1) return commandUsageError(
         `Unexpected argument for token rotate: ${positionals[1]}`,
         'token',

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { flaglessOptionSuggestionLines, helpTopicError, hookUsageMessage, unknownHookActionMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from '../src/cli/command-recovery.js';
+import { flaglessOptionSuggestionLines, helpTopicError, hookUsageMessage, tokenUsageMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from '../src/cli/command-recovery.js';
 
 describe('CLI help and hook recovery messages', () => {
   it('formats help topic recovery with closest known topic suggestions', () => {
@@ -73,5 +73,16 @@ describe('CLI help and hook recovery messages', () => {
     ]);
     expect(flaglessOptionSuggestionLines('share', ['yes', 'unknown'], ['--yes', '--open-review'])).toEqual([]);
     expect(flaglessOptionSuggestionLines('share', [], ['--yes', '--open-review'])).toEqual([]);
+  });
+
+  it('formats token alias usage and unknown subcommand recovery', () => {
+    expect(tokenUsageMessage()).toBe([
+      'Usage: agentfeed token rotate',
+      'Run: agentfeed token rotate --help'
+    ].join('\n'));
+    expect(unknownTokenSubcommandMessage('rotat')).toBe([
+      'Unknown token subcommand: rotat',
+      'Run: agentfeed token rotate --help'
+    ].join('\n'));
   });
 });

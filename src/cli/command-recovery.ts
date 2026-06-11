@@ -39,6 +39,14 @@ export function hookUsageMessage(): string {
   ].join('\n');
 }
 
+export function tokenUsageMessage(): string {
+  return commandUsageError('Usage: agentfeed token rotate', 'token');
+}
+
+export function unknownTokenSubcommandMessage(subcommand: string): string {
+  return commandUsageError(`Unknown token subcommand: ${subcommand}`, 'token');
+}
+
 export function unknownHookActionMessage(action: string, supportedActions: readonly string[]): string {
   const suggestion = closestMatch(action, supportedActions);
   return [

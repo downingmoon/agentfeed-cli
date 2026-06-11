@@ -40,6 +40,7 @@ import { createCompletionVocabulary } from './completion-vocabulary.js';
 import { createCompletionOptionMetadata } from './completion-option-metadata.js';
 import { createCompletionScriptRenderer } from './completion-script-renderer.js';
 import { createCommandCatalog } from './command-catalog.js';
+import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
 import { COMMAND_WORKFLOWS, renderCommandCatalogLines, renderCommandWorkflowLines } from './command-catalog-renderer.js';
 import { COMMAND_DESCRIPTIONS, COMMAND_EXAMPLES, COMMAND_GROUPS, COMMAND_USAGE_OVERRIDES, KNOWN_COMMANDS, PUBLIC_COMMANDS } from './command-definitions.js';
 import { COMMAND_ARG_SPECS, SUPPORTED_COMPLETION_SHELLS } from './command-arg-specs.js';
@@ -2005,38 +2006,36 @@ async function cmdVersion(args: string[]) {
   print(AGENTFEED_CLI_VERSION);
 }
 
-function printCommandWorkflows(): void {
-  for (const line of renderCommandWorkflowLines({
+function commandWorkflowLines(): string[] {
+  return renderCommandWorkflowLines({
     workflows: COMMAND_WORKFLOWS,
     section: ui.section,
     command: ui.command
-  })) print(line);
+  });
 }
 
 async function cmdCommands(args: string[]) {
   const nextActions = commandCatalogNextActions();
   if (flag(args, '--json')) {
-    print(JSON.stringify({
-      next_actions: nextActions,
+    print(JSON.stringify(buildCommandsJsonPayload({
+      nextActions,
       workflows: COMMAND_WORKFLOWS,
-      commands: COMMAND_GROUPS.map((group) => ({
-        group: group.title,
-        commands: group.commands.map((command) => COMMAND_CATALOG.entryFor({
-          name: command,
-          description: COMMAND_DESCRIPTIONS[command],
-          exampleCommand: COMMAND_EXAMPLES[command],
-          usage: COMMAND_USAGE_OVERRIDES[command]
-        }))
-      }))
-    }, null, 2));
+      groups: COMMAND_GROUPS,
+      descriptions: COMMAND_DESCRIPTIONS,
+      examples: COMMAND_EXAMPLES,
+      usageOverrides: COMMAND_USAGE_OVERRIDES,
+      catalog: COMMAND_CATALOG
+    }), null, 2));
     return;
   }
-  print(ui.heading('AgentFeed commands'));
-  printCommandCatalog();
-  printCommandWorkflows();
-  print(`\n${ui.section('Try this')}:`);
-  printGuidedNextCommands(nextActions);
-  print(`\nRun ${ui.command('agentfeed help <command>')} for command-specific options.`);
+  for (const line of renderCommandsHumanLines({
+    heading: ui.heading,
+    section: ui.section,
+    command: ui.command,
+    commandCatalogLines: commandCatalogLines(),
+    workflowLines: commandWorkflowLines(),
+    nextActionLines: renderGuidedNextCommandLines({ commands: nextActions, command: ui.command })
+  })) print(line);
 }
 
 const COMPLETION_VOCABULARY = createCompletionVocabulary({
@@ -2070,10 +2069,6 @@ function commandCatalogLines(): string[] {
     section: ui.section,
     command: ui.command
   });
-}
-
-function printCommandCatalog(): void {
-  for (const line of commandCatalogLines()) print(line);
 }
 
 function printHelp(): void {

@@ -1,8 +1,8 @@
 export type TextFormatter = (value: string) => string;
 
-export type RenderCommandCatalogGroup = {
+export type RenderCommandCatalogGroup<CommandName extends string = string> = {
   readonly title: string;
-  readonly commands: readonly string[];
+  readonly commands: readonly CommandName[];
 };
 
 export type RenderCommandCatalogInput = {

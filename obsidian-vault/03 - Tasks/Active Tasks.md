@@ -14,6 +14,11 @@ updated: 2026-06-12
 
 ## 현재 결론
 
+> [!success] 2026-06-12 CLI commands output renderer split
+> `agentfeed commands` JSON/human output 조립을 `commands-output-renderer` helper로 분리해 commands catalog 출력 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 40 tests, full `npm test -- --run` 712 tests, CLI smoke(`commands`, `commands --json`, `--help`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Commands Output Renderer Split 2026-06-12]]
+
+
 > [!success] 2026-06-12 CLI guided next command renderer split
 > next-action command line 렌더링을 `guided-next-command-renderer` helper로 분리해 단일 command와 recommended-order 출력 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 41 tests, full `npm test -- --run` 710 tests, CLI smoke(`commands`, `--help`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Guided Next Command Renderer Split 2026-06-12]]

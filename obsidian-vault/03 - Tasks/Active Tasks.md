@@ -15,6 +15,12 @@ updated: 2026-06-12
 ## 현재 결론
 
 
+> [!success] 2026-06-12 CLI trailing help alias split
+> `agentfeed <command> help` 및 `agentfeed token rotate help` 감지를 `trailing-help-alias` helper로 분리해 oversized `src/cli/index.ts`의 alias parsing 책임을 줄였다. Red test 확인 후 `npm run build`, focused Vitest 39 tests, full `npm test -- --run` 688 tests, CLI smoke(`status help`, `token rotate help`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Trailing Help Alias Split 2026-06-12]]
+
+
+
 > [!success] 2026-06-12 CLI parser helper boundary split
 > bare `--` recovery `Error` 생성과 `--help`/`-h` 감지를 각각 `bare-double-dash-error` / `help-flag` helper로 분리해 oversized `src/cli/index.ts` parser utility 책임을 줄였다. Red tests 확인 후 `npm run build`, focused Vitest 56 tests, full `npm test -- --run` 687 tests, CLI smoke(`status --`, `status --help`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Parser Helper Boundary Split 2026-06-12]]

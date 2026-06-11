@@ -42,6 +42,7 @@ import { commandHelpHint, commandUsageError, completionUnexpectedArgumentMessage
 import { leadingOptionError } from './leading-option-error.js';
 import { bareDoubleDashError } from './bare-double-dash-error.js';
 import { hasHelpFlag } from './help-flag.js';
+import { isTrailingHelpAlias } from './trailing-help-alias.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -3147,12 +3148,6 @@ function printHelpTopic(args: string[]): void {
   }
   printCommandHelp(args[0]);
 }
-
-function isTrailingHelpAlias(command: string, args: string[]): boolean {
-  if (args.length === 1 && args[0] === 'help') return true;
-  return command === 'token' && args.length === 2 && args[0] === 'rotate' && args[1] === 'help';
-}
-
 async function main() {
   const [command, ...args] = process.argv.slice(2);
   if (command === undefined || command === '--help' || command === '-h') {
@@ -3172,7 +3167,7 @@ async function main() {
     printHelpTopic(args);
     return;
   }
-  if (isTrailingHelpAlias(command, args)) {
+  if (isTrailingHelpAlias({ command, args })) {
     if (!KNOWN_COMMANDS.has(command)) throw unknownCommandError({ command, knownCommands: PUBLIC_COMMANDS });
     printCommandHelp(command);
     return;

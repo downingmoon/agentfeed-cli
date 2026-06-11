@@ -20,9 +20,10 @@ import { detectAgentSignals, formatAgentSignalLines, summarizeAgentSignals } fro
 import { changedAreas } from '../summary/changed-areas.js';
 import { hasAgentFeedHook, installClaudeCodeHook, uninstallClaudeCodeHook, resolveClaudeSettingsPath } from '../hooks/claude-code-settings.js';
 import { flag, option } from './args.js';
+import { consumeLongOption } from './long-option-consumption.js';
 import { parseLongOptionToken } from './long-option-token.js';
 import { buildCommandOptionSets } from './command-option-sets.js';
-import { consumeFlagOption, consumeShortOption, consumeValueOption } from './option-consumption.js';
+import { consumeShortOption } from './option-consumption.js';
 import { assertNoConflictingOptions } from './conflict-validation.js';
 import { assertValidPositionals } from './positional-validation.js';
 import { resolveStatusProject } from './status-project.js';
@@ -2719,18 +2720,10 @@ function validateCommandArgs(command: string, args: string[]): void {
     }
     if (raw.startsWith('--')) {
       const optionToken = parseLongOptionToken(raw);
-      const name = optionToken.name;
-      if (valueOptions.has(name)) {
-        seenOptions.add(name);
-        i = consumeValueOption({ command, optionName: name, inlineValue: optionToken.inlineValue, args, index: i }).nextIndex;
-        continue;
-      }
-      if (flags.has(name)) {
-        seenOptions.add(name);
-        consumeFlagOption({ command, optionName: name, inlineValue: optionToken.inlineValue });
-        continue;
-      }
-      throw unknownOptionError(command, name, spec);
+      const consumption = consumeLongOption({ command, optionToken, valueOptions, flags, args, index: i, unknownOptionError: unknownOptionError(command, optionToken.name, spec) });
+      seenOptions.add(consumption.optionName);
+      i = consumption.nextIndex;
+      continue;
     }
     if (raw.startsWith('-')) {
       seenOptions.add(consumeShortOption({ optionName: raw, flags, unknownOptionError: unknownOptionError(command, raw, spec) }).optionName);

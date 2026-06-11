@@ -15,6 +15,12 @@ updated: 2026-06-11
 ## 현재 결론
 
 
+> [!success] 2026-06-11 CLI long option consumption refactor
+> long option의 value/flag/unknown dispatch와 consumption을 `classifyLongOption` / `consumeLongOption`으로 분리해 `validateCommandArgs` inline branch를 줄였다. Red tests 확인 후 `npm run build`, focused Vitest 50 tests, full `npm test -- --run` 682 tests, CLI smoke(`login --api-base-url=... --json`, `status --json=true`, `share --opne-review`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Long Option Consumption Refactor 2026-06-11]]
+
+
+
 > [!success] 2026-06-11 CLI command option sets refactor
 > command별 flags/valueOptions를 parser lookup set으로 구성하는 책임을 `buildCommandOptionSets`로 분리해 `validateCommandArgs`의 option set 초기화 branch를 줄였다. Red test 확인 후 `npm run build`, focused Vitest 42 tests, full `npm test -- --run` 678 tests, CLI smoke(`status --help`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Command Option Sets Refactor 2026-06-11]]

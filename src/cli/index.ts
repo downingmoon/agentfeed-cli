@@ -23,6 +23,7 @@ import { flag, option } from './args.js';
 import { resolveStatusProject } from './status-project.js';
 import { setupProgressText, statusNextActions, statusReadinessItems, statusSummary, type StatusReadinessItem } from './status-readiness.js';
 import { doctorNextActions, doctorPriorityActions, doctorReadinessItems, doctorSummary, type DoctorPriorityAction, type DoctorReadinessItem } from './doctor-readiness.js';
+import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialResult, tokenLoginCredentialResult, type CredentialResultView } from './auth-result.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -43,7 +44,7 @@ function formatWarningLines(warning: string): string[] {
   return ui.wrapKeyValue('Warning', warning).map((line) => ui.warn(line));
 }
 
-function printWarningLines(warnings: string[]): void {
+function printWarningLines(warnings: readonly string[]): void {
   for (const warning of warnings) {
     for (const line of formatWarningLines(warning)) print(line);
   }
@@ -187,15 +188,7 @@ function draftModelsLabel(draft: LocalDraft): string | null {
   return models.length ? models.join(', ') : null;
 }
 
-function printCredentialResult(options: {
-  heading: string;
-  message: string;
-  apiBaseUrl?: string | null;
-  tokenExpiresAt?: string | null;
-  saved: boolean;
-  warnings?: string[];
-  next?: string[];
-}): void {
+function printCredentialResult(options: CredentialResultView): void {
   print(ui.heading(options.heading));
   print(options.message);
   print();
@@ -218,23 +211,6 @@ function printCredentialResult(options: {
   }
 }
 
-function credentialJsonResult(options: {
-  saved: boolean;
-  apiBaseUrl: string;
-  tokenExpiresAt?: string | null;
-  user?: AgentFeedCredentials['user'];
-  warnings?: string[];
-  next: string[];
-}): Record<string, unknown> {
-  return {
-    saved: options.saved,
-    api_base_url: options.apiBaseUrl,
-    token_expires_at: options.tokenExpiresAt ?? null,
-    user: options.user ?? null,
-    warnings: options.warnings ?? [],
-    next_actions: options.next
-  };
-}
 
 function formatCollectionCursor(value?: string | null): string {
   if (!value) return 'none';
@@ -984,15 +960,7 @@ async function cmdLogin(args: string[]) {
       const saved = await loadCredentialsWithMetadata({ cwd: process.cwd() });
       warnings.push(...saved.warnings);
     }
-    printCredentialResult({
-      heading: noSave ? 'AgentFeed login complete (not saved)' : 'AgentFeed login complete',
-      message: noSave ? 'AgentFeed browser login complete (not saved).' : 'AgentFeed browser login complete.',
-      apiBaseUrl: creds.api_base_url,
-      tokenExpiresAt: creds.token_expires_at,
-      saved: !noSave,
-      warnings,
-      next: noSave ? ['agentfeed login', 'agentfeed status'] : ['agentfeed status', 'agentfeed share --dry']
-    });
+    printCredentialResult(browserLoginCredentialResult({ noSave, credentials: creds, warnings }));
     return;
   }
   const loginApiOptions = { apiBaseUrl, cwd: process.cwd(), trustRepoDiscoveredApiBase: process.env.AGENTFEED_TRUST_REPO_API_BASE === '1' };
@@ -1012,23 +980,13 @@ async function cmdLogin(args: string[]) {
   if (json) {
     print(JSON.stringify(credentialJsonResult({
       saved: !noSave,
-      apiBaseUrl: creds.api_base_url,
-      tokenExpiresAt: creds.token_expires_at,
-      user: creds.user,
+      credentials: creds,
       warnings,
       next
     }), null, 2));
     return;
   }
-  printCredentialResult({
-    heading: noSave ? 'AgentFeed token loaded (not saved)' : 'AgentFeed credentials saved',
-    message: noSave ? 'AgentFeed token loaded for this command only (not saved).' : 'AgentFeed credentials saved.',
-    apiBaseUrl: creds.api_base_url,
-    tokenExpiresAt: creds.token_expires_at,
-    saved: !noSave,
-    warnings,
-    next
-  });
+  printCredentialResult(tokenLoginCredentialResult({ noSave, credentials: creds, warnings }));
 }
 
 async function replacementTokenIdForSavedCredentials(creds: NonNullable<Awaited<ReturnType<typeof loadCredentialsWithMetadata>>['credentials']>): Promise<string | undefined> {
@@ -1044,14 +1002,7 @@ async function rotateViaBrowserLogin(args: string[], message: string, replaceTok
   const noSave = flag(args, '--no-save');
   const existing = await loadCredentialsWithMetadata({ cwd: process.cwd() });
   const creds = await browserLogin({ apiBaseUrl, noOpen: flag(args, '--no-open'), save: !noSave, cwd: process.cwd(), storedApiBaseUrl: existing.credentials?.api_base_url, allowCiBrowser: flag(args, '--browser'), replaceTokenId: noSave ? undefined : replaceTokenId });
-  printCredentialResult({
-    heading: noSave ? 'AgentFeed token replacement complete (not saved)' : 'AgentFeed token replacement complete',
-    message: noSave ? message : `${message}\nSaved replacement token.`,
-    apiBaseUrl: creds.api_base_url,
-    tokenExpiresAt: creds.token_expires_at,
-    saved: !noSave,
-    next: noSave ? ['agentfeed status'] : ['agentfeed status', 'agentfeed share --dry']
-  });
+  printCredentialResult(rotateCredentialResult({ noSave, credentials: creds, message }));
 }
 
 async function cmdRotate(args: string[]) {

@@ -13,7 +13,7 @@ import { formatCollectionExplain } from '../draft/explain.js';
 import { cachedUploadReuseStatusForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, isTrustedReviewUrl, previewDraftRemote, publishDraft, type ApiMetadata, type CachedUploadReuseFailureReason } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
-import { applyRedactedPublicFields, publicScanFieldsFromDraft, scanAndRedactDraftPublicFields, type PublicScanFields } from '../privacy/draft-sanitizer.js';
+import { applyRedactedPublicFields, publicScanFieldsFromDraft, scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
 import type { AgentFeedCredentials, LocalDraft, ReviewUrlHandoff } from '../types.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { detectAgentSignals, formatAgentSignalLines, summarizeAgentSignals } from '../collectors/agent-discovery.js';
@@ -29,7 +29,7 @@ import { apiCheckFailureDetail, apiCompatibilityFailureDetail, apiCompatibilityR
 import { reviewUrlHandoffLines } from './review-handoff.js';
 import { collectJsonNextActions } from './draft-next-actions.js';
 import { discardCompleteNextActions, draftListNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
-import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
+import { commandCatalogNextActions, hookNextActions, initNextActions } from './guidance-actions.js';
 import { renderGuidedNextCommandLines, renderNextCommandLines, renderRecommendedCommandLines } from './guided-next-command-renderer.js';
 import { jsonErrorFromMessage } from './error-output.js';
 import { commandHelpHint, hookUsageMessage, unsupportedHookTargetMessage } from './command-recovery.js';
@@ -44,6 +44,7 @@ import { versionCommandOutput } from './version-command.js';
 import { discardCompletePayload, discardConfirmationPayload } from './discard-command.js';
 import { openJsonPayload } from './open-command.js';
 import { localPreviewJsonPayload, remotePreviewJsonPayload, renderLocalPreviewHumanLines, renderRemotePreviewHumanLines } from './preview-command.js';
+import { formatPrivacyScanReport, privacyScanJsonOutput } from './privacy-scan-output.js';
 import { createCommandCatalog } from './command-catalog.js';
 import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
 import { COMMAND_WORKFLOWS, renderCommandCatalogLines, renderCommandWorkflowLines } from './command-catalog-renderer.js';
@@ -498,33 +499,9 @@ async function sanitizeDraftForCliOutput(cwd: string, draft: LocalDraft): Promis
   return draft;
 }
 
-function flattenStringFields(input: PublicScanFields, prefix = ''): Array<[string, string]> {
-  const entries: Array<[string, string]> = [];
-  for (const [key, value] of Object.entries(input)) {
-    const field = prefix ? `${prefix}.${key}` : key;
-    if (typeof value === 'string') entries.push([field, value]);
-    else if (Array.isArray(value)) {
-      value.forEach((item, i) => {
-        if (typeof item === 'string') entries.push([`${field}.${i}`, item]);
-        else if (item && typeof item === 'object') entries.push(...flattenStringFields(item as PublicScanFields, `${field}.${i}`));
-      });
-    } else if (value && typeof value === 'object') {
-      entries.push(...flattenStringFields(value as PublicScanFields, field));
-    }
-  }
-  return entries;
-}
-
 function singleLine(value: string): string {
   const text = safeTerminalText(value).replace(/\s+/g, ' ').trim();
   return text.length > 160 ? `${text.slice(0, 157)}...` : text;
-}
-
-function redactedFieldPreviews(original: PublicScanFields, redacted: PublicScanFields): Array<{ field: string; value: string }> {
-  const originalFields = new Map(flattenStringFields(original));
-  return flattenStringFields(redacted)
-    .filter(([field, value]) => originalFields.get(field) !== value)
-    .map(([field, value]) => ({ field, value: singleLine(value) }));
 }
 
 async function shouldOpenReviewAfterUpload(openFlag: boolean, options: { respectConfig?: boolean; noOpen?: boolean } = {}): Promise<boolean> {
@@ -538,31 +515,6 @@ async function shouldOpenReviewAfterUpload(openFlag: boolean, options: { respect
   } catch {
     return false;
   }
-}
-
-
-function privacyScanJsonOutput(
-  input: PublicScanFields,
-  result: ReturnType<typeof scanAndRedactFields>,
-  options: { dryRun?: boolean; draftId?: string; path?: string } = {}
-): Record<string, unknown> {
-  const target = options.draftId
-    ? { type: 'draft', id: options.draftId }
-    : options.path
-      ? { type: 'path', path: options.path }
-      : { type: 'input' };
-  const mode = options.draftId
-    ? (options.dryRun ? 'dry_run' : 'redact_and_save')
-    : 'inspect_only';
-  return {
-    dry_run: Boolean(options.dryRun),
-    mode,
-    target,
-    saved: Boolean(options.draftId && !options.dryRun),
-    scan: result.scan,
-    redacted_fields: redactedFieldPreviews(input, result.redacted),
-    next_actions: privacyScanNextActions(options)
-  };
 }
 
 
@@ -596,58 +548,6 @@ function printInitSetupChecklist(items: InitChecklistItem[]): void {
   }
 }
 
-
-function formatPrivacyScanReport(input: PublicScanFields, redacted: PublicScanFields, scan: ReturnType<typeof scanAndRedactFields>['scan'], options: { dryRun?: boolean; draftId?: string; path?: string } = {}): string {
-  const target = options.draftId ? `draft ${options.draftId}` : options.path ? `path ${options.path}` : 'current input';
-  const mode = options.draftId
-    ? (options.dryRun ? 'dry run' : 'redact and save')
-    : 'inspect only';
-  const result = scan.findings.length
-    ? 'Sensitive public fields found; review redactions before sharing.'
-    : 'No public-field findings detected.';
-  const lines = [
-    ui.heading('AgentFeed privacy scan'),
-    '',
-    ui.section('Summary'),
-    `Target: ${target}`,
-    `Mode: ${mode}`,
-    `Privacy: ${scan.status}`,
-    `Findings: ${scan.findings.length}`,
-    `Result: ${result}`
-  ];
-  if (options.draftId) {
-    if (options.dryRun) {
-      lines.push('Dry run: draft not modified.');
-    } else if (scan.findings.length) {
-      lines.push('Saved: redacted public fields were written to the local draft.');
-    } else {
-      lines.push('Saved: privacy scan result was written to the local draft.');
-    }
-  }
-  if (options.path) lines.push('Path scan: inspect only; no draft was modified.');
-  if (scan.findings.length) {
-    lines.push('', ui.section('Findings detail'));
-    for (const finding of scan.findings) {
-      lines.push(`- [${safeTerminalText(finding.severity)}] ${safeTerminalText(finding.type)}${finding.field ? ` at ${safeTerminalText(finding.field)}` : ''} -> ${safeTerminalText(finding.sample_redacted ?? '[REDACTED]')}`);
-    }
-  } else {
-    lines.push('', ui.section('Findings detail'));
-    lines.push('No findings detected.');
-  }
-  const previews = redactedFieldPreviews(input, redacted);
-  if (previews.length) {
-    lines.push('', ui.section('Redacted preview'));
-    for (const preview of previews) lines.push(`- ${safeTerminalText(preview.field)}: ${safeTerminalText(preview.value)}`);
-  } else {
-    lines.push('', ui.section('Redacted preview'));
-    lines.push('No redactions needed.');
-  }
-  lines.push('', ui.section('Next'));
-  for (const command of privacyScanNextActions(options)) {
-    lines.push(`  ${ui.command(command)}`);
-  }
-  return lines.join('\n');
-}
 
 function doctorCheckMarker(value: boolean | string): string {
   const text = String(value).toLowerCase();

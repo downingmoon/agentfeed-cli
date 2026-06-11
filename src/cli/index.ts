@@ -30,6 +30,7 @@ import { reviewUrlHandoffLines } from './review-handoff.js';
 import { collectJsonNextActions, previewNextActions, remotePreviewNextActions } from './draft-next-actions.js';
 import { discardCompleteNextActions, discardConfirmationNextActions, draftListNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
+import { renderGuidedNextCommandLines, renderNextCommandLines, renderRecommendedCommandLines } from './guided-next-command-renderer.js';
 import { jsonErrorFromMessage } from './error-output.js';
 import { commandHelpHint, hookUsageMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
 import { leadingOptionError } from './leading-option-error.js';
@@ -655,37 +656,16 @@ function printDoctorChecks(title: string, checks: Array<[string, boolean | strin
   print();
 }
 
-function uniqueNextCommands(commands: string[]): string[] {
-  const seen = new Set<string>();
-  return commands.filter((command) => {
-    if (seen.has(command)) return false;
-    seen.add(command);
-    return true;
-  });
-}
-
 function printNextCommands(commands: string[]): void {
-  for (const command of uniqueNextCommands(commands)) {
-    print(`  ${ui.command(command)}`);
-  }
+  for (const line of renderNextCommandLines({ commands, command: ui.command })) print(line);
 }
 
 function printRecommendedCommands(commands: string[]): void {
-  const unique = uniqueNextCommands(commands);
-  if (!unique.length) return;
-  print('Recommended order:');
-  unique.forEach((command, index) => {
-    print(`  ${index + 1}. ${ui.command(command)}`);
-  });
+  for (const line of renderRecommendedCommandLines({ commands, command: ui.command })) print(line);
 }
 
 function printGuidedNextCommands(commands: string[]): void {
-  const unique = uniqueNextCommands(commands);
-  if (unique.length > 1) {
-    printRecommendedCommands(unique);
-    return;
-  }
-  printNextCommands(unique);
+  for (const line of renderGuidedNextCommandLines({ commands, command: ui.command })) print(line);
 }
 
 function printUrlBlock(label: string, url: string): void {

@@ -14,6 +14,12 @@ updated: 2026-06-12
 
 ## 현재 결론
 
+> [!success] 2026-06-12 CLI command arg specs split
+> command별 flags/value options/conflicts/positional validation과 completion shell list를 `command-arg-specs` helper로 분리해 parser/completion/catalog가 공유하는 argument metadata 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 41 tests, full `npm test -- --run` 700 tests, CLI smoke(`commands --json`, `completion zsh`, `token rotate browser`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Command Arg Specs Split 2026-06-12]]
+
+
+
 > [!success] 2026-06-12 CLI command definitions split
 > public command order/descriptions/examples/usage overrides/groups/known-command set을 `command-definitions` helper로 분리해 help/catalog/completion/parser가 공유하는 command metadata 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 40 tests, full `npm test -- --run` 697 tests, CLI smoke(`commands --json`, `--help`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Command Definitions Split 2026-06-12]]

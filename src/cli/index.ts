@@ -43,6 +43,7 @@ import { leadingOptionError } from './leading-option-error.js';
 import { bareDoubleDashError } from './bare-double-dash-error.js';
 import { hasHelpFlag } from './help-flag.js';
 import { isTrailingHelpAlias } from './trailing-help-alias.js';
+import { createCompletionVocabulary } from './completion-vocabulary.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -1999,23 +2000,6 @@ async function cmdOpen(args: string[]) {
   printGuidedNextCommands(openNextActions(draft.id));
 }
 
-function completionOptionsFor(command: string): string[] {
-  const spec = COMMAND_ARG_SPECS[command];
-  if (!spec) return ['--help'];
-  return [...new Set([...(spec.flags ?? []), ...(spec.valueOptions ?? []), '--help'])].sort();
-}
-
-function helpTopicWords(): string[] {
-  return [...PUBLIC_COMMANDS, 'token'];
-}
-
-function completionWordsFor(command: string): string[] {
-  if (command === 'completion') return ['zsh', 'bash', 'fish', ...completionOptionsFor(command)];
-  if (command === 'help') return [...helpTopicWords(), ...completionOptionsFor(command)];
-  return completionOptionsFor(command);
-}
-
-
 const COMPLETION_OPTION_DESCRIPTIONS: Record<string, string> = {
   '--all': 'Collect from the full available local history',
   '--api-base-url': 'Override AgentFeed API base URL',
@@ -2173,9 +2157,9 @@ function zshOptionArgument(command: string, optionName: string): string {
 
 function zshArgumentsCase(command: string): string {
   if (command === 'completion' || command === 'help') {
-    return `    ${command}) compadd -- ${completionWordsFor(command).join(' ')} ;;`;
+    return `    ${command}) compadd -- ${COMPLETION_VOCABULARY.wordsFor(command).join(' ')} ;;`;
   }
-  const options = completionOptionsFor(command);
+  const options = COMPLETION_VOCABULARY.optionsFor(command);
   const entries = options
     .map((optionName, index) => {
       const suffix = index === options.length - 1 ? '' : ' \\';
@@ -2223,7 +2207,7 @@ _agentfeed "$@"
 function bashCompletionScript(): string {
   const commands = PUBLIC_COMMANDS.join(' ');
   const optionCases = PUBLIC_COMMANDS
-    .map((command) => `    ${command}) options="${completionWordsFor(command).join(' ')}" ;;`)
+    .map((command) => `    ${command}) options="${COMPLETION_VOCABULARY.wordsFor(command).join(' ')}" ;;`)
     .join('\n');
   const sourceValues = SUPPORTED_SOURCES.join(' ');
   return `_agentfeed() {
@@ -2259,13 +2243,13 @@ complete -F _agentfeed agentfeed
 
 function fishCompletionScript(): string {
   const commandList = PUBLIC_COMMANDS.join(' ');
-  const helpTopics = helpTopicWords().join(' ');
+  const helpTopics = COMPLETION_VOCABULARY.helpTopicWords().join(' ');
   const lines = [
     'complete -c agentfeed -f',
     ...PUBLIC_COMMANDS.map((command) => `complete -c agentfeed -n "not __fish_seen_subcommand_from ${commandList}" -a "${command}" -d "${COMMAND_DESCRIPTIONS[command]}"`),
     'complete -c agentfeed -n "__fish_seen_subcommand_from completion" -a "zsh bash fish" -d "Completion shell"',
     `complete -c agentfeed -n "__fish_seen_subcommand_from help" -a "${helpTopics}" -d "Help topic"`,
-    ...PUBLIC_COMMANDS.flatMap((command) => completionOptionsFor(command).map((optionName) => {
+    ...PUBLIC_COMMANDS.flatMap((command) => COMPLETION_VOCABULARY.optionsFor(command).map((optionName) => {
       const description = fishQuote(completionOptionDescription(command, optionName));
       const choices = completionValueChoices(optionName);
       const valueHint = completionOptionRequiresValue(command, optionName) ? ' -r' : '';
@@ -2449,7 +2433,7 @@ interface CommandOptionDetail {
 }
 
 function commandOptionDetails(command: string): CommandOptionDetail[] {
-  return completionOptionsFor(command).map((optionName) => {
+  return COMPLETION_VOCABULARY.optionsFor(command).map((optionName) => {
     const requiresValue = completionOptionRequiresValue(command, optionName);
     return {
       name: optionName,
@@ -2487,7 +2471,7 @@ function commandCatalogEntry(command: (typeof PUBLIC_COMMANDS)[number]): {
       value_options: [...(spec?.valueOptions ?? [])],
       option_details: commandOptionDetails(command),
       conflicts: [...(spec?.conflicts ?? [])].map(([first, second]) => [first, second]),
-      completion_words: completionWordsFor(command)
+      completion_words: COMPLETION_VOCABULARY.wordsFor(command)
     }
   };
 }
@@ -2686,6 +2670,12 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     }
   }
 };
+const COMPLETION_VOCABULARY = createCompletionVocabulary({
+  commandSpecs: COMMAND_ARG_SPECS,
+  publicCommands: PUBLIC_COMMANDS,
+  completionShells: SUPPORTED_COMPLETION_SHELLS
+});
+
 function validateCommandArgs(command: string, args: string[]): void {
   const spec = COMMAND_ARG_SPECS[command];
   if (!spec) throw unknownCommandError({ command, knownCommands: PUBLIC_COMMANDS });

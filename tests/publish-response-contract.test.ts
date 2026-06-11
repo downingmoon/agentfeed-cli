@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AgentFeedApiError } from '../src/api/errors.js';
-import { parsePublishDraftResult } from '../src/api/publish-response.js';
+import { parsePublishDraftResult, parseRemotePreviewResult } from '../src/api/publish-response.js';
 
 const apiBaseUrl = 'https://api.agentfeed.dev/v1';
 const validUploadResponse: Record<string, unknown> = {
@@ -23,6 +23,35 @@ function parseInvalidUploadResponse(payload: Record<string, unknown>): AgentFeed
 }
 
 describe('publish response contract', () => {
+  it('rejects remote preview responses with unexpected fields', () => {
+    const validPreviewResponse = {
+      valid: true,
+      preview: {
+        title: 'Preview title',
+        summary: 'Preview summary',
+        user_note: null,
+        model: 'gpt-5.5',
+        metrics_row: 'Tokens 100 · Files 2',
+      },
+      warnings: ['review before publishing'],
+    };
+
+    expect(parseRemotePreviewResult(validPreviewResponse)).toMatchObject({
+      valid: true,
+      preview: { title: 'Preview title', summary: 'Preview summary' },
+      warnings: ['review before publishing'],
+    });
+
+    const invalidPreviewResponses = [
+      { ...validPreviewResponse, debug: true },
+      { ...validPreviewResponse, preview: { ...validPreviewResponse.preview, raw_prompt: 'hidden' } },
+    ];
+
+    for (const payload of invalidPreviewResponses) {
+      expect(() => parseRemotePreviewResult(payload)).toThrow(AgentFeedApiError);
+    }
+  });
+
   it('keeps ingest review URL handoff separate from private draft fields', () => {
     const privateFieldResponses: readonly Record<string, unknown>[] = [
       { ...validUploadResponse, user_note: 'private owner note' },

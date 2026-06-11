@@ -34,6 +34,8 @@ export const CACHED_PRIVATE_REVIEW_UPLOAD_STATUS = 'already_uploaded' satisfies 
 const REMOTE_PRIVATE_REVIEW_UPLOAD_STATUS = 'needs_review' satisfies PublishDraftStatus;
 const VALID_PRIVATE_REVIEW_VISIBILITY: PublishDraftVisibility = 'private';
 const PUBLISH_DRAFT_RESULT_FIELDS = new Set(['id', 'status', 'visibility', 'review_url', 'created_at', 'reused_existing']);
+const REMOTE_PREVIEW_RESULT_FIELDS = new Set(['valid', 'preview', 'warnings']);
+const REMOTE_PREVIEW_PAYLOAD_FIELDS = new Set(['title', 'summary', 'user_note', 'model', 'metrics_row']);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -53,7 +55,14 @@ function remotePreviewContractError(): AgentFeedApiError {
 }
 
 export function parseRemotePreviewResult(value: unknown): RemotePreviewResult {
-  if (!isRecord(value) || typeof value.valid !== 'boolean' || !isRecord(value.preview) || !Array.isArray(value.warnings)) {
+  if (
+    !isRecord(value)
+    || !hasOnlyExpectedFields(value, REMOTE_PREVIEW_RESULT_FIELDS)
+    || typeof value.valid !== 'boolean'
+    || !isRecord(value.preview)
+    || !hasOnlyExpectedFields(value.preview, REMOTE_PREVIEW_PAYLOAD_FIELDS)
+    || !Array.isArray(value.warnings)
+  ) {
     throw remotePreviewContractError();
   }
 

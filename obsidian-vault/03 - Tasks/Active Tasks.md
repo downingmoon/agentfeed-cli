@@ -77,6 +77,7 @@ updated: 2026-06-11
 
 ## 완료됨 — 로컬/CI/contract/UI 품질
 
+- [x] [[Frontend API Public User Split 2026-06-11]] — Frontend PublicUser 타입/normalizer를 `api-public-user.ts`로 통합하고 notification-local 중복 parser를 제거. Frontend lint/test/build 통과, frontend commit `54cd0c0` 푸시 완료.
 - [x] [[Frontend API Notification Split 2026-06-11]] — Frontend `src/lib/api.ts`에서 notification list 타입과 response parser를 `api-notifications.ts`로 분리하고 `@/lib/api` public type export와 `me.notifications()` 호출 surface를 유지. Frontend lint/test/build 통과, frontend commit `4b58a09` 푸시 완료.
 - [x] [[Frontend API Activity Split 2026-06-11]] — Frontend `src/lib/api.ts`에서 public profile activity 타입과 response parser를 `api-activity.ts`로 분리하고 `@/lib/api` public type export와 `users.activity()` 호출 surface를 유지. Frontend lint/test/build 통과, frontend commit `c56eccd` 푸시 완료.
 - [x] [[Frontend API Dashboard Split 2026-06-11]] — Frontend `src/lib/api.ts`에서 dashboard summary/recent worklog 타입과 response parser를 `api-dashboard.ts`로 분리하고 `@/lib/api` public type export와 `me.dashboard*` 호출 surface를 유지. Frontend lint/test/build 통과, frontend commit `daae14d` 푸시 완료.

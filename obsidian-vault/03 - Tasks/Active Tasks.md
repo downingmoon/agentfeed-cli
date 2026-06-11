@@ -77,6 +77,7 @@ updated: 2026-06-11
 
 ## 완료됨 — 로컬/CI/contract/UI 품질
 
+- [x] [[Frontend API Integration Status Split 2026-06-11]] — Frontend `src/lib/api.ts`에서 integration status 타입/response parser를 `api-integration-status.ts`로 분리하고 `@/lib/api` public type export와 `me.integrations()` 호출 surface를 유지. Frontend lint/test/build 통과, frontend commit `21eda72` 푸시 완료.
 - [x] [[Frontend API Ingestion Tokens Split 2026-06-11]] — Frontend `src/lib/api.ts`에서 ingestion token 타입/response parser를 `api-ingestion-tokens.ts`로 분리하고 `@/lib/api` public type export와 `me.*Token` 호출 surface를 유지. Frontend lint/test/build 통과, frontend commit `e4cdbd0` 푸시 완료.
 - [x] [[Frontend API Worklog Actions Split 2026-06-11]] — Frontend `src/lib/api.ts`에서 worklog action response parser를 `api-worklog-actions.ts`로 분리하고 publish/privacy action 호출 surface를 유지. Frontend lint/test/build 통과, frontend commit `1bdeded` 푸시 완료.
 - [x] [[Frontend API Social Actions Split 2026-06-11]] — Frontend `src/lib/api.ts`에서 social action response parser를 `api-social-actions.ts`로 분리하고 호출 surface를 유지. Frontend lint/test/build 통과, frontend commit `bca1a44` 푸시 완료.

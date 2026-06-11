@@ -21,6 +21,7 @@ import { changedAreas } from '../summary/changed-areas.js';
 import { hasAgentFeedHook, installClaudeCodeHook, uninstallClaudeCodeHook, resolveClaudeSettingsPath } from '../hooks/claude-code-settings.js';
 import { flag, option } from './args.js';
 import { parseLongOptionToken } from './long-option-token.js';
+import { buildCommandOptionSets } from './command-option-sets.js';
 import { consumeFlagOption, consumeShortOption, consumeValueOption } from './option-consumption.js';
 import { assertNoConflictingOptions } from './conflict-validation.js';
 import { assertValidPositionals } from './positional-validation.js';
@@ -2707,8 +2708,7 @@ function unknownOptionError(command: string, optionName: string, spec: CommandAr
 function validateCommandArgs(command: string, args: string[]): void {
   const spec = COMMAND_ARG_SPECS[command];
   if (!spec) throw unknownCommandError(command);
-  const flags = new Set([...(spec.flags ?? []), '--help', '-h']);
-  const valueOptions = new Set(spec.valueOptions ?? []);
+  const { flags, valueOptions } = buildCommandOptionSets(spec);
   const positionals: string[] = [];
   const seenOptions = new Set<string>();
 

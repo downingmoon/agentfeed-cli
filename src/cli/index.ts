@@ -32,6 +32,7 @@ import { commandCatalogNextActions, hookNextActions, initNextActions, privacySca
 import { jsonErrorFromMessage } from './error-output.js';
 import { closestMatch } from './closest-match.js';
 import { commandHelpHint, commandUsageError, conflictingOptionsError, helpTopicError, hookUsageMessage, unsupportedHookTargetMessage } from './command-recovery.js';
+import { leadingOptionErrorMessage } from './leading-option-recovery.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -2726,64 +2727,13 @@ function unknownCommandError(command: string): Error {
 }
 
 
-function leadingOptionExamples(optionName: string, rawOption: string, args: string[]): string[] {
-  const inlineValue = rawOption.includes('=') ? rawOption.slice(rawOption.indexOf('=') + 1) : null;
-  const nextValue = !rawOption.includes('=') && args[0] && !args[0].startsWith('-') && !KNOWN_COMMANDS.has(args[0])
-    ? args[0]
-    : null;
-  const optionWithValue = inlineValue !== null || nextValue
-    ? `${optionName} ${inlineValue ?? nextValue}`
-    : optionName;
-  switch (optionName) {
-    case '--dry':
-    case '--dry-run':
-      return [
-        'Try: agentfeed share --dry',
-        'Try: agentfeed collect --dry-run --explain'
-      ];
-    case '--json':
-      return [
-        'Try: agentfeed status --json',
-        'Try: agentfeed commands --json'
-      ];
-    case '--api-base-url':
-      return [`Try: agentfeed login ${optionWithValue}`];
-    case '--source':
-      return [`Try: agentfeed collect ${optionWithValue} --explain`];
-    case '--session-file':
-      return [`Try: agentfeed collect ${optionWithValue} --explain`];
-    case '--token-stdin':
-      return ['Try: printf %s "$TOKEN" | agentfeed login --token-stdin'];
-    case '--no-open':
-      return ['Try: agentfeed login --no-open'];
-    case '--open-review':
-      return ['Try: agentfeed share --yes --open-review'];
-    default:
-      return [];
-  }
-}
-
 function leadingOptionError(option: string, args: string[]): Error {
-  const optionName = option.includes('=') ? option.slice(0, option.indexOf('=')) : option;
-  const commandIndex = args.findIndex((arg) => KNOWN_COMMANDS.has(arg));
-  const command = commandIndex >= 0 ? args[commandIndex] : null;
-  const spec = command ? COMMAND_ARG_SPECS[command] : null;
-  const acceptsOption = spec
-    ? [...(spec.flags ?? []), ...(spec.valueOptions ?? []), '--help', '-h'].includes(optionName)
-    : false;
-  const valueTokens = commandIndex > 0 ? args.slice(0, commandIndex) : [];
-  const valueSuffix = spec?.valueOptions?.includes(optionName) && !option.includes('=') && valueTokens[0] && !valueTokens[0].startsWith('-')
-    ? ` ${valueTokens[0]}`
-    : '';
-  const reordered = command && acceptsOption
-    ? `agentfeed ${command} ${option}${valueSuffix}`
-    : null;
-  return new Error([
-    `Option appears before command: ${optionName}`,
-    'AgentFeed uses command-first syntax: agentfeed <command> [options].',
-    ...(reordered ? [`Use: ${reordered}`] : leadingOptionExamples(optionName, option, args)),
-    ...(command ? [commandHelpHint(command)] : ['Run: agentfeed --help'])
-  ].join('\n'));
+  return new Error(leadingOptionErrorMessage({
+    option,
+    args,
+    knownCommands: KNOWN_COMMANDS,
+    commandSpecs: COMMAND_ARG_SPECS
+  }));
 }
 
 function unknownOptionError(command: string, optionName: string, spec: CommandArgSpec): Error {

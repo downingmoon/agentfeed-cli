@@ -44,6 +44,7 @@ import { COMMAND_DESCRIPTIONS, COMMAND_EXAMPLES, COMMAND_GROUPS, COMMAND_USAGE_O
 import { COMMAND_ARG_SPECS, SUPPORTED_COMPLETION_SHELLS } from './command-arg-specs.js';
 import { validateCommandArgs } from './command-argument-validator.js';
 import { commandHelpText } from './command-help-text.js';
+import { renderRootHelpLines } from './root-help-renderer.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -2082,28 +2083,27 @@ const COMMAND_CATALOG = createCommandCatalog({
   optionMetadata: COMPLETION_OPTION_METADATA
 });
 
-function printCommandCatalog(): void {
-  for (const line of renderCommandCatalogLines({
+function commandCatalogLines(): string[] {
+  return renderCommandCatalogLines({
     groups: COMMAND_GROUPS,
     descriptions: COMMAND_DESCRIPTIONS,
     section: ui.section,
     command: ui.command
-  })) print(line);
+  });
+}
+
+function printCommandCatalog(): void {
+  for (const line of commandCatalogLines()) print(line);
 }
 
 function printHelp(): void {
-  print(ui.heading('Usage: agentfeed <command> [options]'));
-  print(`Version: ${AGENTFEED_CLI_VERSION}`);
-  print(`\n${ui.section('Global options')}:\n  agentfeed --help\n  agentfeed --version\n  agentfeed -v\n  agentfeed version`);
-  print(`\n${ui.section('Help')}:\n  agentfeed help\n  agentfeed commands\n  agentfeed help <command>\n  agentfeed <command> help`);
-  print(`\n${ui.section('Quickstart')}:\n  agentfeed init\n  agentfeed login\n  agentfeed share --dry\n  agentfeed share --yes --open-review`);
-  print(`\n${ui.section('Headless login')}:\n  printf %s "$TOKEN" | agentfeed login --token-stdin\n  printf %s "$TOKEN" | agentfeed login --token - --no-save`);
-  print(`\n${ui.section('Daily workflow')}:\n  agentfeed share\n  agentfeed share --yes\n  agentfeed share --dry\n  agentfeed share --note "Fixed auth flow"\n  agentfeed status`);
-  print(`\n${ui.section('Draft review')}:\n  agentfeed collect --explain\n  agentfeed preview --latest\n  agentfeed publish --latest --yes\n  agentfeed open --latest`);
-  print(`\n${ui.section('Advanced and diagnostics')}:\n  agentfeed doctor\n  agentfeed scan --id <draft_id> --dry-run\n  agentfeed hook install claude-code\n  agentfeed drafts\n  agentfeed discard --id <draft_id>\n  agentfeed rotate\n  agentfeed logout`);
-  print(`\n${ui.section('Shell completion')}:\n  agentfeed completion zsh\n  agentfeed completion bash\n  agentfeed completion fish`);
-  printCommandCatalog();
-  print(`\nRun ${ui.command('agentfeed <command> --help')} for command-specific options.`);
+  for (const line of renderRootHelpLines({
+    version: AGENTFEED_CLI_VERSION,
+    heading: ui.heading,
+    section: ui.section,
+    command: ui.command,
+    commandCatalogLines: commandCatalogLines()
+  })) print(line);
 }
 
 function printCommandHelp(command: string): void {

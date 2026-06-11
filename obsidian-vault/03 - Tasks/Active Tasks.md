@@ -14,6 +14,11 @@ updated: 2026-06-12
 
 ## 현재 결론
 
+> [!success] 2026-06-12 CLI root help renderer split
+> root help sections를 `root-help-renderer` helper로 분리해 root help 출력 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 39 tests, full `npm test -- --run` 707 tests, CLI smoke(`--help`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Root Help Renderer Split 2026-06-12]]
+
+
 > [!success] 2026-06-12 CLI command help text split
 > command-specific help text map을 `command-help-core-text` / `command-help-workflow-text` / `command-help-text` facade로 분리해 `index.ts`의 정적 help content 책임을 줄이고 help 출력 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 41 tests, full `npm test -- --run` 706 tests, CLI smoke(`help token rotate`, `share --help`, `completion --help`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Command Help Text Split 2026-06-12]]

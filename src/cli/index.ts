@@ -30,7 +30,7 @@ import { collectJsonNextActions, previewNextActions, remotePreviewNextActions } 
 import { discardCompleteNextActions, discardConfirmationNextActions, draftListNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
 import { jsonErrorFromMessage } from './error-output.js';
-import { bareDoubleDashArgumentMessage, commandHelpHint, commandUsageError, completionUnexpectedArgumentMessage, conflictingOptionsError, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUnexpectedArgumentMessage, hookUsageMessage, optionDoesNotAcceptValueMessage, optionRequiresValueMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownCommandErrorMessage, unknownHookActionMessage, unknownOptionErrorMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
+import { bareDoubleDashArgumentMessage, commandHelpHint, commandUsageError, completionUnexpectedArgumentMessage, conflictingOptionsMessage, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUnexpectedArgumentMessage, hookUsageMessage, optionDoesNotAcceptValueMessage, optionRequiresValueMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownCommandErrorMessage, unknownHookActionMessage, unknownOptionErrorMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
 import { leadingOptionErrorMessage } from './leading-option-recovery.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
@@ -2748,11 +2748,8 @@ function validateCommandArgs(command: string, args: string[]): void {
   const positionalError = spec.validatePositionals?.(positionals);
   if (positionalError) throw new Error(positionalError);
 
-  for (const [first, second] of spec.conflicts ?? []) {
-    if (seenOptions.has(first) && seenOptions.has(second)) {
-      throw new Error(conflictingOptionsError(command, first, second));
-    }
-  }
+  const conflictError = conflictingOptionsMessage(command, seenOptions, spec.conflicts ?? []);
+  if (conflictError) throw new Error(conflictError);
 }
 
 function printCommandCatalog(): void {

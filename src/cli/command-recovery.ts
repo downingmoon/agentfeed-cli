@@ -22,6 +22,17 @@ export function conflictingOptionsError(command: string, first: string, second: 
   ].join('\n');
 }
 
+export function conflictingOptionsMessage(
+  command: string,
+  seenOptions: ReadonlySet<string>,
+  conflicts: readonly (readonly [string, string])[]
+): string | null {
+  for (const [first, second] of conflicts) {
+    if (seenOptions.has(first) && seenOptions.has(second)) return conflictingOptionsError(command, first, second);
+  }
+  return null;
+}
+
 export function bareDoubleDashArgumentMessage(command: string): string {
   return commandUsageError(`Unexpected argument for ${command}: --`, command);
 }

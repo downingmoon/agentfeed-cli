@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bareDoubleDashArgumentMessage, completionUnexpectedArgumentMessage, optionDoesNotAcceptValueMessage, optionRequiresValueMessage, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUnexpectedArgumentMessage, hookUsageMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from '../src/cli/command-recovery.js';
+import { bareDoubleDashArgumentMessage, completionUnexpectedArgumentMessage, conflictingOptionsMessage, optionDoesNotAcceptValueMessage, optionRequiresValueMessage, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUnexpectedArgumentMessage, hookUsageMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from '../src/cli/command-recovery.js';
 
 describe('CLI help and hook recovery messages', () => {
   it('formats help topic recovery with closest known topic suggestions', () => {
@@ -87,6 +87,16 @@ describe('CLI help and hook recovery messages', () => {
       'Supported shells: zsh, bash, fish',
       'Run: agentfeed completion --help'
     ].join('\n'));
+  });
+
+  it('formats first matching conflicting option recovery from seen options', () => {
+    const seenOptions = new Set(['--latest', '--id']);
+    expect(conflictingOptionsMessage('preview', seenOptions, [['--id', '--latest']])).toBe([
+      'Conflicting options for preview: --id and --latest',
+      'Use only one of --id or --latest.',
+      'Run: agentfeed preview --help'
+    ].join('\n'));
+    expect(conflictingOptionsMessage('preview', new Set(['--latest']), [['--id', '--latest']])).toBeNull();
   });
 
   it('formats option value rejection recovery', () => {

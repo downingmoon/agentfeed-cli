@@ -32,13 +32,14 @@ import { discardCompleteNextActions, discardConfirmationNextActions, draftListNe
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
 import { renderGuidedNextCommandLines, renderNextCommandLines, renderRecommendedCommandLines } from './guided-next-command-renderer.js';
 import { jsonErrorFromMessage } from './error-output.js';
-import { commandHelpHint, hookUsageMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
+import { commandHelpHint, hookUsageMessage, unsupportedHookTargetMessage } from './command-recovery.js';
 import { leadingOptionError } from './leading-option-error.js';
 import { hasHelpFlag } from './help-flag.js';
 import { isTrailingHelpAlias } from './trailing-help-alias.js';
 import { createCompletionVocabulary } from './completion-vocabulary.js';
 import { createCompletionOptionMetadata } from './completion-option-metadata.js';
 import { createCompletionScriptRenderer } from './completion-script-renderer.js';
+import { completionCommandResult, unexpectedCompletionCommandResult } from './completion-command.js';
 import { createCommandCatalog } from './command-catalog.js';
 import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
 import { COMMAND_WORKFLOWS, renderCommandCatalogLines, renderCommandWorkflowLines } from './command-catalog-renderer.js';
@@ -1983,19 +1984,17 @@ async function cmdOpen(args: string[]) {
 }
 
 
-function completionScript(shell: string): string {
-  const script = COMPLETION_SCRIPT_RENDERER.scriptFor(shell);
-  if (script) return script;
-  throw new Error(unsupportedCompletionShellMessage(shell, SUPPORTED_COMPLETION_SHELLS));
-}
-
 async function cmdCompletion(args: string[]) {
-  const shell = args[0];
-  if (!shell) {
-    printCommandHelp('completion');
-    return;
+  const result = completionCommandResult({
+    args,
+    scriptFor: (shell) => COMPLETION_SCRIPT_RENDERER.scriptFor(shell),
+    supportedShells: SUPPORTED_COMPLETION_SHELLS
+  });
+  switch (result.kind) {
+    case 'help': return printCommandHelp(result.command);
+    case 'script': return print(result.script);
+    default: return unexpectedCompletionCommandResult(result);
   }
-  print(completionScript(shell));
 }
 
 async function cmdVersion(args: string[]) {

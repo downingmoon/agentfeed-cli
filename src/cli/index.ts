@@ -30,7 +30,7 @@ import { collectJsonNextActions, previewNextActions, remotePreviewNextActions } 
 import { discardCompleteNextActions, discardConfirmationNextActions, draftListNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
 import { jsonErrorFromMessage } from './error-output.js';
-import { commandHelpHint, commandUsageError, conflictingOptionsError, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUsageMessage, tokenUsageMessage, unknownCommandErrorMessage, unknownHookActionMessage, unknownOptionErrorMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
+import { commandHelpHint, commandUsageError, completionUnexpectedArgumentMessage, conflictingOptionsError, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUsageMessage, tokenUsageMessage, unknownCommandErrorMessage, unknownHookActionMessage, unknownOptionErrorMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
 import { leadingOptionErrorMessage } from './leading-option-recovery.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
@@ -2272,16 +2272,14 @@ function fishCompletionScript(): string {
   return `${lines.join('\n')}\n`;
 }
 
+const SUPPORTED_COMPLETION_SHELLS = ['zsh', 'bash', 'fish'] as const;
+
 function completionScript(shell: string): string {
   switch (shell) {
     case 'zsh': return zshCompletionScript();
     case 'bash': return bashCompletionScript();
     case 'fish': return fishCompletionScript();
-    default: throw new Error([
-      `Unsupported completion shell: ${shell}`,
-      'Supported shells: zsh, bash, fish',
-      'Run: agentfeed completion --help'
-    ].join('\n'));
+    default: throw new Error(unsupportedCompletionShellMessage(shell, SUPPORTED_COMPLETION_SHELLS));
   }
 }
 
@@ -2672,10 +2670,9 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
   completion: {
     validatePositionals: (positionals) => {
       if (positionals.length === 0) return null;
-      if (positionals.length > 1) return commandUsageError(`Unexpected argument for completion: ${positionals[1]}`, 'completion');
-      const supportedShells = ['zsh', 'bash', 'fish'];
-      if (supportedShells.includes(positionals[0])) return null;
-      return unsupportedCompletionShellMessage(positionals[0], supportedShells);
+      if (positionals.length > 1) return completionUnexpectedArgumentMessage(positionals[1]);
+      if (SUPPORTED_COMPLETION_SHELLS.some((supportedShell) => supportedShell === positionals[0])) return null;
+      return unsupportedCompletionShellMessage(positionals[0], SUPPORTED_COMPLETION_SHELLS);
     }
   }
 };

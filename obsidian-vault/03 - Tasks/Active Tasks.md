@@ -15,6 +15,11 @@ updated: 2026-06-11
 ## 현재 결론
 
 
+> [!success] 2026-06-11 CLI completion positional recovery refactor
+> `agentfeed completion <shell> <extra>` unexpected positional recovery를 `completionUnexpectedArgumentMessage`로 분리하고, completion generator fallback과 validation이 같은 supported-shell wording helper를 공유하도록 정리했다. `npm run build`, focused Vitest 47 tests, full `npm test -- --run` 657 tests, CLI surface smoke(`completion zsh extra`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Completion Positional Recovery Refactor 2026-06-11]]
+
+
 > [!success] 2026-06-11 CLI help recovery refactor
 > `agentfeed help` unexpected positional argument 복구 메시지를 `helpUnexpectedArgumentMessage` / `helpUnexpectedTokenArgumentMessage`로 분리했다. `npm run build`, focused Vitest 46 tests, full `npm test -- --run` 656 tests, CLI surface smoke(`help status extra`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가.
 > - [[CLI Help Recovery Refactor 2026-06-11]]

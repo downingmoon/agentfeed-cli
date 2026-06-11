@@ -104,6 +104,10 @@ export function unsupportedCompletionShellMessage(shell: string, supportedShells
   ].join('\n');
 }
 
+export function completionUnexpectedArgumentMessage(argument: string): string {
+  return commandUsageError(`Unexpected argument for completion: ${argument}`, 'completion');
+}
+
 function flaglessOptionCommandSuggestion(
   command: string,
   positionals: readonly string[],

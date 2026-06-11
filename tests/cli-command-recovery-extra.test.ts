@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUsageMessage, tokenUsageMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from '../src/cli/command-recovery.js';
+import { completionUnexpectedArgumentMessage, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUsageMessage, tokenUsageMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from '../src/cli/command-recovery.js';
 
 describe('CLI help and hook recovery messages', () => {
   it('formats help topic recovery with closest known topic suggestions', () => {
@@ -71,6 +71,13 @@ describe('CLI help and hook recovery messages', () => {
     expect(unsupportedCompletionShellMessage('powershell', ['zsh', 'bash', 'fish'])).toBe([
       'Unsupported completion shell: powershell',
       'Supported shells: zsh, bash, fish',
+      'Run: agentfeed completion --help'
+    ].join('\n'));
+  });
+
+  it('formats unexpected completion positional recovery', () => {
+    expect(completionUnexpectedArgumentMessage('extra')).toBe([
+      'Unexpected argument for completion: extra',
       'Run: agentfeed completion --help'
     ].join('\n'));
   });

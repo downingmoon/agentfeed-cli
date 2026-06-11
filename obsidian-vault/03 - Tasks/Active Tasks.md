@@ -7,7 +7,7 @@ status: active
 tags:
   - agentfeed/todo
   - project/tasks
-updated: 2026-06-08
+updated: 2026-06-11
 ---
 
 # Active Tasks
@@ -77,6 +77,7 @@ updated: 2026-06-08
 
 ## 완료됨 — 로컬/CI/contract/UI 품질
 
+- [x] [[Cross Repo Contract Audit 2026-06-11]] — CLI/Frontend 호출 경로와 Backend route surface를 대조했고, Frontend 53개 호출 경로는 모두 Backend에 존재함을 확인. Frontend lint/test, Backend 핵심 contract 62 tests, CLI typecheck/full test 610 tests 통과.
 - [x] Frontend user/account response guard가 malformed auth.me/profile/username-check 성공 payload를 fail-closed 처리하도록 보강.
 - [x] [[User Account Response Guard 2026-06-08]] — auth.me/users.get/users.checkUsername response guard 보강.
 - [x] [[Comment Response Guard 2026-06-08]] — worklog comment list/create response guard 보강.

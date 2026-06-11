@@ -31,6 +31,7 @@ import { discardCompleteNextActions, discardConfirmationNextActions, draftListNe
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
 import { jsonErrorFromMessage } from './error-output.js';
 import { closestMatch } from './closest-match.js';
+import { commandHelpHint, commandUsageError, conflictingOptionsError } from './command-recovery.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -2519,21 +2520,7 @@ interface CommandArgSpec {
   validatePositionals?: (positionals: string[]) => string | null;
 }
 
-function commandUsageError(message: string, command: string, suggestions: string[] = []): string {
-  return [
-    message,
-    ...suggestions,
-    commandHelpHint(command)
-  ].join('\n');
-}
 
-function conflictingOptionsError(command: string, first: string, second: string): string {
-  return [
-    `Conflicting options for ${command}: ${first} and ${second}`,
-    `Use only one of ${first} or ${second}.`,
-    commandHelpHint(command)
-  ].join('\n');
-}
 
 function flaglessOptionCommandSuggestion(command: string, positionals: string[], prefixPositionals: string[] = []): string | null {
   const spec = COMMAND_ARG_SPECS[command];
@@ -2752,11 +2739,6 @@ function hasHelpFlag(args: string[]): boolean {
 }
 
 
-function commandHelpHint(command: string): string {
-  if (command === 'token') return 'Run: agentfeed token rotate --help';
-  if (command === 'help') return 'Run: agentfeed help --help';
-  return `Run: agentfeed ${command} --help`;
-}
 
 function unknownCommandError(command: string): Error {
   const suggestion = closestMatch(command, PUBLIC_COMMANDS);

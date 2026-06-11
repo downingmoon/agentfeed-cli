@@ -46,6 +46,7 @@ import { isTrailingHelpAlias } from './trailing-help-alias.js';
 import { createCompletionVocabulary } from './completion-vocabulary.js';
 import { createCompletionOptionMetadata } from './completion-option-metadata.js';
 import { createCompletionScriptRenderer } from './completion-script-renderer.js';
+import { createCommandCatalog } from './command-catalog.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -2072,7 +2073,12 @@ async function cmdCommands(args: string[]) {
       workflows: COMMAND_WORKFLOWS,
       commands: COMMAND_GROUPS.map((group) => ({
         group: group.title,
-        commands: group.commands.map((command) => commandCatalogEntry(command))
+        commands: group.commands.map((command) => COMMAND_CATALOG.entryFor({
+          name: command,
+          description: COMMAND_DESCRIPTIONS[command],
+          exampleCommand: COMMAND_EXAMPLES[command],
+          usage: COMMAND_USAGE_OVERRIDES[command]
+        }))
       }))
     }, null, 2));
     return;
@@ -2155,58 +2161,6 @@ const COMMAND_USAGE_OVERRIDES: Partial<Record<(typeof PUBLIC_COMMANDS)[number], 
   hook: 'agentfeed hook install|uninstall claude-code [options]',
   completion: 'agentfeed completion <shell>'
 };
-
-interface CommandOptionDetail {
-  name: string;
-  description: string;
-  requires_value: boolean;
-  value_hint?: string;
-  value_choices?: readonly string[];
-}
-
-function commandOptionDetails(command: string): CommandOptionDetail[] {
-  return COMPLETION_VOCABULARY.optionsFor(command).map((optionName) => {
-    const requiresValue = COMPLETION_OPTION_METADATA.requiresValue(command, optionName);
-    return {
-      name: optionName,
-      description: COMPLETION_OPTION_METADATA.descriptionFor(command, optionName),
-      requires_value: requiresValue,
-      ...(requiresValue ? { value_hint: COMPLETION_OPTION_METADATA.valuePlaceholderFor(optionName) } : {}),
-      ...(COMPLETION_OPTION_METADATA.valueChoicesFor(optionName).length ? { value_choices: [...COMPLETION_OPTION_METADATA.valueChoicesFor(optionName)] } : {})
-    };
-  });
-}
-
-function commandCatalogEntry(command: (typeof PUBLIC_COMMANDS)[number]): {
-  name: string;
-  description: string;
-  usage: string;
-  help_command: string;
-  example_command: string;
-  options: {
-    flags: string[];
-    value_options: string[];
-    option_details: CommandOptionDetail[];
-    conflicts: Array<[string, string]>;
-    completion_words: string[];
-  };
-} {
-  const spec = COMMAND_ARG_SPECS[command];
-  return {
-    name: command,
-    description: COMMAND_DESCRIPTIONS[command],
-    usage: COMMAND_USAGE_OVERRIDES[command] ?? `agentfeed ${command} [options]`,
-    help_command: `agentfeed help ${command}`,
-    example_command: COMMAND_EXAMPLES[command],
-    options: {
-      flags: [...(spec?.flags ?? [])],
-      value_options: [...(spec?.valueOptions ?? [])],
-      option_details: commandOptionDetails(command),
-      conflicts: [...(spec?.conflicts ?? [])].map(([first, second]) => [first, second]),
-      completion_words: COMPLETION_VOCABULARY.wordsFor(command)
-    }
-  };
-}
 
 const COMMAND_GROUPS: Array<{ title: string; commands: Array<(typeof PUBLIC_COMMANDS)[number]> }> = [
   { title: 'Start', commands: ['help', 'commands', 'init', 'login', 'status'] },
@@ -2417,6 +2371,11 @@ const COMPLETION_OPTION_METADATA = createCompletionOptionMetadata({
 const COMPLETION_SCRIPT_RENDERER = createCompletionScriptRenderer({
   commands: PUBLIC_COMMANDS.map((command) => ({ name: command, description: COMMAND_DESCRIPTIONS[command] })),
   sourceValues: SUPPORTED_SOURCES,
+  vocabulary: COMPLETION_VOCABULARY,
+  optionMetadata: COMPLETION_OPTION_METADATA
+});
+const COMMAND_CATALOG = createCommandCatalog({
+  commandSpecs: COMMAND_ARG_SPECS,
   vocabulary: COMPLETION_VOCABULARY,
   optionMetadata: COMPLETION_OPTION_METADATA
 });

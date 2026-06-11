@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyDraft } from '../src/draft/create.js';
-import { localPreviewJsonPayload, remotePreviewJsonPayload } from '../src/cli/preview-command.js';
+import { localPreviewJsonPayload, remotePreviewJsonPayload, renderLocalPreviewHumanLines, renderRemotePreviewHumanLines } from '../src/cli/preview-command.js';
 
 describe('preview command payload', () => {
   it('builds local preview JSON output with pending next actions', () => {
@@ -55,4 +55,86 @@ describe('preview command payload', () => {
       ]
     });
   });
+
+  it('renders local preview human output lines with review URL and next actions', () => {
+    // Given: an uploaded local draft with a trusted review URL.
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: '/tmp/agentfeed-preview', source: 'codex' });
+    draft.id = 'draft_uploaded';
+    draft.worklog.title = 'Uploaded preview';
+    draft.worklog.summary = 'Uploaded preview summary.';
+    draft.upload = {
+      uploaded: true,
+      worklog_id: 'worklog_uploaded',
+      review_url: 'https://agentfeed.dev/worklogs/worklog_uploaded/review'
+    };
+
+    // When: the CLI builds human-readable local preview output.
+    const lines = renderLocalPreviewHumanLines(draft, {
+      heading: (text) => text,
+      section: (text) => text,
+      command: (text) => text
+    });
+
+    // Then: the sectioned output preserves the existing preview contract.
+    expect(lines).toEqual([
+      'AgentFeed preview',
+      '',
+      '@local · codex · proj',
+      '',
+      'Summary',
+      'ID: draft_uploaded',
+      'Title: Uploaded preview',
+      'Summary: Uploaded preview summary.',
+      '',
+      'Details',
+      'Metrics: 0 files · +0 -0',
+      'Privacy: safe · findings 0',
+      'Upload: uploaded',
+      'Review URL:',
+      '  https://agentfeed.dev/worklogs/worklog_uploaded/review',
+      '',
+      'Next',
+      'Recommended order:',
+      '  1. agentfeed open --id draft_uploaded',
+      '  2. agentfeed scan --id draft_uploaded'
+    ]);
+  });
+
+  it('renders remote preview human output lines with validity guidance', () => {
+    // Given: an invalid remote preview response.
+    const remote = {
+      valid: false,
+      preview: {
+        title: 'Remote invalid',
+        summary: 'Remote summary',
+        user_note: null,
+        model: null,
+        metrics_row: '0 files'
+      },
+      warnings: ['summary is too short']
+    };
+
+    // When: the CLI builds human-readable remote preview output.
+    const lines = renderRemotePreviewHumanLines({ draftId: 'draft_remote', draftTitle: 'Local title', remote }, {
+      heading: (text) => text,
+      section: (text) => text,
+      command: (text) => text
+    });
+
+    // Then: remote validity, warning text, title, and retry guidance are preserved.
+    expect(lines).toEqual([
+      'AgentFeed remote preview',
+      '',
+      'Summary',
+      'Remote preview: invalid',
+      'Warnings: summary is too short',
+      'Title: Remote invalid',
+      '',
+      'Next',
+      'Recommended order:',
+      '  1. agentfeed scan --id draft_remote',
+      '  2. agentfeed preview --id draft_remote --remote'
+    ]);
+  });
+
 });

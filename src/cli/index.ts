@@ -27,7 +27,7 @@ import { doctorNextActions, doctorPriorityActions, doctorReadinessItems, doctorS
 import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialResult, tokenLoginCredentialResult, type CredentialResultView } from './auth-result.js';
 import { apiCheckFailureDetail, apiCompatibilityFailureDetail, apiCompatibilityRecoveryCommands, formatUploadRecoveryMessage, ingestionTokenRecoveryCommands, uploadNextActions, type UploadPreflightOptions } from './upload-guidance.js';
 import { reviewUrlHandoffLines } from './review-handoff.js';
-import { collectJsonNextActions, previewNextActions, remotePreviewNextActions } from './draft-next-actions.js';
+import { collectJsonNextActions } from './draft-next-actions.js';
 import { discardCompleteNextActions, draftListNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
 import { renderGuidedNextCommandLines, renderNextCommandLines, renderRecommendedCommandLines } from './guided-next-command-renderer.js';
@@ -43,7 +43,7 @@ import { completionCommandResult, unexpectedCompletionCommandResult } from './co
 import { versionCommandOutput } from './version-command.js';
 import { discardCompletePayload, discardConfirmationPayload } from './discard-command.js';
 import { openJsonPayload } from './open-command.js';
-import { localPreviewJsonPayload, remotePreviewJsonPayload } from './preview-command.js';
+import { localPreviewJsonPayload, remotePreviewJsonPayload, renderLocalPreviewHumanLines, renderRemotePreviewHumanLines } from './preview-command.js';
 import { createCommandCatalog } from './command-catalog.js';
 import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
 import { COMMAND_WORKFLOWS, renderCommandCatalogLines, renderCommandWorkflowLines } from './command-catalog-renderer.js';
@@ -62,6 +62,7 @@ import { draftPaths } from '../draft/paths.js';
 import * as ui from './ui.js';
 
 function print(text = '') { process.stdout.write(`${text}\n`); }
+function printLines(lines: readonly string[]): void { for (const line of lines) print(line); }
 function err(text = '') { process.stderr.write(`${text}\n`); }
 
 function safeTerminalText(value: string | null | undefined): string {
@@ -1306,37 +1307,12 @@ async function cmdPreview(args: string[]) {
     if (flag(args, '--json')) {
       print(JSON.stringify(remotePreviewJsonPayload({ draftId: draft.id, remote }), null, 2));
     } else {
-      print(ui.heading('AgentFeed remote preview'));
-      print();
-      print(ui.section('Summary'));
-      print(`Remote preview: ${remote.valid ? 'valid' : 'invalid'}`);
-      print(`Warnings: ${remote.warnings.length ? remote.warnings.join(', ') : 'none'}`);
-      print(`Title: ${singleLine(String(remote.preview.title ?? draft.worklog.title))}`);
-      print();
-      print(ui.section('Next'));
-      printGuidedNextCommands(remotePreviewNextActions(draft.id, remote.valid));
+      printLines(renderRemotePreviewHumanLines({ draftId: draft.id, draftTitle: draft.worklog.title, remote }));
     }
     return;
   }
   if (flag(args, '--json')) { print(JSON.stringify(localPreviewJsonPayload(draft), null, 2)); return; }
-  const uploadStatus = draft.upload.uploaded ? 'uploaded' : 'pending';
-  print(ui.heading('AgentFeed preview'));
-  print();
-  print(`@local · ${safeTerminalText(draft.worklog.agent)} · ${safeTerminalText(draft.project.name)}`);
-  print();
-  print(ui.section('Summary'));
-  print(`ID: ${draft.id}`);
-  print(`Title: ${singleLine(draft.worklog.title)}`);
-  for (const line of ui.wrapKeyValue('Summary', singleLine(draft.worklog.summary))) print(line);
-  print();
-  print(ui.section('Details'));
-  for (const line of ui.wrapKeyValue('Metrics', formatMetricsRow(draft))) print(line);
-  print(`Privacy: ${draft.privacy_scan.status} · findings ${draft.privacy_scan.findings.length}`);
-  print(`Upload: ${uploadStatus}`);
-  if (draft.upload.review_url) printUrlBlock('Review URL', draft.upload.review_url);
-  print();
-  print(ui.section('Next'));
-  printRecommendedCommands(previewNextActions(draft));
+  printLines(renderLocalPreviewHumanLines(draft));
 }
 
 async function cmdPublish(args: string[]) {

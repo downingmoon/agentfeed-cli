@@ -21,6 +21,7 @@ import { changedAreas } from '../summary/changed-areas.js';
 import { hasAgentFeedHook, installClaudeCodeHook, uninstallClaudeCodeHook, resolveClaudeSettingsPath } from '../hooks/claude-code-settings.js';
 import { flag, option } from './args.js';
 import { resolveStatusProject } from './status-project.js';
+import { setupProgressText, statusNextActions, statusReadinessItems, statusSummary, type StatusReadinessItem } from './status-readiness.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -851,70 +852,11 @@ function shareDryRunNextActions(draftId: string, hasCredentials: boolean): strin
   ]);
 }
 
-interface StatusReadinessItem {
-  name: string;
-  status: 'ready' | 'attention';
-  detail: string;
-  next_action?: string;
-}
-
-function statusReadinessItems(options: {
-  invalidApiBaseUrl: boolean;
-  projectInitialized: boolean;
-  projectConfigError: string | null;
-  hasToken: boolean;
-  insideGitRepository: boolean;
-  pendingUploads: number;
-}): StatusReadinessItem[] {
-  const projectInitAction = options.insideGitRepository ? 'agentfeed init' : 'git init && agentfeed init';
-  const projectItem: StatusReadinessItem = options.projectInitialized
-    ? { name: 'Project', status: 'ready', detail: 'initialized' }
-    : options.projectConfigError
-      ? { name: 'Project', status: 'attention', detail: 'config unreadable', next_action: 'agentfeed init --force' }
-      : { name: 'Project', status: 'attention', detail: 'not initialized', next_action: projectInitAction };
-  return [
-    options.invalidApiBaseUrl
-      ? { name: 'API', status: 'attention', detail: 'invalid API base URL', next_action: 'agentfeed doctor' }
-      : { name: 'API', status: 'ready', detail: 'base URL accepted' },
-    projectItem,
-    options.insideGitRepository
-      ? { name: 'Git', status: 'ready', detail: 'repository detected' }
-      : { name: 'Git', status: 'attention', detail: 'repository not detected', next_action: 'git init' },
-    options.hasToken
-      ? { name: 'Account', status: 'ready', detail: 'token configured' }
-      : { name: 'Account', status: 'attention', detail: 'token missing', next_action: 'agentfeed login' },
-    options.pendingUploads > 0
-      ? {
-        name: 'Uploads',
-        status: 'attention',
-        detail: `${options.pendingUploads} pending draft${options.pendingUploads === 1 ? '' : 's'}`,
-        next_action: 'agentfeed publish --latest --yes'
-      }
-      : { name: 'Uploads', status: 'ready', detail: 'no pending uploads' }
-  ];
-}
-
 function readinessMarker(status: StatusReadinessItem['status']): string {
   return status === 'ready' ? ui.good('✓') : ui.warn('!');
 }
 
-function statusSummary(readiness: StatusReadinessItem[]): { status: 'ready' | 'attention_needed'; ready: number; attention: number; total: number } {
-  const attention = readiness.filter((item) => item.status === 'attention').length;
-  return {
-    status: attention === 0 ? 'ready' : 'attention_needed',
-    ready: readiness.length - attention,
-    attention,
-    total: readiness.length
-  };
-}
-
-function setupProgressText(readiness: StatusReadinessItem[]): string {
-  const summary = statusSummary(readiness);
-  const attentionLabel = summary.attention === 1 ? '1 needs attention' : `${summary.attention} need attention`;
-  return `${summary.ready}/${summary.total} ready · ${attentionLabel}`;
-}
-
-function printStatusReadiness(items: StatusReadinessItem[]): void {
+function printStatusReadiness(items: readonly StatusReadinessItem[]): void {
   print(ui.section('Readiness'));
   print(`Setup progress: ${setupProgressText(items)}`);
   for (const item of items) {
@@ -922,52 +864,6 @@ function printStatusReadiness(items: StatusReadinessItem[]): void {
     print(`${readinessMarker(item.status)} ${item.name}: ${item.detail}${next}`);
   }
 }
-
-function statusNextActions(options: {
-  invalidApiBaseUrl: boolean;
-  projectInitialized: boolean;
-  projectConfigError: string | null;
-  hasToken: boolean;
-  insideGitRepository: boolean;
-  pendingUploads: number;
-}): string[] {
-  if (options.invalidApiBaseUrl) {
-    return uniqueNextCommands([
-      'unset AGENTFEED_API_BASE_URL',
-      'AGENTFEED_ALLOW_INSECURE_API=1 agentfeed status',
-      'agentfeed doctor'
-    ]);
-  }
-  if (options.projectConfigError) {
-    return uniqueNextCommands([
-      'agentfeed init --force',
-      'agentfeed doctor',
-      ...(!options.hasToken ? ['agentfeed login'] : [])
-    ]);
-  }
-  if (!options.projectInitialized) {
-    return uniqueNextCommands([
-      ...(options.insideGitRepository ? ['agentfeed init'] : ['git init && agentfeed init', 'agentfeed init --no-git-check']),
-      ...(!options.hasToken ? ['agentfeed login'] : [])
-    ]);
-  }
-  if (!options.hasToken) {
-    return uniqueNextCommands([
-      'agentfeed login',
-      ...(options.pendingUploads > 0
-        ? ['agentfeed publish --latest --yes', 'agentfeed discard --latest']
-        : ['agentfeed share --dry'])
-    ]);
-  }
-  if (options.pendingUploads > 0) {
-    return uniqueNextCommands([
-      'agentfeed publish --latest --yes',
-      'agentfeed discard --latest'
-    ]);
-  }
-  return ['agentfeed share --yes'];
-}
-
 
 interface DoctorReadinessItem {
   name: string;
@@ -1068,12 +964,20 @@ interface DoctorPriorityAction {
   command: string;
 }
 
+type DoctorReadinessActionItem = DoctorReadinessItem & {
+  readonly next_action: string;
+};
+
+function hasDoctorNextAction(item: DoctorReadinessItem): item is DoctorReadinessActionItem {
+  return item.status === 'attention' && typeof item.next_action === 'string' && item.next_action.length > 0;
+}
+
 function doctorPriorityActions(readiness: DoctorReadinessItem[]): DoctorPriorityAction[] {
   const priorityOrder = ['API', 'Project', 'Git', 'Account', 'Collection', 'Agent signals'];
   return readiness
-    .filter((item) => item.status === 'attention' && item.next_action)
+    .filter(hasDoctorNextAction)
     .sort((a, b) => priorityOrder.indexOf(a.name) - priorityOrder.indexOf(b.name))
-    .map((item) => ({ name: item.name, detail: item.detail, command: item.next_action as string }));
+    .map((item) => ({ name: item.name, detail: item.detail, command: item.next_action }));
 }
 
 function printDoctorPriorityActions(actions: DoctorPriorityAction[]): void {

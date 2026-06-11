@@ -24,6 +24,7 @@ import { consumeLongOption } from './long-option-consumption.js';
 import { parseLongOptionToken } from './long-option-token.js';
 import { buildCommandOptionSets } from './command-option-sets.js';
 import { consumeShortOption } from './option-consumption.js';
+import { unknownOptionError } from './unknown-option-error.js';
 import { assertNoConflictingOptions } from './conflict-validation.js';
 import { assertValidPositionals } from './positional-validation.js';
 import { resolveStatusProject } from './status-project.js';
@@ -36,7 +37,7 @@ import { collectJsonNextActions, previewNextActions, remotePreviewNextActions } 
 import { discardCompleteNextActions, discardConfirmationNextActions, draftListNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
 import { jsonErrorFromMessage } from './error-output.js';
-import { bareDoubleDashArgumentMessage, commandHelpHint, commandUsageError, completionUnexpectedArgumentMessage, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUnexpectedArgumentMessage, hookUsageMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownCommandErrorMessage, unknownCommandOptionMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
+import { bareDoubleDashArgumentMessage, commandHelpHint, commandUsageError, completionUnexpectedArgumentMessage, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUnexpectedArgumentMessage, hookUsageMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownCommandErrorMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
 import { leadingOptionErrorMessage } from './leading-option-recovery.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
@@ -2701,11 +2702,6 @@ function leadingOptionError(option: string, args: string[]): Error {
     commandSpecs: COMMAND_ARG_SPECS
   }));
 }
-
-function unknownOptionError(command: string, optionName: string, spec: CommandArgSpec): Error {
-  return new Error(unknownCommandOptionMessage(command, optionName, spec.flags ?? [], spec.valueOptions ?? []));
-}
-
 function validateCommandArgs(command: string, args: string[]): void {
   const spec = COMMAND_ARG_SPECS[command];
   if (!spec) throw unknownCommandError(command);
@@ -2727,14 +2723,14 @@ function validateCommandArgs(command: string, args: string[]): void {
         flags,
         args,
         index: i,
-        unknownOptionError: (optionName) => unknownOptionError(command, optionName, spec)
+        unknownOptionError: (optionName) => unknownOptionError({ command, optionName, optionSpec: spec })
       });
       seenOptions.add(consumption.optionName);
       i = consumption.nextIndex;
       continue;
     }
     if (raw.startsWith('-')) {
-      seenOptions.add(consumeShortOption({ optionName: raw, flags, unknownOptionError: unknownOptionError(command, raw, spec) }).optionName);
+      seenOptions.add(consumeShortOption({ optionName: raw, flags, unknownOptionError: unknownOptionError({ command, optionName: raw, optionSpec: spec }) }).optionName);
       continue;
     }
     positionals.push(raw);

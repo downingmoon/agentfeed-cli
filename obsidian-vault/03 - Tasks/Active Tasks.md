@@ -15,6 +15,12 @@ updated: 2026-06-11
 ## 현재 결론
 
 
+> [!success] 2026-06-11 CLI unknown option error factory split
+> unknown option `Error` 생성 책임을 oversized `src/cli/index.ts`에서 `src/cli/unknown-option-error.ts`로 분리하고 long/short unknown option 경로가 같은 helper를 쓰도록 정리했다. Red test 확인 후 `npm run build`, focused Vitest 41 tests, full `npm test -- --run` 683 tests, CLI smoke(`share --opne-review`, `status -x`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Unknown Option Error Factory Split 2026-06-11]]
+
+
+
 > [!success] 2026-06-11 CLI long option unknown recovery laziness
 > `consumeLongOption`의 unknown-option recovery를 eager `Error` 생성에서 lazy factory로 바꿔 정상 value/flag long option 경로가 쓰지 않는 복구 오류를 만들지 않게 했다. Red test 확인 후 `npm run build`, focused Vitest 42 tests, full `npm test -- --run` 682 tests, CLI smoke(`share --opne-review`, `status --json=true`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Long Option Unknown Recovery Laziness 2026-06-11]]

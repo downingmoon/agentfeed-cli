@@ -30,7 +30,7 @@ import { collectJsonNextActions, previewNextActions, remotePreviewNextActions } 
 import { discardCompleteNextActions, discardConfirmationNextActions, draftListNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
 import { jsonErrorFromMessage } from './error-output.js';
-import { bareDoubleDashArgumentMessage, commandHelpHint, commandUsageError, completionUnexpectedArgumentMessage, conflictingOptionsMessage, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUnexpectedArgumentMessage, hookUsageMessage, optionDoesNotAcceptValueMessage, optionRequiresValueMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownCommandErrorMessage, unknownHookActionMessage, unknownOptionErrorMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
+import { bareDoubleDashArgumentMessage, commandHelpHint, commandUsageError, completionUnexpectedArgumentMessage, conflictingOptionsMessage, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUnexpectedArgumentMessage, hookUsageMessage, optionDoesNotAcceptValueMessage, optionRequiresValueMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownCommandErrorMessage, unknownCommandOptionMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
 import { leadingOptionErrorMessage } from './leading-option-recovery.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
@@ -2697,8 +2697,7 @@ function leadingOptionError(option: string, args: string[]): Error {
 }
 
 function unknownOptionError(command: string, optionName: string, spec: CommandArgSpec): Error {
-  const candidates = [...(spec.flags ?? []), ...(spec.valueOptions ?? []), '--help', '-h'];
-  return new Error(unknownOptionErrorMessage(command, optionName, candidates));
+  return new Error(unknownCommandOptionMessage(command, optionName, spec.flags ?? [], spec.valueOptions ?? []));
 }
 
 function validateCommandArgs(command: string, args: string[]): void {

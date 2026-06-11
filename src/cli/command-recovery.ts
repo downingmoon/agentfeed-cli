@@ -125,6 +125,15 @@ export function unknownOptionErrorMessage(command: string, optionName: string, c
   ].join('\n');
 }
 
+export function unknownCommandOptionMessage(
+  command: string,
+  optionName: string,
+  flags: readonly string[],
+  valueOptions: readonly string[]
+): string {
+  return unknownOptionErrorMessage(command, optionName, [...flags, ...valueOptions, '--help', '-h']);
+}
+
 export function unsupportedCompletionShellMessage(shell: string, supportedShells: readonly string[]): string {
   const suggestion = closestMatch(shell, supportedShells);
   return [

@@ -15,6 +15,12 @@ updated: 2026-06-11
 ## 현재 결론
 
 
+> [!success] 2026-06-11 CLI unknown option candidate recovery refactor
+> unknown option suggestion 후보(`flags + valueOptions + --help/-h`) 조립을 `unknownCommandOptionMessage`로 분리해 `unknownOptionError`의 inline candidate assembly를 줄였다. Red test 확인 후 `npm run build`, focused Vitest 54 tests, full `npm test -- --run` 664 tests, CLI surface smoke(`share --opne-review`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Unknown Option Candidate Recovery Refactor 2026-06-11]]
+
+
+
 > [!success] 2026-06-11 CLI conflict recovery decision refactor
 > 상호 배타적 option conflict detection + recovery message 결정을 `conflictingOptionsMessage`로 분리해 `validateCommandArgs`의 conflict loop/message assembly를 줄였다. Red test 확인 후 `npm run build`, focused Vitest 53 tests, full `npm test -- --run` 663 tests, CLI surface smoke(`share --dry --yes`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Conflict Recovery Decision Refactor 2026-06-11]]
@@ -139,6 +145,7 @@ updated: 2026-06-11
 
 ## 완료됨 — 로컬/CI/contract/UI 품질
 
+- [x] [[CLI Unknown Option Candidate Recovery Refactor 2026-06-11]] — unknown option candidate assembly를 `src/cli/command-recovery.ts`로 분리하고 red/focused/full CLI suite 통과 확인.
 - [x] [[CLI Conflict Recovery Decision Refactor 2026-06-11]] — conflicting option detection/recovery decision을 `src/cli/command-recovery.ts`로 분리하고 red/focused/full CLI suite 통과 확인.
 - [x] [[CLI Option Value Rejection Recovery Refactor 2026-06-11]] — flag value-not-accepted recovery message formatting을 `src/cli/command-recovery.ts`로 분리하고 red/focused/full CLI suite 통과 확인.
 - [x] [[CLI Option Value Recovery Refactor 2026-06-11]] — missing value-option recovery message formatting을 `src/cli/command-recovery.ts`로 분리하고 red/focused/full CLI suite 통과 확인.

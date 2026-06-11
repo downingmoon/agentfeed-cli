@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bareDoubleDashArgumentMessage, completionUnexpectedArgumentMessage, conflictingOptionsMessage, optionDoesNotAcceptValueMessage, optionRequiresValueMessage, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUnexpectedArgumentMessage, hookUsageMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from '../src/cli/command-recovery.js';
+import { bareDoubleDashArgumentMessage, completionUnexpectedArgumentMessage, conflictingOptionsMessage, optionDoesNotAcceptValueMessage, optionRequiresValueMessage, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUnexpectedArgumentMessage, hookUsageMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownCommandOptionMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from '../src/cli/command-recovery.js';
 
 describe('CLI help and hook recovery messages', () => {
   it('formats help topic recovery with closest known topic suggestions', () => {
@@ -97,6 +97,15 @@ describe('CLI help and hook recovery messages', () => {
       'Run: agentfeed preview --help'
     ].join('\n'));
     expect(conflictingOptionsMessage('preview', new Set(['--latest']), [['--id', '--latest']])).toBeNull();
+  });
+
+  it('formats unknown command option recovery from flag and value-option candidates', () => {
+    expect(unknownCommandOptionMessage('share', '--opne-review', ['--dry', '--open-review'], ['--source'])).toBe([
+      'Unknown option: --opne-review',
+      'Command: agentfeed share',
+      'Did you mean: --open-review',
+      'Run: agentfeed share --help'
+    ].join('\n'));
   });
 
   it('formats option value rejection recovery', () => {

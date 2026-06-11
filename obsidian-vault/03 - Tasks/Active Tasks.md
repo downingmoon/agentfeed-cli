@@ -81,6 +81,7 @@ updated: 2026-06-11
 
 ## 완료됨 — 로컬/CI/contract/UI 품질
 
+- [x] [[CLI Upload Guidance Refactor 2026-06-11]] — CLI upload success next-action과 API compatibility/token preflight 실패 detail, `Fix first`/`Then retry` recovery message 계산을 `src/cli/upload-guidance.ts`로 분리. CLI build, focused share/collect/publish tests, full vitest 623 tests 통과.
 - [x] [[CLI Auth Result Refactor 2026-06-11]] — CLI `login`/`rotate` 완료 메시지, JSON credential payload, saved/no-save next-action 계산을 `src/cli/auth-result.ts`로 분리하고 entrypoint는 출력/orchestration만 담당하도록 축소. CLI build, focused auth/status/doctor tests, full vitest 623 tests 통과.
 - [x] [[CLI Doctor Readiness Refactor 2026-06-11]] — CLI `agentfeed doctor` readiness/summary/priority/next-action 순수 로직을 `src/cli/doctor-readiness.ts`로 분리하고 entrypoint는 출력/orchestration만 담당하도록 축소. CLI build, focused doctor/status tests, full vitest 623 tests 통과.
 - [x] [[CLI Status Readiness Refactor 2026-06-11]] — CLI `agentfeed status` readiness/summary/next-action 순수 로직을 `src/cli/status-readiness.ts`로 분리하고, doctor priority action의 `next_action as string` 타입 단언을 type guard로 제거. CLI build, focused status+doctor tests, full vitest 623 tests 통과.

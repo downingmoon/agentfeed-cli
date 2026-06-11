@@ -24,6 +24,7 @@ import { resolveStatusProject } from './status-project.js';
 import { setupProgressText, statusNextActions, statusReadinessItems, statusSummary, type StatusReadinessItem } from './status-readiness.js';
 import { doctorNextActions, doctorPriorityActions, doctorReadinessItems, doctorSummary, type DoctorPriorityAction, type DoctorReadinessItem } from './doctor-readiness.js';
 import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialResult, tokenLoginCredentialResult, type CredentialResultView } from './auth-result.js';
+import { apiCheckFailureDetail, apiCompatibilityFailureDetail, apiCompatibilityRecoveryCommands, formatUploadRecoveryMessage, ingestionTokenRecoveryCommands, uploadNextActions, type UploadPreflightOptions } from './upload-guidance.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -307,12 +308,6 @@ function reviewUrlHandoffLines(handoff: ReviewUrlHandoff, reviewUrl: string): st
   return lines;
 }
 
-function uploadNextActions(draftId: string): string[] {
-  return uniqueNextCommands([
-    `agentfeed open --id ${draftId}`,
-    `agentfeed preview --id ${draftId}`
-  ]);
-}
 
 function previewNextActions(draft: LocalDraft): string[] {
   return uniqueNextCommands([
@@ -371,19 +366,6 @@ function printUploadResult(options: {
   printGuidedNextCommands(uploadNextActions(options.draftId));
 }
 
-function apiCompatibilityFailureDetail(result: Awaited<ReturnType<typeof checkApiCompatibility>>): string {
-  if (result.status != null) {
-    return result.error ? `HTTP ${result.status}: ${result.error}` : `HTTP ${result.status}`;
-  }
-  return result.error ?? 'unknown compatibility failure';
-}
-
-function apiCheckFailureDetail(result: Awaited<ReturnType<typeof checkIngestionToken>>): string {
-  if (result.status != null) {
-    return result.error ? `HTTP ${result.status}: ${result.error}` : `HTTP ${result.status}`;
-  }
-  return result.error ?? 'unknown token check failure';
-}
 
 const SAFE_TOKEN_STDIN_COMMAND = 'printf %s "$TOKEN" | agentfeed login --token-stdin';
 
@@ -413,43 +395,11 @@ function missingTokenMessage(): string {
   ].join('\n');
 }
 
-interface UploadPreflightOptions {
-  retryCommand?: string;
-}
-
-function formatRecoveryMessage(firstLine: string, fixCommands: string[], retryCommand?: string): string {
-  const lines = [
-    firstLine,
-    '',
-    'Fix first:',
-    ...uniqueNextCommands(fixCommands).map(command => `Run: ${command}`)
-  ];
-  if (retryCommand) {
-    lines.push('', 'Then retry:', `Run: ${retryCommand}`);
-  }
-  return lines.join('\n');
-}
-
-function apiCompatibilityRecoveryCommands(result: Awaited<ReturnType<typeof checkApiCompatibility>>): string[] {
-  const commands = ['agentfeed doctor', 'agentfeed status'];
-  if (result.status == null) commands.push('agentfeed doctor --json');
-  return commands;
-}
-
-function ingestionTokenRecoveryCommands(result: Awaited<ReturnType<typeof checkIngestionToken>>): string[] {
-  if (result.status === 401 || result.status === 403) {
-    return ['agentfeed login', 'agentfeed rotate', 'agentfeed status'];
-  }
-  if (result.status == null || (result.status >= 500 && result.status <= 599)) {
-    return ['agentfeed doctor', 'agentfeed status'];
-  }
-  return ['agentfeed login', 'agentfeed rotate', 'agentfeed doctor', 'agentfeed status'];
-}
 
 async function requireApiCompatibilityBeforeUpload(apiBaseUrl: string, options: UploadPreflightOptions = {}): Promise<ApiMetadata> {
   const result = await checkApiCompatibility(apiBaseUrl);
   if (result.compatible && result.data) return result.data;
-  throw new Error(formatRecoveryMessage(
+  throw new Error(formatUploadRecoveryMessage(
     `API compatibility check failed for ${result.url}: ${apiCompatibilityFailureDetail(result)} before uploading drafts.`,
     apiCompatibilityRecoveryCommands(result),
     options.retryCommand
@@ -459,7 +409,7 @@ async function requireApiCompatibilityBeforeUpload(apiBaseUrl: string, options: 
 async function requireIngestionTokenBeforeUpload(credentials: AgentFeedCredentials, options: UploadPreflightOptions = {}): Promise<void> {
   const result = await checkIngestionToken(credentials);
   if (result.ok) return;
-  throw new Error(formatRecoveryMessage(
+  throw new Error(formatUploadRecoveryMessage(
     `Ingestion token check failed for ${result.url}: ${apiCheckFailureDetail(result)} before uploading drafts.`,
     ingestionTokenRecoveryCommands(result),
     options.retryCommand

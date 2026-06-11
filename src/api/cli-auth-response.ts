@@ -3,6 +3,7 @@ import { AgentFeedApiError } from './errors.js';
 import { hasOnlyExpectedFields } from './response-contract.js';
 import { validateAuthorizeUrl } from './trusted-url.js';
 
+const CLI_AUTH_SESSION_FIELDS = new Set(['session_id', 'authorize_url', 'user_code', 'expires_at', 'poll_interval_seconds']);
 const CLI_AUTH_EXCHANGE_USER_FIELDS = new Set(['id', 'username', 'display_name', 'avatar_url']);
 const CLI_AUTH_EXCHANGE_RESULT_FIELDS = new Set(['token', 'token_id', 'token_expires_at', 'user', 'rotated_from', 'rotated_at']);
 
@@ -46,7 +47,7 @@ function parseOptionalUser(value: unknown): AgentFeedCredentials['user'] | null 
 }
 
 export function parseCliAuthSession(value: unknown, apiBaseUrl: string): CliAuthSession {
-  if (!isRecord(value)) throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid CLI auth session.');
+  if (!isRecord(value) || !hasOnlyExpectedFields(value, CLI_AUTH_SESSION_FIELDS)) throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid CLI auth session.');
   const sessionId = stringField(value.session_id);
   const authorizeUrl = stringField(value.authorize_url);
   const userCode = stringField(value.user_code);

@@ -109,6 +109,7 @@ export function parsePublishDraftResult(value: unknown, apiBaseUrl: string, revi
   const visibility = stringField(value.visibility);
   const reviewUrl = stringField(value.review_url);
   const createdAt = stringField(value.created_at);
+  const reusedExisting = Object.hasOwn(value, 'reused_existing') ? value.reused_existing : undefined;
   if (
     !id
     || !status
@@ -119,6 +120,7 @@ export function parsePublishDraftResult(value: unknown, apiBaseUrl: string, revi
     || !Number.isFinite(Date.parse(createdAt))
     || !validateReviewUrl(reviewUrl, apiBaseUrl, reviewBaseUrl)
     || worklogIdFromReviewUrl(reviewUrl) !== id
+    || (reusedExisting !== undefined && typeof reusedExisting !== 'boolean')
   ) {
     throw new AgentFeedApiError(502, 'API_RESPONSE_INVALID', 'AgentFeed API returned an invalid upload response. Local draft was kept.');
   }
@@ -129,6 +131,6 @@ export function parsePublishDraftResult(value: unknown, apiBaseUrl: string, revi
     review_url: reviewUrl,
     review_base_url: trustedReviewOrigin(reviewBaseUrl),
     created_at: createdAt,
-    reused_existing: value.reused_existing === true ? true : undefined
+    reused_existing: reusedExisting
   };
 }

@@ -52,6 +52,13 @@ describe('publish response contract', () => {
     }
   });
 
+  it('preserves backend reused_existing false and rejects non-boolean values', () => {
+    expect(parsePublishDraftResult(validUploadResponse, apiBaseUrl).reused_existing).toBe(false);
+
+    const error = parseInvalidUploadResponse({ ...validUploadResponse, reused_existing: 'false' });
+    expect(error.code).toBe('API_RESPONSE_INVALID');
+  });
+
   it('keeps ingest review URL handoff separate from private draft fields', () => {
     const privateFieldResponses: readonly Record<string, unknown>[] = [
       { ...validUploadResponse, user_note: 'private owner note' },

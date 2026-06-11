@@ -81,6 +81,7 @@ updated: 2026-06-11
 
 ## 완료됨 — 로컬/CI/contract/UI 품질
 
+- [x] [[CLI Hook Help Recovery Refactor 2026-06-11]] — help topic/hook usage/unsupported hook target recovery message formatting을 `src/cli/command-recovery.ts`로 분리하고 focused + full CLI suite 통과 확인.
 - [x] [[CLI Review Handoff Refactor 2026-06-11]] — CLI review URL handoff human formatting을 `src/cli/review-handoff.ts`로 분리하고, `index.ts`의 URL trust policy/side-effect 순서는 source contract test로 유지. CLI build, focused handoff/share tests, full vitest 624 tests 통과.
 - [x] [[CLI Upload Guidance Refactor 2026-06-11]] — CLI upload success next-action과 API compatibility/token preflight 실패 detail, `Fix first`/`Then retry` recovery message 계산을 `src/cli/upload-guidance.ts`로 분리. CLI build, focused share/collect/publish tests, full vitest 623 tests 통과.
 - [x] [[CLI Auth Result Refactor 2026-06-11]] — CLI `login`/`rotate` 완료 메시지, JSON credential payload, saved/no-save next-action 계산을 `src/cli/auth-result.ts`로 분리하고 entrypoint는 출력/orchestration만 담당하도록 축소. CLI build, focused auth/status/doctor tests, full vitest 623 tests 통과.

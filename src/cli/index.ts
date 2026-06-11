@@ -31,7 +31,7 @@ import { discardCompleteNextActions, discardConfirmationNextActions, draftListNe
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
 import { jsonErrorFromMessage } from './error-output.js';
 import { closestMatch } from './closest-match.js';
-import { commandHelpHint, commandUsageError, conflictingOptionsError } from './command-recovery.js';
+import { commandHelpHint, commandUsageError, conflictingOptionsError, helpTopicError, hookUsageMessage, unsupportedHookTargetMessage } from './command-recovery.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -1382,12 +1382,13 @@ async function cmdPublish(args: string[]) {
 
 async function cmdScan(args: string[]) {
   const dryRun = flag(args, '--dry-run') || flag(args, '--dry');
-  if (option(args, '--path')) {
-    const git = await collectGitMetrics(option(args, '--path')!);
+  const scanPath = option(args, '--path');
+  if (scanPath) {
+    const git = await collectGitMetrics(scanPath);
     const areas = changedAreas(git.changed_files);
     const input = { changed_areas: areas };
     const result = scanAndRedactFields(input);
-    const scanOptions = { dryRun, path: option(args, '--path')! };
+    const scanOptions = { dryRun, path: scanPath };
     print(flag(args, '--json')
       ? JSON.stringify(privacyScanJsonOutput(input, result, scanOptions), null, 2)
       : formatPrivacyScanReport(input, result.redacted, result.scan, scanOptions));
@@ -2544,14 +2545,6 @@ function flaglessOptionSuggestionLine(command: string, positionals: string[], pr
   return suggestion ? [`Did you mean: ${suggestion}`] : [];
 }
 
-function helpTopicError(topic: string): string {
-  const suggestion = closestMatch(topic, PUBLIC_COMMANDS);
-  return [
-    `Unknown help topic: ${topic}`,
-    ...(suggestion ? [`Did you mean: agentfeed help ${suggestion}`] : []),
-    'Run: agentfeed help'
-  ].join('\n');
-}
 
 const NO_POSITIONALS = (command: string) => (positionals: string[]) =>
   positionals.length
@@ -2562,24 +2555,7 @@ const NO_POSITIONALS = (command: string) => (positionals: string[]) =>
     )
     : null;
 
-function hookUsageMessage(): string {
-  return [
-    'Usage: agentfeed hook install|uninstall claude-code',
-    'Run: agentfeed hook --help',
-    'Run: agentfeed hook install claude-code --dry-run'
-  ].join('\n');
-}
 
-function unsupportedHookTargetMessage(action = 'install', target?: string): string {
-  const suggestion = target && (target === 'claude' || target.startsWith('claude-'))
-    ? `Did you mean: agentfeed hook ${action} claude-code`
-    : null;
-  return [
-    'Only claude-code hooks are supported.',
-    ...(suggestion ? [suggestion] : []),
-    'Run: agentfeed hook install claude-code --help'
-  ].join('\n');
-}
 
 const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
   help: {
@@ -2591,7 +2567,7 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
         return commandUsageError(`Unexpected argument for help token: ${positionals[1]}`, 'help');
       }
       if (positionals.length > 1) return commandUsageError(`Unexpected argument for help: ${positionals[1]}`, 'help');
-      return KNOWN_COMMANDS.has(positionals[0]) ? null : helpTopicError(positionals[0]);
+      return KNOWN_COMMANDS.has(positionals[0]) ? null : helpTopicError(positionals[0], PUBLIC_COMMANDS);
     }
   },
   commands: {

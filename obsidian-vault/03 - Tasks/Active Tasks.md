@@ -15,6 +15,12 @@ updated: 2026-06-11
 ## 현재 결론
 
 
+> [!success] 2026-06-11 CLI flag option consumption refactor
+> flag option의 inline value rejection(`--flag=value`)을 `consumeFlagOption`으로 분리하고, value/flag option consumption을 `option-consumption` module로 묶었다. Red test 확인 후 `npm run build`, focused Vitest 44 tests, full `npm test -- --run` 670 tests, CLI smoke(`status --json=true`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Flag Option Consumption Refactor 2026-06-11]]
+
+
+
 > [!success] 2026-06-11 CLI value option consumption refactor
 > value option의 inline/separate value 소비와 missing-value rejection을 `consumeValueOption`으로 분리해 `validateCommandArgs`가 typed `nextIndex` result를 받도록 정리했다. Red test 확인 후 `npm run build`, focused Vitest 42 tests, full `npm test -- --run` 668 tests, CLI JSON smoke(`login --api-base-url --json`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Value Option Consumption Refactor 2026-06-11]]

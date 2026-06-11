@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { consumeValueOption } from '../src/cli/value-option-consumption.js';
+import { consumeValueOption } from '../src/cli/option-consumption.js';
 
 describe('consumeValueOption', () => {
   it('keeps the current index when the value is inline', () => {

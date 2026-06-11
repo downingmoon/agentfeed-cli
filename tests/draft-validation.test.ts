@@ -88,6 +88,28 @@ describe('local draft validation', () => {
         resolved: false
       }));
     }, 'privacy_scan.findings must contain at most 50 items');
+
+    await expectDraftReadFailure((draft) => {
+      draft.worklog.metrics.models_used = Array.from({ length: 21 }, (_, index) => `model-${index}`);
+    }, 'worklog.metrics.models_used must contain at most 20 items');
+
+    await expectDraftReadFailure((draft) => {
+      draft.worklog.metrics.agent_metrics = Array.from(
+        { length: 21 },
+        (_, index): NonNullable<LocalDraft['worklog']['metrics']['agent_metrics']>[number] => ({ agent: 'codex', session_id: `session-${index}` })
+      );
+    }, 'worklog.metrics.agent_metrics must contain at most 20 items');
+
+    await expectDraftReadFailure((draft) => {
+      draft.worklog.metrics.agent_modes = Array.from({ length: 21 }, (_, index) => `mode-${index}`);
+    }, 'worklog.metrics.agent_modes must contain at most 20 items');
+
+    await expectDraftReadFailure((draft) => {
+      draft.worklog.metrics.collection_sources = Array.from(
+        { length: 21 },
+        (_, index): NonNullable<LocalDraft['worklog']['metrics']['collection_sources']>[number] => ({ type: 'agent_session', name: `source-${index}`, quality: 'high' })
+      );
+    }, 'worklog.metrics.collection_sources must contain at most 20 items');
   });
 
   it('rejects backend-ingest required strings that are empty before upload', async () => {

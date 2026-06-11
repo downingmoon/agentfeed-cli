@@ -84,7 +84,7 @@ function validateMetrics(value: unknown, path: string): WorklogMetrics {
   }
   if (metrics.collection_sources !== undefined && metrics.collection_sources !== null) {
     if (!Array.isArray(metrics.collection_sources)) throw draftError(path, 'worklog.metrics.collection_sources must be an array or null');
-    output.collection_sources = metrics.collection_sources.map((item, index): CollectionSource => {
+    output.collection_sources = requireArrayMax(metrics.collection_sources, 'worklog.metrics.collection_sources', path, WORKLOG_METRIC_COLLECTION_MAX_ITEMS).map((item, index): CollectionSource => {
       const source = requireRecord(item, `worklog.metrics.collection_sources[${index}]`, path);
       rejectUnexpectedKeys(source, COLLECTION_SOURCE_FIELDS, `worklog.metrics.collection_sources[${index}]`, path);
       return {

@@ -29,6 +29,7 @@ import { reviewUrlHandoffLines } from './review-handoff.js';
 import { collectJsonNextActions, previewNextActions, remotePreviewNextActions } from './draft-next-actions.js';
 import { discardCompleteNextActions, discardConfirmationNextActions, draftListNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
+import { jsonErrorFromMessage } from './error-output.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -59,38 +60,6 @@ function jsonModeRequested(argv = process.argv.slice(2)): boolean {
   return argv.some((arg) => arg === '--json');
 }
 
-function errorCodeFromMessage(message: string): string {
-  const firstLine = message.split(/\r?\n/, 1)[0] ?? 'AgentFeed command failed.';
-  return firstLine
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '')
-    .slice(0, 80) || 'agentfeed_error';
-}
-
-function jsonErrorFromMessage(message: string): {
-  error: { code: string; message: string; details: string[] };
-  next_actions: string[];
-  suggestions: string[];
-} {
-  const lines = message.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-  const details = lines.slice(1);
-  const nextActions = lines
-    .filter((line) => /^Run:\s+/i.test(line) || /^Use:\s+/i.test(line) || /^Try:\s+/i.test(line))
-    .map((line) => line.replace(/^(Run|Use|Try):\s+/i, ''));
-  const suggestions = lines
-    .filter((line) => /^Did you mean:\s+/i.test(line))
-    .map((line) => line.replace(/^Did you mean:\s+/i, ''));
-  return {
-    error: {
-      code: errorCodeFromMessage(message),
-      message: lines[0] ?? 'AgentFeed command failed.',
-      details
-    },
-    next_actions: [...new Set(nextActions)],
-    suggestions: [...new Set(suggestions)]
-  };
-}
 
 function projectRelativePath(projectRoot: string, path: string): string {
   const rel = relative(projectRoot, path);

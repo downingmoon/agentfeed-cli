@@ -1,20 +1,17 @@
 import type { AgentFeedCredentials, CliAuthExchangeResult, CliAuthSession, LocalDraft } from '../types.js';
 import type { ApiMetadata } from './metadata.js';
 export type { ApiMetadata } from './metadata.js';
-import { randomUUID } from 'node:crypto';
-import { open, readFile, rm, stat, utimes, type FileHandle } from 'node:fs/promises';
-import { resolveProjectRoot } from '../config/project-config.js';
 import { readDraft } from '../draft/read.js';
-import { draftPaths } from '../draft/paths.js';
 import { writeDraft } from '../draft/write.js';
 import { scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
+import { shortHash } from '../utils/hash.js';
 import { AgentFeedApiError } from './errors.js';
 import { parseCheckData, parseIngestionTokenStatusResponse, type IngestionTokenStatus } from './ingestion-token-status.js';
 import { draftToIngestRequest } from './ingest-request.js';
 import { apiErrorResponseSummary, hasOnlyExpectedFields, parseApiErrorEnvelope, readResponseJson, responseDataEnvelope } from './response-contract.js';
 import { parseMetadataResponse } from './metadata-response.js';
+import { acquireDraftUploadLock } from './draft-upload-lock.js';
 import { trustedReviewOrigin, validateAuthorizeUrl, validateReviewUrl } from './trusted-url.js';
-import { shortHash } from '../utils/hash.js';
 import { AGENTFEED_CLI_VERSION } from '../version.js';
 
 export { AgentFeedApiError } from './errors.js';
@@ -44,10 +41,6 @@ const DEFAULT_API_REQUEST_TIMEOUT_MS = 30_000;
 const API_CHECK_TIMEOUT_MS = 3_000;
 const DEFAULT_API_RETRY_ATTEMPTS = 3;
 const DEFAULT_API_RETRY_BASE_DELAY_MS = 250;
-const DEFAULT_DRAFT_UPLOAD_LOCK_TIMEOUT_MS = 60_000;
-const DRAFT_UPLOAD_LOCK_POLL_MS = 25;
-const DRAFT_UPLOAD_LOCK_STALE_MS = 5 * 60_000;
-const DEFAULT_DRAFT_UPLOAD_LOCK_HEARTBEAT_MS = Math.max(1_000, Math.floor(DRAFT_UPLOAD_LOCK_STALE_MS / 4));
 
 function apiRequestTimeoutMs(): number {
   const configured = Number(process.env.AGENTFEED_API_TIMEOUT_MS);
@@ -63,17 +56,6 @@ function apiRetryAttempts(): number {
 function apiRetryBaseDelayMs(): number {
   const configured = Number(process.env.AGENTFEED_API_RETRY_BASE_DELAY_MS);
   return Number.isFinite(configured) && configured >= 0 ? configured : DEFAULT_API_RETRY_BASE_DELAY_MS;
-}
-
-function draftUploadLockTimeoutMs(): number {
-  const configured = Number(process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_TIMEOUT_MS);
-  return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_DRAFT_UPLOAD_LOCK_TIMEOUT_MS;
-}
-
-function draftUploadLockHeartbeatMs(): number {
-  const configured = Number(process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_HEARTBEAT_MS);
-  if (Number.isFinite(configured) && configured > 0) return Math.max(10, Math.floor(configured));
-  return DEFAULT_DRAFT_UPLOAD_LOCK_HEARTBEAT_MS;
 }
 
 function apiUrl(apiBaseUrl: string, path: string): string {
@@ -765,190 +747,6 @@ function duplicateIngestResult(error: AgentFeedApiError, fallbackCreatedAt: stri
     return parsePublishDraftResult(result, apiBaseUrl, reviewBaseUrl, { allowCachedStatus: true });
   } catch {
     return null;
-  }
-}
-
-async function removeStaleDraftUploadLock(lockPath: string): Promise<void> {
-  let lockStat: Awaited<ReturnType<typeof stat>>;
-  try {
-    lockStat = await stat(lockPath);
-  } catch {
-    return;
-  }
-  if (Date.now() - lockStat.mtimeMs <= DRAFT_UPLOAD_LOCK_STALE_MS) return;
-  await rm(lockPath, { force: true }).catch(() => undefined);
-}
-
-type DraftUploadLockDiagnostics = {
-  draft_id: string;
-  lock_path: string;
-  waited_ms: number;
-  stale_after_ms: number;
-  owner_pid?: number;
-  schema_version?: number;
-  lock_created_at?: string;
-  lock_heartbeat_at?: string;
-  lock_age_ms?: number;
-  heartbeat_age_ms?: number;
-  lock_fingerprint?: string;
-};
-
-function optionalIsoString(value: unknown): string | undefined {
-  return typeof value === 'string' && value.length > 0 ? value : undefined;
-}
-
-function optionalPositiveNumber(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : undefined;
-}
-
-function elapsedMsSince(value: string | undefined, now: number): number | undefined {
-  if (!value) return undefined;
-  const timestamp = Date.parse(value);
-  if (!Number.isFinite(timestamp)) return undefined;
-  return Math.max(0, now - timestamp);
-}
-
-async function draftUploadLockDiagnostics(lockPath: string, draftId: string, waitedMs: number): Promise<DraftUploadLockDiagnostics> {
-  const diagnostics: DraftUploadLockDiagnostics = {
-    draft_id: draftId,
-    lock_path: lockPath,
-    waited_ms: Math.max(0, Math.floor(waitedMs)),
-    stale_after_ms: DRAFT_UPLOAD_LOCK_STALE_MS
-  };
-  try {
-    const contents = await readFile(lockPath, 'utf8');
-    const parsed = JSON.parse(contents) as Record<string, unknown>;
-    const now = Date.now();
-    const createdAt = optionalIsoString(parsed.created_at);
-    const heartbeatAt = optionalIsoString(parsed.heartbeat_at);
-    diagnostics.owner_pid = optionalPositiveNumber(parsed.pid);
-    diagnostics.schema_version = optionalPositiveNumber(parsed.schema_version);
-    diagnostics.lock_created_at = createdAt;
-    diagnostics.lock_heartbeat_at = heartbeatAt;
-    diagnostics.lock_age_ms = elapsedMsSince(createdAt, now);
-    diagnostics.heartbeat_age_ms = elapsedMsSince(heartbeatAt, now);
-    const fingerprintSource = typeof parsed.token_hash === 'string'
-      ? parsed.token_hash
-      : `${diagnostics.owner_pid ?? 'unknown'}:${createdAt ?? 'unknown'}:${heartbeatAt ?? 'unknown'}`;
-    diagnostics.lock_fingerprint = shortHash(`draft-upload-lock-file:${fingerprintSource}`, 12);
-  } catch {
-    diagnostics.lock_fingerprint = shortHash(`draft-upload-lock-file:${lockPath}`, 12);
-  }
-  return diagnostics;
-}
-
-function draftUploadLockedMessage(diagnostics: DraftUploadLockDiagnostics): string {
-  const parts = [
-    `Another agentfeed process is uploading draft ${diagnostics.draft_id}.`,
-    `Waited ${diagnostics.waited_ms}ms for upload lock ${diagnostics.lock_path}.`
-  ];
-  if (diagnostics.owner_pid) parts.push(`Owner pid: ${diagnostics.owner_pid}.`);
-  if (diagnostics.lock_heartbeat_at) parts.push(`Last heartbeat: ${diagnostics.lock_heartbeat_at}.`);
-  parts.push('Wait for it to finish, then rerun the same publish/share command.');
-  parts.push(`If no agentfeed process is active and the lock is older than ${Math.floor(DRAFT_UPLOAD_LOCK_STALE_MS / 1000)} seconds, remove the lock file and rerun.`);
-  return parts.join(' ');
-}
-
-function draftUploadLockTokenHash(token: string): string {
-  return shortHash(`draft-upload-lock:${token}`, 32);
-}
-
-async function createDraftUploadLockFile(lockPath: string, token: string): Promise<FileHandle> {
-  const handle = await open(lockPath, 'wx', 0o600);
-  try {
-    const now = new Date().toISOString();
-    await handle.writeFile(`${JSON.stringify({
-      schema_version: 2,
-      pid: process.pid,
-      token_hash: draftUploadLockTokenHash(token),
-      created_at: now,
-      heartbeat_at: now
-    })}\n`, 'utf8');
-    return handle;
-  } catch (error) {
-    await handle.close().catch(() => undefined);
-    await rm(lockPath, { force: true }).catch(() => undefined);
-    throw error;
-  }
-}
-
-function draftUploadLockHeartbeatFailedError(error: unknown): AgentFeedApiError {
-  const reason = error instanceof Error && error.message ? error.message : 'unknown filesystem error';
-  return new AgentFeedApiError(
-    423,
-    'DRAFT_UPLOAD_LOCK_HEARTBEAT_FAILED',
-    `Draft upload lock heartbeat failed. Local draft metadata was kept unchanged; rerun the same publish/share command to reconcile any server-side duplicate. ${reason}`
-  );
-}
-
-function startDraftUploadLockHeartbeat(lockPath: string): { stop: () => void; assertHealthy: () => void } {
-  const heartbeatMs = draftUploadLockHeartbeatMs();
-  let heartbeatFailure: unknown;
-  const heartbeat = setInterval(() => {
-    const now = new Date();
-    void utimes(lockPath, now, now).catch(error => {
-      heartbeatFailure ??= error;
-    });
-  }, heartbeatMs);
-  heartbeat.unref?.();
-  return {
-    stop: () => clearInterval(heartbeat),
-    assertHealthy: () => {
-      if (heartbeatFailure) throw draftUploadLockHeartbeatFailedError(heartbeatFailure);
-    }
-  };
-}
-
-async function acquireDraftUploadLock(cwd: string, id: string): Promise<{ release: () => Promise<void>; assertHeartbeatHealthy: () => void }> {
-  const root = await resolveProjectRoot(cwd);
-  const { jsonPath } = draftPaths(root, id);
-  const lockPath = `${jsonPath}.upload.lock`;
-  const startedAt = Date.now();
-  const timeoutMs = draftUploadLockTimeoutMs();
-  const deadline = startedAt + timeoutMs;
-  const token = randomUUID();
-  let removedStaleLock = false;
-
-  while (true) {
-    try {
-      const handle = await createDraftUploadLockFile(lockPath, token);
-      const heartbeat = startDraftUploadLockHeartbeat(lockPath);
-      let released = false;
-      return {
-        assertHeartbeatHealthy: heartbeat.assertHealthy,
-        release: async () => {
-          if (released) return;
-          released = true;
-          heartbeat.stop();
-          await handle.close().catch(() => undefined);
-          try {
-            const lockContents = await readFile(lockPath, 'utf8');
-            const parsed = JSON.parse(lockContents) as { token_hash?: unknown };
-            if (parsed.token_hash === draftUploadLockTokenHash(token)) await rm(lockPath, { force: true });
-          } catch {
-            // If the lock file is already gone or corrupted, never delete a replacement lock.
-          }
-        }
-      };
-    } catch (error) {
-      const code = typeof error === 'object' && error !== null && 'code' in error ? String((error as { code?: unknown }).code) : '';
-      if (code !== 'EEXIST') throw error;
-      if (!removedStaleLock) {
-        removedStaleLock = true;
-        await removeStaleDraftUploadLock(lockPath);
-        continue;
-      }
-      if (Date.now() >= deadline) {
-        const diagnostics = await draftUploadLockDiagnostics(lockPath, id, Date.now() - startedAt);
-        throw new AgentFeedApiError(
-          423,
-          'DRAFT_UPLOAD_LOCKED',
-          draftUploadLockedMessage(diagnostics),
-          diagnostics
-        );
-      }
-      await sleep(Math.min(DRAFT_UPLOAD_LOCK_POLL_MS, Math.max(1, deadline - Date.now())));
-    }
   }
 }
 

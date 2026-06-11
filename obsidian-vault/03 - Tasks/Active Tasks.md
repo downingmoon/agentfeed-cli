@@ -77,6 +77,7 @@ updated: 2026-06-11
 
 ## 완료됨 — 로컬/CI/contract/UI 품질
 
+- [x] [[Frontend API Social Actions Split 2026-06-11]] — Frontend `src/lib/api.ts`에서 social action response parser를 `api-social-actions.ts`로 분리하고 호출 surface를 유지. Frontend lint/test/build 통과, frontend commit `bca1a44` 푸시 완료.
 - [x] [[Frontend API Contract Primitives Split 2026-06-11]] — Frontend `src/lib/api.ts`에서 공통 contract primitive guard를 `api-contract-primitives.ts`로 분리하고 parser behavior를 유지. Frontend lint/test/build 통과, frontend commit `b89bdb1` 푸시 완료.
 - [x] [[Frontend API Integration Guide Split 2026-06-11]] — Frontend `src/lib/api.ts`에서 setup-guide parser와 integration type contract를 `api-integration-guide.ts`로 분리하고 public export surface를 유지. Frontend lint/test/build 통과, frontend commit `40e04c8` 푸시 완료.
 - [x] [[Frontend API Transport Boundary Split 2026-06-11]] — Frontend `src/lib/api.ts`에서 API transport/error boundary를 `api-transport.ts`로 분리하고 public export surface를 유지. Frontend lint/test/build 통과, frontend commit `1b222ac` 푸시 완료.

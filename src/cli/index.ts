@@ -20,14 +20,7 @@ import { detectAgentSignals, formatAgentSignalLines, summarizeAgentSignals } fro
 import { changedAreas } from '../summary/changed-areas.js';
 import { hasAgentFeedHook, installClaudeCodeHook, uninstallClaudeCodeHook, resolveClaudeSettingsPath } from '../hooks/claude-code-settings.js';
 import { flag, option } from './args.js';
-import { consumeLongOption } from './long-option-consumption.js';
-import { parseLongOptionToken } from './long-option-token.js';
-import { buildCommandOptionSets } from './command-option-sets.js';
-import { consumeShortOption } from './option-consumption.js';
-import { unknownOptionError } from './unknown-option-error.js';
 import { unknownCommandError } from './unknown-command-error.js';
-import { assertNoConflictingOptions } from './conflict-validation.js';
-import { assertValidPositionals } from './positional-validation.js';
 import { resolveStatusProject } from './status-project.js';
 import { setupProgressText, statusNextActions, statusReadinessItems, statusSummary, type StatusReadinessItem } from './status-readiness.js';
 import { doctorNextActions, doctorPriorityActions, doctorReadinessItems, doctorSummary, type DoctorPriorityAction, type DoctorReadinessItem } from './doctor-readiness.js';
@@ -40,7 +33,6 @@ import { commandCatalogNextActions, hookNextActions, initNextActions, privacySca
 import { jsonErrorFromMessage } from './error-output.js';
 import { commandHelpHint, hookUsageMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
 import { leadingOptionError } from './leading-option-error.js';
-import { bareDoubleDashError } from './bare-double-dash-error.js';
 import { hasHelpFlag } from './help-flag.js';
 import { isTrailingHelpAlias } from './trailing-help-alias.js';
 import { createCompletionVocabulary } from './completion-vocabulary.js';
@@ -50,6 +42,7 @@ import { createCommandCatalog } from './command-catalog.js';
 import { COMMAND_WORKFLOWS, renderCommandCatalogLines, renderCommandWorkflowLines } from './command-catalog-renderer.js';
 import { COMMAND_DESCRIPTIONS, COMMAND_EXAMPLES, COMMAND_GROUPS, COMMAND_USAGE_OVERRIDES, KNOWN_COMMANDS, PUBLIC_COMMANDS } from './command-definitions.js';
 import { COMMAND_ARG_SPECS, SUPPORTED_COMPLETION_SHELLS } from './command-arg-specs.js';
+import { validateCommandArgs } from './command-argument-validator.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -2087,45 +2080,6 @@ const COMMAND_CATALOG = createCommandCatalog({
   vocabulary: COMPLETION_VOCABULARY,
   optionMetadata: COMPLETION_OPTION_METADATA
 });
-
-function validateCommandArgs(command: string, args: string[]): void {
-  const spec = COMMAND_ARG_SPECS[command];
-  if (!spec) throw unknownCommandError({ command, knownCommands: PUBLIC_COMMANDS });
-  const { flags, valueOptions } = buildCommandOptionSets(spec);
-  const positionals: string[] = [];
-  const seenOptions = new Set<string>();
-
-  for (let i = 0; i < args.length; i += 1) {
-    const raw = args[i];
-    if (raw === '--') {
-      throw bareDoubleDashError(command);
-    }
-    if (raw.startsWith('--')) {
-      const optionToken = parseLongOptionToken(raw);
-      const consumption = consumeLongOption({
-        command,
-        optionToken,
-        valueOptions,
-        flags,
-        args,
-        index: i,
-        unknownOptionError: (optionName) => unknownOptionError({ command, optionName, optionSpec: spec })
-      });
-      seenOptions.add(consumption.optionName);
-      i = consumption.nextIndex;
-      continue;
-    }
-    if (raw.startsWith('-')) {
-      seenOptions.add(consumeShortOption({ optionName: raw, flags, unknownOptionError: unknownOptionError({ command, optionName: raw, optionSpec: spec }) }).optionName);
-      continue;
-    }
-    positionals.push(raw);
-  }
-
-  assertValidPositionals({ positionals, validatePositionals: spec.validatePositionals });
-
-  assertNoConflictingOptions({ command, seenOptions, conflicts: spec.conflicts ?? [] });
-}
 
 function printCommandCatalog(): void {
   for (const line of renderCommandCatalogLines({

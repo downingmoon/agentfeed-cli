@@ -26,6 +26,7 @@ import { doctorNextActions, doctorPriorityActions, doctorReadinessItems, doctorS
 import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialResult, tokenLoginCredentialResult, type CredentialResultView } from './auth-result.js';
 import { apiCheckFailureDetail, apiCompatibilityFailureDetail, apiCompatibilityRecoveryCommands, formatUploadRecoveryMessage, ingestionTokenRecoveryCommands, uploadNextActions, type UploadPreflightOptions } from './upload-guidance.js';
 import { reviewUrlHandoffLines } from './review-handoff.js';
+import { collectJsonNextActions, previewNextActions, remotePreviewNextActions } from './draft-next-actions.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -285,28 +286,6 @@ async function handoffReviewUrl(reviewUrl: string, options: { copy: boolean; ope
   return handoff;
 }
 
-
-function previewNextActions(draft: LocalDraft): string[] {
-  return uniqueNextCommands([
-    draft.upload.uploaded ? `agentfeed open --id ${draft.id}` : `agentfeed publish --id ${draft.id} --yes`,
-    `agentfeed scan --id ${draft.id}`
-  ]);
-}
-
-function collectJsonNextActions(draft: LocalDraft): string[] {
-  return draft.upload.uploaded
-    ? uploadNextActions(draft.id)
-    : uniqueNextCommands([
-      `agentfeed preview --id ${draft.id}`,
-      `agentfeed publish --id ${draft.id} --yes`
-    ]);
-}
-
-function remotePreviewNextActions(draftId: string, valid: boolean): string[] {
-  return valid
-    ? uniqueNextCommands([`agentfeed publish --id ${draftId} --yes`, `agentfeed scan --id ${draftId}`])
-    : uniqueNextCommands([`agentfeed scan --id ${draftId}`, `agentfeed preview --id ${draftId} --remote`]);
-}
 
 function printUploadResult(options: {
   heading: string;

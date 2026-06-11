@@ -30,7 +30,7 @@ import { collectJsonNextActions, previewNextActions, remotePreviewNextActions } 
 import { discardCompleteNextActions, discardConfirmationNextActions, draftListNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
 import { jsonErrorFromMessage } from './error-output.js';
-import { bareDoubleDashArgumentMessage, commandHelpHint, commandUsageError, completionUnexpectedArgumentMessage, conflictingOptionsError, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUnexpectedArgumentMessage, hookUsageMessage, optionRequiresValueMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownCommandErrorMessage, unknownHookActionMessage, unknownOptionErrorMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
+import { bareDoubleDashArgumentMessage, commandHelpHint, commandUsageError, completionUnexpectedArgumentMessage, conflictingOptionsError, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUnexpectedArgumentMessage, hookUsageMessage, optionDoesNotAcceptValueMessage, optionRequiresValueMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownCommandErrorMessage, unknownHookActionMessage, unknownOptionErrorMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
 import { leadingOptionErrorMessage } from './leading-option-recovery.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
@@ -2730,7 +2730,7 @@ function validateCommandArgs(command: string, args: string[]): void {
       }
       if (flags.has(name)) {
         seenOptions.add(name);
-        if (equalsIndex >= 0) throw new Error(commandUsageError(`${name} does not accept a value.`, command));
+        if (equalsIndex >= 0) throw new Error(optionDoesNotAcceptValueMessage(command, name));
         continue;
       }
       throw unknownOptionError(command, name, spec);

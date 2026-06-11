@@ -15,6 +15,12 @@ updated: 2026-06-11
 ## 현재 결론
 
 
+> [!success] 2026-06-11 CLI option value rejection recovery refactor
+> 값을 받지 않는 flag에 `=` 값이 붙은 경우의 recovery를 `optionDoesNotAcceptValueMessage`로 분리해 `validateCommandArgs`의 inline message assembly를 줄였다. Red test 확인 후 `npm run build`, focused Vitest 52 tests, full `npm test -- --run` 662 tests, CLI surface smoke(`status --json=true`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Option Value Rejection Recovery Refactor 2026-06-11]]
+
+
+
 > [!success] 2026-06-11 CLI option value recovery refactor
 > 값이 필요한 option의 missing-value recovery를 `optionRequiresValueMessage`로 분리해 `validateCommandArgs`의 inline message assembly를 줄였다. Red test 확인 후 `npm run build`, focused Vitest 51 tests, full `npm test -- --run` 661 tests, CLI surface smoke(`login --api-base-url`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Option Value Recovery Refactor 2026-06-11]]
@@ -127,6 +133,7 @@ updated: 2026-06-11
 
 ## 완료됨 — 로컬/CI/contract/UI 품질
 
+- [x] [[CLI Option Value Rejection Recovery Refactor 2026-06-11]] — flag value-not-accepted recovery message formatting을 `src/cli/command-recovery.ts`로 분리하고 red/focused/full CLI suite 통과 확인.
 - [x] [[CLI Option Value Recovery Refactor 2026-06-11]] — missing value-option recovery message formatting을 `src/cli/command-recovery.ts`로 분리하고 red/focused/full CLI suite 통과 확인.
 - [x] [[CLI Completion Recovery Refactor 2026-06-11]] — completion shell recovery message formatting을 `src/cli/command-recovery.ts`로 분리하고 focused + full CLI suite 통과 확인.
 - [x] [[CLI Unknown Recovery Refactor 2026-06-11]] — unknown command/option recovery message formatting을 `src/cli/command-recovery.ts`로 분리하고 focused + full CLI suite 통과 확인.

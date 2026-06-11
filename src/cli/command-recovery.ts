@@ -30,6 +30,10 @@ export function optionRequiresValueMessage(command: string, optionName: string):
   return commandUsageError(`${optionName} requires a value.`, command);
 }
 
+export function optionDoesNotAcceptValueMessage(command: string, optionName: string): string {
+  return commandUsageError(`${optionName} does not accept a value.`, command);
+}
+
 export function helpTopicError(topic: string, publicCommands: readonly string[]): string {
   const suggestion = closestMatch(topic, publicCommands);
   return [

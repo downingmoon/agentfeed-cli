@@ -45,6 +45,7 @@ import { hasHelpFlag } from './help-flag.js';
 import { isTrailingHelpAlias } from './trailing-help-alias.js';
 import { createCompletionVocabulary } from './completion-vocabulary.js';
 import { createCompletionOptionMetadata } from './completion-option-metadata.js';
+import { createCompletionScriptRenderer } from './completion-script-renderer.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -2001,146 +2002,12 @@ async function cmdOpen(args: string[]) {
   printGuidedNextCommands(openNextActions(draft.id));
 }
 
-function fishQuote(value: string): string {
-  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
-}
-
-function zshQuote(value: string): string {
-  return `'${value.replace(/'/g, "'\\''")}'`;
-}
-
-function zshOptionArgument(command: string, optionName: string): string {
-  const description = COMPLETION_OPTION_METADATA.descriptionFor(command, optionName).replace(/]/g, '\\]');
-  const base = `${optionName}[${description}]`;
-  if (!COMPLETION_OPTION_METADATA.requiresValue(command, optionName)) return base;
-  const placeholder = COMPLETION_OPTION_METADATA.valuePlaceholderFor(optionName);
-  const choices = COMPLETION_OPTION_METADATA.valueChoicesFor(optionName);
-  if (choices.length) return `${base}:${placeholder}:(${choices.join(' ')})`;
-  if (COMPLETION_OPTION_METADATA.isFileValueOption(optionName)) return `${base}:${placeholder}:_files`;
-  return `${base}:${placeholder}:`;
-}
-
-function zshArgumentsCase(command: string): string {
-  if (command === 'completion' || command === 'help') {
-    return `    ${command}) compadd -- ${COMPLETION_VOCABULARY.wordsFor(command).join(' ')} ;;`;
-  }
-  const options = COMPLETION_VOCABULARY.optionsFor(command);
-  const entries = options
-    .map((optionName, index) => {
-      const suffix = index === options.length - 1 ? '' : ' \\';
-      return `        ${zshQuote(zshOptionArgument(command, optionName))}${suffix}`;
-    })
-    .join('\n');
-  return [
-    `    ${command})`,
-    '      _arguments \\',
-    entries,
-    '      ;;'
-  ].join('\n');
-}
-
-function zshCompletionScript(): string {
-  const commandEntries = PUBLIC_COMMANDS
-    .map((command) => `    '${command}:${COMMAND_DESCRIPTIONS[command]}'`)
-    .join('\n');
-  const optionCases = PUBLIC_COMMANDS
-    .map((command) => zshArgumentsCase(command))
-    .join('\n');
-  return `#compdef agentfeed
-
-_agentfeed() {
-  local -a commands
-  commands=(
-${commandEntries}
-  )
-
-  if (( CURRENT == 2 )); then
-    _describe 'agentfeed command' commands
-    return
-  fi
-
-  case "$words[2]" in
-${optionCases}
-    *) compadd -- --help ;;
-  esac
-}
-
-_agentfeed "$@"
-`;
-}
-
-function bashCompletionScript(): string {
-  const commands = PUBLIC_COMMANDS.join(' ');
-  const optionCases = PUBLIC_COMMANDS
-    .map((command) => `    ${command}) options="${COMPLETION_VOCABULARY.wordsFor(command).join(' ')}" ;;`)
-    .join('\n');
-  const sourceValues = SUPPORTED_SOURCES.join(' ');
-  return `_agentfeed() {
-  local cur prev command commands options
-  COMPREPLY=()
-  cur="\${COMP_WORDS[COMP_CWORD]}"
-  prev="\${COMP_WORDS[COMP_CWORD-1]}"
-  command="\${COMP_WORDS[1]}"
-  commands="${commands}"
-
-  if [[ COMP_CWORD -eq 1 ]]; then
-    COMPREPLY=( $(compgen -W "$commands" -- "$cur") )
-    return 0
-  fi
-
-  case "$prev" in
-    --source) COMPREPLY=( $(compgen -W "${sourceValues}" -- "$cur") ); return 0 ;;
-    --token) COMPREPLY=( $(compgen -W "-" -- "$cur") ); return 0 ;;
-    --path|--session-file|--settings-path) COMPREPLY=( $(compgen -f -- "$cur") ); return 0 ;;
-  esac
-
-  case "$command" in
-${optionCases}
-    *) options="--help" ;;
-  esac
-
-  COMPREPLY=( $(compgen -W "$options" -- "$cur") )
-}
-
-complete -F _agentfeed agentfeed
-`;
-}
-
-function fishCompletionScript(): string {
-  const commandList = PUBLIC_COMMANDS.join(' ');
-  const helpTopics = COMPLETION_VOCABULARY.helpTopicWords().join(' ');
-  const lines = [
-    'complete -c agentfeed -f',
-    ...PUBLIC_COMMANDS.map((command) => `complete -c agentfeed -n "not __fish_seen_subcommand_from ${commandList}" -a "${command}" -d "${COMMAND_DESCRIPTIONS[command]}"`),
-    'complete -c agentfeed -n "__fish_seen_subcommand_from completion" -a "zsh bash fish" -d "Completion shell"',
-    `complete -c agentfeed -n "__fish_seen_subcommand_from help" -a "${helpTopics}" -d "Help topic"`,
-    ...PUBLIC_COMMANDS.flatMap((command) => COMPLETION_VOCABULARY.optionsFor(command).map((optionName) => {
-      const description = fishQuote(COMPLETION_OPTION_METADATA.descriptionFor(command, optionName));
-      const choices = COMPLETION_OPTION_METADATA.valueChoicesFor(optionName);
-      const valueHint = COMPLETION_OPTION_METADATA.requiresValue(command, optionName) ? ' -r' : '';
-      const choiceHint = choices.length ? ` -a ${fishQuote(choices.join(' '))}` : '';
-      const fileHint = COMPLETION_OPTION_METADATA.isFileValueOption(optionName) ? ' -F' : '';
-      if (optionName.startsWith('--')) {
-        return `complete -c agentfeed -n "__fish_seen_subcommand_from ${command}" -l ${optionName.slice(2)}${valueHint}${choiceHint}${fileHint} -d ${description}`;
-      }
-      if (optionName.startsWith('-') && optionName.length === 2) {
-        return `complete -c agentfeed -n "__fish_seen_subcommand_from ${command}" -s ${optionName.slice(1)}${valueHint}${choiceHint}${fileHint} -d ${description}`;
-      }
-      return '';
-    }).filter(Boolean))
-  ];
-  return `${lines.join('\n')}\n`;
-}
-
 const SUPPORTED_COMPLETION_SHELLS = ['zsh', 'bash', 'fish'] as const;
 
 function completionScript(shell: string): string {
-  switch (shell) {
-    case 'zsh': return zshCompletionScript();
-    case 'bash': return bashCompletionScript();
-    case 'fish': return fishCompletionScript();
-    default: throw new Error(unsupportedCompletionShellMessage(shell, SUPPORTED_COMPLETION_SHELLS));
-  }
+  const script = COMPLETION_SCRIPT_RENDERER.scriptFor(shell);
+  if (script) return script;
+  throw new Error(unsupportedCompletionShellMessage(shell, SUPPORTED_COMPLETION_SHELLS));
 }
 
 async function cmdCompletion(args: string[]) {
@@ -2546,6 +2413,12 @@ const COMPLETION_OPTION_METADATA = createCompletionOptionMetadata({
     '--source': SUPPORTED_SOURCES,
     '--token': ['-']
   }
+});
+const COMPLETION_SCRIPT_RENDERER = createCompletionScriptRenderer({
+  commands: PUBLIC_COMMANDS.map((command) => ({ name: command, description: COMMAND_DESCRIPTIONS[command] })),
+  sourceValues: SUPPORTED_SOURCES,
+  vocabulary: COMPLETION_VOCABULARY,
+  optionMetadata: COMPLETION_OPTION_METADATA
 });
 
 function validateCommandArgs(command: string, args: string[]): void {

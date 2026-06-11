@@ -21,6 +21,7 @@ import { changedAreas } from '../summary/changed-areas.js';
 import { hasAgentFeedHook, installClaudeCodeHook, uninstallClaudeCodeHook, resolveClaudeSettingsPath } from '../hooks/claude-code-settings.js';
 import { flag, option } from './args.js';
 import { parseLongOptionToken } from './long-option-token.js';
+import { consumeValueOption } from './value-option-consumption.js';
 import { resolveStatusProject } from './status-project.js';
 import { setupProgressText, statusNextActions, statusReadinessItems, statusSummary, type StatusReadinessItem } from './status-readiness.js';
 import { doctorNextActions, doctorPriorityActions, doctorReadinessItems, doctorSummary, type DoctorPriorityAction, type DoctorReadinessItem } from './doctor-readiness.js';
@@ -2719,13 +2720,7 @@ function validateCommandArgs(command: string, args: string[]): void {
       const name = optionToken.name;
       if (valueOptions.has(name)) {
         seenOptions.add(name);
-        if (optionToken.inlineValue !== null) {
-          if (optionToken.inlineValue.length === 0) throw new Error(optionRequiresValueMessage(command, name));
-        } else {
-          const value = args[i + 1];
-          if (!value || value.startsWith('--')) throw new Error(optionRequiresValueMessage(command, name));
-          i += 1;
-        }
+        i = consumeValueOption({ command, optionName: name, inlineValue: optionToken.inlineValue, args, index: i }).nextIndex;
         continue;
       }
       if (flags.has(name)) {

@@ -31,7 +31,7 @@ import { discardCompleteNextActions, discardConfirmationNextActions, draftListNe
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
 import { jsonErrorFromMessage } from './error-output.js';
 import { closestMatch } from './closest-match.js';
-import { commandHelpHint, commandUsageError, conflictingOptionsError, helpTopicError, hookUsageMessage, unsupportedHookTargetMessage } from './command-recovery.js';
+import { commandHelpHint, commandUsageError, conflictingOptionsError, helpTopicError, hookUsageMessage, unknownCommandErrorMessage, unknownOptionErrorMessage, unsupportedHookTargetMessage } from './command-recovery.js';
 import { leadingOptionErrorMessage } from './leading-option-recovery.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
@@ -2718,12 +2718,7 @@ function hasHelpFlag(args: string[]): boolean {
 
 
 function unknownCommandError(command: string): Error {
-  const suggestion = closestMatch(command, PUBLIC_COMMANDS);
-  return new Error([
-    `Unknown command: ${command}`,
-    ...(suggestion ? [`Did you mean: agentfeed ${suggestion}`] : []),
-    'Run: agentfeed --help'
-  ].join('\n'));
+  return new Error(unknownCommandErrorMessage(command, PUBLIC_COMMANDS));
 }
 
 
@@ -2738,13 +2733,7 @@ function leadingOptionError(option: string, args: string[]): Error {
 
 function unknownOptionError(command: string, optionName: string, spec: CommandArgSpec): Error {
   const candidates = [...(spec.flags ?? []), ...(spec.valueOptions ?? []), '--help', '-h'];
-  const suggestion = closestMatch(optionName, candidates);
-  return new Error([
-    `Unknown option: ${optionName}`,
-    `Command: agentfeed ${command}`,
-    ...(suggestion ? [`Did you mean: ${suggestion}`] : []),
-    commandHelpHint(command)
-  ].join('\n'));
+  return new Error(unknownOptionErrorMessage(command, optionName, candidates));
 }
 
 function validateCommandArgs(command: string, args: string[]): void {

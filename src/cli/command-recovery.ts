@@ -49,3 +49,22 @@ export function unsupportedHookTargetMessage(action = 'install', target?: string
     'Run: agentfeed hook install claude-code --help'
   ].join('\n');
 }
+
+export function unknownCommandErrorMessage(command: string, publicCommands: readonly string[]): string {
+  const suggestion = closestMatch(command, publicCommands);
+  return [
+    `Unknown command: ${command}`,
+    ...(suggestion ? [`Did you mean: agentfeed ${suggestion}`] : []),
+    'Run: agentfeed --help'
+  ].join('\n');
+}
+
+export function unknownOptionErrorMessage(command: string, optionName: string, candidates: readonly string[]): string {
+  const suggestion = closestMatch(optionName, candidates);
+  return [
+    `Unknown option: ${optionName}`,
+    `Command: agentfeed ${command}`,
+    ...(suggestion ? [`Did you mean: ${suggestion}`] : []),
+    commandHelpHint(command)
+  ].join('\n');
+}

@@ -67,14 +67,14 @@ export async function readResponseJson(
   }
 }
 
-export function responseDataEnvelope<T>(
+export function responseDataEnvelope(
   value: unknown,
   options: {
     readonly successMessage: string;
     readonly unexpectedFieldsMessage?: string;
     readonly localDraftKept?: boolean;
   },
-): T {
+): unknown {
   if (!isRecord(value) || !Object.hasOwn(value, 'data')) {
     throw new AgentFeedApiError(
       502,
@@ -90,5 +90,5 @@ export function responseDataEnvelope<T>(
       options.localDraftKept ? `${message} Local draft was kept.` : message,
     );
   }
-  return value.data as T;
+  return value.data;
 }

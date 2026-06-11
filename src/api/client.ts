@@ -42,7 +42,7 @@ function friendlyError(status: number, code: string, message: string, details?: 
   return message || `AgentFeed API error (${status})`;
 }
 
-async function postJson<T>(apiBaseUrl: string, path: string, body: Record<string, unknown>): Promise<T> {
+async function postJson(apiBaseUrl: string, path: string, body: Record<string, unknown>): Promise<unknown> {
   const response = await fetchWithTimeout(`${apiBaseUrl.replace(/\/$/, '')}${path}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -57,14 +57,14 @@ async function postJson<T>(apiBaseUrl: string, path: string, body: Record<string
     const msg = friendlyError(response.status, api.code, api.message, api.details);
     throw new AgentFeedApiError(response.status, api.code, msg, api.details);
   }
-  return responseDataEnvelope<T>(data, {
+  return responseDataEnvelope(data, {
     successMessage: 'AgentFeed API response is missing the data envelope.',
     unexpectedFieldsMessage: 'AgentFeed API response has unexpected data envelope fields.'
   });
 }
 
 export async function createCliAuthSession(apiBaseUrl: string, input: { verifier: string; deviceName?: string; replaceTokenId?: string }): Promise<CliAuthSession> {
-  const data = await postJson<unknown>(apiBaseUrl, '/auth/cli/sessions', {
+  const data = await postJson(apiBaseUrl, '/auth/cli/sessions', {
     verifier: input.verifier,
     device_name: input.deviceName,
     replace_token_id: input.replaceTokenId
@@ -73,10 +73,10 @@ export async function createCliAuthSession(apiBaseUrl: string, input: { verifier
 }
 
 export async function exchangeCliAuthSession(apiBaseUrl: string, sessionId: string, verifier: string): Promise<CliAuthExchangeResult> {
-  return parseCliAuthExchangeResult(await postJson<unknown>(apiBaseUrl, `/auth/cli/sessions/${encodeURIComponent(sessionId)}/exchange`, { verifier }));
+  return parseCliAuthExchangeResult(await postJson(apiBaseUrl, `/auth/cli/sessions/${encodeURIComponent(sessionId)}/exchange`, { verifier }));
 }
 
-async function postIngest<T>(path: string, draft: LocalDraft, credentials: AgentFeedCredentials): Promise<T> {
+async function postIngest(path: string, draft: LocalDraft, credentials: AgentFeedCredentials): Promise<unknown> {
   const payload = draftToIngestRequest(draft);
   const body = JSON.stringify(payload);
   if (Buffer.byteLength(body, 'utf8') > 512 * 1024) throw new AgentFeedApiError(413, 'INGESTION_PAYLOAD_TOO_LARGE', 'Draft payload is too large.');
@@ -99,7 +99,7 @@ async function postIngest<T>(path: string, draft: LocalDraft, credentials: Agent
       const msg = friendlyError(response.status, api.code, api.message, details);
       throw new AgentFeedApiError(response.status, api.code, msg, details);
     }
-    return responseDataEnvelope<T>(data, {
+    return responseDataEnvelope(data, {
       successMessage: 'AgentFeed API upload response is missing the data envelope.',
       unexpectedFieldsMessage: 'AgentFeed API upload response has unexpected data envelope fields.',
       localDraftKept: true
@@ -109,11 +109,11 @@ async function postIngest<T>(path: string, draft: LocalDraft, credentials: Agent
 
 
 export async function previewDraftRemote(draft: LocalDraft, credentials: AgentFeedCredentials): Promise<RemotePreviewResult> {
-  return parseRemotePreviewResult(await postIngest<unknown>('/ingest/worklogs/preview', draft, credentials));
+  return parseRemotePreviewResult(await postIngest('/ingest/worklogs/preview', draft, credentials));
 }
 
 export async function uploadDraft(draft: LocalDraft, credentials: AgentFeedCredentials, reviewBaseUrl?: string | null): Promise<PublishDraftResult> {
-  return parsePublishDraftResult(await postIngest<unknown>('/ingest/worklogs', draft, credentials), credentials.api_base_url, reviewBaseUrl);
+  return parsePublishDraftResult(await postIngest('/ingest/worklogs', draft, credentials), credentials.api_base_url, reviewBaseUrl);
 }
 
 export function isTrustedReviewUrl(reviewUrl: string, apiBaseUrl: string, reviewBaseUrl?: string | null): boolean {

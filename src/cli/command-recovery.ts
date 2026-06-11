@@ -47,6 +47,10 @@ export function hookUsageMessage(): string {
   ].join('\n');
 }
 
+export function hookUnexpectedArgumentMessage(argument: string): string {
+  return commandUsageError(`Unexpected argument for hook: ${argument}`, 'hook');
+}
+
 export function tokenUsageMessage(): string {
   return commandUsageError('Usage: agentfeed token rotate', 'token');
 }

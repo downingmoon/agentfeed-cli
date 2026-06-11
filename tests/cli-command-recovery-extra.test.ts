@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { completionUnexpectedArgumentMessage, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUsageMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from '../src/cli/command-recovery.js';
+import { completionUnexpectedArgumentMessage, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUnexpectedArgumentMessage, hookUsageMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from '../src/cli/command-recovery.js';
 
 describe('CLI help and hook recovery messages', () => {
   it('formats help topic recovery with closest known topic suggestions', () => {
@@ -30,6 +30,13 @@ describe('CLI help and hook recovery messages', () => {
       'Usage: agentfeed hook install|uninstall claude-code',
       'Run: agentfeed hook --help',
       'Run: agentfeed hook install claude-code --dry-run'
+    ].join('\n'));
+  });
+
+  it('formats unexpected hook positional recovery', () => {
+    expect(hookUnexpectedArgumentMessage('extra')).toBe([
+      'Unexpected argument for hook: extra',
+      'Run: agentfeed hook --help'
     ].join('\n'));
   });
 

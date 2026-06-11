@@ -15,6 +15,11 @@ updated: 2026-06-11
 ## 현재 결론
 
 
+> [!success] 2026-06-11 CLI hook unexpected recovery refactor
+> `agentfeed hook install claude-code <extra>` unexpected positional recovery를 `hookUnexpectedArgumentMessage`로 분리해 hook validation의 inline message assembly를 줄였다. Red test 확인 후 `npm run build`, focused Vitest 49 tests, full `npm test -- --run` 659 tests, CLI surface smoke(`hook install claude-code extra`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Hook Unexpected Recovery Refactor 2026-06-11]]
+
+
 > [!success] 2026-06-11 CLI token rotate recovery refactor
 > `agentfeed token rotate <extra>` unexpected positional recovery를 `tokenRotateUnexpectedArgumentMessage`로 분리해 token alias validation의 inline message assembly를 줄였다. Red test 확인 후 `npm run build`, focused Vitest 48 tests, full `npm test -- --run` 658 tests, CLI surface smoke(`token rotate browser`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Token Rotate Recovery Refactor 2026-06-11]]

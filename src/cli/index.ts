@@ -30,7 +30,7 @@ import { collectJsonNextActions, previewNextActions, remotePreviewNextActions } 
 import { discardCompleteNextActions, discardConfirmationNextActions, draftListNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
 import { jsonErrorFromMessage } from './error-output.js';
-import { commandHelpHint, commandUsageError, completionUnexpectedArgumentMessage, conflictingOptionsError, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUsageMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownCommandErrorMessage, unknownHookActionMessage, unknownOptionErrorMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
+import { commandHelpHint, commandUsageError, completionUnexpectedArgumentMessage, conflictingOptionsError, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUnexpectedArgumentMessage, hookUsageMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownCommandErrorMessage, unknownHookActionMessage, unknownOptionErrorMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
 import { leadingOptionErrorMessage } from './leading-option-recovery.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
@@ -2633,7 +2633,7 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
     conflicts: [['--global', '--project']],
     validatePositionals: (positionals) => {
       if (positionals.length < 2) return hookUsageMessage();
-      if (positionals.length > 2) return commandUsageError(`Unexpected argument for hook: ${positionals[2]}`, 'hook');
+      if (positionals.length > 2) return hookUnexpectedArgumentMessage(positionals[2]);
       const [action, target] = positionals;
       if (action !== 'install' && action !== 'uninstall') {
         return unknownHookActionMessage(action, ['install', 'uninstall']);

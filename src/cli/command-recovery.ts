@@ -55,6 +55,10 @@ export function unknownTokenSubcommandMessage(subcommand: string): string {
   return commandUsageError(`Unknown token subcommand: ${subcommand}`, 'token');
 }
 
+export function tokenRotateUnexpectedArgumentMessage(argument: string, suggestions: readonly string[] = []): string {
+  return commandUsageError(`Unexpected argument for token rotate: ${argument}`, 'token', suggestions);
+}
+
 export function unknownHookActionMessage(action: string, supportedActions: readonly string[]): string {
   const suggestion = closestMatch(action, supportedActions);
   return [

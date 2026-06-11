@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { completionUnexpectedArgumentMessage, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUsageMessage, tokenUsageMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from '../src/cli/command-recovery.js';
+import { completionUnexpectedArgumentMessage, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUsageMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from '../src/cli/command-recovery.js';
 
 describe('CLI help and hook recovery messages', () => {
   it('formats help topic recovery with closest known topic suggestions', () => {
@@ -100,6 +100,14 @@ describe('CLI help and hook recovery messages', () => {
     ].join('\n'));
     expect(unknownTokenSubcommandMessage('rotat')).toBe([
       'Unknown token subcommand: rotat',
+      'Run: agentfeed token rotate --help'
+    ].join('\n'));
+  });
+
+  it('formats unexpected token rotate positional recovery with suggestions', () => {
+    expect(tokenRotateUnexpectedArgumentMessage('browser', ['Did you mean: agentfeed token rotate --browser'])).toBe([
+      'Unexpected argument for token rotate: browser',
+      'Did you mean: agentfeed token rotate --browser',
       'Run: agentfeed token rotate --help'
     ].join('\n'));
   });

@@ -15,6 +15,11 @@ updated: 2026-06-11
 ## 현재 결론
 
 
+> [!success] 2026-06-11 CLI token rotate recovery refactor
+> `agentfeed token rotate <extra>` unexpected positional recovery를 `tokenRotateUnexpectedArgumentMessage`로 분리해 token alias validation의 inline message assembly를 줄였다. Red test 확인 후 `npm run build`, focused Vitest 48 tests, full `npm test -- --run` 658 tests, CLI surface smoke(`token rotate browser`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Token Rotate Recovery Refactor 2026-06-11]]
+
+
 > [!success] 2026-06-11 CLI completion positional recovery refactor
 > `agentfeed completion <shell> <extra>` unexpected positional recovery를 `completionUnexpectedArgumentMessage`로 분리하고, completion generator fallback과 validation이 같은 supported-shell wording helper를 공유하도록 정리했다. `npm run build`, focused Vitest 47 tests, full `npm test -- --run` 657 tests, CLI surface smoke(`completion zsh extra`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Completion Positional Recovery Refactor 2026-06-11]]

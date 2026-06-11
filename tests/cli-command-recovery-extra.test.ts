@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { helpTopicError, hookUsageMessage, unknownHookActionMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from '../src/cli/command-recovery.js';
+import { flaglessOptionSuggestionLines, helpTopicError, hookUsageMessage, unknownHookActionMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from '../src/cli/command-recovery.js';
 
 describe('CLI help and hook recovery messages', () => {
   it('formats help topic recovery with closest known topic suggestions', () => {
@@ -62,5 +62,16 @@ describe('CLI help and hook recovery messages', () => {
       'Supported shells: zsh, bash, fish',
       'Run: agentfeed completion --help'
     ].join('\n'));
+  });
+
+  it('formats flagless option suggestions from supported long flags only', () => {
+    expect(flaglessOptionSuggestionLines('share', ['yes', 'open-review'], ['--yes', '--open-review', '-y'])).toEqual([
+      'Did you mean: agentfeed share --yes --open-review'
+    ]);
+    expect(flaglessOptionSuggestionLines('token', ['yes'], ['--yes'], ['rotate'])).toEqual([
+      'Did you mean: agentfeed token rotate --yes'
+    ]);
+    expect(flaglessOptionSuggestionLines('share', ['yes', 'unknown'], ['--yes', '--open-review'])).toEqual([]);
+    expect(flaglessOptionSuggestionLines('share', [], ['--yes', '--open-review'])).toEqual([]);
   });
 });

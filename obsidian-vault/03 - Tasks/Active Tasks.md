@@ -15,6 +15,11 @@ updated: 2026-06-11
 ## 현재 결론
 
 
+> [!success] 2026-06-11 CLI flagless option recovery refactor
+> bare positional option name(`yes`, `open-review`)을 dashed flags로 제안하는 로직을 `flaglessOptionSuggestionLines`로 분리해 `src/cli/index.ts` inline Map/formatting 책임을 줄였다. `npm run build`, focused Vitest 6 tests, CLI help 38 tests, full `npm test -- --run` 654 tests, CLI surface smoke(`share yes open-review`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가.
+> - [[CLI Flagless Option Recovery Refactor 2026-06-11]]
+
+
 > [!success] 2026-06-11 CLI hook action recovery refactor
 > `hook` action typo 복구 메시지를 `unknownHookActionMessage`로 분리해 `src/cli/index.ts` inline recovery 조합을 줄였다. `npm run build`, focused Vitest 43 tests, full `npm test -- --run` 653 tests, CLI surface smoke(`hook instal claude-code`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가.
 > - [[CLI Hook Action Recovery Refactor 2026-06-11]]

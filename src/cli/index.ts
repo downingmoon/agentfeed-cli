@@ -30,7 +30,7 @@ import { collectJsonNextActions, previewNextActions, remotePreviewNextActions } 
 import { discardCompleteNextActions, discardConfirmationNextActions, draftListNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
 import { jsonErrorFromMessage } from './error-output.js';
-import { commandHelpHint, commandUsageError, conflictingOptionsError, helpTopicError, hookUsageMessage, unknownCommandErrorMessage, unknownHookActionMessage, unknownOptionErrorMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
+import { commandHelpHint, commandUsageError, conflictingOptionsError, flaglessOptionSuggestionLines, helpTopicError, hookUsageMessage, unknownCommandErrorMessage, unknownHookActionMessage, unknownOptionErrorMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
 import { leadingOptionErrorMessage } from './leading-option-recovery.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
@@ -2521,28 +2521,9 @@ interface CommandArgSpec {
   validatePositionals?: (positionals: string[]) => string | null;
 }
 
-
-
-function flaglessOptionCommandSuggestion(command: string, positionals: string[], prefixPositionals: string[] = []): string | null {
+function flaglessOptionSuggestionsFor(command: string, positionals: readonly string[], prefixPositionals: readonly string[] = []): string[] {
   const spec = COMMAND_ARG_SPECS[command];
-  if (!spec || positionals.length === 0) return null;
-  const flagByBareName = new Map(
-    (spec.flags ?? [])
-      .filter((candidate) => candidate.startsWith('--'))
-      .map((candidate) => [candidate.slice(2), candidate])
-  );
-  const suggestedFlags: string[] = [];
-  for (const positional of positionals) {
-    const flag = flagByBareName.get(positional);
-    if (!flag) return null;
-    suggestedFlags.push(flag);
-  }
-  return `agentfeed ${[command, ...prefixPositionals, ...suggestedFlags].join(' ')}`;
-}
-
-function flaglessOptionSuggestionLine(command: string, positionals: string[], prefixPositionals: string[] = []): string[] {
-  const suggestion = flaglessOptionCommandSuggestion(command, positionals, prefixPositionals);
-  return suggestion ? [`Did you mean: ${suggestion}`] : [];
+  return flaglessOptionSuggestionLines(command, positionals, spec?.flags ?? [], prefixPositionals);
 }
 
 
@@ -2551,7 +2532,7 @@ const NO_POSITIONALS = (command: string) => (positionals: string[]) =>
     ? commandUsageError(
       `Unexpected argument for ${command}: ${positionals[0]}`,
       command,
-      flaglessOptionSuggestionLine(command, positionals)
+      flaglessOptionSuggestionsFor(command, positionals)
     )
     : null;
 
@@ -2606,7 +2587,7 @@ const COMMAND_ARG_SPECS: Record<string, CommandArgSpec> = {
       if (positionals.length > 1) return commandUsageError(
         `Unexpected argument for token rotate: ${positionals[1]}`,
         'token',
-        flaglessOptionSuggestionLine('token', positionals.slice(1), ['rotate'])
+        flaglessOptionSuggestionsFor('token', positionals.slice(1), ['rotate'])
       );
       return null;
     }

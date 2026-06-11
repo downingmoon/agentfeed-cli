@@ -87,3 +87,34 @@ export function unsupportedCompletionShellMessage(shell: string, supportedShells
     'Run: agentfeed completion --help'
   ].join('\n');
 }
+
+function flaglessOptionCommandSuggestion(
+  command: string,
+  positionals: readonly string[],
+  flags: readonly string[],
+  prefixPositionals: readonly string[] = []
+): string | null {
+  if (positionals.length === 0) return null;
+  const flagByBareName = new Map(
+    flags
+      .filter((candidate) => candidate.startsWith('--'))
+      .map((candidate) => [candidate.slice(2), candidate])
+  );
+  const suggestedFlags: string[] = [];
+  for (const positional of positionals) {
+    const flag = flagByBareName.get(positional);
+    if (!flag) return null;
+    suggestedFlags.push(flag);
+  }
+  return `agentfeed ${[command, ...prefixPositionals, ...suggestedFlags].join(' ')}`;
+}
+
+export function flaglessOptionSuggestionLines(
+  command: string,
+  positionals: readonly string[],
+  flags: readonly string[],
+  prefixPositionals: readonly string[] = []
+): string[] {
+  const suggestion = flaglessOptionCommandSuggestion(command, positionals, flags, prefixPositionals);
+  return suggestion ? [`Did you mean: ${suggestion}`] : [];
+}

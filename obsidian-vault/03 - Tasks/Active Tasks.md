@@ -77,6 +77,7 @@ updated: 2026-06-11
 
 ## 완료됨 — 로컬/CI/contract/UI 품질
 
+- [x] [[Frontend API Compatibility Split 2026-06-11]] — Frontend `src/lib/api.ts`에서 backend metadata compatibility 책임을 `api-compatibility.ts`로 분리하고 public export surface를 유지. Frontend lint/test/build 통과, frontend commit `2016fda` 푸시 완료.
 - [x] [[Cross Repo Contract Audit 2026-06-11]] — CLI/Frontend 호출 경로와 Backend route surface를 대조했고, Frontend 53개 호출 경로는 모두 Backend에 존재함을 확인. Frontend lint/test, Backend 핵심 contract 62 tests, CLI typecheck/full test 610 tests 통과.
 - [x] Frontend user/account response guard가 malformed auth.me/profile/username-check 성공 payload를 fail-closed 처리하도록 보강.
 - [x] [[User Account Response Guard 2026-06-08]] — auth.me/users.get/users.checkUsername response guard 보강.

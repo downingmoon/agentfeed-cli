@@ -9,7 +9,7 @@ export interface LongOptionConsumptionInput {
   readonly flags: ReadonlySet<string>;
   readonly args: readonly string[];
   readonly index: number;
-  readonly unknownOptionError: Error;
+  readonly unknownOptionError: (optionName: string) => Error;
 }
 
 export interface LongOptionConsumption {
@@ -39,7 +39,7 @@ export function consumeLongOption(input: LongOptionConsumptionInput): LongOption
       consumeFlagOption({ command: input.command, optionName: classification.name, inlineValue: input.optionToken.inlineValue });
       return { optionName: classification.name, nextIndex: input.index };
     case 'unknown':
-      throw input.unknownOptionError;
+      throw input.unknownOptionError(classification.name);
     default:
       return unreachableLongOptionClassification(classification);
   }

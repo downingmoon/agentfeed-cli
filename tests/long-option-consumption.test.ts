@@ -2,12 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { consumeLongOption } from '../src/cli/long-option-consumption.js';
 
 describe('consumeLongOption', () => {
-  it('consumes value and flag long options with the accepted option name', () => {
-    // Given: parser lookup sets and one value option token.
+  it('consumes value and flag long options without constructing unknown recovery errors', () => {
+    // Given: parser lookup sets and one unknown recovery error factory.
     const valueOptions = new Set(['--api-base-url']);
     const flags = new Set(['--json']);
+    let unknownRecoveryCalls = 0;
+    const unknownOptionError = (optionName: string): Error => {
+      unknownRecoveryCalls += 1;
+      return new Error(`Unknown option: ${optionName}`);
+    };
 
-    // When / Then: value and flag options return the accepted name and next index.
+    // When / Then: value and flag options return the accepted name and leave unknown recovery lazy.
     expect(consumeLongOption({
       command: 'login',
       optionToken: { name: '--api-base-url', inlineValue: 'https://api.example.test' },
@@ -15,7 +20,7 @@ describe('consumeLongOption', () => {
       flags,
       args: ['--api-base-url=https://api.example.test'],
       index: 0,
-      unknownOptionError: new Error('unknown')
+      unknownOptionError
     })).toEqual({ optionName: '--api-base-url', nextIndex: 0 });
 
     expect(consumeLongOption({
@@ -25,15 +30,21 @@ describe('consumeLongOption', () => {
       flags,
       args: ['--json'],
       index: 0,
-      unknownOptionError: new Error('unknown')
+      unknownOptionError
     })).toEqual({ optionName: '--json', nextIndex: 0 });
+
+    expect(unknownRecoveryCalls).toBe(0);
   });
 
-  it('throws the provided unknown option error', () => {
+  it('constructs the unknown option error only after unknown classification', () => {
     // Given: a long option token that is absent from parser lookup sets.
-    const error = new Error('Unknown option: --missing');
+    let recoveredName: string | null = null;
+    const unknownOptionError = (optionName: string): Error => {
+      recoveredName = optionName;
+      return new Error(`Unknown option: ${optionName}`);
+    };
 
-    // When / Then: unknown option recovery stays owned by the caller.
+    // When / Then: unknown option recovery stays owned by the caller and receives the unknown name.
     expect(() => consumeLongOption({
       command: 'share',
       optionToken: { name: '--missing', inlineValue: null },
@@ -41,7 +52,9 @@ describe('consumeLongOption', () => {
       flags: new Set(['--json']),
       args: ['--missing'],
       index: 0,
-      unknownOptionError: error
+      unknownOptionError
     })).toThrow('Unknown option: --missing');
+
+    expect(recoveredName).toBe('--missing');
   });
 });

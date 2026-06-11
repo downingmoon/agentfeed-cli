@@ -2720,7 +2720,15 @@ function validateCommandArgs(command: string, args: string[]): void {
     }
     if (raw.startsWith('--')) {
       const optionToken = parseLongOptionToken(raw);
-      const consumption = consumeLongOption({ command, optionToken, valueOptions, flags, args, index: i, unknownOptionError: unknownOptionError(command, optionToken.name, spec) });
+      const consumption = consumeLongOption({
+        command,
+        optionToken,
+        valueOptions,
+        flags,
+        args,
+        index: i,
+        unknownOptionError: (optionName) => unknownOptionError(command, optionName, spec)
+      });
       seenOptions.add(consumption.optionName);
       i = consumption.nextIndex;
       continue;

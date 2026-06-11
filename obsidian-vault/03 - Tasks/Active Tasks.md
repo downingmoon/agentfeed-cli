@@ -15,6 +15,12 @@ updated: 2026-06-11
 ## 현재 결론
 
 
+> [!success] 2026-06-11 CLI long option unknown recovery laziness
+> `consumeLongOption`의 unknown-option recovery를 eager `Error` 생성에서 lazy factory로 바꿔 정상 value/flag long option 경로가 쓰지 않는 복구 오류를 만들지 않게 했다. Red test 확인 후 `npm run build`, focused Vitest 42 tests, full `npm test -- --run` 682 tests, CLI smoke(`share --opne-review`, `status --json=true`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Long Option Unknown Recovery Laziness 2026-06-11]]
+
+
+
 > [!success] 2026-06-11 CLI long option consumption refactor
 > long option의 value/flag/unknown dispatch와 consumption을 `classifyLongOption` / `consumeLongOption`으로 분리해 `validateCommandArgs` inline branch를 줄였다. Red tests 확인 후 `npm run build`, focused Vitest 50 tests, full `npm test -- --run` 682 tests, CLI smoke(`login --api-base-url=... --json`, `status --json=true`, `share --opne-review`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Long Option Consumption Refactor 2026-06-11]]

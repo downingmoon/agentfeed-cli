@@ -596,7 +596,7 @@ describe('share CLI command', () => {
       }
       const output = JSON.parse(failure?.stdout ?? '{}') as { error: { message: string }; next_actions: string[] };
       expect(output.error.message).toContain('API compatibility check failed');
-      expect(output.error.message).toContain('HTTP 200: AgentFeed API compatibility metadata is missing or unsupported.');
+      expect(output.error.message).toContain('HTTP 200: AgentFeed API metadata response data is invalid.');
       expect(output.next_actions).toEqual(['agentfeed doctor', 'agentfeed status']);
       expect(failure?.stderr ?? '').toBe('');
       expect(ingestRequestCount).toBe(0);

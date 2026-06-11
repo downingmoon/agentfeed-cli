@@ -28,7 +28,7 @@ import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialRes
 import { apiCheckFailureDetail, apiCompatibilityFailureDetail, apiCompatibilityRecoveryCommands, formatUploadRecoveryMessage, ingestionTokenRecoveryCommands, uploadNextActions, type UploadPreflightOptions } from './upload-guidance.js';
 import { reviewUrlHandoffLines } from './review-handoff.js';
 import { collectJsonNextActions, previewNextActions, remotePreviewNextActions } from './draft-next-actions.js';
-import { discardCompleteNextActions, discardConfirmationNextActions, draftListNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
+import { discardCompleteNextActions, draftListNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
 import { renderGuidedNextCommandLines, renderNextCommandLines, renderRecommendedCommandLines } from './guided-next-command-renderer.js';
 import { jsonErrorFromMessage } from './error-output.js';
@@ -41,6 +41,7 @@ import { createCompletionOptionMetadata } from './completion-option-metadata.js'
 import { createCompletionScriptRenderer } from './completion-script-renderer.js';
 import { completionCommandResult, unexpectedCompletionCommandResult } from './completion-command.js';
 import { versionCommandOutput } from './version-command.js';
+import { discardCompletePayload, discardConfirmationPayload } from './discard-command.js';
 import { createCommandCatalog } from './command-catalog.js';
 import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
 import { COMMAND_WORKFLOWS, renderCommandCatalogLines, renderCommandWorkflowLines } from './command-catalog-renderer.js';
@@ -1811,16 +1812,7 @@ async function cmdDiscard(args: string[]) {
   }
   if (!flag(args, '--yes') && !flag(args, '-y')) {
     if (flag(args, '--json')) {
-      print(JSON.stringify({
-        confirmation_required: true,
-        deleted: false,
-        draft_id: id,
-        files: {
-          json: { existed: hadJson, will_remove: hadJson, removed: false },
-          markdown: { existed: hadMarkdown, will_remove: hadMarkdown, removed: false }
-        },
-        next_actions: discardConfirmationNextActions(id)
-      }, null, 2));
+      print(JSON.stringify(discardConfirmationPayload({ draftId: id, hadJson, hadMarkdown }), null, 2));
       return;
     }
     printDiscardConfirmationRequired(id, { hadJson, hadMarkdown });
@@ -1829,16 +1821,7 @@ async function cmdDiscard(args: string[]) {
   await rm(jsonPath, { force: true });
   await rm(markdownPath, { force: true });
   if (flag(args, '--json')) {
-    print(JSON.stringify({
-      confirmation_required: false,
-      deleted: true,
-      draft_id: id,
-      files: {
-        json: { existed: hadJson, removed: hadJson },
-        markdown: { existed: hadMarkdown, removed: hadMarkdown }
-      },
-      next_actions: discardCompleteNextActions()
-    }, null, 2));
+    print(JSON.stringify(discardCompletePayload({ draftId: id, hadJson, hadMarkdown }), null, 2));
     return;
   }
   print(ui.heading('AgentFeed draft discarded'));

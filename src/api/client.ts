@@ -1,5 +1,5 @@
 import type { AgentFeedCredentials, CliAuthExchangeResult, CliAuthSession, LocalDraft } from '../types.js';
-import { parseApiMetadata, type ApiMetadata } from './metadata.js';
+import type { ApiMetadata } from './metadata.js';
 export type { ApiMetadata } from './metadata.js';
 import { randomUUID } from 'node:crypto';
 import { open, readFile, rm, stat, utimes, type FileHandle } from 'node:fs/promises';
@@ -11,7 +11,8 @@ import { scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
 import { AgentFeedApiError } from './errors.js';
 import { parseCheckData, parseIngestionTokenStatusResponse, type IngestionTokenStatus } from './ingestion-token-status.js';
 import { draftToIngestRequest } from './ingest-request.js';
-import { DATA_RESPONSE_ENVELOPE_FIELDS, apiErrorResponseSummary, hasOnlyExpectedFields, parseApiErrorEnvelope, readResponseJson, responseDataEnvelope } from './response-contract.js';
+import { apiErrorResponseSummary, hasOnlyExpectedFields, parseApiErrorEnvelope, readResponseJson, responseDataEnvelope } from './response-contract.js';
+import { parseMetadataResponse } from './metadata-response.js';
 import { trustedReviewOrigin, validateAuthorizeUrl, validateReviewUrl } from './trusted-url.js';
 import { shortHash } from '../utils/hash.js';
 import { AGENTFEED_CLI_VERSION } from '../version.js';
@@ -85,29 +86,6 @@ function healthUrl(apiBaseUrl: string): string {
   url.search = '';
   url.hash = '';
   return url.toString();
-}
-
-interface ParsedApiMetadataResponse {
-  data?: ApiMetadata;
-  error?: string;
-}
-
-async function parseMetadataResponse(response: Response): Promise<ParsedApiMetadataResponse> {
-  const contentType = response.headers.get('content-type') ?? '';
-  if (!contentType.includes('application/json')) {
-    return { error: 'AgentFeed API metadata response is not JSON.' };
-  }
-  try {
-    const parsed: unknown = await response.json();
-    if (!isRecord(parsed) || !Object.hasOwn(parsed, 'data')) return { error: 'AgentFeed API metadata response is missing the data envelope.' };
-    if (!hasOnlyExpectedFields(parsed, DATA_RESPONSE_ENVELOPE_FIELDS)) {
-      return { error: 'AgentFeed API metadata response has unexpected data envelope fields.' };
-    }
-    const metadata = parseApiMetadata(parsed.data);
-    return metadata ? { data: metadata } : { error: 'AgentFeed API metadata response data is invalid.' };
-  } catch {
-    return { error: 'AgentFeed API metadata response contains invalid JSON.' };
-  }
 }
 
 function errorCauseChain(error: unknown): Array<Record<string, unknown>> {

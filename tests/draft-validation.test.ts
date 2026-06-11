@@ -135,4 +135,25 @@ describe('local draft validation', () => {
       draft.worklog.metrics.collection_sources = [{ type: 'agent_session', name: '', quality: 'high' }];
     }, 'worklog.metrics.collection_sources[0].name must not be empty');
   });
+
+  it('rejects backend-ingest evidence fields that the API contract does not support', async () => {
+    await expectDraftReadFailure((draft) => {
+      Object.assign(draft.worklog.metrics, { raw_tokens: 'must not be ignored' });
+    }, 'worklog.metrics.raw_tokens is not supported by the AgentFeed API contract');
+
+    await expectDraftReadFailure((draft) => {
+      draft.worklog.metrics.agent_metrics = [{ agent: 'codex', tokens_used: 1 }];
+      Object.assign(draft.worklog.metrics.agent_metrics[0], { raw_session: 'must not be ignored' });
+    }, 'worklog.metrics.agent_metrics[0].raw_session is not supported by the AgentFeed API contract');
+
+    await expectDraftReadFailure((draft) => {
+      draft.worklog.metrics.agent_metrics = [{ agent: 'codex', tokens_used: 1 }];
+      Object.assign(draft.worklog.metrics.agent_metrics[0], { commits_created: 1 });
+    }, 'worklog.metrics.agent_metrics[0].commits_created is not supported by the AgentFeed API contract');
+
+    await expectDraftReadFailure((draft) => {
+      draft.worklog.metrics.collection_sources = [{ type: 'agent_session', name: 'codex', quality: 'high' }];
+      Object.assign(draft.worklog.metrics.collection_sources[0], { raw_path: 'must not be ignored' });
+    }, 'worklog.metrics.collection_sources[0].raw_path is not supported by the AgentFeed API contract');
+  });
 });

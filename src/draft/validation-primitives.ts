@@ -17,6 +17,12 @@ export function requireRecord(value: unknown, field: string, path: string): Reco
   return value;
 }
 
+export function rejectUnexpectedKeys(value: Record<string, unknown>, allowed: readonly string[], field: string, path: string): void {
+  const allowedKeys = new Set(allowed);
+  const unexpectedKey = Object.keys(value).find((key) => !allowedKeys.has(key));
+  if (unexpectedKey !== undefined) throw draftError(path, `${field}.${unexpectedKey} is not supported by the AgentFeed API contract`);
+}
+
 export function requireString(value: unknown, field: string, path: string): string {
   if (typeof value !== 'string') throw draftError(path, `${field} must be a string`);
   return value;

@@ -1,6 +1,6 @@
 import type { AgentMetricSummary, AgentType, CollectionQuality, CollectionSource, CollectionWindow, CollectionWindowReason, LocalDraft, PrivacyFinding, PrivacyScanResult, PrivacySeverity, PrivacyStatus, ReviewUrlHandoffChannel, WorklogCategory, WorklogMetrics, WorklogTimelineItem } from '../types.js';
 
-import { draftError, optionalNonNegativeNumberOrNull, optionalStringArrayOrNullMax, optionalStringOrNull, optionalStringOrNullMax, optionalTimestampOrNull, requireAgentType, requireArrayMax, requireBoolean, requireCollectionQuality, requireCollectionSourceType, requireCollectionWindowReason, requireNonNegativeInteger, requirePrivacyFindingType, requirePrivacyResolution, requirePrivacySeverity, requirePrivacyStatus, requirePrivateVisibility, requireRecord, requireString, requireStringArrayMax, requireStringMax, requireTimestamp, requireTimelineStatus, requireWorklogCategory } from './validation-primitives.js';
+import { draftError, optionalNonNegativeNumberOrNull, optionalStringArrayOrNullMax, optionalStringOrNull, optionalStringOrNullMax, optionalTimestampOrNull, requireAgentType, requireArrayMax, requireBoolean, requireCollectionQuality, requireCollectionSourceType, requireCollectionWindowReason, requireNonNegativeInteger, requirePrivacyFindingType, requirePrivacyResolution, requirePrivacySeverity, requirePrivacyStatus, requirePrivateVisibility, requireRecord, rejectUnexpectedKeys, requireString, requireStringArrayMax, requireStringMax, requireTimestamp, requireTimelineStatus, requireWorklogCategory } from './validation-primitives.js';
 
 const PROJECT_NAME_MAX_LENGTH = 100;
 const SOURCE_TOOL_VERSION_MAX_LENGTH = 100;
@@ -26,6 +26,9 @@ const PRIVACY_FINDINGS_MAX_ITEMS = 50;
 const PRIVACY_FINDING_ID_MAX_LENGTH = 100;
 const PRIVACY_FINDING_FIELD_MAX_LENGTH = 100;
 const PRIVACY_FINDING_MESSAGE_MAX_LENGTH = 2000;
+const AGENT_METRIC_FIELDS = ['agent', 'model', 'session_id', 'tokens_used', 'estimated_cost_usd', 'duration_seconds', 'files_changed', 'lines_added', 'lines_removed', 'tests_run', 'tests_passed', 'failed_commands', 'commands_run', 'tool_calls', 'skills_used', 'subagents_spawned', 'subagents_completed', 'agent_turns', 'agent_modes'] as const;
+const COLLECTION_SOURCE_FIELDS = ['type', 'name', 'quality'] as const;
+const WORKLOG_METRIC_FIELDS = ['tokens_used', 'estimated_cost_usd', 'duration_seconds', 'files_changed', 'lines_added', 'lines_removed', 'tests_run', 'tests_passed', 'commits_created', 'failed_commands', 'commands_run', 'tool_calls', 'skills_used', 'subagents_spawned', 'subagents_completed', 'agent_turns', 'models_used', 'agent_metrics', 'agent_modes', 'collection_quality', 'collection_sources'] as const;
 
 function validateCollectionWindow(value: unknown, field: string, path: string): CollectionWindow | null | undefined {
   if (value === undefined || value === null) return value;
@@ -39,6 +42,7 @@ function validateCollectionWindow(value: unknown, field: string, path: string): 
 function validateAgentMetricSummary(value: unknown, index: number, path: string): AgentMetricSummary {
   const field = `worklog.metrics.agent_metrics[${index}]`;
   const metric = requireRecord(value, field, path);
+  rejectUnexpectedKeys(metric, AGENT_METRIC_FIELDS, field, path);
   const output: AgentMetricSummary = {
     agent: requireAgentType(metric.agent, `${field}.agent`, path),
   };
@@ -57,6 +61,7 @@ function validateAgentMetricSummary(value: unknown, index: number, path: string)
 
 function validateMetrics(value: unknown, path: string): WorklogMetrics {
   const metrics = requireRecord(value, 'worklog.metrics', path);
+  rejectUnexpectedKeys(metrics, WORKLOG_METRIC_FIELDS, 'worklog.metrics', path);
   const output: WorklogMetrics = {};
   for (const field of ['tokens_used', 'estimated_cost_usd', 'duration_seconds', 'files_changed', 'lines_added', 'lines_removed', 'tests_run', 'tests_passed', 'commits_created', 'failed_commands', 'commands_run', 'tool_calls', 'skills_used', 'subagents_spawned', 'subagents_completed', 'agent_turns'] as const) {
     const normalized = optionalNonNegativeNumberOrNull(metrics[field], `worklog.metrics.${field}`, path);
@@ -80,6 +85,7 @@ function validateMetrics(value: unknown, path: string): WorklogMetrics {
     if (!Array.isArray(metrics.collection_sources)) throw draftError(path, 'worklog.metrics.collection_sources must be an array or null');
     output.collection_sources = metrics.collection_sources.map((item, index): CollectionSource => {
       const source = requireRecord(item, `worklog.metrics.collection_sources[${index}]`, path);
+      rejectUnexpectedKeys(source, COLLECTION_SOURCE_FIELDS, `worklog.metrics.collection_sources[${index}]`, path);
       return {
         type: requireCollectionSourceType(source.type, `worklog.metrics.collection_sources[${index}].type`, path),
         name: requireStringMax(source.name, `worklog.metrics.collection_sources[${index}].name`, path, WORKLOG_COLLECTION_SOURCE_NAME_MAX_LENGTH, false),

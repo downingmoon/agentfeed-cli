@@ -22,6 +22,10 @@ export function conflictingOptionsError(command: string, first: string, second: 
   ].join('\n');
 }
 
+export function bareDoubleDashArgumentMessage(command: string): string {
+  return commandUsageError(`Unexpected argument for ${command}: --`, command);
+}
+
 export function helpTopicError(topic: string, publicCommands: readonly string[]): string {
   const suggestion = closestMatch(topic, publicCommands);
   return [

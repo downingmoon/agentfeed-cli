@@ -15,6 +15,11 @@ updated: 2026-06-11
 ## 현재 결론
 
 
+> [!success] 2026-06-11 CLI bare double dash recovery refactor
+> command parser의 bare `--` recovery를 `bareDoubleDashArgumentMessage`로 분리해 `validateCommandArgs`의 inline message assembly를 줄였다. Red test 확인 후 `npm run build`, focused Vitest 50 tests, full `npm test -- --run` 660 tests, CLI surface smoke(`status --`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Bare Double Dash Recovery Refactor 2026-06-11]]
+
+
 > [!success] 2026-06-11 CLI hook unexpected recovery refactor
 > `agentfeed hook install claude-code <extra>` unexpected positional recovery를 `hookUnexpectedArgumentMessage`로 분리해 hook validation의 inline message assembly를 줄였다. Red test 확인 후 `npm run build`, focused Vitest 49 tests, full `npm test -- --run` 659 tests, CLI surface smoke(`hook install claude-code extra`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Hook Unexpected Recovery Refactor 2026-06-11]]

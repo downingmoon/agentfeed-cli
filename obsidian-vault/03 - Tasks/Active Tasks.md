@@ -15,6 +15,12 @@ updated: 2026-06-12
 ## 현재 결론
 
 
+> [!success] 2026-06-12 CLI leading option error factory split
+> leading option `Error` 생성 책임을 oversized `src/cli/index.ts`에서 `src/cli/leading-option-error.ts`로 분리하고 command-first recovery wording을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 42 tests, full `npm test -- --run` 685 tests, CLI smoke(`--json status`, `--source codex share`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Leading Option Error Factory Split 2026-06-12]]
+
+
+
 > [!success] 2026-06-12 CLI unknown command error factory split
 > unknown command `Error` 생성 책임을 oversized `src/cli/index.ts`에서 `src/cli/unknown-command-error.ts`로 분리하고 모든 unknown-command 경로가 같은 helper를 쓰도록 정리했다. Red test 확인 후 `npm run build`, focused Vitest 40 tests, full `npm test -- --run` 684 tests, CLI smoke(`statsu`, `statsu --help`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Unknown Command Error Factory Split 2026-06-12]]

@@ -39,7 +39,7 @@ import { discardCompleteNextActions, discardConfirmationNextActions, draftListNe
 import { commandCatalogNextActions, hookNextActions, initNextActions, privacyScanNextActions } from './guidance-actions.js';
 import { jsonErrorFromMessage } from './error-output.js';
 import { bareDoubleDashArgumentMessage, commandHelpHint, commandUsageError, completionUnexpectedArgumentMessage, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUnexpectedArgumentMessage, hookUsageMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from './command-recovery.js';
-import { leadingOptionErrorMessage } from './leading-option-recovery.js';
+import { leadingOptionError } from './leading-option-error.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -2688,15 +2688,6 @@ function hasHelpFlag(args: string[]): boolean {
   return args.includes('--help') || args.includes('-h');
 }
 
-
-function leadingOptionError(option: string, args: string[]): Error {
-  return new Error(leadingOptionErrorMessage({
-    option,
-    args,
-    knownCommands: KNOWN_COMMANDS,
-    commandSpecs: COMMAND_ARG_SPECS
-  }));
-}
 function validateCommandArgs(command: string, args: string[]): void {
   const spec = COMMAND_ARG_SPECS[command];
   if (!spec) throw unknownCommandError({ command, knownCommands: PUBLIC_COMMANDS });
@@ -3172,7 +3163,7 @@ async function main() {
     return;
   }
   if (command.startsWith('-') && command !== '--version' && command !== '-v') {
-    throw leadingOptionError(command, args);
+    throw leadingOptionError({ option: command, args, knownCommands: KNOWN_COMMANDS, commandSpecs: COMMAND_ARG_SPECS });
   }
   if (hasHelpFlag(args)) {
     if (!KNOWN_COMMANDS.has(command)) throw unknownCommandError({ command, knownCommands: PUBLIC_COMMANDS });

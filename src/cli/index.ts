@@ -20,6 +20,7 @@ import { detectAgentSignals, formatAgentSignalLines, summarizeAgentSignals } fro
 import { changedAreas } from '../summary/changed-areas.js';
 import { hasAgentFeedHook, installClaudeCodeHook, uninstallClaudeCodeHook, resolveClaudeSettingsPath } from '../hooks/claude-code-settings.js';
 import { flag, option } from './args.js';
+import { resolveStatusProject } from './status-project.js';
 import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
@@ -860,18 +861,22 @@ interface StatusReadinessItem {
 function statusReadinessItems(options: {
   invalidApiBaseUrl: boolean;
   projectInitialized: boolean;
+  projectConfigError: string | null;
   hasToken: boolean;
   insideGitRepository: boolean;
   pendingUploads: number;
 }): StatusReadinessItem[] {
   const projectInitAction = options.insideGitRepository ? 'agentfeed init' : 'git init && agentfeed init';
+  const projectItem: StatusReadinessItem = options.projectInitialized
+    ? { name: 'Project', status: 'ready', detail: 'initialized' }
+    : options.projectConfigError
+      ? { name: 'Project', status: 'attention', detail: 'config unreadable', next_action: 'agentfeed init --force' }
+      : { name: 'Project', status: 'attention', detail: 'not initialized', next_action: projectInitAction };
   return [
     options.invalidApiBaseUrl
       ? { name: 'API', status: 'attention', detail: 'invalid API base URL', next_action: 'agentfeed doctor' }
       : { name: 'API', status: 'ready', detail: 'base URL accepted' },
-    options.projectInitialized
-      ? { name: 'Project', status: 'ready', detail: 'initialized' }
-      : { name: 'Project', status: 'attention', detail: 'not initialized', next_action: projectInitAction },
+    projectItem,
     options.insideGitRepository
       ? { name: 'Git', status: 'ready', detail: 'repository detected' }
       : { name: 'Git', status: 'attention', detail: 'repository not detected', next_action: 'git init' },
@@ -921,6 +926,7 @@ function printStatusReadiness(items: StatusReadinessItem[]): void {
 function statusNextActions(options: {
   invalidApiBaseUrl: boolean;
   projectInitialized: boolean;
+  projectConfigError: string | null;
   hasToken: boolean;
   insideGitRepository: boolean;
   pendingUploads: number;
@@ -930,6 +936,13 @@ function statusNextActions(options: {
       'unset AGENTFEED_API_BASE_URL',
       'AGENTFEED_ALLOW_INSECURE_API=1 agentfeed status',
       'agentfeed doctor'
+    ]);
+  }
+  if (options.projectConfigError) {
+    return uniqueNextCommands([
+      'agentfeed init --force',
+      'agentfeed doctor',
+      ...(!options.hasToken ? ['agentfeed login'] : [])
     ]);
   }
   if (!options.projectInitialized) {
@@ -1323,9 +1336,10 @@ async function cmdStatus(args: string[] = []) {
   const credentialResolution = diagnostics.metadata;
   const creds = credentialResolution.credentials;
   const hasToken = Boolean(creds) || credentialResolution.token_source !== 'missing';
-  let config: Awaited<ReturnType<typeof loadProjectConfig>> | null = null;
-  let root = process.cwd();
-  try { root = await resolveProjectRoot(process.cwd()); config = await loadProjectConfig(root); } catch { /* not initialized */ }
+  const projectResolution = await resolveStatusProject(process.cwd());
+  const config = projectResolution.config;
+  const root = projectResolution.root;
+  const projectConfigError = projectResolution.configError;
   const drafts = config ? await listDrafts(root) : [];
   const pending = (await Promise.all(drafts.map((d) => draftUploadPendingForStatus(d.path)))).filter(Boolean).length;
   const collectionStateResult = config ? await readCollectionStateWithDiagnostics(root) : null;
@@ -1340,7 +1354,12 @@ async function cmdStatus(args: string[] = []) {
       statusWarnings.push(`Claude Code settings could not be parsed at ${settingsPath}; hook status is unknown.`);
     }
   }
-  const allWarnings = [...credentialResolution.warnings, ...statusWarnings, ...(collectionStateResult?.warnings ?? [])];
+  const allWarnings = [
+    ...credentialResolution.warnings,
+    ...(projectConfigError ? [projectConfigError] : []),
+    ...statusWarnings,
+    ...(collectionStateResult?.warnings ?? [])
+  ];
   const apiBaseUrl = credentialResolution.api_base_url ?? creds?.api_base_url ?? await resolveApiBaseUrl();
   const git = await collectGitMetrics(process.cwd());
   const insideGitRepository = Boolean(git.repository_root);
@@ -1356,6 +1375,7 @@ async function cmdStatus(args: string[] = []) {
   const statusOptions = {
     invalidApiBaseUrl: diagnostics.invalidApiBaseUrl,
     projectInitialized: Boolean(config),
+    projectConfigError,
     hasToken,
     insideGitRepository,
     pendingUploads: pending
@@ -1393,6 +1413,7 @@ async function cmdStatus(args: string[] = []) {
         initialized: Boolean(config),
         name: config?.project.name ?? null,
         root: config ? root : null,
+        config_error: projectConfigError,
         git_repository: insideGitRepository,
         claude_code_hook: hook
       },
@@ -1434,8 +1455,9 @@ async function cmdStatus(args: string[] = []) {
   printWarningLines(allWarnings);
   print();
   print(ui.section('Project'));
-  print(`Project initialized: ${config ? 'yes' : 'no'}`);
+  print(`Project initialized: ${config ? 'yes' : projectConfigError ? 'error' : 'no'}`);
   if (config) print(`Project name: ${config.project.name}`);
+  if (projectConfigError) print(`Project config error: ${projectConfigError}`);
   print(`Git repository: ${insideGitRepository ? 'yes' : 'no'}`);
   print(`Claude Code hook: ${hook}`);
   print();

@@ -81,6 +81,7 @@ updated: 2026-06-11
 
 ## 완료됨 — 로컬/CI/contract/UI 품질
 
+- [x] [[CLI Status Config Error Visibility 2026-06-11]] — `agentfeed status`가 손상된 `.agentfeed/config.json`을 `not initialized`로 숨기지 않고 human/JSON 출력에서 `config unreadable`, `config_error`, `agentfeed init --force`/`agentfeed doctor` 복구 명령을 명확히 보여주도록 보강. CLI build, focused status tests, full vitest 통과.
 - [x] [[Frontend API Worklog Social State Split 2026-06-11]] — Frontend `src/lib/api.ts`에서 worklog social stats와 viewer state 타입/parser를 `api-worklog-social-state.ts`로 분리하고 card/detail parser가 같은 fail-closed parser를 공유하도록 정리. Frontend lint/test/build 통과, frontend commit `3a0fdb8` 푸시 완료.
 - [x] [[Frontend API Worklog Metrics Source Split 2026-06-11]] — Frontend `src/lib/api.ts`에서 worklog metrics/source evidence 타입과 parser를 `api-worklog-metrics-source.ts`, agent taxonomy를 `api-worklog-taxonomy.ts`로 분리하고 `@/lib/api` public export surface를 유지. Frontend lint/test/build 통과, frontend commit `d326b47` 푸시 완료.
 - [x] [[Frontend API Username Check Split 2026-06-11]] — Frontend `src/lib/api.ts`에서 username availability response 타입과 parser를 `api-username-check.ts`로 분리하고 `@/lib/api` public export와 `users.checkUsername()` 호출 surface를 유지. Frontend lint/test/build 통과, frontend commit `b1c7f2d` 푸시 완료.

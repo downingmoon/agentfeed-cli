@@ -14,6 +14,11 @@ updated: 2026-06-12
 
 ## 현재 결론
 
+> [!success] 2026-06-12 CLI preview payload split
+> `agentfeed preview --json` 및 `preview --remote --json`의 local/remote payload 조립을 `preview-command` helper로 분리해 preview JSON 출력 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 56 tests, full `npm test -- --run` 723 tests, 실제 temp project CLI smoke(local/remote preview JSON) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Preview Payload Split 2026-06-12]]
+
+
 > [!success] 2026-06-12 CLI open payload split
 > `agentfeed open --json`의 review URL/opened/warnings/next_actions payload 조립을 `open-command` helper로 분리해 open JSON 출력 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 60 tests, full `npm test -- --run` 721 tests, 실제 temp project CLI smoke(`open --id draft_open --json`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Open Payload Split 2026-06-12]]

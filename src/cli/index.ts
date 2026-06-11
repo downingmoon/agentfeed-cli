@@ -43,6 +43,7 @@ import { completionCommandResult, unexpectedCompletionCommandResult } from './co
 import { versionCommandOutput } from './version-command.js';
 import { discardCompletePayload, discardConfirmationPayload } from './discard-command.js';
 import { openJsonPayload } from './open-command.js';
+import { localPreviewJsonPayload, remotePreviewJsonPayload } from './preview-command.js';
 import { createCommandCatalog } from './command-catalog.js';
 import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
 import { COMMAND_WORKFLOWS, renderCommandCatalogLines, renderCommandWorkflowLines } from './command-catalog-renderer.js';
@@ -1303,7 +1304,7 @@ async function cmdPreview(args: string[]) {
     await requireApiCompatibilityBeforeUpload(creds.api_base_url);
     const remote = await previewDraftRemote(draft, creds);
     if (flag(args, '--json')) {
-      print(JSON.stringify({ draft_id: draft.id, ...remote, next_actions: remotePreviewNextActions(draft.id, remote.valid) }, null, 2));
+      print(JSON.stringify(remotePreviewJsonPayload({ draftId: draft.id, remote }), null, 2));
     } else {
       print(ui.heading('AgentFeed remote preview'));
       print();
@@ -1317,7 +1318,7 @@ async function cmdPreview(args: string[]) {
     }
     return;
   }
-  if (flag(args, '--json')) { print(JSON.stringify({ ...draft, next_actions: previewNextActions(draft) }, null, 2)); return; }
+  if (flag(args, '--json')) { print(JSON.stringify(localPreviewJsonPayload(draft), null, 2)); return; }
   const uploadStatus = draft.upload.uploaded ? 'uploaded' : 'pending';
   print(ui.heading('AgentFeed preview'));
   print();

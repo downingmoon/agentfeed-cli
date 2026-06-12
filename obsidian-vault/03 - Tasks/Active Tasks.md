@@ -14,6 +14,12 @@ updated: 2026-06-12
 
 ## 현재 결론
 
+> [!success] 2026-06-12 CLI hook output split
+> `agentfeed hook install/uninstall claude-code`의 JSON payload 및 human-readable lifecycle rendering을 `hook-output` helper로 분리해 hook 출력 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 153 tests, full `npm test -- --run` 747 tests, 실제 temp project CLI smoke(`hook install --dry-run`, `hook install`, `hook uninstall`, JSON variants) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Hook Output Split 2026-06-12]]
+
+
+
 > [!success] 2026-06-12 CLI init output split
 > `agentfeed init`의 JSON payload 및 human-readable setup checklist rendering을 `init-output` helper로 분리해 init 출력 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 57 tests, full `npm test -- --run` 743 tests, 실제 temp project CLI smoke(`init`, `init --json`, `init --force`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Init Output Split 2026-06-12]]

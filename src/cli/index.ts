@@ -27,7 +27,7 @@ import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialRes
 import { apiCheckFailureDetail, apiCompatibilityFailureDetail, apiCompatibilityRecoveryCommands, formatUploadRecoveryMessage, ingestionTokenRecoveryCommands, uploadNextActions, type UploadPreflightOptions } from './upload-guidance.js';
 import { collectJsonNextActions } from './draft-next-actions.js';
 import { discardCompleteNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
-import { commandCatalogNextActions, hookNextActions } from './guidance-actions.js';
+import { commandCatalogNextActions } from './guidance-actions.js';
 import { renderGuidedNextCommandLines, renderNextCommandLines, renderRecommendedCommandLines } from './guided-next-command-renderer.js';
 import { jsonErrorFromMessage } from './error-output.js';
 import { commandHelpHint, hookUsageMessage, unsupportedHookTargetMessage } from './command-recovery.js';
@@ -49,6 +49,7 @@ import { renderStatusHumanLines, statusJsonPayload, type StatusHealth, type Stat
 import { collectJsonPayload, renderCollectAutoUploadIgnoredWarningLines, renderCollectHumanLines } from './collect-output.js';
 import { logoutJsonPayload, renderLogoutHumanLines } from './logout-output.js';
 import { initJsonPayload, renderInitHumanLines } from './init-output.js';
+import { hookJsonPayload, renderHookHumanLines, type HookInstallOutputInput, type HookUninstallOutputInput } from './hook-output.js';
 import { renderUploadConfirmationRequiredLines, renderUploadResultLines } from './upload-output.js';
 import { createCommandCatalog } from './command-catalog.js';
 import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
@@ -935,58 +936,31 @@ async function cmdHook(args: string[]) {
     await loadProjectConfig(process.cwd());
     const dryRun = flag(args, '--dry-run');
     const result = await installClaudeCodeHook({ projectRoot: root, scope, settingsPath, dryRun });
-    const nextActions = hookNextActions('install', dryRun);
+    const hookOutput = {
+      action: 'install',
+      scope,
+      dryRun,
+      settingsPath: result.path,
+      backupPath: result.backupPath ?? null
+    } satisfies HookInstallOutputInput;
     if (flag(args, '--json')) {
-      print(JSON.stringify({
-        target: 'claude-code',
-        action: 'install',
-        scope,
-        dry_run: dryRun,
-        settings_path: result.path,
-        backup_path: result.backupPath ?? null,
-        next_actions: nextActions
-      }, null, 2));
+      print(JSON.stringify(hookJsonPayload(hookOutput), null, 2));
       return;
     }
-    print(ui.heading(dryRun ? 'AgentFeed hook dry run' : 'AgentFeed hook installed'));
-    print(`${dryRun ? 'Would install' : 'Installed'} AgentFeed Claude Code hook.`);
-    print();
-    print(ui.section('Summary'));
-    print('Target: claude-code');
-    print('Action: install');
-    print(`Scope: ${scope}`);
-    print(`Dry run: ${dryRun ? 'yes' : 'no'}`);
-    print(`Settings: ${result.path}`);
-    if (result.backupPath) print(`Backup: ${result.backupPath}`);
-    print();
-    print(ui.section('Next'));
-    printGuidedNextCommands(nextActions);
+    printLines(renderHookHumanLines(hookOutput));
   } else if (action === 'uninstall') {
     const result = await uninstallClaudeCodeHook({ projectRoot: root, scope, settingsPath });
-    const nextActions = hookNextActions('uninstall');
+    const hookOutput = {
+      action: 'uninstall',
+      scope,
+      settingsPath: result.path,
+      backupPath: result.backupPath ?? null
+    } satisfies HookUninstallOutputInput;
     if (flag(args, '--json')) {
-      print(JSON.stringify({
-        target: 'claude-code',
-        action: 'uninstall',
-        scope,
-        settings_path: result.path,
-        backup_path: result.backupPath ?? null,
-        next_actions: nextActions
-      }, null, 2));
+      print(JSON.stringify(hookJsonPayload(hookOutput), null, 2));
       return;
     }
-    print(ui.heading('AgentFeed hook removed'));
-    print('Uninstalled AgentFeed Claude Code hook.');
-    print();
-    print(ui.section('Summary'));
-    print('Target: claude-code');
-    print('Action: uninstall');
-    print(`Scope: ${scope}`);
-    print(`Settings: ${result.path}`);
-    if (result.backupPath) print(`Backup: ${result.backupPath}`);
-    print();
-    print(ui.section('Next'));
-    printGuidedNextCommands(nextActions);
+    printLines(renderHookHumanLines(hookOutput));
   } else throw new Error(hookUsageMessage());
 }
 

@@ -54,6 +54,7 @@ import { doctorJsonPayload, renderDoctorHumanLines, type DoctorCheckTuple } from
 import { renderUploadConfirmationRequiredLines, renderUploadResultLines } from './upload-output.js';
 import { renderShareLocalNextLines, shareLocalJsonPayload, shareUploadedJsonPayload } from './share-output.js';
 import { publishJsonPayload, renderPublishUploadResultLines } from './publish-output.js';
+import { handoffReviewUrl, reviewUrlHandoffLines, shouldCopyReviewUrl } from './review-handoff.js';
 import { createCommandCatalog } from './command-catalog.js';
 import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
 import { COMMAND_WORKFLOWS, renderCommandCatalogLines, renderCommandWorkflowLines } from './command-catalog-renderer.js';
@@ -66,7 +67,6 @@ import { formatMetricsRow, formatSharePreview, parseShareArgs } from './share.js
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
 import { openBrowser } from '../utils/open-browser.js';
-import { copyToClipboard } from '../utils/clipboard.js';
 import { AGENTFEED_CLI_VERSION } from '../version.js';
 import { draftPaths } from '../draft/paths.js';
 import * as ui from './ui.js';
@@ -140,68 +140,6 @@ async function loadDiagnosticCredentialsWithMetadata(options: { cwd?: string } =
     };
   }
 }
-
-
-function shouldCopyReviewUrl(options: { json?: boolean; noClipboard?: boolean; clipboard?: boolean }): boolean {
-  if (options.noClipboard) return false;
-  if (options.json) return options.clipboard === true;
-  return true;
-}
-
-function emptyReviewUrlHandoff(): ReviewUrlHandoff {
-  return {
-    clipboard: { requested: false, ok: null },
-    browser: { requested: false, ok: null }
-  };
-}
-
-async function safeBooleanAction(action: () => Promise<boolean>): Promise<boolean> {
-  try {
-    return await action();
-  } catch {
-    return false;
-  }
-}
-
-function rejectReviewUrlHandoff(handoff: ReviewUrlHandoff, options: { copy: boolean; open: boolean }): ReviewUrlHandoff {
-  const warning = 'Review URL was rejected by trust policy. Run agentfeed share again to upload a fresh private review draft.';
-  if (options.copy) {
-    handoff.clipboard.requested = true;
-    handoff.clipboard.ok = false;
-    handoff.clipboard.warning = warning;
-  }
-  if (options.open) {
-    handoff.browser.requested = true;
-    handoff.browser.ok = false;
-    handoff.browser.warning = warning;
-  }
-  return handoff;
-}
-
-async function handoffReviewUrl(reviewUrl: string, options: { copy: boolean; open: boolean; apiBaseUrl: string; reviewBaseUrl?: string | null }): Promise<ReviewUrlHandoff> {
-  const handoff = emptyReviewUrlHandoff();
-  if ((options.copy || options.open) && !isTrustedReviewUrl(reviewUrl, options.apiBaseUrl, options.reviewBaseUrl)) {
-    return rejectReviewUrlHandoff(handoff, options);
-  }
-  const tasks: Promise<void>[] = [];
-  if (options.copy) {
-    handoff.clipboard.requested = true;
-    tasks.push(safeBooleanAction(() => copyToClipboard(reviewUrl)).then((ok) => {
-      handoff.clipboard.ok = ok;
-      if (!ok) handoff.clipboard.warning = 'Review URL was not copied to clipboard. Copy the review URL manually.';
-    }));
-  }
-  if (options.open) {
-    handoff.browser.requested = true;
-    tasks.push(safeBooleanAction(() => openBrowser(reviewUrl)).then((ok) => {
-      handoff.browser.ok = ok;
-      if (!ok) handoff.browser.warning = 'Review URL could not be opened automatically. Open the review URL manually.';
-    }));
-  }
-  await Promise.all(tasks);
-  return handoff;
-}
-
 
 
 const SAFE_TOKEN_STDIN_COMMAND = 'printf %s "$TOKEN" | agentfeed login --token-stdin';

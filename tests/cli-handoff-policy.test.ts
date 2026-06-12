@@ -7,14 +7,7 @@ function source(path: string): string {
 
 describe('CLI review URL handoff trust policy', () => {
   it('validates review URL trust before clipboard or browser side effects', () => {
-    const cli = source('src/cli/index.ts');
-    const handoffStart = cli.indexOf('async function handoffReviewUrl');
-    const handoffEnd = cli.indexOf('const SAFE_TOKEN_STDIN_COMMAND');
-    expect(handoffStart).toBeGreaterThanOrEqual(0);
-    expect(handoffEnd).toBeGreaterThan(handoffStart);
-    const rejectStart = cli.indexOf('function rejectReviewUrlHandoff');
-    expect(rejectStart).toBeGreaterThanOrEqual(0);
-    const handoff = cli.slice(rejectStart, handoffEnd);
+    const handoff = source('src/cli/review-handoff.ts');
 
     expect(handoff).toContain('isTrustedReviewUrl');
     expect(handoff.indexOf('isTrustedReviewUrl')).toBeLessThan(handoff.indexOf('copyToClipboard'));

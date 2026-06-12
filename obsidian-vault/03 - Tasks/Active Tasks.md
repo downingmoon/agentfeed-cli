@@ -15,6 +15,12 @@ updated: 2026-06-12
 ## 현재 결론
 
 
+> [!success] 2026-06-12 CLI logout output split
+> `agentfeed logout`의 JSON payload 및 human-readable security checklist rendering을 `logout-output` helper로 분리해 logout 출력 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 76 tests, full `npm test -- --run` 737 tests, 실제 temp HOME CLI smoke(`logout`, `logout --json`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Logout Output Split 2026-06-12]]
+
+
+
 > [!success] 2026-06-12 CLI status output split
 > `agentfeed status`의 JSON payload 및 human-readable output rendering을 `status-output` helper로 분리하고 credential/API/cursor provenance label을 `diagnostic-formatters`로 공유했다. Red test 확인 후 `npm run build`, focused Vitest 43 tests, full `npm test -- --run` 734 tests, 실제 temp project CLI smoke(`status`, `status --json`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Status Output Split 2026-06-12]]

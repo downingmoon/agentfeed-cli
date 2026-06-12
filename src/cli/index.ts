@@ -11,12 +11,10 @@ import { writeDraft } from '../draft/write.js';
 import { formatCollectionExplain } from '../draft/explain.js';
 import { cachedUploadReuseStatusForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, isTrustedReviewUrl, previewDraftRemote, publishDraft } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
-import { scanAndRedactFields } from '../privacy/scan.js';
-import { applyRedactedPublicFields, publicScanFieldsFromDraft, scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
+import { scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
 import type { AgentFeedCredentials, LocalDraft, ReviewUrlHandoff } from '../types.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { detectAgentSignals, formatAgentSignalLines, summarizeAgentSignals } from '../collectors/agent-discovery.js';
-import { changedAreas } from '../summary/changed-areas.js';
 import { hasAgentFeedHook, installClaudeCodeHook, uninstallClaudeCodeHook, resolveClaudeSettingsPath } from '../hooks/claude-code-settings.js';
 import { flag, option } from './args.js';
 import { unknownCommandError } from './unknown-command-error.js';
@@ -45,6 +43,7 @@ import { discardCompletePayload, discardConfirmationPayload, renderDiscardComple
 import { noOpenableDraftsMessage, noUploadedDraftsMessage, notUploadedDraftMessage, openJsonPayload, renderOpenHumanLines } from './open-command.js';
 import { localPreviewJsonPayload, remotePreviewJsonPayload, renderLocalPreviewHumanLines, renderRemotePreviewHumanLines } from './preview-command.js';
 import { formatPrivacyScanReport, privacyScanJsonOutput } from './privacy-scan-output.js';
+import { runPrivacyScanCommand } from './scan-command.js';
 import { draftListJsonOutput, renderDraftListHumanLines } from './draft-list-output.js';
 import { buildDraftListRow } from './draft-list-rows.js';
 import { formatCollectionCursor, nextDefaultCollectionSince, formatTokenExpiry, formatWarningLines, credentialSourceLabel, credentialStoreLabel, apiBaseSourceLabel, readinessMarker, tokenExpiryWarning } from './diagnostic-formatters.js';
@@ -573,30 +572,11 @@ async function cmdPublish(args: string[]) {
 async function cmdScan(args: string[]) {
   const dryRun = flag(args, '--dry-run') || flag(args, '--dry');
   const scanPath = option(args, '--path');
-  if (scanPath) {
-    const git = await collectGitMetrics(scanPath);
-    const areas = changedAreas(git.changed_files);
-    const input = { changed_areas: areas };
-    const result = scanAndRedactFields(input);
-    const scanOptions = { dryRun, path: scanPath };
-    print(flag(args, '--json')
-      ? JSON.stringify(privacyScanJsonOutput(input, result, scanOptions), null, 2)
-      : formatPrivacyScanReport(input, result.redacted, result.scan, scanOptions));
-    return;
-  }
-  const id = await resolveDraftId(process.cwd(), args);
-  const draft = await readDraft(process.cwd(), id);
-  const input = publicScanFieldsFromDraft(draft);
-  const result = scanAndRedactFields(input);
-  if (!dryRun) {
-    applyRedactedPublicFields(draft, result.redacted);
-    draft.privacy_scan = result.scan;
-    await writeDraft(process.cwd(), draft);
-  }
-  const scanOptions = { dryRun, draftId: id };
+  const id = scanPath ? undefined : await resolveDraftId(process.cwd(), args);
+  const scan = await runPrivacyScanCommand({ cwd: process.cwd(), dryRun, path: scanPath ?? undefined, draftId: id });
   print(flag(args, '--json')
-    ? JSON.stringify(privacyScanJsonOutput(input, result, scanOptions), null, 2)
-    : formatPrivacyScanReport(input, result.redacted, result.scan, scanOptions));
+    ? JSON.stringify(privacyScanJsonOutput(scan.input, scan.result, scan.options), null, 2)
+    : formatPrivacyScanReport(scan.input, scan.result.redacted, scan.result.scan, scan.options));
 }
 
 async function cmdHook(args: string[]) {

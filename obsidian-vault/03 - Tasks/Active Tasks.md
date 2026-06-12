@@ -14,6 +14,11 @@ updated: 2026-06-12
 
 ## 현재 결론
 
+> [!success] 2026-06-12 CLI scan command execution split
+> `agentfeed scan`의 path inspect-only, draft dry-run, saved draft redaction/write execution을 `scan-command` helper로 분리했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 79 tests, full `npm test -- --run` 798 tests, 실제 temp project CLI smoke(`scan --dry-run`, `scan --json`, `scan --path --json`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/개인서버 배포/infra/CICD 작업 없음.
+> - [[CLI Scan Command Execution Split 2026-06-12]]
+
+
 > [!success] 2026-06-12 CLI draft list row builder split
 > `agentfeed drafts`의 saved draft row construction, title redaction, invalid draft fallback을 `draft-list-rows` helper로 분리했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 112 tests, full `npm test -- --run` 795 tests, 실제 temp project CLI smoke(`drafts`, `drafts --json`: redacted single-line title, malformed invalid row) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/개인서버 배포/infra/CICD 작업 없음.
 > - [[CLI Draft List Row Builder Split 2026-06-12]]

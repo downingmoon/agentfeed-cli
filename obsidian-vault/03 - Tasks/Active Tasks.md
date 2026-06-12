@@ -14,6 +14,12 @@ updated: 2026-06-12
 
 ## 현재 결론
 
+> [!success] 2026-06-12 CLI auth token input split
+> `agentfeed login`의 token input method 판정과 보안 recovery 문구를 `auth-token-input` helper로 분리했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 210 tests, full `npm test -- --run` 786 tests, 실제 CLI smoke(`login --json`, empty `--token-stdin`, unsafe argv token refusal) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/개인서버 배포/infra/CICD 작업 없음.
+> - [[CLI Auth Token Input Split 2026-06-12]]
+
+
+
 > [!success] 2026-06-12 CLI diagnostic credentials split
 > invalid `AGENTFEED_API_BASE_URL` 상태에서도 status/doctor가 environment token provenance와 recovery guidance를 유지하도록 diagnostic credential helper로 분리했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 70 tests, full `npm test -- --run` 779 tests, 실제 temp project CLI smoke(`status --json`, `doctor --json` with invalid API URL) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/개인서버 배포/infra/CICD 작업 없음.
 > - [[CLI Diagnostic Credentials Split 2026-06-12]]

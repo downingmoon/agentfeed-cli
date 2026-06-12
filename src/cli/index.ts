@@ -24,6 +24,7 @@ import { resolveStatusProject } from './status-project.js';
 import { setupProgressText, statusNextActions, statusReadinessItems } from './status-readiness.js';
 import { doctorNextActions, doctorReadinessItems } from './doctor-readiness.js';
 import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialResult, tokenLoginCredentialResult } from './auth-result.js';
+import { missingTokenMessage, resolveLoginTokenInput } from './auth-token-input.js';
 import { invalidApiBaseUrlMessage, loadDiagnosticCredentialsWithMetadata } from './diagnostic-credentials.js';
 import { requireApiCompatibilityBeforeCredentialSave, requireApiCompatibilityBeforeUpload, requireUploadPreflight } from './upload-preflight.js';
 import { collectJsonNextActions } from './draft-next-actions.js';
@@ -93,46 +94,11 @@ function jsonModeRequested(argv = process.argv.slice(2)): boolean {
 
 
 
-const SAFE_TOKEN_STDIN_COMMAND = 'printf %s "$TOKEN" | agentfeed login --token-stdin';
-
-function emptyTokenStdinMessage(): string {
-  return [
-    'No token received on stdin.',
-    `Run: ${SAFE_TOKEN_STDIN_COMMAND}`,
-    'Run: agentfeed login'
-  ].join('\n');
-}
-
-function unsafeArgvTokenMessage(): string {
-  return [
-    'Literal token input through --token <token> is disabled.',
-    'Reason: argv can leak through shell history and process listings.',
-    `Run: ${SAFE_TOKEN_STDIN_COMMAND}`,
-    'Run: agentfeed login',
-    'For local throwaway development only: AGENTFEED_ALLOW_UNSAFE_ARGV_TOKEN=1 agentfeed login --token <token>'
-  ].join('\n');
-}
-
-function missingTokenMessage(): string {
-  return [
-    'AgentFeed token is missing.',
-    'Run: agentfeed login',
-    `Run: ${SAFE_TOKEN_STDIN_COMMAND}`
-  ].join('\n');
-}
-
-
 async function readStdinText(): Promise<string> {
   let text = '';
   process.stdin.setEncoding('utf8');
   for await (const chunk of process.stdin) text += chunk;
   return text;
-}
-
-async function readTokenFromStdin(): Promise<string> {
-  const token = (await readStdinText()).trim();
-  if (!token) throw new Error(emptyTokenStdinMessage());
-  return token;
 }
 
 const CI_ENVIRONMENT_VARIABLES = [
@@ -247,15 +213,14 @@ async function cmdInit(args: string[]) {
 
 async function cmdLogin(args: string[]) {
   const tokenOption = option(args, '--token');
-  const tokenFromStdin = flag(args, '--token-stdin') || tokenOption === '-';
   const json = flag(args, '--json');
-  if (tokenOption && tokenOption !== '-' && tokenFromStdin) {
-    throw new Error('Use only one token input method: --token -, or --token-stdin.');
-  }
-  if (tokenOption && tokenOption !== '-' && process.env.AGENTFEED_ALLOW_UNSAFE_ARGV_TOKEN !== '1') {
-    throw new Error(unsafeArgvTokenMessage());
-  }
-  const token = tokenFromStdin ? await readTokenFromStdin() : tokenOption;
+  const token = await resolveLoginTokenInput({
+    tokenOption,
+    tokenStdinFlag: flag(args, '--token-stdin'),
+    json,
+    allowUnsafeArgvToken: process.env.AGENTFEED_ALLOW_UNSAFE_ARGV_TOKEN === '1',
+    readStdinText
+  });
   const apiBaseUrl = option(args, '--api-base-url');
   const noSave = flag(args, '--no-save');
   if (!token) {

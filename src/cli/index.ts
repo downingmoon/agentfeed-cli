@@ -26,7 +26,6 @@ import { doctorNextActions, doctorReadinessItems } from './doctor-readiness.js';
 import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialResult, tokenLoginCredentialResult } from './auth-result.js';
 import { apiCheckFailureDetail, apiCompatibilityFailureDetail, apiCompatibilityRecoveryCommands, formatUploadRecoveryMessage, ingestionTokenRecoveryCommands, uploadNextActions, type UploadPreflightOptions } from './upload-guidance.js';
 import { collectJsonNextActions } from './draft-next-actions.js';
-import { shareDryRunNextActions } from './draft-navigation-actions.js';
 import { commandCatalogNextActions } from './guidance-actions.js';
 import { renderGuidedNextCommandLines, renderNextCommandLines, renderRecommendedCommandLines } from './guided-next-command-renderer.js';
 import { jsonErrorFromMessage } from './error-output.js';
@@ -53,6 +52,7 @@ import { hookJsonPayload, renderHookHumanLines, type HookInstallOutputInput, typ
 import { renderCredentialResultLines } from './auth-output.js';
 import { doctorJsonPayload, renderDoctorHumanLines, type DoctorCheckTuple } from './doctor-output.js';
 import { renderUploadConfirmationRequiredLines, renderUploadResultLines } from './upload-output.js';
+import { renderShareLocalNextLines, shareLocalJsonPayload, shareUploadedJsonPayload } from './share-output.js';
 import { createCommandCatalog } from './command-catalog.js';
 import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
 import { COMMAND_WORKFLOWS, renderCommandCatalogLines, renderCommandWorkflowLines } from './command-catalog-renderer.js';
@@ -663,16 +663,14 @@ async function cmdShare(args: string[]) {
   if (opts.json) {
     if (opts.dryRun || !creds) {
       const hasCredentials = Boolean(creds) || await hasCredentialsForPublishGuidance();
-      print(JSON.stringify({
-        dry_run: opts.dryRun,
-        upload_skipped: !opts.dryRun && !creds ? { reason: 'token_missing', next_action: 'agentfeed login' } : null,
-        reused_existing_draft: collection.reusedExisting,
+      print(JSON.stringify(shareLocalJsonPayload({
+        dryRun: opts.dryRun,
+        hasCredentials,
+        reusedExistingDraft: collection.reusedExisting,
         draft,
-        privacy_policy: privacyPolicySummary(draft),
         warnings,
-        next_actions: shareDryRunNextActions(draft.id, hasCredentials),
-        ...(opts.explain ? { collection_explain: formatCollectionExplain(draft) } : {})
-      }, null, 2));
+        explain: opts.explain
+      }), null, 2));
       return;
     }
     const metadata = await requireUploadPreflight(creds);
@@ -685,18 +683,14 @@ async function cmdShare(args: string[]) {
       apiBaseUrl: creds.api_base_url,
       reviewBaseUrl: result.review_base_url ?? metadata.review_base_url
     });
-    print(JSON.stringify({
-      dry_run: false,
-      reused_existing_draft: collection.reusedExisting,
-      draft_id: draft.id,
+    print(JSON.stringify(shareUploadedJsonPayload({
+      reusedExistingDraft: collection.reusedExisting,
       draft,
       upload: result,
-      privacy_policy: privacyPolicySummary(draft),
       handoff,
       warnings,
-      next_actions: uploadNextActions(draft.id),
-      ...(opts.explain ? { collection_explain: formatCollectionExplain(draft) } : {})
-    }, null, 2));
+      explain: opts.explain
+    }), null, 2));
     return;
   }
 
@@ -716,12 +710,7 @@ async function cmdShare(args: string[]) {
 
   if (opts.dryRun || !creds) {
     const hasCredentials = Boolean(creds) || await hasCredentialsForPublishGuidance();
-    const nextActions = shareDryRunNextActions(draft.id, hasCredentials);
-    print(ui.section('Next'));
-    print(opts.dryRun
-      ? `Dry run complete. Local draft kept: ${draft.id}`
-      : `Upload skipped: AgentFeed token is missing. Local draft kept: ${draft.id}`);
-    printRecommendedCommands(nextActions);
+    printLines(renderShareLocalNextLines({ dryRun: opts.dryRun, draftId: draft.id, hasCredentials }));
     return;
   }
 

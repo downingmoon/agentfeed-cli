@@ -14,6 +14,12 @@ updated: 2026-06-12
 
 ## 현재 결론
 
+
+> [!success] 2026-06-12 CLI share local output split
+> `agentfeed share`의 dry-run/token-missing JSON payload 및 human next-action rendering을 `share-output` helper로 분리해 local share 출력 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 64 tests, full `npm test -- --run` 763 tests, 실제 temp project CLI smoke(`share --dry`, `share --dry --json`, token-missing `share --yes --json`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Share Local Output Split 2026-06-12]]
+
+
 > [!success] 2026-06-12 CLI open error guidance split
 > `agentfeed open`의 pending/no-drafts/no-uploaded draft error guidance를 `open-command` helper로 분리해 review URL 부재 오류 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 78 tests, full `npm test -- --run` 759 tests, 실제 temp project CLI smoke(`open --latest` no drafts, `open --id` pending draft, `open --latest` no uploaded) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Open Error Guidance Split 2026-06-12]]

@@ -15,6 +15,12 @@ updated: 2026-06-12
 ## 현재 결론
 
 
+> [!success] 2026-06-12 CLI draft list output split
+> `agentfeed drafts`의 summary, JSON payload, human-readable list rendering을 `draft-list-output` helper로 분리해 draft list 출력 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 61 tests, full `npm test -- --run` 730 tests, 실제 temp project CLI smoke(`drafts` human/JSON) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Draft List Output Split 2026-06-12]]
+
+
+
 > [!success] 2026-06-12 CLI privacy scan output split
 > `agentfeed scan`의 JSON payload와 human-readable privacy scan report 조립을 `privacy-scan-output` helper로 분리해 scan 출력 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 51 tests, full `npm test -- --run` 727 tests, 실제 temp git project CLI smoke(`scan --path` human/JSON) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Privacy Scan Output Split 2026-06-12]]

@@ -28,7 +28,7 @@ import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialRes
 import { apiCheckFailureDetail, apiCompatibilityFailureDetail, apiCompatibilityRecoveryCommands, formatUploadRecoveryMessage, ingestionTokenRecoveryCommands, uploadNextActions, type UploadPreflightOptions } from './upload-guidance.js';
 import { reviewUrlHandoffLines } from './review-handoff.js';
 import { collectJsonNextActions } from './draft-next-actions.js';
-import { discardCompleteNextActions, draftListNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
+import { discardCompleteNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
 import { commandCatalogNextActions, hookNextActions, initNextActions } from './guidance-actions.js';
 import { renderGuidedNextCommandLines, renderNextCommandLines, renderRecommendedCommandLines } from './guided-next-command-renderer.js';
 import { jsonErrorFromMessage } from './error-output.js';
@@ -45,6 +45,7 @@ import { discardCompletePayload, discardConfirmationPayload } from './discard-co
 import { openJsonPayload } from './open-command.js';
 import { localPreviewJsonPayload, remotePreviewJsonPayload, renderLocalPreviewHumanLines, renderRemotePreviewHumanLines } from './preview-command.js';
 import { formatPrivacyScanReport, privacyScanJsonOutput } from './privacy-scan-output.js';
+import { draftListJsonOutput, renderDraftListHumanLines, type DraftListRow } from './draft-list-output.js';
 import { createCommandCatalog } from './command-catalog.js';
 import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
 import { COMMAND_WORKFLOWS, renderCommandCatalogLines, renderCommandWorkflowLines } from './command-catalog-renderer.js';
@@ -1516,22 +1517,6 @@ async function cmdDoctor(args: string[] = []) {
   printRecommendedCommands(nextActions);
 }
 
-interface DraftListRow {
-  id: string;
-  path: string;
-  updated_at: string;
-  valid: boolean;
-  project?: string;
-  title?: string;
-  agent?: string;
-  status?: 'pending' | 'uploaded';
-  privacy?: string;
-  findings?: number;
-  metrics?: string;
-  review_url?: string | null;
-  error?: string;
-}
-
 function safeDraftListTitle(draft: LocalDraft): string {
   const result = scanAndRedactFields({ title: draft.worklog.title });
   return singleLine(String(result.redacted.title ?? draft.worklog.title));
@@ -1567,108 +1552,15 @@ async function draftListRow(row: Awaited<ReturnType<typeof listDrafts>>[number])
 }
 
 
-interface DraftListSummary {
-  total: number;
-  valid: number;
-  invalid: number;
-  pending: number;
-  uploaded: number;
-}
-
-function draftListSummary(rows: DraftListRow[]): DraftListSummary {
-  const validRows = rows.filter((row) => row.valid);
-  return {
-    total: rows.length,
-    valid: validRows.length,
-    invalid: rows.length - validRows.length,
-    pending: validRows.filter((row) => row.status === 'pending').length,
-    uploaded: validRows.filter((row) => row.status === 'uploaded').length
-  };
-}
-
-function printDraftListSummary(summary: DraftListSummary): void {
-  print(ui.section('Summary'));
-  print(`Total: ${summary.total}`);
-  print(`Pending upload: ${summary.pending}`);
-  print(`Uploaded: ${summary.uploaded}`);
-  if (summary.invalid > 0) print(ui.warn(`Invalid: ${summary.invalid}`));
-  print('Order: newest first');
-}
-
-function formatRelativeTime(value: string, now = Date.now()): string {
-  const parsed = Date.parse(value);
-  if (!Number.isFinite(parsed)) return value;
-
-  const deltaMs = parsed - now;
-  const absMs = Math.abs(deltaMs);
-  const future = deltaMs > 0;
-  const suffix = future ? 'from now' : 'ago';
-
-  if (absMs < 60_000) return future ? 'in less than 1m' : 'just now';
-  const minutes = Math.floor(absMs / 60_000);
-  if (minutes < 60) return future ? `in ${minutes}m` : `${minutes}m ${suffix}`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return future ? `in ${hours}h` : `${hours}h ${suffix}`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return future ? `in ${days}d` : `${days}d ${suffix}`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return future ? `in ${months}mo` : `${months}mo ${suffix}`;
-  const years = Math.floor(days / 365);
-  return future ? `in ${years}y` : `${years}y ${suffix}`;
-}
-
-function formatDraftUpdatedAt(value: string): string {
-  const parsed = Date.parse(value);
-  if (!Number.isFinite(parsed)) return value;
-  return `${new Date(parsed).toISOString()} (${formatRelativeTime(value)})`;
-}
-
-
 async function cmdDrafts(args: string[]) {
   await loadProjectConfig(process.cwd());
   const rows = await Promise.all((await listDrafts(process.cwd())).map((row) => draftListRow(row)));
-  const summary = draftListSummary(rows);
-  const nextActions = draftListNextActions(rows);
   if (flag(args, '--json')) {
-    print(JSON.stringify({ summary, drafts: rows, next_actions: nextActions }, null, 2));
+    print(JSON.stringify(draftListJsonOutput(rows), null, 2));
     return;
   }
 
-  print(ui.heading(`AgentFeed drafts (${rows.length})`));
-  if (!rows.length) {
-    print();
-    print('No local drafts found.');
-    print();
-    print(ui.section('Next'));
-    printRecommendedCommands(nextActions);
-    return;
-  }
-
-  print();
-  printDraftListSummary(summary);
-  print();
-  for (const row of rows) {
-    if (!row.valid) {
-      print(`${row.id}  invalid`);
-      print(`  Updated: ${formatDraftUpdatedAt(row.updated_at)}`);
-      print(`  Error: ${row.error}`);
-      continue;
-    }
-    print(`${safeTerminalText(row.id)}  ${safeTerminalText(row.status)}  ${safeTerminalText(row.agent)}  ${safeTerminalText(row.privacy)} · findings ${row.findings}`);
-    print(`  Updated: ${formatDraftUpdatedAt(row.updated_at)}`);
-    print(`  Project: ${safeTerminalText(row.project)}`);
-    print(`  Title: ${safeTerminalText(row.title)}`);
-    for (const line of ui.wrapKeyValue('  Metrics', row.metrics ?? 'no metrics')) print(line);
-    if (row.status === 'uploaded') {
-      print(`  Open: ${ui.command(`agentfeed open --id ${row.id}`)}`);
-    } else {
-      print(`  Upload: ${ui.command(`agentfeed publish --id ${row.id} --yes`)}`);
-    }
-  }
-
-  print();
-  print(ui.section('Next'));
-  printRecommendedCommands(nextActions);
+  printLines(renderDraftListHumanLines(rows));
 }
 
 async function cmdDiscard(args: string[]) {

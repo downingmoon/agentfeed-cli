@@ -14,6 +14,11 @@ updated: 2026-06-12
 
 ## 현재 결론
 
+> [!success] 2026-06-12 CLI share upload execution split
+> `agentfeed share`의 upload confirmation gate, preflight, publish API call, saved draft sanitize/reread, cursor mark, review URL handoff policy를 `share-upload-execution` helper로 분리했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 82 tests, full `npm test -- --run` 816 tests, 실제 temp project + local fake API CLI smoke(confirmation no-network pause, `share --yes --json --no-clipboard --no-open-review`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/개인서버 배포/infra/CICD 작업 없음.
+> - [[CLI Share Upload Execution Split 2026-06-12]]
+
+
 > [!success] 2026-06-12 CLI publish execution split
 > `agentfeed publish`의 confirmation gate, credential/token guidance, upload preflight, publish API call, saved-draft reread, review URL handoff policy를 `publish-execution` helper로 분리했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 80 tests, full `npm test -- --run` 813 tests, 실제 temp project + local fake API CLI smoke(confirmation no-network pause, `publish --yes --json --no-clipboard --no-open-review`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/개인서버 배포/infra/CICD 작업 없음.
 > - [[CLI Publish Execution Split 2026-06-12]]

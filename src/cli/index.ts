@@ -24,7 +24,6 @@ import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialRes
 import { missingTokenMessage, resolveLoginTokenInput } from './auth-token-input.js';
 import { loadDiagnosticCredentialsWithMetadata } from './diagnostic-credentials.js';
 import { requireApiCompatibilityBeforeCredentialSave, requireApiCompatibilityBeforeUpload, requireUploadPreflight } from './upload-preflight.js';
-import { shouldOpenReviewAfterUpload, shouldRequireUploadConfirmation } from './runtime-policy.js';
 import { collectJsonNextActions } from './draft-next-actions.js';
 import { commandCatalogNextActions } from './guidance-actions.js';
 import { renderGuidedNextCommandLines, renderNextCommandLines, renderRecommendedCommandLines } from './guided-next-command-renderer.js';
@@ -58,9 +57,10 @@ import { renderCredentialResultLines } from './auth-output.js';
 import { doctorJsonPayload, renderDoctorHumanLines, type DoctorCheckTuple } from './doctor-output.js';
 import { renderUploadConfirmationRequiredLines, renderUploadResultLines } from './upload-output.js';
 import { renderShareLocalNextLines, shareLocalJsonPayload, shareUploadedJsonPayload } from './share-output.js';
+import { runShareUploadCommand } from './share-upload-execution.js';
 import { publishJsonPayload, renderPublishUploadResultLines } from './publish-output.js';
 import { runPublishCommand } from './publish-execution.js';
-import { handoffReviewUrl, reviewUrlHandoffLines, shouldCopyReviewUrl } from './review-handoff.js';
+import { handoffReviewUrl, reviewUrlHandoffLines } from './review-handoff.js';
 import { createCommandCatalog } from './command-catalog.js';
 import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
 import { COMMAND_WORKFLOWS, renderCommandCatalogLines, renderCommandWorkflowLines } from './command-catalog-renderer.js';
@@ -448,21 +448,26 @@ async function cmdShare(args: string[]) {
       }), null, 2));
       return;
     }
-    const metadata = await requireUploadPreflight(creds);
-    const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds, reviewBaseUrl: metadata.review_base_url });
-    draft = await sanitizeDraftForCliOutput(process.cwd(), await readDraft(process.cwd(), draft.id));
-    if (!opts.noSaveCursor) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
-    const handoff = await handoffReviewUrl(result.review_url, {
-      copy: shouldCopyReviewUrl({ json: true, noClipboard: opts.noClipboard, clipboard: flag(args, '--clipboard') }),
-      open: await shouldOpenReviewAfterUpload(opts.openReview, { respectConfig: false, noOpen: opts.noOpenReview }),
-      apiBaseUrl: creds.api_base_url,
-      reviewBaseUrl: result.review_base_url ?? metadata.review_base_url
+    const upload = await runShareUploadCommand({
+      cwd: process.cwd(),
+      draft,
+      credentials: creds,
+      flags: {
+        json: true,
+        yes: opts.yes,
+        clipboard: flag(args, '--clipboard'),
+        noClipboard: opts.noClipboard,
+        openReview: opts.openReview,
+        noOpenReview: opts.noOpenReview,
+        noSaveCursor: opts.noSaveCursor
+      }
     });
+    if (upload.kind === 'confirmation_required') throw new Error('Internal error: JSON share upload should not require confirmation.');
     print(JSON.stringify(shareUploadedJsonPayload({
       reusedExistingDraft: collection.reusedExisting,
-      draft,
-      upload: result,
-      handoff,
+      draft: upload.draft,
+      upload: upload.upload,
+      handoff: upload.handoff,
       warnings,
       explain: opts.explain
     }), null, 2));
@@ -489,26 +494,30 @@ async function cmdShare(args: string[]) {
     return;
   }
 
-  if (shouldRequireUploadConfirmation({ yes: opts.yes })) {
-    printLines(renderUploadConfirmationRequiredLines(draft, `agentfeed publish --id ${draft.id} --yes`, 'agentfeed share --yes'));
+  const upload = await runShareUploadCommand({
+    cwd: process.cwd(),
+    draft,
+    credentials: creds,
+    flags: {
+      json: false,
+      yes: opts.yes,
+      clipboard: flag(args, '--clipboard'),
+      noClipboard: opts.noClipboard,
+      openReview: opts.openReview,
+      noOpenReview: opts.noOpenReview,
+      noSaveCursor: opts.noSaveCursor
+    }
+  });
+  if (upload.kind === 'confirmation_required') {
+    printLines(renderUploadConfirmationRequiredLines(upload.draft, upload.command, upload.extraCommand));
     return;
   }
-
-  const metadata = await requireUploadPreflight(creds);
-  const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds, reviewBaseUrl: metadata.review_base_url });
-  if (!opts.noSaveCursor) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
-  const handoff = await handoffReviewUrl(result.review_url, {
-    copy: shouldCopyReviewUrl({ noClipboard: opts.noClipboard }),
-    open: await shouldOpenReviewAfterUpload(opts.openReview, { noOpen: opts.noOpenReview }),
-    apiBaseUrl: creds.api_base_url,
-    reviewBaseUrl: result.review_base_url ?? metadata.review_base_url
-  });
   printLines(renderUploadResultLines({
-    heading: result.reused_existing ? 'AgentFeed upload reused' : 'AgentFeed upload complete',
-    message: result.reused_existing ? 'Worklog already uploaded; reusing existing review URL.' : 'Worklog uploaded.',
-    draftId: draft.id,
-    result,
-    handoff
+    heading: upload.upload.reused_existing ? 'AgentFeed upload reused' : 'AgentFeed upload complete',
+    message: upload.upload.reused_existing ? 'Worklog already uploaded; reusing existing review URL.' : 'Worklog uploaded.',
+    draftId: upload.draft.id,
+    result: upload.upload,
+    handoff: upload.handoff
   }));
 }
 

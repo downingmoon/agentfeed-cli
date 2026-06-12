@@ -8,7 +8,8 @@ import { collectConfiguredCommandMetricsWithStatus } from '../collectors/test-co
 import { detectAgentSignals } from '../collectors/agent-discovery.js';
 import { shouldIgnoreEvidencePath } from '../collectors/path-filter.js';
 import { changedAreas } from '../summary/changed-areas.js';
-import { generateOutcome, generateSummary, generateTimeline, generateTitle } from '../summary/rule-based.js';
+import { generateOutcome, generateSummary, generateTimeline } from '../summary/rule-based.js';
+import { generateRicherSummaryFields } from '../summary/richer-summary.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
 import { parseRequiredRedactedDraftFields } from './redacted-draft-fields.js';
 import { randomSuffix, shortHash } from '../utils/hash.js';
@@ -601,17 +602,16 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
     collection_quality: session?.collection_quality ?? null,
     collection_sources: session?.collection_sources ?? null
   };
-  const title = generateTitle(safeAreas, mergedGit);
-  const summary = generateSummary(safeAreas, metrics);
+  const generatedPublicFields = generateRicherSummaryFields({
+    areas: safeAreas,
+    metrics,
+    git: mergedGit,
+    tags: config.project.tags,
+    publicPrompt: null,
+  });
   const publicFields = {
-    title,
-    summary,
+    ...generatedPublicFields,
     user_note: normalizedNote,
-    public_prompt: null,
-    outcome: generateOutcome(safeAreas),
-    timeline: generateTimeline(),
-    changed_areas: safeAreas,
-    tags: config.project.tags.slice(0, 10),
     project: { name: config.project.name, repository_url: git.repository_url ?? config.project.repository_url ?? null }
   };
   const { redacted, scan } = scanAndRedactFields(publicFields);

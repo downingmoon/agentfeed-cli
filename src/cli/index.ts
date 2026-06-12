@@ -3,7 +3,7 @@ import { rm } from 'node:fs/promises';
 import { relative } from 'node:path';
 import { initProject, loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
 import { credentialsFromToken, credentialsPath, deleteSavedCredentials, loadCredentials, loadCredentialsWithMetadata, saveCredentials, type CredentialTokenSource } from '../config/credentials.js';
-import { resolveApiBaseUrl, resolveApiBaseUrlWithMetadata, type ApiBaseUrlSource } from '../config/api-base.js';
+import { resolveApiBaseUrl, resolveApiBaseUrlWithMetadata } from '../config/api-base.js';
 import { DEFAULT_API_BASE_URL } from '../config/defaults.js';
 import { markCollectionComplete, readCollectionStateWithDiagnostics, resolveCollectionWindowWithDiagnostics } from '../config/collection-state.js';
 import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
@@ -22,7 +22,7 @@ import { hasAgentFeedHook, installClaudeCodeHook, uninstallClaudeCodeHook, resol
 import { flag, option } from './args.js';
 import { unknownCommandError } from './unknown-command-error.js';
 import { resolveStatusProject } from './status-project.js';
-import { setupProgressText, statusNextActions, statusReadinessItems, statusSummary, type StatusReadinessItem } from './status-readiness.js';
+import { setupProgressText, statusNextActions, statusReadinessItems } from './status-readiness.js';
 import { doctorNextActions, doctorPriorityActions, doctorReadinessItems, doctorSummary, type DoctorPriorityAction, type DoctorReadinessItem } from './doctor-readiness.js';
 import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialResult, tokenLoginCredentialResult, type CredentialResultView } from './auth-result.js';
 import { apiCheckFailureDetail, apiCompatibilityFailureDetail, apiCompatibilityRecoveryCommands, formatUploadRecoveryMessage, ingestionTokenRecoveryCommands, uploadNextActions, type UploadPreflightOptions } from './upload-guidance.js';
@@ -45,6 +45,8 @@ import { openJsonPayload } from './open-command.js';
 import { localPreviewJsonPayload, remotePreviewJsonPayload, renderLocalPreviewHumanLines, renderRemotePreviewHumanLines } from './preview-command.js';
 import { formatPrivacyScanReport, privacyScanJsonOutput } from './privacy-scan-output.js';
 import { draftListJsonOutput, renderDraftListHumanLines, type DraftListRow } from './draft-list-output.js';
+import { formatCollectionCursor, nextDefaultCollectionSince, formatTokenExpiry, formatWarningLines, credentialSourceLabel, credentialStoreLabel, apiBaseSourceLabel, readinessMarker, tokenExpiryWarning } from './diagnostic-formatters.js';
+import { renderStatusHumanLines, statusJsonPayload, type StatusHealth, type StatusOutputInput } from './status-output.js';
 import { renderUploadConfirmationRequiredLines, renderUploadResultLines } from './upload-output.js';
 import { createCommandCatalog } from './command-catalog.js';
 import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
@@ -71,9 +73,6 @@ function safeTerminalText(value: string | null | undefined): string {
   return ui.sanitizeTerminalText(value ?? '');
 }
 
-function formatWarningLines(warning: string): string[] {
-  return ui.wrapKeyValue('Warning', warning).map((line) => ui.warn(line));
-}
 
 function printWarningLines(warnings: readonly string[]): void {
   for (const warning of warnings) {
@@ -91,34 +90,6 @@ function projectRelativePath(projectRoot: string, path: string): string {
   return rel && !rel.startsWith('..') ? rel : path;
 }
 
-function credentialSourceLabel(source: CredentialTokenSource): string {
-  switch (source) {
-    case 'environment': return 'environment (AGENTFEED_TOKEN)';
-    case 'credentials_file': return 'saved credentials file';
-    case 'keychain': return 'OS keychain';
-    case 'missing': return 'missing';
-  }
-}
-
-function credentialStoreLabel(source: Awaited<ReturnType<typeof loadCredentialsWithMetadata>>['credential_store']): string {
-  switch (source) {
-    case 'environment': return 'environment (AGENTFEED_TOKEN)';
-    case 'file': return 'private credentials file';
-    case 'keychain': return 'OS keychain';
-    case 'missing': return 'missing';
-  }
-}
-
-function apiBaseSourceLabel(source: ApiBaseUrlSource, detail?: string): string {
-  const suffix = detail ? ` (${detail})` : '';
-  switch (source) {
-    case 'explicit': return `explicit CLI option${suffix}`;
-    case 'environment': return `environment (AGENTFEED_API_BASE_URL)`;
-    case 'stored_credentials': return `saved credentials file${suffix}`;
-    case 'env_file': return `discovered env file${suffix}`;
-    case 'default': return `default${suffix}`;
-  }
-}
 
 type CredentialsMetadata = Awaited<ReturnType<typeof loadCredentialsWithMetadata>>;
 
@@ -169,17 +140,6 @@ async function loadDiagnosticCredentialsWithMetadata(options: { cwd?: string } =
   }
 }
 
-function formatTokenExpiry(expiresAt: string): string {
-  const expires = Date.parse(expiresAt);
-  if (!Number.isFinite(expires)) return expiresAt;
-  const deltaMs = expires - Date.now();
-  const absMs = Math.abs(deltaMs);
-  const days = Math.floor(absMs / 86_400_000);
-  const hours = Math.floor((absMs % 86_400_000) / 3_600_000);
-  const relative = deltaMs < 0 ? `expired ${days}d ${hours}h ago` : `in ${days}d ${hours}h`;
-  return `${new Date(expires).toISOString()} (${relative})`;
-}
-
 function draftModelsLabel(draft: LocalDraft): string | null {
   const models = draft.worklog.metrics.models_used?.length
     ? draft.worklog.metrics.models_used
@@ -211,16 +171,6 @@ function printCredentialResult(options: CredentialResultView): void {
 }
 
 
-function formatCollectionCursor(value?: string | null): string {
-  if (!value) return 'none';
-  const parsed = Date.parse(value);
-  if (!Number.isFinite(parsed)) return `invalid (${value})`;
-  return new Date(parsed).toISOString();
-}
-
-function nextDefaultCollectionSince(value?: string | null): string {
-  return value ? formatCollectionCursor(value) : 'beginning';
-}
 
 function shouldCopyReviewUrl(options: { json?: boolean; noClipboard?: boolean; clipboard?: boolean }): boolean {
   if (options.noClipboard) return false;
@@ -405,15 +355,6 @@ function printDiscardConfirmationRequired(id: string, options: { hadJson: boolea
   print(`  ${ui.command(`agentfeed preview --id ${id}`)}`);
 }
 
-function tokenExpiryWarning(expiresAt?: string | null, expiringSoon?: boolean): string | null {
-  if (!expiresAt) return null;
-  const expires = Date.parse(expiresAt);
-  if (!Number.isFinite(expires)) return null;
-  if (expires <= Date.now()) return 'ingestion token is expired. Run: agentfeed rotate';
-  if (expiringSoon || expires - Date.now() <= 7 * 86_400_000) return 'ingestion token expires soon. Run: agentfeed rotate to replace this device token.';
-  return null;
-}
-
 async function sanitizeDraftForCliOutput(cwd: string, draft: LocalDraft): Promise<LocalDraft> {
   scanAndRedactDraftPublicFields(draft);
   await writeDraft(cwd, draft);
@@ -502,18 +443,6 @@ function printUrlBlock(label: string, url: string): void {
 }
 
 
-function readinessMarker(status: StatusReadinessItem['status']): string {
-  return status === 'ready' ? ui.good('✓') : ui.warn('!');
-}
-
-function printStatusReadiness(items: readonly StatusReadinessItem[]): void {
-  print(ui.section('Readiness'));
-  print(`Setup progress: ${setupProgressText(items)}`);
-  for (const item of items) {
-    const next = item.next_action ? ` → ${item.next_action}` : '';
-    print(`${readinessMarker(item.status)} ${item.name}: ${item.detail}${next}`);
-  }
-}
 
 function printDoctorPriorityActions(actions: DoctorPriorityAction[]): void {
   if (!actions.length) return;
@@ -758,7 +687,7 @@ async function cmdStatus(args: string[] = []) {
   const apiBaseUrl = credentialResolution.api_base_url ?? creds?.api_base_url ?? await resolveApiBaseUrl();
   const git = await collectGitMetrics(process.cwd());
   const insideGitRepository = Boolean(git.repository_root);
-  const health = diagnostics.invalidApiBaseUrl
+  const health: StatusHealth = diagnostics.invalidApiBaseUrl
     ? 'attention needed'
     : allWarnings.length || pending > 0
       ? 'attention needed'
@@ -777,96 +706,38 @@ async function cmdStatus(args: string[] = []) {
   };
   const nextActions = statusNextActions(statusOptions);
   const readiness = statusReadinessItems(statusOptions);
+  const statusOutput: StatusOutputInput = {
+    health,
+    readiness,
+    hasToken,
+    tokenSource: credentialResolution.token_source,
+    credentialStore: credentialResolution.credential_store,
+    credentialsFileExists: credentialResolution.credentials_file_exists,
+    credentialsFilePath: credentialResolution.credentials_file_path,
+    tokenExpiresAt: creds?.token_expires_at ?? null,
+    apiBaseUrl,
+    apiBaseUrlSource: credentialResolution.api_base_url_source,
+    apiBaseUrlSourceDetail: credentialResolution.api_base_url_source_detail,
+    invalidApiBaseUrl: diagnostics.invalidApiBaseUrl,
+    projectInitialized: Boolean(config),
+    projectName: config?.project.name ?? null,
+    projectRoot: config ? root : null,
+    projectConfigError,
+    insideGitRepository,
+    claudeCodeHook: hook,
+    localDraftsCount: drafts.length,
+    pendingUploadCount: pending,
+    lastCollectionCursor: collectionState.last_collected_at ?? null,
+    warnings: allWarnings,
+    nextActions
+  };
 
   if (flag(args, '--json')) {
-    print(JSON.stringify({
-      health,
-      summary: statusSummary(readiness),
-      readiness,
-      account: {
-        token_configured: hasToken,
-        token_source: credentialResolution.token_source,
-        token_source_label: credentialSourceLabel(credentialResolution.token_source),
-        credential_store: credentialResolution.credential_store,
-        credential_store_label: credentialStoreLabel(credentialResolution.credential_store),
-        credentials_file: {
-          exists: credentialResolution.credentials_file_exists,
-          path: credentialResolution.credentials_file_path
-        },
-        token_expires_at: creds?.token_expires_at ?? null
-      },
-      api: {
-        base_url: apiBaseUrl,
-        source: credentialResolution.api_base_url_source ?? null,
-        source_label: credentialResolution.api_base_url_source
-          ? apiBaseSourceLabel(credentialResolution.api_base_url_source, credentialResolution.api_base_url_source_detail)
-          : null,
-        source_detail: credentialResolution.api_base_url_source_detail ?? null,
-        invalid: diagnostics.invalidApiBaseUrl
-      },
-      project: {
-        initialized: Boolean(config),
-        name: config?.project.name ?? null,
-        root: config ? root : null,
-        config_error: projectConfigError,
-        git_repository: insideGitRepository,
-        claude_code_hook: hook
-      },
-      collection: {
-        local_drafts_count: drafts.length,
-        pending_upload_count: pending,
-        last_collection_cursor: collectionState.last_collected_at ?? null,
-        last_collection_cursor_label: formatCollectionCursor(collectionState.last_collected_at),
-        next_default_collection_since: collectionState.last_collected_at ?? null,
-        next_default_collection_since_label: nextDefaultCollectionSince(collectionState.last_collected_at)
-      },
-      warnings: allWarnings,
-      next_actions: nextActions
-    }, null, 2));
+    print(JSON.stringify(statusJsonPayload(statusOutput), null, 2));
     return;
   }
 
-  print(ui.heading('AgentFeed status'));
-  print(`Health: ${health === 'ready' ? ui.good(health) : ui.warn(health)}`);
-  print();
-  printStatusReadiness(readiness);
-  print();
-  print(ui.section('Account'));
-  print(`User/token: ${hasToken ? 'configured' : 'missing'}`);
-  print(`User/token source: ${credentialSourceLabel(credentialResolution.token_source)}`);
-  print(`Credential store: ${credentialStoreLabel(credentialResolution.credential_store)}`);
-  print(`Credentials file: ${credentialResolution.credentials_file_exists ? credentialResolution.credentials_file_path : 'missing'}`);
-  if (creds?.token_expires_at) {
-    print(`Token expires at: ${formatTokenExpiry(creds.token_expires_at)}`);
-    const warning = tokenExpiryWarning(creds.token_expires_at);
-    if (warning) printWarningLines([warning]);
-  }
-  print();
-  print(ui.section('API'));
-  print(`API base URL: ${apiBaseUrl}`);
-  if (credentialResolution.api_base_url_source) {
-    print(`API base URL source: ${apiBaseSourceLabel(credentialResolution.api_base_url_source, credentialResolution.api_base_url_source_detail)}`);
-  }
-  printWarningLines(allWarnings);
-  print();
-  print(ui.section('Project'));
-  print(`Project initialized: ${config ? 'yes' : projectConfigError ? 'error' : 'no'}`);
-  if (config) print(`Project name: ${config.project.name}`);
-  if (projectConfigError) print(`Project config error: ${projectConfigError}`);
-  print(`Git repository: ${insideGitRepository ? 'yes' : 'no'}`);
-  print(`Claude Code hook: ${hook}`);
-  print();
-  print(ui.section('Collection'));
-  print(`Local drafts count: ${drafts.length}`);
-  print(`Pending upload count: ${pending}`);
-  print(`Last collection cursor: ${formatCollectionCursor(collectionState.last_collected_at)}`);
-  print(`Next default collection since: ${nextDefaultCollectionSince(collectionState.last_collected_at)}`);
-  if (pending > 0 && collectionState.last_collected_at) {
-    printWarningLines(['pending local drafts exist while a collection cursor is set; publish/discard them or use --all/--since if the next collect looks empty.']);
-  }
-  print();
-  print(ui.section('Next'));
-  printRecommendedCommands(nextActions);
+  printLines(renderStatusHumanLines(statusOutput));
 }
 
 

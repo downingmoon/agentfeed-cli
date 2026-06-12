@@ -15,6 +15,12 @@ updated: 2026-06-12
 ## 현재 결론
 
 
+> [!success] 2026-06-12 CLI status output split
+> `agentfeed status`의 JSON payload 및 human-readable output rendering을 `status-output` helper로 분리하고 credential/API/cursor provenance label을 `diagnostic-formatters`로 공유했다. Red test 확인 후 `npm run build`, focused Vitest 43 tests, full `npm test -- --run` 734 tests, 실제 temp project CLI smoke(`status`, `status --json`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Status Output Split 2026-06-12]]
+
+
+
 > [!success] 2026-06-12 CLI upload output split
 > `agentfeed share --yes` / `agentfeed publish`의 upload completion 및 confirmation human output rendering을 `upload-output` helper로 분리해 upload 출력 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 188 tests, full `npm test -- --run` 732 tests, 실제 temp project CLI smoke(`publish` confirmation output) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Upload Output Split 2026-06-12]]

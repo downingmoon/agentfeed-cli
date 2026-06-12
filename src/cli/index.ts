@@ -22,7 +22,7 @@ import { flag, option } from './args.js';
 import { unknownCommandError } from './unknown-command-error.js';
 import { resolveStatusProject } from './status-project.js';
 import { setupProgressText, statusNextActions, statusReadinessItems } from './status-readiness.js';
-import { doctorNextActions, doctorPriorityActions, doctorReadinessItems, doctorSummary, type DoctorPriorityAction, type DoctorReadinessItem } from './doctor-readiness.js';
+import { doctorNextActions, doctorReadinessItems } from './doctor-readiness.js';
 import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialResult, tokenLoginCredentialResult } from './auth-result.js';
 import { apiCheckFailureDetail, apiCompatibilityFailureDetail, apiCompatibilityRecoveryCommands, formatUploadRecoveryMessage, ingestionTokenRecoveryCommands, uploadNextActions, type UploadPreflightOptions } from './upload-guidance.js';
 import { collectJsonNextActions } from './draft-next-actions.js';
@@ -51,6 +51,7 @@ import { logoutJsonPayload, renderLogoutHumanLines } from './logout-output.js';
 import { initJsonPayload, renderInitHumanLines } from './init-output.js';
 import { hookJsonPayload, renderHookHumanLines, type HookInstallOutputInput, type HookUninstallOutputInput } from './hook-output.js';
 import { renderCredentialResultLines } from './auth-output.js';
+import { doctorJsonPayload, renderDoctorHumanLines, type DoctorCheckTuple } from './doctor-output.js';
 import { renderUploadConfirmationRequiredLines, renderUploadResultLines } from './upload-output.js';
 import { createCommandCatalog } from './command-catalog.js';
 import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
@@ -349,19 +350,6 @@ async function shouldOpenReviewAfterUpload(openFlag: boolean, options: { respect
 
 
 
-function doctorCheckMarker(value: boolean | string): string {
-  const text = String(value).toLowerCase();
-  if (text.startsWith('yes') || text === 'ready' || text === 'configured') return ui.good('✓');
-  if (text.startsWith('no') || text.includes('invalid') || text.includes('unreachable')) return ui.warn('!');
-  if (text.startsWith('skipped') || text.startsWith('unknown') || text.startsWith('unavailable')) return '-';
-  return '•';
-}
-
-function printDoctorChecks(title: string, checks: Array<[string, boolean | string]>): void {
-  print(ui.section(title));
-  for (const [name, value] of checks) print(`${doctorCheckMarker(value)} ${name}: ${value}`);
-  print();
-}
 
 function printNextCommands(commands: string[]): void {
   for (const line of renderNextCommandLines({ commands, command: ui.command })) print(line);
@@ -382,27 +370,6 @@ function printUrlBlock(label: string, url: string): void {
 
 
 
-function printDoctorPriorityActions(actions: DoctorPriorityAction[]): void {
-  if (!actions.length) return;
-  print('Fix first:');
-  actions.slice(0, 3).forEach((action, index) => {
-    print(`  ${index + 1}. ${action.name}: ${action.detail}`);
-    print(`     Run: ${action.command}`);
-  });
-}
-
-function printDoctorSummary(readiness: DoctorReadinessItem[]): void {
-  const summary = doctorSummary(readiness);
-  const priorityActions = doctorPriorityActions(readiness);
-  print(ui.section('Summary'));
-  print(`Overall: ${summary.status === 'ready' ? 'ready' : 'attention needed'} (${summary.ready} ready, ${summary.attention} attention)`);
-  for (const item of readiness) {
-    const next = item.next_action ? ` → ${item.next_action}` : '';
-    print(`${readinessMarker(item.status)} ${item.name}: ${item.detail}${next}`);
-  }
-  printDoctorPriorityActions(priorityActions);
-  print();
-}
 
 async function resolveDraftId(cwd: string, args: string[]): Promise<string> {
   await loadProjectConfig(cwd);
@@ -941,12 +908,8 @@ async function cmdHook(args: string[]) {
   } else throw new Error(hookUsageMessage());
 }
 
-function doctorCheckRows(checks: Array<[string, boolean | string]>): Array<{ name: string; value: boolean | string }> {
-  return checks.map(([name, value]) => ({ name, value }));
-}
-
 async function cmdDoctor(args: string[] = []) {
-  const runtimeChecks: Array<[string, boolean | string]> = [
+  const runtimeChecks: DoctorCheckTuple[] = [
     ['Node version', process.versions.node],
     ['agentfeed version', AGENTFEED_CLI_VERSION]
   ];
@@ -959,14 +922,14 @@ async function cmdDoctor(args: string[] = []) {
   const apiBaseUrl = credentialResolution.api_base_url ?? apiResolution?.value ?? await resolveApiBaseUrl();
   const apiReachability = diagnostics.invalidApiBaseUrl ? null : await checkApiReachability(apiBaseUrl);
   const apiCompatibility = diagnostics.invalidApiBaseUrl ? null : await checkApiCompatibility(apiBaseUrl);
-  const accountChecks: Array<[string, boolean | string]> = [
+  const accountChecks: DoctorCheckTuple[] = [
     ['global credentials file exists', creds ? 'yes' : 'no'],
     ['credentials file path', credentialResolution.credentials_file_path],
     ['credential source', credentialSourceLabel(credentialResolution.token_source)],
     ['credential store', credentialStoreLabel(credentialResolution.credential_store)],
     ['ingestion token exists', creds?.ingestion_token || credentialResolution.token_source === 'environment' ? 'yes' : 'no']
   ];
-  const apiChecks: Array<[string, boolean | string]> = [
+  const apiChecks: DoctorCheckTuple[] = [
     ['API base URL configured', apiBaseUrl],
     [
     'API base URL source',
@@ -1022,12 +985,12 @@ async function cmdDoctor(args: string[] = []) {
     nextCollectionSinceLabel = 'unavailable (project config unreadable)';
   }
   const git = await collectGitMetrics(process.cwd());
-  const projectChecks: Array<[string, boolean | string]> = [
+  const projectChecks: DoctorCheckTuple[] = [
     ['project config valid', projectConfigValid ? 'yes' : 'no'],
     ...(projectConfigError ? [['project config error', projectConfigError] satisfies [string, string]] : []),
     ['current directory is git repository', git.repository_root ? 'yes' : 'no']
   ];
-  const collectionChecks: Array<[string, boolean | string]> = [
+  const collectionChecks: DoctorCheckTuple[] = [
     ['last collection cursor', collectionStateLabel],
     ['next default collection since', nextCollectionSinceLabel]
   ];
@@ -1062,49 +1025,25 @@ async function cmdDoctor(args: string[] = []) {
     apiCompatibility,
     agentSignalLines
   });
-  const summary = doctorSummary(readiness);
-  const priorityActions = doctorPriorityActions(readiness);
+  const doctorOutput = {
+    readiness,
+    runtimeChecks,
+    accountChecks,
+    apiChecks,
+    projectChecks,
+    collectionChecks,
+    warnings,
+    agentSignalSummary,
+    agentSignals: agentSignalLines,
+    nextActions
+  };
 
   if (flag(args, '--json')) {
-    print(JSON.stringify({
-      summary,
-      readiness,
-      priority_actions: priorityActions,
-      runtime: doctorCheckRows(runtimeChecks),
-      account: doctorCheckRows(accountChecks),
-      api: doctorCheckRows(apiChecks),
-      project: doctorCheckRows(projectChecks),
-      collection: doctorCheckRows(collectionChecks),
-      warnings,
-      agent_signal_summary: agentSignalSummary,
-      agent_signals: agentSignalLines,
-      next_actions: nextActions
-    }, null, 2));
+    print(JSON.stringify(doctorJsonPayload(doctorOutput), null, 2));
     return;
   }
 
-  print(ui.heading('AgentFeed doctor'));
-  print();
-
-  printDoctorSummary(readiness);
-
-  printDoctorChecks('Runtime', runtimeChecks);
-  printDoctorChecks('Account', accountChecks);
-  printDoctorChecks('API', apiChecks);
-  printDoctorChecks('Project', projectChecks);
-  printDoctorChecks('Collection', collectionChecks);
-
-  if (warnings.length) {
-    print(ui.section('Warnings'));
-    printWarningLines(warnings);
-    print();
-  }
-
-  print(ui.section('Agent signals'));
-  for (const line of agentSignalLines) print(line);
-  print();
-  print(ui.section('Next'));
-  printRecommendedCommands(nextActions);
+  printLines(renderDoctorHumanLines(doctorOutput));
 }
 
 function safeDraftListTitle(draft: LocalDraft): string {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { openJsonPayload, renderOpenHumanLines } from '../src/cli/open-command.js';
+import { noOpenableDraftsMessage, noUploadedDraftsMessage, notUploadedDraftMessage, openJsonPayload, renderOpenHumanLines } from '../src/cli/open-command.js';
 
 
 const plainStyle = {
@@ -86,6 +86,40 @@ describe('open command payload', () => {
       '  1. agentfeed preview --id draft_manual',
       '  2. agentfeed status'
     ]);
+  });
+
+
+
+  it('renders pending draft guidance when a draft has no review URL', () => {
+    expect(notUploadedDraftMessage('draft_pending')).toBe([
+      'Draft has not been uploaded yet: draft_pending',
+      'Run: agentfeed publish --id draft_pending --yes',
+      'Run: agentfeed preview --id draft_pending',
+      'Run: agentfeed drafts'
+    ].join('\n'));
+  });
+
+  it('renders latest pending draft guidance when no uploaded drafts exist', () => {
+    expect(noUploadedDraftsMessage('draft_latest')).toBe([
+      'No uploaded local drafts found.',
+      'Newest draft: draft_latest',
+      'Run: agentfeed publish --id draft_latest --yes',
+      'Run: agentfeed share --yes',
+      'Run: agentfeed drafts'
+    ].join('\n'));
+  });
+
+  it('renders empty uploaded-review guidance when no drafts exist', () => {
+    expect(noOpenableDraftsMessage()).toBe([
+      'No uploaded review drafts found.',
+      '',
+      'Create and review a draft first:',
+      'Run: agentfeed share --dry',
+      'Run: agentfeed publish --latest --yes',
+      '',
+      'Or inspect saved drafts:',
+      'Run: agentfeed drafts'
+    ].join('\n'));
   });
 
 });

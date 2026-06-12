@@ -14,6 +14,12 @@ updated: 2026-06-12
 
 ## 현재 결론
 
+> [!success] 2026-06-12 CLI open error guidance split
+> `agentfeed open`의 pending/no-drafts/no-uploaded draft error guidance를 `open-command` helper로 분리해 review URL 부재 오류 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 78 tests, full `npm test -- --run` 759 tests, 실제 temp project CLI smoke(`open --latest` no drafts, `open --id` pending draft, `open --latest` no uploaded) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Open Error Guidance Split 2026-06-12]]
+
+
+
 > [!success] 2026-06-12 CLI discard output split
 > `agentfeed discard`의 confirmation 및 confirmed-delete human-readable rendering을 `discard-command` helper로 분리해 삭제 전/후 출력 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 24 tests, full `npm test -- --run` 756 tests, 실제 temp project CLI smoke(`discard`, `discard --json`, `discard --yes`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Discard Output Split 2026-06-12]]

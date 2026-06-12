@@ -40,7 +40,7 @@ import { createCompletionScriptRenderer } from './completion-script-renderer.js'
 import { completionCommandResult, unexpectedCompletionCommandResult } from './completion-command.js';
 import { versionCommandOutput } from './version-command.js';
 import { discardCompletePayload, discardConfirmationPayload, renderDiscardCompleteHumanLines, renderDiscardConfirmationHumanLines } from './discard-command.js';
-import { openJsonPayload, renderOpenHumanLines } from './open-command.js';
+import { noOpenableDraftsMessage, noUploadedDraftsMessage, notUploadedDraftMessage, openJsonPayload, renderOpenHumanLines } from './open-command.js';
 import { localPreviewJsonPayload, remotePreviewJsonPayload, renderLocalPreviewHumanLines, renderRemotePreviewHumanLines } from './preview-command.js';
 import { formatPrivacyScanReport, privacyScanJsonOutput } from './privacy-scan-output.js';
 import { draftListJsonOutput, renderDraftListHumanLines, type DraftListRow } from './draft-list-output.js';
@@ -1101,45 +1101,12 @@ async function cmdDiscard(args: string[]) {
   printLines(renderDiscardCompleteHumanLines({ draftId: id, hadJson, hadMarkdown }));
 }
 
-function notUploadedDraftMessage(draft: LocalDraft): string {
-  return [
-    `Draft has not been uploaded yet: ${draft.id}`,
-    `Run: agentfeed publish --id ${draft.id} --yes`,
-    `Run: agentfeed preview --id ${draft.id}`,
-    'Run: agentfeed drafts'
-  ].join('\n');
-}
-
-function noUploadedDraftsMessage(latestDraft: LocalDraft): string {
-  return [
-    'No uploaded local drafts found.',
-    `Newest draft: ${latestDraft.id}`,
-    `Run: agentfeed publish --id ${latestDraft.id} --yes`,
-    'Run: agentfeed share --yes',
-    'Run: agentfeed drafts'
-  ].join('\n');
-}
-
-function noOpenableDraftsMessage(): string {
-  return [
-    'No uploaded review drafts found.',
-    '',
-    'Create and review a draft first:',
-    'Run: agentfeed share --dry',
-    'Run: agentfeed publish --latest --yes',
-    '',
-    'Or inspect saved drafts:',
-    'Run: agentfeed drafts'
-  ].join('\n');
-}
-
-
 async function resolveOpenDraft(args: string[]): Promise<LocalDraft> {
   await loadProjectConfig(process.cwd());
   const id = option(args, '--id');
   if (id && !flag(args, '--latest')) {
     const draft = await readDraft(process.cwd(), id);
-    if (!draft.upload.review_url) throw new Error(notUploadedDraftMessage(draft));
+    if (!draft.upload.review_url) throw new Error(notUploadedDraftMessage(draft.id));
     return draft;
   }
 
@@ -1158,7 +1125,7 @@ async function resolveOpenDraft(args: string[]): Promise<LocalDraft> {
     if (draft.upload.review_url) return draft;
   }
 
-  if (latestValidDraft) throw new Error(noUploadedDraftsMessage(latestValidDraft));
+  if (latestValidDraft) throw new Error(noUploadedDraftsMessage(latestValidDraft.id));
   throw new Error([
     'No openable local drafts found.',
     'Run: agentfeed drafts',
@@ -1169,7 +1136,7 @@ async function resolveOpenDraft(args: string[]): Promise<LocalDraft> {
 async function cmdOpen(args: string[]) {
   const draft = await resolveOpenDraft(args);
   const reviewUrl = draft.upload.review_url;
-  if (!reviewUrl) throw new Error(notUploadedDraftMessage(draft));
+  if (!reviewUrl) throw new Error(notUploadedDraftMessage(draft.id));
   const trustedApiBases = new Set([DEFAULT_API_BASE_URL]);
   const warnings: string[] = [];
   if (draft.upload.api_base_url) trustedApiBases.add(draft.upload.api_base_url);

@@ -41,6 +41,38 @@ export function openJsonPayload(input: OpenCommandPayloadInput): OpenCommandPayl
   };
 }
 
+export function notUploadedDraftMessage(draftId: string): string {
+  return [
+    `Draft has not been uploaded yet: ${draftId}`,
+    `Run: agentfeed publish --id ${draftId} --yes`,
+    `Run: agentfeed preview --id ${draftId}`,
+    'Run: agentfeed drafts'
+  ].join('\n');
+}
+
+export function noUploadedDraftsMessage(latestDraftId: string): string {
+  return [
+    'No uploaded local drafts found.',
+    `Newest draft: ${latestDraftId}`,
+    `Run: agentfeed publish --id ${latestDraftId} --yes`,
+    'Run: agentfeed share --yes',
+    'Run: agentfeed drafts'
+  ].join('\n');
+}
+
+export function noOpenableDraftsMessage(): string {
+  return [
+    'No uploaded review drafts found.',
+    '',
+    'Create and review a draft first:',
+    'Run: agentfeed share --dry',
+    'Run: agentfeed publish --latest --yes',
+    '',
+    'Or inspect saved drafts:',
+    'Run: agentfeed drafts'
+  ].join('\n');
+}
+
 export function renderOpenHumanLines(
   input: OpenCommandPayloadInput,
   style: OpenCommandStyle = DEFAULT_STYLE

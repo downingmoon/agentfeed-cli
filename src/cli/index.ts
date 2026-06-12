@@ -10,7 +10,7 @@ import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 import { formatCollectionExplain } from '../draft/explain.js';
-import { cachedUploadReuseStatusForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, isTrustedReviewUrl, previewDraftRemote, publishDraft, type ApiMetadata, type CachedUploadReuseFailureReason } from '../api/client.js';
+import { cachedUploadReuseStatusForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, isTrustedReviewUrl, previewDraftRemote, publishDraft, type ApiMetadata } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
 import { applyRedactedPublicFields, publicScanFieldsFromDraft, scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
@@ -26,7 +26,6 @@ import { setupProgressText, statusNextActions, statusReadinessItems, statusSumma
 import { doctorNextActions, doctorPriorityActions, doctorReadinessItems, doctorSummary, type DoctorPriorityAction, type DoctorReadinessItem } from './doctor-readiness.js';
 import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialResult, tokenLoginCredentialResult, type CredentialResultView } from './auth-result.js';
 import { apiCheckFailureDetail, apiCompatibilityFailureDetail, apiCompatibilityRecoveryCommands, formatUploadRecoveryMessage, ingestionTokenRecoveryCommands, uploadNextActions, type UploadPreflightOptions } from './upload-guidance.js';
-import { reviewUrlHandoffLines } from './review-handoff.js';
 import { collectJsonNextActions } from './draft-next-actions.js';
 import { discardCompleteNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
 import { commandCatalogNextActions, hookNextActions, initNextActions } from './guidance-actions.js';
@@ -46,6 +45,7 @@ import { openJsonPayload } from './open-command.js';
 import { localPreviewJsonPayload, remotePreviewJsonPayload, renderLocalPreviewHumanLines, renderRemotePreviewHumanLines } from './preview-command.js';
 import { formatPrivacyScanReport, privacyScanJsonOutput } from './privacy-scan-output.js';
 import { draftListJsonOutput, renderDraftListHumanLines, type DraftListRow } from './draft-list-output.js';
+import { renderUploadConfirmationRequiredLines, renderUploadResultLines } from './upload-output.js';
 import { createCommandCatalog } from './command-catalog.js';
 import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
 import { COMMAND_WORKFLOWS, renderCommandCatalogLines, renderCommandWorkflowLines } from './command-catalog-renderer.js';
@@ -283,41 +283,6 @@ async function handoffReviewUrl(reviewUrl: string, options: { copy: boolean; ope
 }
 
 
-function printUploadResult(options: {
-  heading: string;
-  message: string;
-  draftId: string;
-  result: Awaited<ReturnType<typeof publishDraft>>;
-  handoff: ReviewUrlHandoff;
-  privacyPolicyLines?: string[];
-}): void {
-  print(ui.heading(options.heading));
-  print(options.message);
-  const privacyPolicyLines = options.privacyPolicyLines ?? [];
-  if (privacyPolicyLines.length) {
-    print();
-    print(ui.section('Policy'));
-    for (const line of privacyPolicyLines) print(line);
-  }
-
-  print();
-  print(ui.section('Summary'));
-  print(`Draft: ${options.draftId}`);
-  print(`Status: ${options.result.status}`);
-  printUrlBlock('Review URL', options.result.review_url);
-
-  const handoffLines = reviewUrlHandoffLines(options.handoff, options.result.review_url);
-  if (handoffLines.length) {
-    print();
-    print(ui.section('Handoff'));
-    for (const line of handoffLines) print(line);
-  }
-
-  print();
-  print(ui.section('Next'));
-  printGuidedNextCommands(uploadNextActions(options.draftId));
-}
-
 
 const SAFE_TOKEN_STDIN_COMMAND = 'printf %s "$TOKEN" | agentfeed login --token-stdin';
 
@@ -421,51 +386,6 @@ function isCiEnvironment(): boolean {
 function shouldRequireUploadConfirmation(options: { json?: boolean; yes?: boolean }): boolean {
   if (options.json || options.yes) return false;
   return true;
-}
-
-function cachedUploadReuseReasonLabel(reason: CachedUploadReuseFailureReason): string {
-  switch (reason) {
-    case 'missing_upload_marker': return 'no saved private review upload marker is present';
-    case 'missing_worklog_id': return 'saved upload metadata is missing the worklog id';
-    case 'missing_review_url': return 'saved upload metadata is missing the review URL';
-    case 'missing_payload_hash': return 'saved upload metadata is missing the redacted payload hash';
-    case 'missing_credential_binding': return 'saved upload metadata is missing the credential binding';
-    case 'base_url_mismatch': return 'saved upload was created for a different API base URL';
-    case 'invalid_review_url': return 'saved review URL is no longer trusted for the current API/review origin';
-    case 'payload_hash_mismatch': return 'local draft content changed after the saved upload';
-    case 'credential_binding_mismatch': return 'saved upload was created with a different token or user binding';
-  }
-}
-
-function printUploadConfirmationRequired(draft: LocalDraft, command: string, extraCommand?: string, options: { cacheReuseReason?: CachedUploadReuseFailureReason } = {}): void {
-  print(ui.heading('AgentFeed upload paused'));
-  print('Upload confirmation required.');
-  print('No data was uploaded to AgentFeed.');
-  if (options.cacheReuseReason) {
-    print();
-    print(ui.section('Warnings'));
-    print(`Saved private review cache cannot be reused: ${cachedUploadReuseReasonLabel(options.cacheReuseReason)}.`);
-  }
-  print();
-  print(ui.section('Summary'));
-  print(`Draft: ${draft.id}`);
-  print(`Project: ${draft.project.name}`);
-  print(`Title: ${draft.worklog.title}`);
-  print(`Privacy: ${draft.privacy_scan.status} · findings ${draft.privacy_scan.findings.length}`);
-  print();
-  print(ui.section('Review before upload'));
-  print(`Preview: ${ui.command(`agentfeed preview --id ${draft.id}`)}`);
-  print(`Privacy: ${draft.privacy_scan.findings.length ? 'review findings before public sharing' : 'no findings detected'}`);
-  print('Target: private AgentFeed review draft');
-  print('Safety: no upload happens until you rerun with --yes.');
-  print();
-  print(ui.section('Next'));
-  print('Upload after reviewing this draft:');
-  print(`  ${ui.command(command)}`);
-  if (extraCommand) {
-    print('Or collect and upload in one command:');
-    print(`  ${ui.command(extraCommand)}`);
-  }
 }
 
 function printDiscardConfirmationRequired(id: string, options: { hadJson: boolean; hadMarkdown: boolean }): void {
@@ -1167,7 +1087,7 @@ async function cmdShare(args: string[]) {
   }
 
   if (shouldRequireUploadConfirmation({ yes: opts.yes })) {
-    printUploadConfirmationRequired(draft, `agentfeed publish --id ${draft.id} --yes`, 'agentfeed share --yes');
+    printLines(renderUploadConfirmationRequiredLines(draft, `agentfeed publish --id ${draft.id} --yes`, 'agentfeed share --yes'));
     return;
   }
 
@@ -1180,13 +1100,13 @@ async function cmdShare(args: string[]) {
     apiBaseUrl: creds.api_base_url,
     reviewBaseUrl: result.review_base_url ?? metadata.review_base_url
   });
-  printUploadResult({
+  printLines(renderUploadResultLines({
     heading: result.reused_existing ? 'AgentFeed upload reused' : 'AgentFeed upload complete',
     message: result.reused_existing ? 'Worklog already uploaded; reusing existing review URL.' : 'Worklog uploaded.',
     draftId: draft.id,
     result,
     handoff
-  });
+  }));
 }
 
 async function hasCredentialsForPublishGuidance(): Promise<boolean> {
@@ -1223,7 +1143,7 @@ async function cmdPublish(args: string[]) {
   if (!creds) throw new Error(missingTokenMessage());
   const cacheReuseStatus = cachedUploadReuseStatusForCredentials(existingDraft, creds);
   if (!cacheReuseStatus.reusable && shouldRequireUploadConfirmation({ json: flag(args, '--json'), yes: flag(args, '--yes') || flag(args, '-y') })) {
-    printUploadConfirmationRequired(existingDraft, `agentfeed publish --id ${id} --yes`, undefined, existingDraft.upload.uploaded ? { cacheReuseReason: cacheReuseStatus.reason } : {});
+    printLines(renderUploadConfirmationRequiredLines(existingDraft, `agentfeed publish --id ${id} --yes`, undefined, existingDraft.upload.uploaded ? { cacheReuseReason: cacheReuseStatus.reason } : {}));
     return;
   }
   const metadata = await requireUploadPreflight(creds, { retryCommand: `agentfeed publish --id ${id} --yes` });
@@ -1246,14 +1166,14 @@ async function cmdPublish(args: string[]) {
     apiBaseUrl: creds.api_base_url,
     reviewBaseUrl: result.review_base_url ?? metadata?.review_base_url
   });
-  printUploadResult({
+  printLines(renderUploadResultLines({
     heading: result.reused_existing ? 'AgentFeed upload reused' : 'AgentFeed upload complete',
     message: result.reused_existing ? 'Private review draft already uploaded; reusing existing review URL.' : 'Private review draft uploaded.',
     draftId: id,
     result,
     handoff,
     privacyPolicyLines
-  });
+  }));
 }
 
 async function cmdScan(args: string[]) {

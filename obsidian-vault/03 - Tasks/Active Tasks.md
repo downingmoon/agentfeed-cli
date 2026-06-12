@@ -15,6 +15,12 @@ updated: 2026-06-12
 ## 현재 결론
 
 
+> [!success] 2026-06-12 CLI publish output split
+> `agentfeed publish`의 JSON payload 및 human upload result rendering을 `publish-output` helper로 분리해 direct publish 출력 계약을 테스트로 고정했다. Red test 2회 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 62 tests, full `npm test -- --run` 765 tests, 실제 temp project + local fake API CLI smoke(`publish --json`, `publish` reused human output) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Publish Output Split 2026-06-12]]
+
+
+
 > [!success] 2026-06-12 CLI share local output split
 > `agentfeed share`의 dry-run/token-missing JSON payload 및 human next-action rendering을 `share-output` helper로 분리해 local share 출력 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 64 tests, full `npm test -- --run` 763 tests, 실제 temp project CLI smoke(`share --dry`, `share --dry --json`, token-missing `share --yes --json`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Share Local Output Split 2026-06-12]]

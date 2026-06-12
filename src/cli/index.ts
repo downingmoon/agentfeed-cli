@@ -24,7 +24,7 @@ import { resolveStatusProject } from './status-project.js';
 import { setupProgressText, statusNextActions, statusReadinessItems } from './status-readiness.js';
 import { doctorNextActions, doctorReadinessItems } from './doctor-readiness.js';
 import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialResult, tokenLoginCredentialResult } from './auth-result.js';
-import { apiCheckFailureDetail, apiCompatibilityFailureDetail, apiCompatibilityRecoveryCommands, formatUploadRecoveryMessage, ingestionTokenRecoveryCommands, uploadNextActions, type UploadPreflightOptions } from './upload-guidance.js';
+import { apiCheckFailureDetail, apiCompatibilityFailureDetail, apiCompatibilityRecoveryCommands, formatUploadRecoveryMessage, ingestionTokenRecoveryCommands, type UploadPreflightOptions } from './upload-guidance.js';
 import { collectJsonNextActions } from './draft-next-actions.js';
 import { commandCatalogNextActions } from './guidance-actions.js';
 import { renderGuidedNextCommandLines, renderNextCommandLines, renderRecommendedCommandLines } from './guided-next-command-renderer.js';
@@ -53,6 +53,7 @@ import { renderCredentialResultLines } from './auth-output.js';
 import { doctorJsonPayload, renderDoctorHumanLines, type DoctorCheckTuple } from './doctor-output.js';
 import { renderUploadConfirmationRequiredLines, renderUploadResultLines } from './upload-output.js';
 import { renderShareLocalNextLines, shareLocalJsonPayload, shareUploadedJsonPayload } from './share-output.js';
+import { publishJsonPayload, renderPublishUploadResultLines } from './publish-output.js';
 import { createCommandCatalog } from './command-catalog.js';
 import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
 import { COMMAND_WORKFLOWS, renderCommandCatalogLines, renderCommandWorkflowLines } from './command-catalog-renderer.js';
@@ -61,7 +62,7 @@ import { COMMAND_ARG_SPECS, SUPPORTED_COMPLETION_SHELLS } from './command-arg-sp
 import { validateCommandArgs } from './command-argument-validator.js';
 import { commandHelpText } from './command-help-text.js';
 import { renderRootHelpLines } from './root-help-renderer.js';
-import { formatMetricsRow, formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from './share.js';
+import { formatMetricsRow, formatSharePreview, parseShareArgs } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
 import { openBrowser } from '../utils/open-browser.js';
@@ -784,24 +785,16 @@ async function cmdPublish(args: string[]) {
       apiBaseUrl: creds.api_base_url,
       reviewBaseUrl: result.review_base_url ?? metadata?.review_base_url
     });
-    print(JSON.stringify({ draft_id: id, upload: result, privacy_policy: privacyPolicySummary(savedDraft), handoff, next_actions: uploadNextActions(id) }, null, 2));
+    print(JSON.stringify(publishJsonPayload({ draft: savedDraft, upload: result, handoff }), null, 2));
     return;
   }
-  const privacyPolicyLines = formatPrivacyPolicyLines(savedDraft);
   const handoff = await handoffReviewUrl(result.review_url, {
     copy: shouldCopyReviewUrl({ noClipboard: flag(args, '--no-clipboard') }),
     open: await shouldOpenReviewAfterUpload(flag(args, '--open-review'), { noOpen: flag(args, '--no-open-review') }),
     apiBaseUrl: creds.api_base_url,
     reviewBaseUrl: result.review_base_url ?? metadata?.review_base_url
   });
-  printLines(renderUploadResultLines({
-    heading: result.reused_existing ? 'AgentFeed upload reused' : 'AgentFeed upload complete',
-    message: result.reused_existing ? 'Private review draft already uploaded; reusing existing review URL.' : 'Private review draft uploaded.',
-    draftId: id,
-    result,
-    handoff,
-    privacyPolicyLines
-  }));
+  printLines(renderPublishUploadResultLines({ draft: savedDraft, upload: result, handoff }));
 }
 
 async function cmdScan(args: string[]) {

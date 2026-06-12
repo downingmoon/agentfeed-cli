@@ -8,7 +8,7 @@ import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 import { formatCollectionExplain } from '../draft/explain.js';
-import { cachedUploadReuseStatusForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, publishDraft } from '../api/client.js';
+import { checkApiCompatibility, checkApiReachability, checkIngestionToken, publishDraft } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
 import type { AgentFeedCredentials, LocalDraft, ReviewUrlHandoff } from '../types.js';
@@ -59,6 +59,7 @@ import { doctorJsonPayload, renderDoctorHumanLines, type DoctorCheckTuple } from
 import { renderUploadConfirmationRequiredLines, renderUploadResultLines } from './upload-output.js';
 import { renderShareLocalNextLines, shareLocalJsonPayload, shareUploadedJsonPayload } from './share-output.js';
 import { publishJsonPayload, renderPublishUploadResultLines } from './publish-output.js';
+import { runPublishCommand } from './publish-execution.js';
 import { handoffReviewUrl, reviewUrlHandoffLines, shouldCopyReviewUrl } from './review-handoff.js';
 import { createCommandCatalog } from './command-catalog.js';
 import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
@@ -536,34 +537,27 @@ async function cmdPreview(args: string[]) {
 
 async function cmdPublish(args: string[]) {
   const id = await resolveDraftId(process.cwd(), args);
-  const existingDraft = await readDraft(process.cwd(), id);
-  const creds = await loadCredentials();
-  if (!creds) throw new Error(missingTokenMessage());
-  const cacheReuseStatus = cachedUploadReuseStatusForCredentials(existingDraft, creds);
-  if (!cacheReuseStatus.reusable && shouldRequireUploadConfirmation({ json: flag(args, '--json'), yes: flag(args, '--yes') || flag(args, '-y') })) {
-    printLines(renderUploadConfirmationRequiredLines(existingDraft, `agentfeed publish --id ${id} --yes`, undefined, existingDraft.upload.uploaded ? { cacheReuseReason: cacheReuseStatus.reason } : {}));
-    return;
-  }
-  const metadata = await requireUploadPreflight(creds, { retryCommand: `agentfeed publish --id ${id} --yes` });
-  const result = await publishDraft({ cwd: process.cwd(), id, credentials: creds, reviewBaseUrl: metadata?.review_base_url });
-  const savedDraft = await readDraft(process.cwd(), id);
-  if (flag(args, '--json')) {
-    const handoff = await handoffReviewUrl(result.review_url, {
-      copy: shouldCopyReviewUrl({ json: true, noClipboard: flag(args, '--no-clipboard'), clipboard: flag(args, '--clipboard') }),
-      open: await shouldOpenReviewAfterUpload(flag(args, '--open-review'), { respectConfig: false, noOpen: flag(args, '--no-open-review') }),
-      apiBaseUrl: creds.api_base_url,
-      reviewBaseUrl: result.review_base_url ?? metadata?.review_base_url
-    });
-    print(JSON.stringify(publishJsonPayload({ draft: savedDraft, upload: result, handoff }), null, 2));
-    return;
-  }
-  const handoff = await handoffReviewUrl(result.review_url, {
-    copy: shouldCopyReviewUrl({ noClipboard: flag(args, '--no-clipboard') }),
-    open: await shouldOpenReviewAfterUpload(flag(args, '--open-review'), { noOpen: flag(args, '--no-open-review') }),
-    apiBaseUrl: creds.api_base_url,
-    reviewBaseUrl: result.review_base_url ?? metadata?.review_base_url
+  const result = await runPublishCommand({
+    cwd: process.cwd(),
+    id,
+    flags: {
+      json: flag(args, '--json'),
+      yes: flag(args, '--yes') || flag(args, '-y'),
+      clipboard: flag(args, '--clipboard'),
+      noClipboard: flag(args, '--no-clipboard'),
+      openReview: flag(args, '--open-review'),
+      noOpenReview: flag(args, '--no-open-review')
+    }
   });
-  printLines(renderPublishUploadResultLines({ draft: savedDraft, upload: result, handoff }));
+  if (result.kind === 'confirmation_required') {
+    printLines(renderUploadConfirmationRequiredLines(result.draft, result.command, undefined, result.cacheReuseReason ? { cacheReuseReason: result.cacheReuseReason } : {}));
+    return;
+  }
+  if (flag(args, '--json')) {
+    print(JSON.stringify(publishJsonPayload({ draft: result.draft, upload: result.upload, handoff: result.handoff }), null, 2));
+    return;
+  }
+  printLines(renderPublishUploadResultLines({ draft: result.draft, upload: result.upload, handoff: result.handoff }));
 }
 
 async function cmdScan(args: string[]) {

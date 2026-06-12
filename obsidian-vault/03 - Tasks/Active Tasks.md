@@ -14,6 +14,11 @@ updated: 2026-06-12
 
 ## 현재 결론
 
+> [!success] 2026-06-12 CLI publish execution split
+> `agentfeed publish`의 confirmation gate, credential/token guidance, upload preflight, publish API call, saved-draft reread, review URL handoff policy를 `publish-execution` helper로 분리했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 80 tests, full `npm test -- --run` 813 tests, 실제 temp project + local fake API CLI smoke(confirmation no-network pause, `publish --yes --json --no-clipboard --no-open-review`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/개인서버 배포/infra/CICD 작업 없음.
+> - [[CLI Publish Execution Split 2026-06-12]]
+
+
 > [!success] 2026-06-12 CLI open execution split
 > `agentfeed open`의 saved review URL trust validation, invalid API URL warning capture, browser-open fallback warning 조립을 `open-execution` helper로 분리했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 49 tests, full `npm test -- --run` 810 tests, 실제 temp project CLI smoke(`open --json`, invalid API URL human fallback, invalid review URL) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/개인서버 배포/infra/CICD 작업 없음.
 > - [[CLI Open Execution Split 2026-06-12]]

@@ -27,11 +27,16 @@ describe('CLI review URL handoff trust policy', () => {
 
   it('passes the active API and review bases into every upload handoff call', () => {
     const cli = source('src/cli/index.ts');
-    expect((cli.match(/handoffReviewUrl\(result\.review_url/g) ?? []).length).toBe(5);
+    const publishExecution = source('src/cli/publish-execution.ts');
+    const uploadHandoffSources = `${cli}\n${publishExecution}`;
+    expect((cli.match(/handoffReviewUrl\(result\.review_url/g) ?? []).length).toBe(3);
+    expect((publishExecution.match(/handoffReviewUrl\(upload\.review_url/g) ?? []).length).toBe(1);
     expect(cli).toContain('draft.upload.handoff = await handoffReviewUrl(result.review_url, { copy: false, open: true, apiBaseUrl: creds.api_base_url, reviewBaseUrl: result.review_base_url ?? metadata.review_base_url });');
+    expect(publishExecution).toContain('apiBaseUrl: credentials.api_base_url,');
+    expect(publishExecution).toContain('reviewBaseUrl: upload.review_base_url ?? metadata.review_base_url');
     const nonNullBang = String.fromCharCode(33);
-    expect(cli).not.toContain(`apiBaseUrl: creds${nonNullBang}.api_base_url`);
-    expect((cli.match(/apiBaseUrl: creds\.api_base_url,\s*reviewBaseUrl: result\.review_base_url/g) ?? []).length).toBe(5);
-    expect((cli.match(/reviewBaseUrl: result\.review_base_url/g) ?? []).length).toBe(5);
+    expect(uploadHandoffSources).not.toContain(`apiBaseUrl: creds${nonNullBang}.api_base_url`);
+    expect((cli.match(/apiBaseUrl: creds\.api_base_url,\s*reviewBaseUrl: result\.review_base_url/g) ?? []).length).toBe(3);
+    expect((cli.match(/reviewBaseUrl: result\.review_base_url/g) ?? []).length).toBe(3);
   });
 });

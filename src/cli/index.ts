@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { rm } from 'node:fs/promises';
 import { initProject, loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
-import { credentialsFromToken, credentialsPath, deleteSavedCredentials, loadCredentials, loadCredentialsWithMetadata, saveCredentials, type CredentialTokenSource } from '../config/credentials.js';
+import { credentialsFromToken, deleteSavedCredentials, loadCredentials, loadCredentialsWithMetadata, saveCredentials } from '../config/credentials.js';
 import { resolveApiBaseUrl, resolveApiBaseUrlWithMetadata } from '../config/api-base.js';
 import { DEFAULT_API_BASE_URL } from '../config/defaults.js';
 import { markCollectionComplete, readCollectionStateWithDiagnostics, resolveCollectionWindowWithDiagnostics } from '../config/collection-state.js';
@@ -24,6 +24,7 @@ import { resolveStatusProject } from './status-project.js';
 import { setupProgressText, statusNextActions, statusReadinessItems } from './status-readiness.js';
 import { doctorNextActions, doctorReadinessItems } from './doctor-readiness.js';
 import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialResult, tokenLoginCredentialResult } from './auth-result.js';
+import { invalidApiBaseUrlMessage, loadDiagnosticCredentialsWithMetadata } from './diagnostic-credentials.js';
 import { requireApiCompatibilityBeforeCredentialSave, requireApiCompatibilityBeforeUpload, requireUploadPreflight } from './upload-preflight.js';
 import { collectJsonNextActions } from './draft-next-actions.js';
 import { commandCatalogNextActions } from './guidance-actions.js';
@@ -90,56 +91,6 @@ function jsonModeRequested(argv = process.argv.slice(2)): boolean {
   return argv.some((arg) => arg === '--json');
 }
 
-
-
-type CredentialsMetadata = Awaited<ReturnType<typeof loadCredentialsWithMetadata>>;
-
-interface DiagnosticCredentialsMetadata {
-  metadata: CredentialsMetadata;
-  invalidApiBaseUrl: boolean;
-}
-
-function invalidApiBaseUrlMessage(error: unknown): string | null {
-  if (!(error instanceof Error)) return null;
-  return error.message.startsWith('Invalid AgentFeed API base URL') ? error.message : null;
-}
-
-function invalidConfiguredApiBaseUrlLabel(): string {
-  const value = process.env.AGENTFEED_API_BASE_URL?.trim();
-  return value ? `invalid (${value})` : 'invalid';
-}
-
-function invalidApiBaseUrlWarnings(message: string): string[] {
-  return [
-    `invalid AgentFeed API URL setting ignored for diagnostics: ${message}`,
-    'Fix AGENTFEED_API_BASE_URL, unset it, or set AGENTFEED_ALLOW_INSECURE_API=1 for explicit development-only HTTP testing.'
-  ];
-}
-
-async function loadDiagnosticCredentialsWithMetadata(options: { cwd?: string } = {}): Promise<DiagnosticCredentialsMetadata> {
-  try {
-    return { metadata: await loadCredentialsWithMetadata(options), invalidApiBaseUrl: false };
-  } catch (error) {
-    const message = invalidApiBaseUrlMessage(error);
-    if (!message) throw error;
-    const tokenSource: CredentialTokenSource = process.env.AGENTFEED_TOKEN ? 'environment' : 'missing';
-    const file = credentialsPath();
-    return {
-      invalidApiBaseUrl: true,
-      metadata: {
-        credentials: null,
-        token_source: tokenSource,
-        credentials_file_path: file,
-        credentials_file_exists: await pathExists(file),
-        credential_store: tokenSource === 'environment' ? 'environment' : 'missing',
-        api_base_url: invalidConfiguredApiBaseUrlLabel(),
-        api_base_url_source: 'environment',
-        api_base_url_source_detail: 'AGENTFEED_API_BASE_URL',
-        warnings: invalidApiBaseUrlWarnings(message)
-      }
-    };
-  }
-}
 
 
 const SAFE_TOKEN_STDIN_COMMAND = 'printf %s "$TOKEN" | agentfeed login --token-stdin';

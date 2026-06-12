@@ -14,6 +14,12 @@ updated: 2026-06-12
 
 ## 현재 결론
 
+> [!success] 2026-06-12 CLI diagnostic credentials split
+> invalid `AGENTFEED_API_BASE_URL` 상태에서도 status/doctor가 environment token provenance와 recovery guidance를 유지하도록 diagnostic credential helper로 분리했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 70 tests, full `npm test -- --run` 779 tests, 실제 temp project CLI smoke(`status --json`, `doctor --json` with invalid API URL) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/개인서버 배포/infra/CICD 작업 없음.
+> - [[CLI Diagnostic Credentials Split 2026-06-12]]
+
+
+
 > [!success] 2026-06-12 CLI upload preflight split
 > upload/credential-save 전 API compatibility 및 ingestion token preflight recovery를 `upload-preflight` helper로 분리해 compatibility → token → ingest 차단 순서를 테스트로 고정했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 265 tests, full `npm test -- --run` 774 tests, 실제 temp project + local fake API CLI smoke(metadata incompatibility, token 401) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/개인서버 배포/infra/CICD 작업 없음.
 > - [[CLI Upload Preflight Split 2026-06-12]]

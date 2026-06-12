@@ -47,6 +47,7 @@ import { formatPrivacyScanReport, privacyScanJsonOutput } from './privacy-scan-o
 import { draftListJsonOutput, renderDraftListHumanLines, type DraftListRow } from './draft-list-output.js';
 import { formatCollectionCursor, nextDefaultCollectionSince, formatTokenExpiry, formatWarningLines, credentialSourceLabel, credentialStoreLabel, apiBaseSourceLabel, readinessMarker, tokenExpiryWarning } from './diagnostic-formatters.js';
 import { renderStatusHumanLines, statusJsonPayload, type StatusHealth, type StatusOutputInput } from './status-output.js';
+import { collectJsonPayload, renderCollectAutoUploadIgnoredWarningLines, renderCollectHumanLines } from './collect-output.js';
 import { logoutJsonPayload, renderLogoutHumanLines } from './logout-output.js';
 import { renderUploadConfirmationRequiredLines, renderUploadResultLines } from './upload-output.js';
 import { createCommandCatalog } from './command-catalog.js';
@@ -139,13 +140,6 @@ async function loadDiagnosticCredentialsWithMetadata(options: { cwd?: string } =
       }
     };
   }
-}
-
-function draftModelsLabel(draft: LocalDraft): string | null {
-  const models = draft.worklog.metrics.models_used?.length
-    ? draft.worklog.metrics.models_used
-    : draft.worklog.model ? [draft.worklog.model] : [];
-  return models.length ? models.join(', ') : null;
 }
 
 function printCredentialResult(options: CredentialResultView): void {
@@ -774,43 +768,21 @@ async function cmdCollect(args: string[]) {
       }
     }
     if (!flag(args, '--no-save-cursor')) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
-    print(JSON.stringify({ ...draft, warnings, next_actions: collectJsonNextActions(draft) }, null, 2));
+    print(JSON.stringify(collectJsonPayload({ draft, warnings }), null, 2));
     return;
   }
-  print(ui.heading(collection.reusedExisting ? 'AgentFeed draft reused' : 'AgentFeed draft ready'));
-  print(collection.reusedExisting ? 'Existing matching draft reused.\n' : 'Draft created.\n');
-  if (warnings.length) {
-    print(ui.section('Warnings'));
-    printWarningLines(warnings);
-    print();
-  }
-  print(ui.section('Summary'));
-  print(`ID: ${draft.id}`);
-  print(`Project: ${safeTerminalText(draft.project.name)}`);
-  print(`Title: ${singleLine(draft.worklog.title)}`);
-  print(`Privacy: ${safeTerminalText(draft.privacy_scan.status)}`);
-  if (flag(args, '--dry') || flag(args, '--dry-run')) print('Mode: dry run (local draft only; no upload attempted)');
-  print();
-  print(ui.section('Signals'));
-  print(`Agent: ${safeTerminalText(draft.worklog.agent)}`);
-  const models = draftModelsLabel(draft);
-  if (models) print(`Models: ${safeTerminalText(models)}`);
-  for (const line of ui.wrapKeyValue('Metrics', formatMetricsRow(draft))) print(line);
-  if (flag(args, '--explain')) {
-    print();
-    print(ui.section('Collection'));
-    print(formatCollectionExplain(draft));
-  }
-  print();
-  print(ui.section('Next'));
-  printRecommendedCommands(collectJsonNextActions(draft));
+  printLines(renderCollectHumanLines({
+    draft,
+    warnings,
+    reusedExisting: collection.reusedExisting,
+    dryRun: flag(args, '--dry') || flag(args, '--dry-run'),
+    explain: flag(args, '--explain')
+  }));
   if (uploadRequested) {
     await cmdPublish(['--id', draft.id, '--yes', ...(flag(args, '--open-review') ? ['--open-review'] : []), ...(flag(args, '--no-open-review') ? ['--no-open-review'] : [])]);
   } else {
     if (!flag(args, '--no-upload') && config.collection.auto_upload) {
-      print();
-      print(ui.section('Warnings'));
-      print('Note: collection.auto_upload is ignored by collect for safety. Use agentfeed collect --upload to upload explicitly.');
+      printLines(renderCollectAutoUploadIgnoredWarningLines());
     }
   }
   if (!flag(args, '--no-save-cursor')) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));

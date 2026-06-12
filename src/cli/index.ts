@@ -26,7 +26,7 @@ import { doctorNextActions, doctorReadinessItems } from './doctor-readiness.js';
 import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialResult, tokenLoginCredentialResult } from './auth-result.js';
 import { apiCheckFailureDetail, apiCompatibilityFailureDetail, apiCompatibilityRecoveryCommands, formatUploadRecoveryMessage, ingestionTokenRecoveryCommands, uploadNextActions, type UploadPreflightOptions } from './upload-guidance.js';
 import { collectJsonNextActions } from './draft-next-actions.js';
-import { discardCompleteNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
+import { discardCompleteNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
 import { commandCatalogNextActions } from './guidance-actions.js';
 import { renderGuidedNextCommandLines, renderNextCommandLines, renderRecommendedCommandLines } from './guided-next-command-renderer.js';
 import { jsonErrorFromMessage } from './error-output.js';
@@ -40,7 +40,7 @@ import { createCompletionScriptRenderer } from './completion-script-renderer.js'
 import { completionCommandResult, unexpectedCompletionCommandResult } from './completion-command.js';
 import { versionCommandOutput } from './version-command.js';
 import { discardCompletePayload, discardConfirmationPayload } from './discard-command.js';
-import { openJsonPayload } from './open-command.js';
+import { openJsonPayload, renderOpenHumanLines } from './open-command.js';
 import { localPreviewJsonPayload, remotePreviewJsonPayload, renderLocalPreviewHumanLines, renderRemotePreviewHumanLines } from './preview-command.js';
 import { formatPrivacyScanReport, privacyScanJsonOutput } from './privacy-scan-output.js';
 import { draftListJsonOutput, renderDraftListHumanLines, type DraftListRow } from './draft-list-output.js';
@@ -362,14 +362,6 @@ function printRecommendedCommands(commands: string[]): void {
 function printGuidedNextCommands(commands: string[]): void {
   for (const line of renderGuidedNextCommandLines({ commands, command: ui.command })) print(line);
 }
-
-function printUrlBlock(label: string, url: string): void {
-  print(`${label}:`);
-  print(`  ${ui.command(url)}`);
-}
-
-
-
 
 async function resolveDraftId(cwd: string, args: string[]): Promise<string> {
   await loadProjectConfig(cwd);
@@ -1232,37 +1224,7 @@ async function cmdOpen(args: string[]) {
     }), null, 2));
     return;
   }
-  if (!opened) {
-    print(ui.heading('AgentFeed review URL'));
-    print('Browser open failed. Open this URL manually:');
-    print();
-    print(ui.section('Summary'));
-    print(`Draft: ${draft.id}`);
-    printUrlBlock('Review URL', reviewUrl);
-    if (warnings.length) {
-      print();
-      print(ui.section('Warnings'));
-      printWarningLines(warnings);
-    }
-    print();
-    print(ui.section('Next'));
-    printGuidedNextCommands(openNextActions(draft.id));
-    return;
-  }
-  print(ui.heading('AgentFeed review opened'));
-  print('Opened review URL.');
-  print();
-  print(ui.section('Summary'));
-  print(`Draft: ${draft.id}`);
-  printUrlBlock('Review URL', reviewUrl);
-  if (warnings.length) {
-    print();
-    print(ui.section('Warnings'));
-    printWarningLines(warnings);
-  }
-  print();
-  print(ui.section('Next'));
-  printGuidedNextCommands(openNextActions(draft.id));
+  printLines(renderOpenHumanLines({ draftId: draft.id, reviewUrl, opened, warnings }));
 }
 
 

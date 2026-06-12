@@ -14,6 +14,12 @@ updated: 2026-06-12
 
 ## 현재 결론
 
+> [!success] 2026-06-12 CLI open human renderer split
+> `agentfeed open`의 review URL human-readable rendering을 `open-command` helper로 분리해 manual-open fallback과 browser-open success 출력 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 78 tests, full `npm test -- --run` 754 tests, 실제 temp project CLI smoke(`open`, `open --json`, fake browser success) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> - [[CLI Open Human Renderer Split 2026-06-12]]
+
+
+
 > [!success] 2026-06-12 CLI doctor output split
 > `agentfeed doctor`의 JSON payload 및 human-readable diagnostics rendering을 `doctor-output` helper로 분리해 doctor 출력 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 48 tests, full `npm test -- --run` 752 tests, 실제 temp project CLI smoke(`doctor`, `doctor --json`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Doctor Output Split 2026-06-12]]

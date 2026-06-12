@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { rm } from 'node:fs/promises';
-import { relative } from 'node:path';
 import { initProject, loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
 import { credentialsFromToken, credentialsPath, deleteSavedCredentials, loadCredentials, loadCredentialsWithMetadata, saveCredentials, type CredentialTokenSource } from '../config/credentials.js';
 import { resolveApiBaseUrl, resolveApiBaseUrlWithMetadata } from '../config/api-base.js';
@@ -28,7 +27,7 @@ import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialRes
 import { apiCheckFailureDetail, apiCompatibilityFailureDetail, apiCompatibilityRecoveryCommands, formatUploadRecoveryMessage, ingestionTokenRecoveryCommands, uploadNextActions, type UploadPreflightOptions } from './upload-guidance.js';
 import { collectJsonNextActions } from './draft-next-actions.js';
 import { discardCompleteNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
-import { commandCatalogNextActions, hookNextActions, initNextActions } from './guidance-actions.js';
+import { commandCatalogNextActions, hookNextActions } from './guidance-actions.js';
 import { renderGuidedNextCommandLines, renderNextCommandLines, renderRecommendedCommandLines } from './guided-next-command-renderer.js';
 import { jsonErrorFromMessage } from './error-output.js';
 import { commandHelpHint, hookUsageMessage, unsupportedHookTargetMessage } from './command-recovery.js';
@@ -49,6 +48,7 @@ import { formatCollectionCursor, nextDefaultCollectionSince, formatTokenExpiry, 
 import { renderStatusHumanLines, statusJsonPayload, type StatusHealth, type StatusOutputInput } from './status-output.js';
 import { collectJsonPayload, renderCollectAutoUploadIgnoredWarningLines, renderCollectHumanLines } from './collect-output.js';
 import { logoutJsonPayload, renderLogoutHumanLines } from './logout-output.js';
+import { initJsonPayload, renderInitHumanLines } from './init-output.js';
 import { renderUploadConfirmationRequiredLines, renderUploadResultLines } from './upload-output.js';
 import { createCommandCatalog } from './command-catalog.js';
 import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
@@ -86,11 +86,6 @@ function jsonModeRequested(argv = process.argv.slice(2)): boolean {
   return argv.some((arg) => arg === '--json');
 }
 
-
-function projectRelativePath(projectRoot: string, path: string): string {
-  const rel = relative(projectRoot, path);
-  return rel && !rel.startsWith('..') ? rel : path;
-}
 
 
 type CredentialsMetadata = Awaited<ReturnType<typeof loadCredentialsWithMetadata>>;
@@ -375,36 +370,6 @@ async function shouldOpenReviewAfterUpload(openFlag: boolean, options: { respect
 }
 
 
-interface InitChecklistItem {
-  name: string;
-  detail: string;
-  next_action?: string;
-}
-
-function initSetupChecklist(alreadyInitialized: boolean): InitChecklistItem[] {
-  return alreadyInitialized
-    ? [
-      { name: 'Project', detail: 'existing config kept' },
-      { name: 'Status', detail: 'inspect credentials, API, hooks, and drafts', next_action: 'agentfeed status' },
-      { name: 'First draft', detail: 'collect locally without uploading', next_action: 'agentfeed share --dry' },
-      { name: 'Reinitialize', detail: 'backup and recreate config only if needed', next_action: 'agentfeed init --force' }
-    ]
-    : [
-      { name: 'Project', detail: 'config ready' },
-      { name: 'Account', detail: 'connect this terminal to AgentFeed', next_action: 'agentfeed login' },
-      { name: 'Agent hook', detail: 'capture Claude Code sessions automatically', next_action: 'agentfeed hook install claude-code' },
-      { name: 'First draft', detail: 'collect locally without uploading', next_action: 'agentfeed share --dry' }
-    ];
-}
-
-function printInitSetupChecklist(items: InitChecklistItem[]): void {
-  print(ui.section('Setup checklist'));
-  for (const item of items) {
-    const next = item.next_action ? ` → ${item.next_action}` : '';
-    print(`• ${item.name}: ${item.detail}${next}`);
-  }
-}
-
 
 function doctorCheckMarker(value: boolean | string): string {
   const text = String(value).toLowerCase();
@@ -488,45 +453,21 @@ async function cmdInit(args: string[]) {
     noGitCheck: flag(args, '--no-git-check'),
     force: flag(args, '--force')
   });
-  const nextActions = initNextActions(result.alreadyInitialized);
-  const setupChecklist = initSetupChecklist(result.alreadyInitialized);
+  const initOutput = {
+    alreadyInitialized: result.alreadyInitialized,
+    project: {
+      name: result.config.project.name,
+      visibility: result.config.project.visibility,
+      tags: result.config.project.tags
+    },
+    root: result.root,
+    backupPaths: result.backupPaths
+  };
   if (flag(args, '--json')) {
-    print(JSON.stringify({
-      already_initialized: result.alreadyInitialized,
-      project: {
-        name: result.config.project.name,
-        visibility: result.config.project.visibility,
-        tags: result.config.project.tags
-      },
-      root: result.root,
-      config_path: '.agentfeed/config.json',
-      backup_paths: result.backupPaths.map((backupPath) => projectRelativePath(result.root, backupPath)),
-      setup_checklist: setupChecklist,
-      next_actions: nextActions
-    }, null, 2));
+    print(JSON.stringify(initJsonPayload(initOutput), null, 2));
     return;
   }
-  print(ui.heading(result.alreadyInitialized ? 'AgentFeed already initialized' : result.backupPaths.length ? 'AgentFeed reinitialized' : 'AgentFeed initialized'));
-  print(result.alreadyInitialized
-    ? 'Existing AgentFeed config kept.'
-    : result.backupPaths.length
-      ? 'AgentFeed config recreated after backing up existing files.'
-      : 'Project config created.');
-  print();
-  print(ui.section('Summary'));
-  print(`Project: ${result.config.project.name}`);
-  print(`Visibility: ${result.config.project.visibility}`);
-  print('Config: .agentfeed/config.json');
-  if (result.backupPaths.length) {
-    print();
-    print(ui.section('Backups'));
-    for (const backupPath of result.backupPaths) print(projectRelativePath(result.root, backupPath));
-  }
-  print();
-  printInitSetupChecklist(setupChecklist);
-  print();
-  print(ui.section('Next'));
-  printRecommendedCommands(nextActions);
+  printLines(renderInitHumanLines(initOutput));
 }
 
 async function cmdLogin(args: string[]) {

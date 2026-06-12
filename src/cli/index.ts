@@ -3,13 +3,12 @@ import { rm } from 'node:fs/promises';
 import { initProject, loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
 import { credentialsFromToken, deleteSavedCredentials, loadCredentials, loadCredentialsWithMetadata, saveCredentials } from '../config/credentials.js';
 import { resolveApiBaseUrl, resolveApiBaseUrlWithMetadata } from '../config/api-base.js';
-import { DEFAULT_API_BASE_URL } from '../config/defaults.js';
 import { markCollectionComplete, readCollectionStateWithDiagnostics, resolveCollectionWindowWithDiagnostics } from '../config/collection-state.js';
 import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 import { formatCollectionExplain } from '../draft/explain.js';
-import { cachedUploadReuseStatusForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, isTrustedReviewUrl, publishDraft } from '../api/client.js';
+import { cachedUploadReuseStatusForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, publishDraft } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
 import type { AgentFeedCredentials, LocalDraft, ReviewUrlHandoff } from '../types.js';
@@ -23,7 +22,7 @@ import { setupProgressText, statusNextActions, statusReadinessItems } from './st
 import { doctorNextActions, doctorReadinessItems } from './doctor-readiness.js';
 import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialResult, tokenLoginCredentialResult } from './auth-result.js';
 import { missingTokenMessage, resolveLoginTokenInput } from './auth-token-input.js';
-import { invalidApiBaseUrlMessage, loadDiagnosticCredentialsWithMetadata } from './diagnostic-credentials.js';
+import { loadDiagnosticCredentialsWithMetadata } from './diagnostic-credentials.js';
 import { requireApiCompatibilityBeforeCredentialSave, requireApiCompatibilityBeforeUpload, requireUploadPreflight } from './upload-preflight.js';
 import { shouldOpenReviewAfterUpload, shouldRequireUploadConfirmation } from './runtime-policy.js';
 import { collectJsonNextActions } from './draft-next-actions.js';
@@ -40,7 +39,8 @@ import { createCompletionScriptRenderer } from './completion-script-renderer.js'
 import { completionCommandResult, unexpectedCompletionCommandResult } from './completion-command.js';
 import { versionCommandOutput } from './version-command.js';
 import { discardCompletePayload, discardConfirmationPayload, renderDiscardCompleteHumanLines, renderDiscardConfirmationHumanLines } from './discard-command.js';
-import { notUploadedDraftMessage, openJsonPayload, renderOpenHumanLines } from './open-command.js';
+import { openJsonPayload, renderOpenHumanLines } from './open-command.js';
+import { openReviewDraft } from './open-execution.js';
 import { resolveOpenDraft } from './open-draft-resolver.js';
 import { localPreviewJsonPayload, remotePreviewJsonPayload, renderLocalPreviewHumanLines, renderRemotePreviewHumanLines } from './preview-command.js';
 import { runPreviewCommand } from './preview-execution.js';
@@ -71,7 +71,6 @@ import { renderRootHelpLines } from './root-help-renderer.js';
 import { formatSharePreview, parseShareArgs } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
-import { openBrowser } from '../utils/open-browser.js';
 import { AGENTFEED_CLI_VERSION } from '../version.js';
 import { draftPaths } from '../draft/paths.js';
 import * as ui from './ui.js';
@@ -802,37 +801,22 @@ async function cmdDiscard(args: string[]) {
 
 async function cmdOpen(args: string[]) {
   const draft = await resolveOpenDraft({ cwd: process.cwd(), id: option(args, '--id'), latest: flag(args, '--latest') });
-  const reviewUrl = draft.upload.review_url;
-  if (!reviewUrl) throw new Error(notUploadedDraftMessage(draft.id));
-  const trustedApiBases = new Set([DEFAULT_API_BASE_URL]);
-  const warnings: string[] = [];
-  if (draft.upload.api_base_url) trustedApiBases.add(draft.upload.api_base_url);
-  try {
-    const credentials = await loadCredentialsWithMetadata({ cwd: process.cwd() });
-    if (credentials.api_base_url) trustedApiBases.add(credentials.api_base_url);
-  } catch (error) {
-    const invalidApiMessage = invalidApiBaseUrlMessage(error);
-    if (!invalidApiMessage) throw error;
-    warnings.push(`ignored invalid AgentFeed API URL while opening a saved review URL: ${invalidApiMessage}`);
-  }
-  if (![...trustedApiBases].some((apiBaseUrl) => isTrustedReviewUrl(reviewUrl, apiBaseUrl, draft.upload.review_base_url))) {
-    throw new Error('Saved draft review URL is invalid. Run agentfeed share again to upload a fresh private review draft.');
-  }
-  const opened = await openBrowser(reviewUrl);
-  const openWarnings = [
-    ...warnings,
-    ...(!opened ? ['Review URL could not be opened automatically. Open review_url manually.'] : [])
-  ];
+  const result = await openReviewDraft({ cwd: process.cwd(), draft });
   if (flag(args, '--json')) {
     print(JSON.stringify(openJsonPayload({
-      draftId: draft.id,
-      reviewUrl,
-      opened,
-      warnings: openWarnings
+      draftId: result.draftId,
+      reviewUrl: result.reviewUrl,
+      opened: result.opened,
+      warnings: result.jsonWarnings
     }), null, 2));
     return;
   }
-  printLines(renderOpenHumanLines({ draftId: draft.id, reviewUrl, opened, warnings }));
+  printLines(renderOpenHumanLines({
+    draftId: result.draftId,
+    reviewUrl: result.reviewUrl,
+    opened: result.opened,
+    warnings: result.warnings
+  }));
 }
 
 

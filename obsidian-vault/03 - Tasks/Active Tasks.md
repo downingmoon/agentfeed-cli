@@ -14,6 +14,11 @@ updated: 2026-06-12
 
 ## 현재 결론
 
+> [!success] 2026-06-12 CLI open execution split
+> `agentfeed open`의 saved review URL trust validation, invalid API URL warning capture, browser-open fallback warning 조립을 `open-execution` helper로 분리했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 49 tests, full `npm test -- --run` 810 tests, 실제 temp project CLI smoke(`open --json`, invalid API URL human fallback, invalid review URL) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/개인서버 배포/infra/CICD 작업 없음.
+> - [[CLI Open Execution Split 2026-06-12]]
+
+
 > [!success] 2026-06-12 CLI open draft resolver split
 > `agentfeed open`의 draft id/latest 선택, pending/no-uploaded guidance, malformed draft skip을 `open-draft-resolver` helper로 분리했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 45 tests, full `npm test -- --run` 806 tests, 실제 temp project CLI smoke(`open --latest --json`, pending `open --id`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/개인서버 배포/infra/CICD 작업 없음.
 > - [[CLI Open Draft Resolver Split 2026-06-12]]

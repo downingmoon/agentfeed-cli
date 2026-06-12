@@ -23,7 +23,7 @@ import { unknownCommandError } from './unknown-command-error.js';
 import { resolveStatusProject } from './status-project.js';
 import { setupProgressText, statusNextActions, statusReadinessItems } from './status-readiness.js';
 import { doctorNextActions, doctorPriorityActions, doctorReadinessItems, doctorSummary, type DoctorPriorityAction, type DoctorReadinessItem } from './doctor-readiness.js';
-import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialResult, tokenLoginCredentialResult, type CredentialResultView } from './auth-result.js';
+import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialResult, tokenLoginCredentialResult } from './auth-result.js';
 import { apiCheckFailureDetail, apiCompatibilityFailureDetail, apiCompatibilityRecoveryCommands, formatUploadRecoveryMessage, ingestionTokenRecoveryCommands, uploadNextActions, type UploadPreflightOptions } from './upload-guidance.js';
 import { collectJsonNextActions } from './draft-next-actions.js';
 import { discardCompleteNextActions, openNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
@@ -50,6 +50,7 @@ import { collectJsonPayload, renderCollectAutoUploadIgnoredWarningLines, renderC
 import { logoutJsonPayload, renderLogoutHumanLines } from './logout-output.js';
 import { initJsonPayload, renderInitHumanLines } from './init-output.js';
 import { hookJsonPayload, renderHookHumanLines, type HookInstallOutputInput, type HookUninstallOutputInput } from './hook-output.js';
+import { renderCredentialResultLines } from './auth-output.js';
 import { renderUploadConfirmationRequiredLines, renderUploadResultLines } from './upload-output.js';
 import { createCommandCatalog } from './command-catalog.js';
 import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
@@ -137,30 +138,6 @@ async function loadDiagnosticCredentialsWithMetadata(options: { cwd?: string } =
     };
   }
 }
-
-function printCredentialResult(options: CredentialResultView): void {
-  print(ui.heading(options.heading));
-  print(options.message);
-  print();
-  print(ui.section('Summary'));
-  print(`Credentials: ${options.saved ? 'saved' : 'not saved'}`);
-  if (options.apiBaseUrl) print(`API: ${options.apiBaseUrl}`);
-  if (options.tokenExpiresAt) print(`Token expires at: ${formatTokenExpiry(options.tokenExpiresAt)}`);
-  if (options.warnings?.length) {
-    print();
-    print(ui.section('Warnings'));
-    printWarningLines(options.warnings);
-  }
-  print();
-  print(ui.section('Next'));
-  if (options.saved) {
-    for (const command of options.next?.length ? options.next : ['agentfeed status']) print(`  ${ui.command(command)}`);
-  } else {
-    print('No credentials file was written. Future commands need AGENTFEED_TOKEN or a saved login.');
-    for (const command of options.next ?? ['agentfeed status']) print(`  ${ui.command(command)}`);
-  }
-}
-
 
 
 function shouldCopyReviewUrl(options: { json?: boolean; noClipboard?: boolean; clipboard?: boolean }): boolean {
@@ -499,7 +476,7 @@ async function cmdLogin(args: string[]) {
       const saved = await loadCredentialsWithMetadata({ cwd: process.cwd() });
       warnings.push(...saved.warnings);
     }
-    printCredentialResult(browserLoginCredentialResult({ noSave, credentials: creds, warnings }));
+    printLines(renderCredentialResultLines(browserLoginCredentialResult({ noSave, credentials: creds, warnings })));
     return;
   }
   const loginApiOptions = { apiBaseUrl, cwd: process.cwd(), trustRepoDiscoveredApiBase: process.env.AGENTFEED_TRUST_REPO_API_BASE === '1' };
@@ -525,7 +502,7 @@ async function cmdLogin(args: string[]) {
     }), null, 2));
     return;
   }
-  printCredentialResult(tokenLoginCredentialResult({ noSave, credentials: creds, warnings }));
+  printLines(renderCredentialResultLines(tokenLoginCredentialResult({ noSave, credentials: creds, warnings })));
 }
 
 async function replacementTokenIdForSavedCredentials(creds: NonNullable<Awaited<ReturnType<typeof loadCredentialsWithMetadata>>['credentials']>): Promise<string | undefined> {
@@ -541,7 +518,7 @@ async function rotateViaBrowserLogin(args: string[], message: string, replaceTok
   const noSave = flag(args, '--no-save');
   const existing = await loadCredentialsWithMetadata({ cwd: process.cwd() });
   const creds = await browserLogin({ apiBaseUrl, noOpen: flag(args, '--no-open'), save: !noSave, cwd: process.cwd(), storedApiBaseUrl: existing.credentials?.api_base_url, allowCiBrowser: flag(args, '--browser'), replaceTokenId: noSave ? undefined : replaceTokenId });
-  printCredentialResult(rotateCredentialResult({ noSave, credentials: creds, message }));
+  printLines(renderCredentialResultLines(rotateCredentialResult({ noSave, credentials: creds, message })));
 }
 
 async function cmdRotate(args: string[]) {

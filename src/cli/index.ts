@@ -26,7 +26,7 @@ import { doctorNextActions, doctorReadinessItems } from './doctor-readiness.js';
 import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialResult, tokenLoginCredentialResult } from './auth-result.js';
 import { apiCheckFailureDetail, apiCompatibilityFailureDetail, apiCompatibilityRecoveryCommands, formatUploadRecoveryMessage, ingestionTokenRecoveryCommands, uploadNextActions, type UploadPreflightOptions } from './upload-guidance.js';
 import { collectJsonNextActions } from './draft-next-actions.js';
-import { discardCompleteNextActions, shareDryRunNextActions } from './draft-navigation-actions.js';
+import { shareDryRunNextActions } from './draft-navigation-actions.js';
 import { commandCatalogNextActions } from './guidance-actions.js';
 import { renderGuidedNextCommandLines, renderNextCommandLines, renderRecommendedCommandLines } from './guided-next-command-renderer.js';
 import { jsonErrorFromMessage } from './error-output.js';
@@ -39,7 +39,7 @@ import { createCompletionOptionMetadata } from './completion-option-metadata.js'
 import { createCompletionScriptRenderer } from './completion-script-renderer.js';
 import { completionCommandResult, unexpectedCompletionCommandResult } from './completion-command.js';
 import { versionCommandOutput } from './version-command.js';
-import { discardCompletePayload, discardConfirmationPayload } from './discard-command.js';
+import { discardCompletePayload, discardConfirmationPayload, renderDiscardCompleteHumanLines, renderDiscardConfirmationHumanLines } from './discard-command.js';
 import { openJsonPayload, renderOpenHumanLines } from './open-command.js';
 import { localPreviewJsonPayload, remotePreviewJsonPayload, renderLocalPreviewHumanLines, renderRemotePreviewHumanLines } from './preview-command.js';
 import { formatPrivacyScanReport, privacyScanJsonOutput } from './privacy-scan-output.js';
@@ -305,23 +305,6 @@ function isCiEnvironment(): boolean {
 function shouldRequireUploadConfirmation(options: { json?: boolean; yes?: boolean }): boolean {
   if (options.json || options.yes) return false;
   return true;
-}
-
-function printDiscardConfirmationRequired(id: string, options: { hadJson: boolean; hadMarkdown: boolean }): void {
-  print(ui.heading('AgentFeed discard paused'));
-  print('Discard confirmation required.');
-  print('No local draft files were deleted.');
-  print();
-  print(ui.section('Summary'));
-  print(`Draft: ${id}`);
-  print(`JSON: ${options.hadJson ? 'will be removed' : 'not found'}`);
-  print(`Markdown: ${options.hadMarkdown ? 'will be removed' : 'not found'}`);
-  print();
-  print(ui.section('Next'));
-  print('Delete this local draft after reviewing it:');
-  print(`  ${ui.command(`agentfeed discard --id ${id} --yes`)}`);
-  print('Or preview it first:');
-  print(`  ${ui.command(`agentfeed preview --id ${id}`)}`);
 }
 
 async function sanitizeDraftForCliOutput(cwd: string, draft: LocalDraft): Promise<LocalDraft> {
@@ -1106,7 +1089,7 @@ async function cmdDiscard(args: string[]) {
       print(JSON.stringify(discardConfirmationPayload({ draftId: id, hadJson, hadMarkdown }), null, 2));
       return;
     }
-    printDiscardConfirmationRequired(id, { hadJson, hadMarkdown });
+    printLines(renderDiscardConfirmationHumanLines({ draftId: id, hadJson, hadMarkdown }));
     return;
   }
   await rm(jsonPath, { force: true });
@@ -1115,16 +1098,7 @@ async function cmdDiscard(args: string[]) {
     print(JSON.stringify(discardCompletePayload({ draftId: id, hadJson, hadMarkdown }), null, 2));
     return;
   }
-  print(ui.heading('AgentFeed draft discarded'));
-  print(`Discarded draft: ${id}`);
-  print();
-  print(ui.section('Summary'));
-  print(`Draft: ${id}`);
-  print(`JSON: ${hadJson ? 'removed' : 'not found'}`);
-  print(`Markdown: ${hadMarkdown ? 'removed' : 'not found'}`);
-  print();
-  print(ui.section('Next'));
-  printGuidedNextCommands(discardCompleteNextActions());
+  printLines(renderDiscardCompleteHumanLines({ draftId: id, hadJson, hadMarkdown }));
 }
 
 function notUploadedDraftMessage(draft: LocalDraft): string {

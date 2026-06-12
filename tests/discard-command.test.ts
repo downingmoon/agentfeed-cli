@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { discardCompletePayload, discardConfirmationPayload } from '../src/cli/discard-command.js';
+import { discardCompletePayload, discardConfirmationPayload, renderDiscardCompleteHumanLines, renderDiscardConfirmationHumanLines } from '../src/cli/discard-command.js';
+
+
+const plainStyle = {
+  heading: (text: string) => text,
+  section: (text: string) => text,
+  command: (text: string) => text
+} as const;
 
 describe('discard command payloads', () => {
   it('returns confirmation payload without marking files removed', () => {
@@ -35,4 +42,50 @@ describe('discard command payloads', () => {
       next_actions: ['agentfeed drafts', 'agentfeed collect --explain']
     });
   });
+
+
+  it('renders human confirmation without marking files removed', () => {
+    // Given / When: discard is requested without explicit confirmation.
+    const lines = renderDiscardConfirmationHumanLines({ draftId: 'draft_keep', hadJson: true, hadMarkdown: false }, plainStyle);
+
+    // Then: human output explains that nothing was deleted and shows review/delete commands.
+    expect(lines).toEqual([
+      'AgentFeed discard paused',
+      'Discard confirmation required.',
+      'No local draft files were deleted.',
+      '',
+      'Summary',
+      'Draft: draft_keep',
+      'JSON: will be removed',
+      'Markdown: not found',
+      '',
+      'Next',
+      'Delete this local draft after reviewing it:',
+      '  agentfeed discard --id draft_keep --yes',
+      'Or preview it first:',
+      '  agentfeed preview --id draft_keep'
+    ]);
+  });
+
+  it('renders human completion after confirmed deletion', () => {
+    // Given / When: discard has removed the files that existed.
+    const lines = renderDiscardCompleteHumanLines({ draftId: 'draft_delete', hadJson: true, hadMarkdown: true }, plainStyle);
+
+    // Then: human output records deletion and post-discard navigation.
+    expect(lines).toEqual([
+      'AgentFeed draft discarded',
+      'Discarded draft: draft_delete',
+      '',
+      'Summary',
+      'Draft: draft_delete',
+      'JSON: removed',
+      'Markdown: removed',
+      '',
+      'Next',
+      'Recommended order:',
+      '  1. agentfeed drafts',
+      '  2. agentfeed collect --explain'
+    ]);
+  });
+
 });

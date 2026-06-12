@@ -45,7 +45,8 @@ import { discardCompletePayload, discardConfirmationPayload, renderDiscardComple
 import { noOpenableDraftsMessage, noUploadedDraftsMessage, notUploadedDraftMessage, openJsonPayload, renderOpenHumanLines } from './open-command.js';
 import { localPreviewJsonPayload, remotePreviewJsonPayload, renderLocalPreviewHumanLines, renderRemotePreviewHumanLines } from './preview-command.js';
 import { formatPrivacyScanReport, privacyScanJsonOutput } from './privacy-scan-output.js';
-import { draftListJsonOutput, renderDraftListHumanLines, type DraftListRow } from './draft-list-output.js';
+import { draftListJsonOutput, renderDraftListHumanLines } from './draft-list-output.js';
+import { buildDraftListRow } from './draft-list-rows.js';
 import { formatCollectionCursor, nextDefaultCollectionSince, formatTokenExpiry, formatWarningLines, credentialSourceLabel, credentialStoreLabel, apiBaseSourceLabel, readinessMarker, tokenExpiryWarning } from './diagnostic-formatters.js';
 import { renderStatusHumanLines, statusJsonPayload, type StatusHealth, type StatusOutputInput } from './status-output.js';
 import { collectJsonPayload, renderCollectAutoUploadIgnoredWarningLines, renderCollectHumanLines } from './collect-output.js';
@@ -66,7 +67,7 @@ import { COMMAND_ARG_SPECS, SUPPORTED_COMPLETION_SHELLS } from './command-arg-sp
 import { validateCommandArgs } from './command-argument-validator.js';
 import { commandHelpText } from './command-help-text.js';
 import { renderRootHelpLines } from './root-help-renderer.js';
-import { formatMetricsRow, formatSharePreview, parseShareArgs } from './share.js';
+import { formatSharePreview, parseShareArgs } from './share.js';
 import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
 import { openBrowser } from '../utils/open-browser.js';
@@ -106,11 +107,6 @@ async function sanitizeDraftForCliOutput(cwd: string, draft: LocalDraft): Promis
   scanAndRedactDraftPublicFields(draft);
   await writeDraft(cwd, draft);
   return draft;
-}
-
-function singleLine(value: string): string {
-  const text = safeTerminalText(value).replace(/\s+/g, ' ').trim();
-  return text.length > 160 ? `${text.slice(0, 157)}...` : text;
 }
 
 function printNextCommands(commands: string[]): void {
@@ -780,44 +776,10 @@ async function cmdDoctor(args: string[] = []) {
   printLines(renderDoctorHumanLines(doctorOutput));
 }
 
-function safeDraftListTitle(draft: LocalDraft): string {
-  const result = scanAndRedactFields({ title: draft.worklog.title });
-  return singleLine(String(result.redacted.title ?? draft.worklog.title));
-}
-
-async function draftListRow(row: Awaited<ReturnType<typeof listDrafts>>[number]): Promise<DraftListRow> {
-  const updatedAt = new Date(row.mtimeMs).toISOString();
-  try {
-    const draft = await readDraft(process.cwd(), row.id);
-    return {
-      id: row.id,
-      path: row.path,
-      updated_at: updatedAt,
-      valid: true,
-      project: draft.project.name,
-      title: safeDraftListTitle(draft),
-      agent: draft.worklog.agent,
-      status: draft.upload.uploaded ? 'uploaded' : 'pending',
-      privacy: draft.privacy_scan.status,
-      findings: draft.privacy_scan.findings.length,
-      metrics: formatMetricsRow(draft),
-      review_url: draft.upload.review_url ?? null
-    };
-  } catch (error) {
-    return {
-      id: row.id,
-      path: row.path,
-      updated_at: updatedAt,
-      valid: false,
-      error: error instanceof Error ? error.message : String(error)
-    };
-  }
-}
-
-
 async function cmdDrafts(args: string[]) {
   await loadProjectConfig(process.cwd());
-  const rows = await Promise.all((await listDrafts(process.cwd())).map((row) => draftListRow(row)));
+  const cwd = process.cwd();
+  const rows = await Promise.all((await listDrafts(cwd)).map((row) => buildDraftListRow(cwd, row)));
   if (flag(args, '--json')) {
     print(JSON.stringify(draftListJsonOutput(rows), null, 2));
     return;

@@ -9,7 +9,7 @@ import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 import { formatCollectionExplain } from '../draft/explain.js';
-import { cachedUploadReuseStatusForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, isTrustedReviewUrl, previewDraftRemote, publishDraft } from '../api/client.js';
+import { cachedUploadReuseStatusForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, isTrustedReviewUrl, publishDraft } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
 import type { AgentFeedCredentials, LocalDraft, ReviewUrlHandoff } from '../types.js';
@@ -42,6 +42,7 @@ import { versionCommandOutput } from './version-command.js';
 import { discardCompletePayload, discardConfirmationPayload, renderDiscardCompleteHumanLines, renderDiscardConfirmationHumanLines } from './discard-command.js';
 import { noOpenableDraftsMessage, noUploadedDraftsMessage, notUploadedDraftMessage, openJsonPayload, renderOpenHumanLines } from './open-command.js';
 import { localPreviewJsonPayload, remotePreviewJsonPayload, renderLocalPreviewHumanLines, renderRemotePreviewHumanLines } from './preview-command.js';
+import { runPreviewCommand } from './preview-execution.js';
 import { formatPrivacyScanReport, privacyScanJsonOutput } from './privacy-scan-output.js';
 import { runPrivacyScanCommand } from './scan-command.js';
 import { draftListJsonOutput, renderDraftListHumanLines } from './draft-list-output.js';
@@ -520,21 +521,17 @@ async function hasCredentialsForPublishGuidance(): Promise<boolean> {
 
 async function cmdPreview(args: string[]) {
   const id = await resolveDraftId(process.cwd(), args);
-  const draft = await sanitizeDraftForCliOutput(process.cwd(), await readDraft(process.cwd(), id));
-  if (flag(args, '--remote')) {
-    const creds = await loadCredentials();
-    if (!creds) throw new Error(missingTokenMessage());
-    await requireApiCompatibilityBeforeUpload(creds.api_base_url);
-    const remote = await previewDraftRemote(draft, creds);
+  const preview = await runPreviewCommand({ cwd: process.cwd(), id, remote: flag(args, '--remote') });
+  if (preview.kind === 'remote') {
     if (flag(args, '--json')) {
-      print(JSON.stringify(remotePreviewJsonPayload({ draftId: draft.id, remote }), null, 2));
+      print(JSON.stringify(remotePreviewJsonPayload({ draftId: preview.draft.id, remote: preview.remote }), null, 2));
     } else {
-      printLines(renderRemotePreviewHumanLines({ draftId: draft.id, draftTitle: draft.worklog.title, remote }));
+      printLines(renderRemotePreviewHumanLines({ draftId: preview.draft.id, draftTitle: preview.draft.worklog.title, remote: preview.remote }));
     }
     return;
   }
-  if (flag(args, '--json')) { print(JSON.stringify(localPreviewJsonPayload(draft), null, 2)); return; }
-  printLines(renderLocalPreviewHumanLines(draft));
+  if (flag(args, '--json')) { print(JSON.stringify(localPreviewJsonPayload(preview.draft), null, 2)); return; }
+  printLines(renderLocalPreviewHumanLines(preview.draft));
 }
 
 async function cmdPublish(args: string[]) {

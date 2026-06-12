@@ -14,6 +14,11 @@ updated: 2026-06-12
 
 ## 현재 결론
 
+> [!success] 2026-06-12 CLI preview execution split
+> `agentfeed preview`의 local draft sanitize/persist와 remote compatibility preflight/preview execution을 `preview-execution` helper로 분리했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 81 tests, full `npm test -- --run` 801 tests, 실제 temp project CLI smoke(`preview`, `preview --remote --json`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/개인서버 배포/infra/CICD 작업 없음.
+> - [[CLI Preview Execution Split 2026-06-12]]
+
+
 > [!success] 2026-06-12 CLI scan command execution split
 > `agentfeed scan`의 path inspect-only, draft dry-run, saved draft redaction/write execution을 `scan-command` helper로 분리했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 79 tests, full `npm test -- --run` 798 tests, 실제 temp project CLI smoke(`scan --dry-run`, `scan --json`, `scan --path --json`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/개인서버 배포/infra/CICD 작업 없음.
 > - [[CLI Scan Command Execution Split 2026-06-12]]

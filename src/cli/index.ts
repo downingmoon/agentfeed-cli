@@ -57,6 +57,7 @@ import { renderCredentialResultLines } from './auth-output.js';
 import { doctorJsonPayload, renderDoctorHumanLines, type DoctorCheckTuple } from './doctor-output.js';
 import { renderUploadConfirmationRequiredLines, renderUploadResultLines } from './upload-output.js';
 import { renderShareLocalNextLines, shareLocalJsonPayload, shareUploadedJsonPayload } from './share-output.js';
+import { runShareCollectionCommand } from './share-collection-execution.js';
 import { runShareUploadCommand } from './share-upload-execution.js';
 import { publishJsonPayload, renderPublishUploadResultLines } from './publish-output.js';
 import { runPublishCommand } from './publish-execution.js';
@@ -426,14 +427,10 @@ async function cmdCollect(args: string[]) {
 
 async function cmdShare(args: string[]) {
   const opts = parseShareArgs(args);
-  await loadProjectConfig(process.cwd());
-  const collectionWindow = await resolveCollectionWindowWithDiagnostics({ cwd: process.cwd(), args });
-  const window = collectionWindow.window;
-  const creds = opts.dryRun ? null : await loadCredentials();
-
-  const collection = await collectDraftWithStatus({ cwd: process.cwd(), source: opts.source, sessionFile: opts.sessionFile, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all'), note: opts.note, runConfiguredCommands: opts.runConfiguredCommands, skipConfiguredCommands: opts.dryRun });
-  let draft = await sanitizeDraftForCliOutput(process.cwd(), collection.draft);
-  const warnings = [...collectionWindow.warnings, ...collection.warnings];
+  const collection = await runShareCollectionCommand({ cwd: process.cwd(), args, share: opts });
+  const draft = collection.draft;
+  const creds = collection.credentials;
+  const warnings = collection.warnings;
 
   if (opts.json) {
     if (opts.dryRun || !creds) {
@@ -441,7 +438,7 @@ async function cmdShare(args: string[]) {
       print(JSON.stringify(shareLocalJsonPayload({
         dryRun: opts.dryRun,
         hasCredentials,
-        reusedExistingDraft: collection.reusedExisting,
+        reusedExistingDraft: collection.reusedExistingDraft,
         draft,
         warnings,
         explain: opts.explain
@@ -464,7 +461,7 @@ async function cmdShare(args: string[]) {
     });
     if (upload.kind === 'confirmation_required') throw new Error('Internal error: JSON share upload should not require confirmation.');
     print(JSON.stringify(shareUploadedJsonPayload({
-      reusedExistingDraft: collection.reusedExisting,
+      reusedExistingDraft: collection.reusedExistingDraft,
       draft: upload.draft,
       upload: upload.upload,
       handoff: upload.handoff,
@@ -474,7 +471,7 @@ async function cmdShare(args: string[]) {
     return;
   }
 
-  if (collection.reusedExisting) print(`Reusing existing matching draft: ${draft.id}\n`);
+  if (collection.reusedExistingDraft) print(`Reusing existing matching draft: ${draft.id}\n`);
   if (warnings.length) {
     print(ui.section('Warnings'));
     printWarningLines(warnings);

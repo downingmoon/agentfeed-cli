@@ -14,6 +14,11 @@ updated: 2026-06-12
 
 ## 현재 결론
 
+> [!success] 2026-06-12 CLI share collection execution split
+> `agentfeed share`의 project config validation, collection window resolution, dry-run credential skip, draft collection, sanitize/write, warning merge를 `share-collection-execution` helper로 분리했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 79 tests, full `npm test -- --run` 818 tests, 실제 temp project CLI smoke(dry-run JSON no API call, confirmation no-network pause, fake API upload) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 사용자 배포 요청은 활성 목표의 금지 규칙 때문에 수행하지 않았고 서버/개인서버 배포/infra/CICD 작업 없음.
+> - [[CLI Share Collection Execution Split 2026-06-12]]
+
+
 > [!success] 2026-06-12 CLI share upload execution split
 > `agentfeed share`의 upload confirmation gate, preflight, publish API call, saved draft sanitize/reread, cursor mark, review URL handoff policy를 `share-upload-execution` helper로 분리했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 82 tests, full `npm test -- --run` 816 tests, 실제 temp project + local fake API CLI smoke(confirmation no-network pause, `share --yes --json --no-clipboard --no-open-review`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/개인서버 배포/infra/CICD 작업 없음.
 > - [[CLI Share Upload Execution Split 2026-06-12]]

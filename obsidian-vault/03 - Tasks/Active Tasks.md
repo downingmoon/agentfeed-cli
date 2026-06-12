@@ -14,6 +14,12 @@ updated: 2026-06-12
 
 ## 현재 결론
 
+> [!success] 2026-06-12 CLI upload preflight split
+> upload/credential-save 전 API compatibility 및 ingestion token preflight recovery를 `upload-preflight` helper로 분리해 compatibility → token → ingest 차단 순서를 테스트로 고정했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 265 tests, full `npm test -- --run` 774 tests, 실제 temp project + local fake API CLI smoke(metadata incompatibility, token 401) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/개인서버 배포/infra/CICD 작업 없음.
+> - [[CLI Upload Preflight Split 2026-06-12]]
+
+
+
 
 > [!success] 2026-06-12 CLI review handoff policy split
 > review URL trust validation, clipboard/browser side-effect policy, and handoff formatting ownership을 `review-handoff` helper로 통합해 handoff 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 71 tests, full `npm test -- --run` 768 tests, 실제 temp project + local fake API + fake `pbcopy`/`open` CLI smoke(`share --json --clipboard --open-review`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.

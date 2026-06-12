@@ -9,7 +9,7 @@ import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 import { formatCollectionExplain } from '../draft/explain.js';
-import { cachedUploadReuseStatusForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, isTrustedReviewUrl, previewDraftRemote, publishDraft, type ApiMetadata } from '../api/client.js';
+import { cachedUploadReuseStatusForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, isTrustedReviewUrl, previewDraftRemote, publishDraft } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactFields } from '../privacy/scan.js';
 import { applyRedactedPublicFields, publicScanFieldsFromDraft, scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
@@ -24,7 +24,7 @@ import { resolveStatusProject } from './status-project.js';
 import { setupProgressText, statusNextActions, statusReadinessItems } from './status-readiness.js';
 import { doctorNextActions, doctorReadinessItems } from './doctor-readiness.js';
 import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialResult, tokenLoginCredentialResult } from './auth-result.js';
-import { apiCheckFailureDetail, apiCompatibilityFailureDetail, apiCompatibilityRecoveryCommands, formatUploadRecoveryMessage, ingestionTokenRecoveryCommands, type UploadPreflightOptions } from './upload-guidance.js';
+import { requireApiCompatibilityBeforeCredentialSave, requireApiCompatibilityBeforeUpload, requireUploadPreflight } from './upload-preflight.js';
 import { collectJsonNextActions } from './draft-next-actions.js';
 import { commandCatalogNextActions } from './guidance-actions.js';
 import { renderGuidedNextCommandLines, renderNextCommandLines, renderRecommendedCommandLines } from './guided-next-command-renderer.js';
@@ -170,41 +170,6 @@ function missingTokenMessage(): string {
   ].join('\n');
 }
 
-
-async function requireApiCompatibilityBeforeUpload(apiBaseUrl: string, options: UploadPreflightOptions = {}): Promise<ApiMetadata> {
-  const result = await checkApiCompatibility(apiBaseUrl);
-  if (result.compatible && result.data) return result.data;
-  throw new Error(formatUploadRecoveryMessage(
-    `API compatibility check failed for ${result.url}: ${apiCompatibilityFailureDetail(result)} before uploading drafts.`,
-    apiCompatibilityRecoveryCommands(result),
-    options.retryCommand
-  ));
-}
-
-async function requireIngestionTokenBeforeUpload(credentials: AgentFeedCredentials, options: UploadPreflightOptions = {}): Promise<void> {
-  const result = await checkIngestionToken(credentials);
-  if (result.ok) return;
-  throw new Error(formatUploadRecoveryMessage(
-    `Ingestion token check failed for ${result.url}: ${apiCheckFailureDetail(result)} before uploading drafts.`,
-    ingestionTokenRecoveryCommands(result),
-    options.retryCommand
-  ));
-}
-
-async function requireUploadPreflight(credentials: AgentFeedCredentials, options: UploadPreflightOptions = {}): Promise<ApiMetadata> {
-  const metadata = await requireApiCompatibilityBeforeUpload(credentials.api_base_url, options);
-  await requireIngestionTokenBeforeUpload(credentials, options);
-  return metadata;
-}
-
-async function requireApiCompatibilityBeforeCredentialSave(apiBaseUrl: string): Promise<void> {
-  const result = await checkApiCompatibility(apiBaseUrl);
-  if (result.compatible) return;
-  throw new Error([
-    `API compatibility check failed for ${result.url}: ${apiCompatibilityFailureDetail(result)} before saving credentials.`,
-    'Run: agentfeed doctor'
-  ].join('\n'));
-}
 
 async function readStdinText(): Promise<string> {
   let text = '';

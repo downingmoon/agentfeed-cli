@@ -14,6 +14,11 @@ updated: 2026-06-12
 
 ## 현재 결론
 
+> [!success] 2026-06-12 CLI open draft resolver split
+> `agentfeed open`의 draft id/latest 선택, pending/no-uploaded guidance, malformed draft skip을 `open-draft-resolver` helper로 분리했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 45 tests, full `npm test -- --run` 806 tests, 실제 temp project CLI smoke(`open --latest --json`, pending `open --id`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/개인서버 배포/infra/CICD 작업 없음.
+> - [[CLI Open Draft Resolver Split 2026-06-12]]
+
+
 > [!success] 2026-06-12 CLI preview execution split
 > `agentfeed preview`의 local draft sanitize/persist와 remote compatibility preflight/preview execution을 `preview-execution` helper로 분리했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 81 tests, full `npm test -- --run` 801 tests, 실제 temp project CLI smoke(`preview`, `preview --remote --json`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/개인서버 배포/infra/CICD 작업 없음.
 > - [[CLI Preview Execution Split 2026-06-12]]

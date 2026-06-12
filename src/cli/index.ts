@@ -27,6 +27,7 @@ import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialRes
 import { missingTokenMessage, resolveLoginTokenInput } from './auth-token-input.js';
 import { invalidApiBaseUrlMessage, loadDiagnosticCredentialsWithMetadata } from './diagnostic-credentials.js';
 import { requireApiCompatibilityBeforeCredentialSave, requireApiCompatibilityBeforeUpload, requireUploadPreflight } from './upload-preflight.js';
+import { shouldOpenReviewAfterUpload, shouldRequireUploadConfirmation } from './runtime-policy.js';
 import { collectJsonNextActions } from './draft-next-actions.js';
 import { commandCatalogNextActions } from './guidance-actions.js';
 import { renderGuidedNextCommandLines, renderNextCommandLines, renderRecommendedCommandLines } from './guided-next-command-renderer.js';
@@ -101,33 +102,6 @@ async function readStdinText(): Promise<string> {
   return text;
 }
 
-const CI_ENVIRONMENT_VARIABLES = [
-  'AGENTFEED_CI',
-  'CI',
-  'GITHUB_ACTIONS',
-  'GITLAB_CI',
-  'BUILDKITE',
-  'CIRCLECI',
-  'JENKINS_URL',
-  'TF_BUILD',
-  'TEAMCITY_VERSION',
-  'VERCEL',
-  'NETLIFY',
-];
-
-function isTruthyEnvironmentValue(value: string | undefined): boolean {
-  return value !== undefined && value !== '' && value !== '0' && value.toLowerCase() !== 'false';
-}
-
-function isCiEnvironment(): boolean {
-  return CI_ENVIRONMENT_VARIABLES.some((name) => isTruthyEnvironmentValue(process.env[name]));
-}
-
-function shouldRequireUploadConfirmation(options: { json?: boolean; yes?: boolean }): boolean {
-  if (options.json || options.yes) return false;
-  return true;
-}
-
 async function sanitizeDraftForCliOutput(cwd: string, draft: LocalDraft): Promise<LocalDraft> {
   scanAndRedactDraftPublicFields(draft);
   await writeDraft(cwd, draft);
@@ -138,22 +112,6 @@ function singleLine(value: string): string {
   const text = safeTerminalText(value).replace(/\s+/g, ' ').trim();
   return text.length > 160 ? `${text.slice(0, 157)}...` : text;
 }
-
-async function shouldOpenReviewAfterUpload(openFlag: boolean, options: { respectConfig?: boolean; noOpen?: boolean } = {}): Promise<boolean> {
-  if (options.noOpen) return false;
-  if (openFlag) return true;
-  if (isCiEnvironment()) return false;
-  if (options.respectConfig === false) return false;
-  try {
-    const config = await loadProjectConfig(process.cwd());
-    return config.collection.open_review_after_upload;
-  } catch {
-    return false;
-  }
-}
-
-
-
 
 function printNextCommands(commands: string[]): void {
   for (const line of renderNextCommandLines({ commands, command: ui.command })) print(line);

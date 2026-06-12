@@ -14,6 +14,11 @@ updated: 2026-06-12
 
 ## 현재 결론
 
+> [!success] 2026-06-12 CLI runtime policy split
+> CI 환경 감지, upload confirmation 요구, upload 후 review open 정책을 `runtime-policy` helper로 분리했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 141 tests, full `npm test -- --run` 793 tests, 실제 temp project + local fake API/fake browser CLI smoke(CI auto-open suppression, explicit `--open-review`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/개인서버 배포/infra/CICD 작업 없음.
+> - [[CLI Runtime Policy Split 2026-06-12]]
+
+
 > [!success] 2026-06-12 CLI auth token input split
 > `agentfeed login`의 token input method 판정과 보안 recovery 문구를 `auth-token-input` helper로 분리했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 210 tests, full `npm test -- --run` 786 tests, 실제 CLI smoke(`login --json`, empty `--token-stdin`, unsafe argv token refusal) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/개인서버 배포/infra/CICD 작업 없음.
 > - [[CLI Auth Token Input Split 2026-06-12]]

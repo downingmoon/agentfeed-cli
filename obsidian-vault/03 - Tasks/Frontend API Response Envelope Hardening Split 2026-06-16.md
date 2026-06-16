@@ -55,6 +55,6 @@ status: done
 
 - Keep response envelope/OkResponse hardening separate from auth event diagnostics when adding future API response cases.
 - [x] `project-mutation-contracts.contract.test.ts` warning-band form serializer split was handled in [[Frontend Project Mutation Form Contract Split 2026-06-16]].
-- Continue reducing the remaining documented warning-band contract file: `search-explore-response-guards.contract.test.ts`.
+- [x] `search-explore-response-guards.contract.test.ts` warning-band split was handled in [[Frontend Search Explore Response Guard Split 2026-06-16]].
 - Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.
 - Server/infra/CI/CD work remains held by the active goal constraint.

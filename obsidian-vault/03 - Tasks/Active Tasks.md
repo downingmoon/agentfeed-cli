@@ -14,6 +14,11 @@ updated: 2026-06-16
 
 ## 현재 결론
 
+> [!success] 2026-06-16 Frontend search/explore response guard split
+> Frontend search/explore nested response guard checks를 warning-band `search-explore-response-guards.contract.test.ts`에서 `search-response-guards.contract.test.ts`와 `explore-response-guards.contract.test.ts`로 분리하고 shared fixture module 및 local contract runner를 업데이트했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Search Explore Response Guard Split 2026-06-16]]
+
+
 > [!success] 2026-06-16 Frontend project mutation form contract split
 > Frontend project mutation form serializer/null-clear semantics를 warning-band `project-mutation-contracts.contract.test.ts`에서 `project-mutation-form-contracts.contract.test.ts`로 분리하고 local contract runner에 등록했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Project Mutation Form Contract Split 2026-06-16]]

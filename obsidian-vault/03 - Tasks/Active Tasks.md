@@ -14,6 +14,11 @@ updated: 2026-06-16
 
 ## 현재 결론
 
+> [!success] 2026-06-16 Frontend URL navigation contract split
+> Frontend `review_base_url` normalization, worklog/project/dashboard URL builders, and share permalink checks를 oversized `api-contract.test.ts`에서 `url-navigation-contracts.contract.test.ts`로 분리하고 local contract runner에 등록했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend URL Navigation Contract Split 2026-06-16]]
+
+
 > [!success] 2026-06-16 Frontend auth next contract split
 > Frontend OAuth `next` path sanitization and GitHub OAuth URL encoding checks를 oversized `api-contract.test.ts`에서 `auth-next-contracts.contract.test.ts`로 분리하고 local contract runner에 등록했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Auth Next Contract Split 2026-06-16]]

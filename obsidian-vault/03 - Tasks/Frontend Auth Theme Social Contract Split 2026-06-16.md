@@ -52,5 +52,6 @@ status: done
 
 - Keep new contract additions out of broad omnibus files; add focused files by API/feature boundary.
 - Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.
-- Continue reducing other warning-band contract files already documented in the enterprise polish log.
+- [x] `api-response-hardening.contract.test.ts` warning-band split was handled in [[Frontend API Response Envelope Hardening Split 2026-06-16]].
+- Continue reducing remaining warning-band contract files already documented in the enterprise polish log.
 - Server/infra/CI/CD work remains held by the active goal constraint.

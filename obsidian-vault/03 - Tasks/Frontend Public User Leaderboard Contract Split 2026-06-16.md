@@ -46,6 +46,7 @@ status: done
 
 ## Follow-up
 
-- Continue splitting remaining `api-contract.test.ts` clusters: API error/display behavior, notification/path/external URL helpers, theme/auth-action/social-action helpers, and list envelope fallback checks.
+- [x] Notification/path/external URL helpers were split in [[Frontend Notification URL Contract Split 2026-06-16]].
+- Continue splitting remaining `api-contract.test.ts` clusters: API error/display behavior, theme/auth-action/social-action helpers, and list envelope fallback checks.
 - Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.
 - Server/infra/CI/CD work remains held by the active goal constraint.

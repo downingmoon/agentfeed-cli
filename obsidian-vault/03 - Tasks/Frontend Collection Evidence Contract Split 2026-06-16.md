@@ -52,6 +52,7 @@ After splitting worklog detail guards, `agentfeed-frontend/src/lib/collection-ev
 ## Follow-up
 
 - Keep valid collection evidence display checks, malformed fail-closed cases, and shared review fixtures separated when adding future evidence coverage.
+- [x] Next re-scan found `worklog-card-response-guards.contract.test.ts` near 200 pure LOC and split it in [[Frontend Worklog Card Response Guard Split 2026-06-16]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.
 - Server/infra/CI/CD work remains held by the active goal constraint.

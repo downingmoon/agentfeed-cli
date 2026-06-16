@@ -14,6 +14,11 @@ updated: 2026-06-16
 
 ## 현재 결론
 
+> [!success] 2026-06-16 Frontend identity profile contract split
+> Frontend user identity/avatar/profile link/comment-author checks를 oversized `api-contract.test.ts`에서 `identity-profile-contracts.contract.test.ts`로 분리하고 local contract runner에 등록했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Identity Profile Contract Split 2026-06-16]]
+
+
 > [!success] 2026-06-16 Frontend security headers contract split
 > Frontend security header/CSP checks를 oversized `api-contract.test.ts`에서 `security-headers.contract.test.ts`로 분리하고 local contract runner에 등록했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, changed-file LOC audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Security Headers Contract Split 2026-06-16]]

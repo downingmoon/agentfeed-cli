@@ -7,12 +7,17 @@ status: active
 tags:
   - agentfeed/todo
   - project/tasks
-updated: 2026-06-12
+updated: 2026-06-16
 ---
 
 # Active Tasks
 
 ## 현재 결론
+
+> [!success] 2026-06-16 Frontend security headers contract split
+> Frontend security header/CSP checks를 oversized `api-contract.test.ts`에서 `security-headers.contract.test.ts`로 분리하고 local contract runner에 등록했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, changed-file LOC audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Security Headers Contract Split 2026-06-16]]
+
 
 > [!success] 2026-06-12 CLI share collection execution split
 > `agentfeed share`의 project config validation, collection window resolution, dry-run credential skip, draft collection, sanitize/write, warning merge를 `share-collection-execution` helper로 분리했다. Red test 확인 후 `npm run build`, `npm run typecheck`, focused Vitest 79 tests, full `npm test -- --run` 818 tests, 실제 temp project CLI smoke(dry-run JSON no API call, confirmation no-network pause, fake API upload) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 사용자 배포 요청은 활성 목표의 금지 규칙 때문에 수행하지 않았고 서버/개인서버 배포/infra/CICD 작업 없음.

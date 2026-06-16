@@ -52,6 +52,7 @@ After the worklog card response guard split, the next contract size re-scan show
 ## Follow-up
 
 - Keep valid worklog card adapter normalization checks separate from malformed source/metrics/viewer-state fail-closed cases.
+- [x] Next re-scan found `project-response-contracts.contract.test.ts` near 200 pure LOC and split it in [[Frontend Project Response Contract Split 2026-06-16]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.
 - Server/infra/CI/CD work remains held by the active goal constraint.

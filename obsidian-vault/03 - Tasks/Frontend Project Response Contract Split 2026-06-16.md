@@ -50,6 +50,7 @@ After the worklog card adapter split, the next contract size re-scan showed `age
 ## Follow-up
 
 - Keep valid project response preservation checks, malformed response fail-closed cases, and shared fixtures separated when adding future project response coverage.
+- [x] Next re-scan found `project-mutation-contracts.contract.test.ts` near 200 pure LOC and split it in [[Frontend Project Mutation Response Contract Split 2026-06-16]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.
 - Server/infra/CI/CD work remains held by the active goal constraint.

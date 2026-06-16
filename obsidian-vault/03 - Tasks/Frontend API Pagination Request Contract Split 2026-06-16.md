@@ -49,6 +49,7 @@ After the settings profile validation save split, the next contract size re-scan
 ## Follow-up
 
 - Keep mixed endpoint URL/method contracts separate from cursor pagination request contracts when adding future API client request coverage.
+- [x] Next re-scan found `api-fetch-request-hardening.contract.test.ts` near 200 pure LOC and split it in [[Frontend API Fetch Timeout Contract Split 2026-06-16]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.
 - Server/infra/CI/CD work remains held by the active goal constraint.

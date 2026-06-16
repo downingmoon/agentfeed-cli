@@ -53,6 +53,7 @@ After the project response split, the next contract size re-scan showed `agentfe
 ## Follow-up
 
 - Keep project mutation request/body contracts, response fixtures, and strict response fail-closed checks separated when adding future mutation coverage.
+- [x] Next re-scan found `project-schema-variants-strict-fields.contract.test.ts` near 200 pure LOC and split it in [[Frontend Project Schema Variant Contract Split 2026-06-16]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.
 - Server/infra/CI/CD work remains held by the active goal constraint.

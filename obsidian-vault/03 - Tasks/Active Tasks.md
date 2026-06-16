@@ -14,6 +14,11 @@ updated: 2026-06-16
 
 ## 현재 결론
 
+> [!success] 2026-06-16 Frontend settings profile validation save contract split
+> Frontend settings profile validation/no-API save preflight checks를 near-warning `settings-profile-save.contract.test.ts`에서 `settings-profile-validation-save.contract.test.ts`로 분리하고 local contract runner에 등록했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Settings Profile Validation Save Contract Split 2026-06-16]]
+
+
 > [!success] 2026-06-16 Frontend me settings mutation contract split
 > Frontend privacy/notification settings mutation checks를 near-warning `me-client-mutation-contracts.contract.test.ts`에서 `me-settings-mutation-contracts.contract.test.ts`로 분리하고 local contract runner에 등록했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Me Settings Mutation Contract Split 2026-06-16]]

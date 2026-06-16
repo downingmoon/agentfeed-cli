@@ -51,6 +51,7 @@ After the project schema variant split, the next contract size re-scan showed `a
 ## Follow-up
 
 - Keep ingestion/profile/username mutation contracts separate from settings mutation contracts when adding future me-client coverage.
+- [x] Next re-scan found `settings-profile-save.contract.test.ts` near 200 pure LOC and split it in [[Frontend Settings Profile Validation Save Contract Split 2026-06-16]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.
 - Server/infra/CI/CD work remains held by the active goal constraint.

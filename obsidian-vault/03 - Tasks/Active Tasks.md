@@ -14,6 +14,11 @@ updated: 2026-06-16
 
 ## 현재 결론
 
+> [!success] 2026-06-16 Frontend worklog card adapter contract split
+> Frontend worklog card adapter valid normalization checks와 malformed source/metrics/viewer-state fail-closed cases를 near-warning `worklog-card-adapter.contract.test.ts`에서 `worklog-card-malformed-adapter.contract.test.ts`로 분리하고 local contract runner에 등록했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Worklog Card Adapter Contract Split 2026-06-16]]
+
+
 > [!success] 2026-06-16 Frontend worklog card response guard split
 > Frontend worklog card list response fixtures and malformed row fail-closed cases를 near-warning `worklog-card-response-guards.contract.test.ts`에서 `worklog-card-response-fixtures.ts`와 `worklog-card-malformed-response-guards.contract.test.ts`로 분리하고 local contract runner에 등록했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Worklog Card Response Guard Split 2026-06-16]]

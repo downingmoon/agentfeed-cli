@@ -51,6 +51,7 @@ After the collection evidence split, the next contract size re-scan showed `agen
 ## Follow-up
 
 - Keep raw worklog card response fixtures, valid list response checks, and malformed row fail-closed cases separated when adding future card-list coverage.
+- [x] Next re-scan found `worklog-card-adapter.contract.test.ts` near 200 pure LOC and split it in [[Frontend Worklog Card Adapter Contract Split 2026-06-16]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.
 - Server/infra/CI/CD work remains held by the active goal constraint.

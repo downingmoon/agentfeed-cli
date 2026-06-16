@@ -53,6 +53,7 @@ After the project mutation response split, the next contract size re-scan showed
 ## Follow-up
 
 - Keep valid schema variant preservation checks, malformed strict-field cases, and shared fixtures separated when adding future project schema coverage.
+- [x] Next re-scan found `me-client-mutation-contracts.contract.test.ts` near 200 pure LOC and split it in [[Frontend Me Settings Mutation Contract Split 2026-06-16]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.
 - Server/infra/CI/CD work remains held by the active goal constraint.

@@ -52,6 +52,7 @@ status: done
 ## Follow-up
 
 - Keep CLI auth happy-path flow contracts separate from malformed response/parser fail-closed contracts.
-- Next enterprise-readiness pass should re-scan contract file sizes and decide whether any remaining files near 200 pure LOC need split before adding cases.
+- [x] Next re-scan found `worklog-detail-response-guards.contract.test.ts` near 200 pure LOC and split it in [[Frontend Worklog Detail Response Guard Split 2026-06-16]].
+- Continue re-scanning contract file sizes before adding cases to near-200 pure LOC files.
 - Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.
 - Server/infra/CI/CD work remains held by the active goal constraint.

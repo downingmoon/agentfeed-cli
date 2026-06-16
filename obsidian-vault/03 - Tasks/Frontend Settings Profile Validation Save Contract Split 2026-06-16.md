@@ -51,6 +51,7 @@ After the me settings mutation split, the next contract size re-scan showed `age
 ## Follow-up
 
 - Keep save-flow behavior and validation/no-API preflight behavior separated when adding future settings profile save coverage.
+- [x] Next re-scan found `api-request-contracts.contract.test.ts` near 200 pure LOC and split it in [[Frontend API Pagination Request Contract Split 2026-06-16]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.
 - Server/infra/CI/CD work remains held by the active goal constraint.

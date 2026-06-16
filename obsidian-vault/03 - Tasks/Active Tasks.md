@@ -14,6 +14,11 @@ updated: 2026-06-16
 
 ## 현재 결론
 
+> [!success] 2026-06-16 Frontend public user leaderboard contract split
+> Frontend public user parser and leaderboard row guards를 oversized `api-contract.test.ts`에서 `public-user-leaderboard-contracts.contract.test.ts`로 분리하고 local contract runner에 등록했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Public User Leaderboard Contract Split 2026-06-16]]
+
+
 > [!success] 2026-06-16 Frontend worklog review action contract split
 > Frontend publish/unpublish/comment predicates and privacy preview safety checks를 oversized `api-contract.test.ts`에서 `worklog-review-action-contracts.contract.test.ts`로 분리하고 local contract runner에 등록했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Worklog Review Action Contract Split 2026-06-16]]

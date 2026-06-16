@@ -52,6 +52,7 @@ status: done
 
 ## Follow-up
 
-- Continue splitting remaining `api-contract.test.ts` clusters: API error/display behavior, list envelope fallback, and theme/auth-action/social-action helpers.
+- [x] API error/display behavior and list envelope fallback were split in [[Frontend API Error List Contract Split 2026-06-16]].
+- Continue splitting remaining `api-contract.test.ts` cluster: theme/auth-action/social-action helpers.
 - Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.
 - Server/infra/CI/CD work remains held by the active goal constraint.

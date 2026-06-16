@@ -61,7 +61,7 @@ Backend CLI auth status/approve 응답은 `extra="forbid"`인데 Frontend `norma
 ## 후행 과제
 
 - CLI auth exchange는 CLI parser에서 이미 root/user allowlist가 있고, Frontend는 exchange secret을 직접 소비하지 않는다. 남은 후보는 auth/me, settings, integration guide/status처럼 사용자 계정·설정 관련 read response의 extra-forbid ↔ frontend parser allowlist 정합성 점검이다.
-- `src/lib/cli-auth.contract.ts`는 flow-level 통합 계약이고 이번 extra-field guard는 focused test로 분리했다. 앞으로도 단일 response schema strictness는 focused file로 유지한다.
+- [x] `src/lib/cli-auth.contract.ts` flow-level 통합 계약에서 malformed response fail-closed cases는 [[Frontend CLI Auth Malformed Response Contract Split 2026-06-16]]로 분리했다. 앞으로도 단일 response schema strictness는 focused file로 유지한다.
 
 ## 관련 노트
 

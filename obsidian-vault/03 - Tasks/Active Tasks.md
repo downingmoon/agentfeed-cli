@@ -14,6 +14,11 @@ updated: 2026-06-16
 
 ## 현재 결론
 
+> [!success] 2026-06-16 Frontend auth/theme/social contract split
+> Final auth-gated action intent, optimistic social action state, and theme bootstrap checks를 `api-contract.test.ts`에서 `auth-theme-social-contracts.contract.test.ts`로 분리하고 old omnibus file을 제거했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Auth Theme Social Contract Split 2026-06-16]]
+
+
 > [!success] 2026-06-16 Frontend API error/list contract split
 > Frontend API error display safety and malformed list-envelope fallback checks를 oversized `api-contract.test.ts`에서 `api-error-list-contracts.contract.test.ts`로 분리하고 local contract runner에 등록했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend API Error List Contract Split 2026-06-16]]

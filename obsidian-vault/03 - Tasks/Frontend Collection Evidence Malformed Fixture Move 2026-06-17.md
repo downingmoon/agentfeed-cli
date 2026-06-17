@@ -46,5 +46,6 @@ After the worklog review strict field fixture move, the next contract size re-sc
 ## Follow-up
 
 - Keep collection evidence malformed review cases in `collection-evidence-fixtures.ts` with the valid collection evidence review fixture.
+- [x] Next re-scan found `privacy-scan-strict-fields.contract.test.ts` as the largest contract file and moved fixtures in [[Frontend Privacy Scan Strict Field Fixture Move 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

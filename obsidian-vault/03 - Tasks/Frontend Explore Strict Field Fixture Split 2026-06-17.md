@@ -44,5 +44,6 @@ After the owner project detail fixture split, the next contract size re-scan sho
 ## Follow-up
 
 - Keep explore strict-field fixtures separate from normalization/fail-closed assertions when adding future explore response coverage.
+- [x] Next re-scan found `worklog-detail-strict-fields.contract.test.ts` tied as largest and split fixtures in [[Frontend Worklog Detail Strict Field Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

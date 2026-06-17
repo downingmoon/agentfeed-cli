@@ -46,5 +46,6 @@ After the API fetch request hardening fixture split, the next contract size re-s
 ## Follow-up
 
 - Keep API response hardening response/scenario data in `api-response-hardening-fixtures.ts`.
+- [x] Next re-scan found `owner-project-detail-contracts.contract.test.ts` as the largest contract file and moved fixtures in [[Frontend Owner Project Detail Fixture Move 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

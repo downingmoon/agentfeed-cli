@@ -45,5 +45,6 @@ After the API response envelope case move, the next contract size re-scan showed
 ## Follow-up
 
 - Keep API request method/path/query expectations in `api-request-contract-fixtures.ts`.
+- [x] Next re-scan found `api-fetch-timeout-cancellation.contract.test.ts` as the largest contract file and split fixtures in [[Frontend API Fetch Timeout Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

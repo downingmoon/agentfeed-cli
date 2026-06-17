@@ -50,5 +50,6 @@ After the contract runner source registry split, the next contract size re-scan 
 ## Follow-up
 
 - Keep valid read payload preservation checks, malformed fail-closed cases, and shared fixtures separated when adding future read-model coverage.
+- [x] Next re-scan found `owner-project-detail-contracts.contract.test.ts` as the largest contract file and split fixtures in [[Frontend Owner Project Detail Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

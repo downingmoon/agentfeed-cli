@@ -46,5 +46,6 @@ After the collection evidence malformed fixture move, the next contract size re-
 ## Follow-up
 
 - Keep privacy scan strict-field review cases in `worklog-review-response-fixtures.ts` with the worklog review response fixtures.
+- [x] Next re-scan found `project-malformed-response-contracts.contract.test.ts` as the largest contract file and moved fixtures in [[Frontend Project Malformed Response Fixture Move 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

@@ -45,5 +45,6 @@ After the project mutation contract fixture split, the next contract size re-sca
 ## Follow-up
 
 - Keep me-client mutation fixtures and request capture helpers separate from endpoint assertion flow when adding future account mutation coverage.
+- [x] Next re-scan found `user-account-response-guards.contract.test.ts` tied as the largest contract file and split fixtures in [[Frontend User Account Response Guard Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

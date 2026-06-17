@@ -45,5 +45,6 @@ After the public user leaderboard fixture split, the next contract size re-scan 
 ## Follow-up
 
 - Keep worklog card adapter variant payloads in `worklog-card-contract-fixtures.ts` and assertion flow in the adapter contract file.
+- [x] Next re-scan found `settings-profile-save.contract.test.ts` as the largest contract file and moved fixtures in [[Frontend Settings Profile Save Fixture Move 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

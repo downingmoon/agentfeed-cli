@@ -45,5 +45,6 @@ After the ingestion token mutation fixture split, the next contract size re-scan
 ## Follow-up
 
 - Keep worklog mutation response and request body fixtures in `worklog-mutation-body-contract-fixtures.ts`.
+- [x] Next re-scan found `project-schema-variants-malformed-strict-fields.contract.test.ts` as the largest contract file and moved fixtures in [[Frontend Project Schema Variant Malformed Fixture Move 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

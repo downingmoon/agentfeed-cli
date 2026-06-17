@@ -45,5 +45,6 @@ After the project mutation request expectation move, the next contract size re-s
 ## Follow-up
 
 - Keep security header and CSP directive expectations in `security-headers-contract-fixtures.ts`.
+- Re-scan found `api-error-diagnostics.contract.test.ts` tied as the largest contract file and split fixtures in [[Frontend API Error Diagnostic Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

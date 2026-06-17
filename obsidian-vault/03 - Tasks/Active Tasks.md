@@ -14,6 +14,11 @@ updated: 2026-06-17
 
 ## 현재 결론
 
+> [!success] 2026-06-17 Frontend API error diagnostic fixture split
+> Frontend API error diagnostic bodies, response init fixtures, backend error envelope, and capture helper를 `api-error-diagnostics.contract.test.ts`에서 `api-error-diagnostics-contract-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend API Error Diagnostic Fixture Split 2026-06-17]]
+
+
 > [!success] 2026-06-17 Frontend security header contract fixture split
 > Frontend static security header, IP-only server-test header, and CSP directive fixtures를 `security-headers.contract.test.ts`에서 `security-headers-contract-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Security Header Contract Fixture Split 2026-06-17]]

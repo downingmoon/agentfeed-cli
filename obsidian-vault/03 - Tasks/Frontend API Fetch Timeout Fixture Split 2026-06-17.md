@@ -45,5 +45,6 @@ After the API request contract expectation move, the next contract size re-scan 
 ## Follow-up
 
 - Keep API timeout/cancellation helper fixtures in `api-fetch-timeout-cancellation-fixtures.ts`.
+- [x] Next re-scan found `cli-auth.contract.ts` tied as the largest contract file and split fixtures in [[Frontend CLI Auth Contract Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

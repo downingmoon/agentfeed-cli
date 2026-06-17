@@ -14,6 +14,11 @@ updated: 2026-06-17
 
 ## 현재 결론
 
+> [!success] 2026-06-17 Frontend API response envelope fixture split
+> Frontend API response envelope helper/case fixtures를 `api-response-envelope-hardening.contract.test.ts`에서 `api-response-envelope-hardening-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend API Response Envelope Fixture Split 2026-06-17]]
+
+
 > [!success] 2026-06-17 Frontend settings profile save fixture move
 > Frontend settings profile save form fixtures를 `settings-profile-save.contract.test.ts`에서 existing `settings-profile-save.contract-fixtures.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Settings Profile Save Fixture Move 2026-06-17]]

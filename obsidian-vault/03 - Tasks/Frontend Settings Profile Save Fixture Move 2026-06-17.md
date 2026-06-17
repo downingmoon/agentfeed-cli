@@ -45,5 +45,6 @@ After the worklog card adapter fixture move, the next contract size re-scan show
 ## Follow-up
 
 - Keep settings profile save form fixtures in `settings-profile-save.contract-fixtures.ts` and assertion flow in the contract file.
+- [x] Next re-scan found `api-response-envelope-hardening.contract.test.ts` as the largest contract file and split fixtures in [[Frontend API Response Envelope Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

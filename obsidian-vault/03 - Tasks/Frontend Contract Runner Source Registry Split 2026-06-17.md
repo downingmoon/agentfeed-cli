@@ -45,5 +45,6 @@ Repeated frontend contract split notes left a follow-up that `agentfeed-frontend
 ## Follow-up
 
 - Keep `run-contract-tests.mjs` focused on orchestration and put future source registrations in `contract-test-sources.mjs`.
+- [x] Next re-scan found `remaining-read-response-guards.contract.test.ts` as the largest contract file and split it in [[Frontend Remaining Read Response Guard Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

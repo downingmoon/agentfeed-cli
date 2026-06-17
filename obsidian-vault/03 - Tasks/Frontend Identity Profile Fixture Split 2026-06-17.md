@@ -45,5 +45,6 @@ After the API response hardening fixture split, the next contract size re-scan s
 ## Follow-up
 
 - Keep identity/profile fixtures separate from profile link, display, avatar, and comment adapter assertions when adding future identity coverage.
+- [x] Next re-scan found `cli-auth-malformed-response.contract.test.ts` as the largest contract file and split fixtures in [[Frontend CLI Auth Malformed Response Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

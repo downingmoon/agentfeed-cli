@@ -46,5 +46,6 @@ After the privacy scan strict field fixture move, the next contract size re-scan
 ## Follow-up
 
 - Keep project malformed response cases in `project-response-fixtures.ts` with project response summary/detail fixtures.
+- [x] Next re-scan found `ingestion-token-mutation-contracts.contract.test.ts` tied as the largest contract file and split fixtures in [[Frontend Ingestion Token Mutation Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

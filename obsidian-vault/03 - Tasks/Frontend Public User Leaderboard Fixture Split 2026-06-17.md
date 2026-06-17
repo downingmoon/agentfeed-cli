@@ -45,5 +45,6 @@ After the user account response guard fixture split, the next contract size re-s
 ## Follow-up
 
 - Keep public user/leaderboard fixtures separate from normalizer and adapter assertion flow when adding future leaderboard coverage.
+- [x] Next re-scan found `worklog-card-adapter.contract.test.ts` tied as the largest contract file and moved fixtures in [[Frontend Worklog Card Adapter Fixture Move 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

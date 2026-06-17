@@ -14,6 +14,11 @@ updated: 2026-06-17
 
 ## 현재 결론
 
+> [!success] 2026-06-17 Frontend worklog card adapter fixture move
+> Frontend worklog card adapter variant payloads를 `worklog-card-adapter.contract.test.ts`에서 existing `worklog-card-contract-fixtures.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Worklog Card Adapter Fixture Move 2026-06-17]]
+
+
 > [!success] 2026-06-17 Frontend public user leaderboard fixture split
 > Frontend public user and leaderboard row fixtures를 `public-user-leaderboard-contracts.contract.test.ts`에서 `public-user-leaderboard-contract-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Public User Leaderboard Fixture Split 2026-06-17]]

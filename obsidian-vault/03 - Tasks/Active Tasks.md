@@ -14,6 +14,11 @@ updated: 2026-06-17
 
 ## 현재 결론
 
+> [!success] 2026-06-17 Frontend worklog card adapter expectation move
+> Frontend worklog card adapter collection source, multi-agent metrics, hidden metrics, and viewer-state/social expectation helpers를 `worklog-card-adapter.contract.test.ts`에서 existing `worklog-card-contract-fixtures.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Worklog Card Adapter Expectation Move 2026-06-17]]
+
+
 > [!success] 2026-06-17 Frontend worklog review action case move
 > Frontend worklog review unpublish, comment-submit, and publish-control cases를 `worklog-review-action-contracts.contract.test.ts`에서 existing `worklog-review-action-contract-fixtures.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Worklog Review Action Case Move 2026-06-17]]

@@ -46,5 +46,6 @@ After the ingestion token response guard fixture split, the next contract size r
 ## Follow-up
 
 - Keep worklog review action cases in `worklog-review-action-contract-fixtures.ts`.
+- Re-scan found `worklog-card-adapter.contract.test.ts` tied as the largest contract file and moved expectations in [[Frontend Worklog Card Adapter Expectation Move 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

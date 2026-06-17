@@ -45,5 +45,6 @@ After the API response envelope fixture split, the next contract size re-scan sh
 ## Follow-up
 
 - Keep metadata compatibility fixtures separate from route/compatibility assertion flow when adding future metadata contract coverage.
+- [x] Next re-scan found `worklog-review-strict-fields.contract.test.ts` tied as the largest contract file and moved fixtures in [[Frontend Worklog Review Strict Field Fixture Move 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

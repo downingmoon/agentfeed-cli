@@ -14,6 +14,11 @@ updated: 2026-06-17
 
 ## 현재 결론
 
+> [!success] 2026-06-17 Frontend account project mutation response fixture split
+> Frontend account/project mutation malformed response cases를 `account-project-mutation-response-guards.contract.test.ts`에서 `account-project-mutation-response-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Account Project Mutation Response Fixture Split 2026-06-17]]
+
+
 > [!success] 2026-06-17 Frontend owner project detail fixture move
 > Frontend owner-project detail wrapper/stat fixtures를 `owner-project-detail-contracts.contract.test.ts`에서 existing `owner-project-detail-fixtures.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Owner Project Detail Fixture Move 2026-06-17]]

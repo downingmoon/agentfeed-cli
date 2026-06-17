@@ -46,5 +46,6 @@ After the API response hardening scenario move, the next contract size re-scan s
 ## Follow-up
 
 - Keep owner-project detail wrapper and stats fixtures in `owner-project-detail-fixtures.ts`.
+- [x] Next re-scan found `account-project-mutation-response-guards.contract.test.ts` as the largest contract file and split fixtures in [[Frontend Account Project Mutation Response Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

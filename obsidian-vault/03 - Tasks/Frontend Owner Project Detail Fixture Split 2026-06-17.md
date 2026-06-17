@@ -44,5 +44,6 @@ After the remaining read response split, the next contract size re-scan showed `
 ## Follow-up
 
 - Keep owner-project detail fixtures separate from endpoint/request/stats behavior checks when adding future owner project coverage.
+- [x] Next re-scan found `explore-strict-fields.contract.test.ts` as the largest contract file and split fixtures in [[Frontend Explore Strict Field Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

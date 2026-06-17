@@ -14,6 +14,11 @@ updated: 2026-06-17
 
 ## 현재 결론
 
+> [!success] 2026-06-17 Frontend explore strict field fixture split
+> Frontend explore strict-field fixtures를 `explore-strict-fields.contract.test.ts`에서 `explore-strict-fields-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Explore Strict Field Fixture Split 2026-06-17]]
+
+
 > [!success] 2026-06-17 Frontend owner project detail fixture split
 > Frontend owner-project detail response type/factory fixtures를 `owner-project-detail-contracts.contract.test.ts`에서 `owner-project-detail-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Owner Project Detail Fixture Split 2026-06-17]]

@@ -45,5 +45,6 @@ After the API fetch timeout fixture split, the next contract size re-scan showed
 ## Follow-up
 
 - Keep CLI auth response and expected request fixtures in `cli-auth-contract-fixtures.ts`.
+- [x] Next re-scan found `api-fetch-request-hardening.contract.test.ts` as the largest contract file and moved cases in [[Frontend API Fetch Request Header Case Move 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

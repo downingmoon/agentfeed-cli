@@ -45,5 +45,6 @@ After the comment response guard fixture split, the next contract size re-scan s
 ## Follow-up
 
 - Keep settings profile save scenario expectations in `settings-profile-save.contract-fixtures.ts`.
+- Re-scan found `api-response-hardening.contract.test.ts` as the largest contract file and moved auth-event helpers in [[Frontend API Response Auth Event Helper Move 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

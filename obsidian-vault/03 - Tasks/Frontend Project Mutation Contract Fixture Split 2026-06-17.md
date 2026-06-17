@@ -45,5 +45,6 @@ After the auth next fixture split, the next contract size re-scan showed `agentf
 ## Follow-up
 
 - Keep project mutation request fixtures separate from endpoint request/response assertion flow when adding future mutation coverage.
+- [x] Next re-scan found `me-client-mutation-contracts.contract.test.ts` as the largest contract file and split fixtures in [[Frontend Me Client Mutation Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

@@ -46,5 +46,6 @@ After the owner project detail fixture move, the next contract size re-scan show
 ## Follow-up
 
 - Keep account/project mutation response guard fixtures in `account-project-mutation-response-fixtures.ts`.
+- [x] Next re-scan found `api-response-envelope-hardening.contract.test.ts` as the largest contract file and moved cases in [[Frontend API Response Envelope Case Move 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

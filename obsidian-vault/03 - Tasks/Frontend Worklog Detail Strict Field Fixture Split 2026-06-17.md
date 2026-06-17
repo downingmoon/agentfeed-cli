@@ -44,5 +44,6 @@ After the explore strict field fixture split, the next contract size re-scan sho
 ## Follow-up
 
 - Keep worklog detail/card strict-field fixtures separate from diagnostics preservation and fail-closed assertions when adding future coverage.
+- [x] Next re-scan found `worklog-review-action-response-guards.contract.test.ts` tied as largest and split it in [[Frontend Worklog Action Response Guard Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

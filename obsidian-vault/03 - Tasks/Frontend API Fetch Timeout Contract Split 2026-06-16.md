@@ -52,5 +52,5 @@ After the API pagination request split, the next contract size re-scan showed `a
 
 - Keep header/CSRF request hardening separate from timeout/cancellation behavior when adding future API fetch coverage.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
-- Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.
+- [x] Split growing contract source registration into `scripts/contract-test-sources.mjs` in [[Frontend Contract Runner Source Registry Split 2026-06-17]].
 - Server/infra/CI/CD work remains held by the active goal constraint.

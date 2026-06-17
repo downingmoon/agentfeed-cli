@@ -14,6 +14,11 @@ updated: 2026-06-17
 
 ## 현재 결론
 
+> [!success] 2026-06-17 Frontend API fetch request hardening fixture split
+> Frontend API fetch request hardening response stubs를 `api-fetch-request-hardening.contract.test.ts`에서 `api-fetch-request-hardening-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend API Fetch Request Hardening Fixture Split 2026-06-17]]
+
+
 > [!success] 2026-06-17 Frontend leaderboard response fixture split
 > Frontend leaderboard valid response/malformed cases를 `leaderboard-response-contracts.contract.test.ts`에서 `leaderboard-response-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Leaderboard Response Fixture Split 2026-06-17]]

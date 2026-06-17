@@ -45,5 +45,6 @@ After the API error diagnostic fixture split, the next contract size re-scan sho
 ## Follow-up
 
 - Keep comment response guard fixtures and malformed cases in `comment-response-guard-fixtures.ts`.
+- Re-scan found `settings-profile-save.contract.test.ts` tied as the largest contract file and moved expectations in [[Frontend Settings Profile Save Expectation Move 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

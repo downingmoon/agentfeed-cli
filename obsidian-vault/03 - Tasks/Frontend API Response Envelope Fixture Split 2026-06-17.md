@@ -45,5 +45,6 @@ After the settings profile save fixture move, the next contract size re-scan sho
 ## Follow-up
 
 - Keep API response envelope helper/case fixtures separate from envelope hardening assertion flow when adding future response envelope coverage.
+- [x] Next re-scan found `metadata-strict-fields.contract.test.ts` tied as the largest contract file and split fixtures in [[Frontend Metadata Strict Field Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

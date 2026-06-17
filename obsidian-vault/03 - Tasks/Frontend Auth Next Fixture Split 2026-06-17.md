@@ -45,5 +45,6 @@ After the worklog review action fixture split, the next contract size re-scan sh
 ## Follow-up
 
 - Keep OAuth next route/hash/query cases separate from OAuth URL assertion flow when adding future auth redirect coverage.
+- [x] Next re-scan found `project-mutation-contracts.contract.test.ts` tied as the largest contract file and split fixtures in [[Frontend Project Mutation Contract Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

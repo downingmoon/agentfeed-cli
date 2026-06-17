@@ -45,5 +45,6 @@ After the identity profile fixture split, the next contract size re-scan showed 
 ## Follow-up
 
 - Keep malformed CLI auth response cases separate from fail-closed assertion flow when adding future CLI auth response coverage.
+- [x] Next re-scan found `project-summary-adapters.contract.test.ts` as the largest contract file and split fixtures in [[Frontend Project Summary Adapter Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

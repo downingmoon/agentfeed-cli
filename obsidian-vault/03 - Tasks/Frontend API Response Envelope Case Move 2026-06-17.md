@@ -46,5 +46,6 @@ After the account/project mutation response fixture split, the next contract siz
 ## Follow-up
 
 - Keep API response envelope malformed cases in `api-response-envelope-hardening-fixtures.ts`.
+- [x] Next re-scan found `api-request-contracts.contract.test.ts` as the largest contract file and moved expectations in [[Frontend API Request Contract Expectation Move 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

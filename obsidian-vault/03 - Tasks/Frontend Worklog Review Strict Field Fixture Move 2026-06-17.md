@@ -46,5 +46,6 @@ After the metadata strict field fixture split, the next contract size re-scan sh
 ## Follow-up
 
 - Keep worklog review response fixtures and strict-field malformed cases in `worklog-review-response-fixtures.ts`.
+- [x] Next re-scan found `collection-evidence-malformed.contract.test.ts` as the largest contract file and moved fixtures in [[Frontend Collection Evidence Malformed Fixture Move 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

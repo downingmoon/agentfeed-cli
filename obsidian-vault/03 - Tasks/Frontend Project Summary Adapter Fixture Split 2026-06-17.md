@@ -45,5 +45,6 @@ After the CLI auth malformed response fixture split, the next contract size re-s
 ## Follow-up
 
 - Keep project summary adapter fixtures and malformed row cases separate from adapter assertion flow when adding future project list coverage.
+- [x] Next re-scan found `worklog-review-action-contracts.contract.test.ts` as the largest contract file and split fixtures in [[Frontend Worklog Review Action Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

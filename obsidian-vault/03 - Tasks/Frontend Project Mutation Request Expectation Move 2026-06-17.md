@@ -45,5 +45,6 @@ After the API fetch request header case move, the next contract size re-scan sho
 ## Follow-up
 
 - Keep project mutation request expectations in `project-mutation-contract-fixtures.ts`.
+- Re-scan found `security-headers.contract.test.ts` as the largest contract file and split fixtures in [[Frontend Security Header Contract Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

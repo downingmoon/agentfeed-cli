@@ -14,6 +14,11 @@ updated: 2026-06-17
 
 ## 현재 결론
 
+> [!success] 2026-06-17 Frontend identity profile fixture split
+> Frontend identity/profile user and comment fixtures를 `identity-profile-contracts.contract.test.ts`에서 `identity-profile-contract-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Identity Profile Fixture Split 2026-06-17]]
+
+
 > [!success] 2026-06-17 Frontend API response hardening fixture split
 > Frontend API response hardening fixtures/helpers를 `api-response-hardening.contract.test.ts`에서 `api-response-hardening-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend API Response Hardening Fixture Split 2026-06-17]]

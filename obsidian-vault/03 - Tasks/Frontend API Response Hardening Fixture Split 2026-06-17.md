@@ -45,5 +45,6 @@ After the notification URL fixture split, the next contract size re-scan showed 
 ## Follow-up
 
 - Keep API response hardening fixtures/helpers separate from auth-error behavior assertions when adding future hardening coverage.
+- [x] Next re-scan found `identity-profile-contracts.contract.test.ts` as the largest contract file and split fixtures in [[Frontend Identity Profile Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

@@ -45,5 +45,6 @@ After the API request fixture split, the next contract size re-scan showed `agen
 ## Follow-up
 
 - Keep notification URL fixtures and unsafe external URL case lists separate from assertion flow when adding future notification URL coverage.
+- [x] Next re-scan found `api-response-hardening.contract.test.ts` as the largest contract file and split fixtures/helpers in [[Frontend API Response Hardening Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

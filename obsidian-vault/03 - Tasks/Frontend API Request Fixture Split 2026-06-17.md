@@ -44,5 +44,6 @@ After the worklog action response guard split, the next contract size re-scan sh
 ## Follow-up
 
 - Keep API request response stubs separate from endpoint URL/method assertions when adding future request contract coverage.
+- [x] Next re-scan found `notification-url-contracts.contract.test.ts` as the largest contract file and split fixtures in [[Frontend Notification URL Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

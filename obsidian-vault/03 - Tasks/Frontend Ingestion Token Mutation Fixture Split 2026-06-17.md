@@ -45,5 +45,6 @@ After the project malformed response fixture move, the next contract size re-sca
 ## Follow-up
 
 - Keep ingestion token mutation response and request contract fixtures in `ingestion-token-mutation-contract-fixtures.ts`.
+- [x] Next re-scan found `worklog-mutation-body-contracts.contract.test.ts` as the largest contract file and split fixtures in [[Frontend Worklog Mutation Body Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

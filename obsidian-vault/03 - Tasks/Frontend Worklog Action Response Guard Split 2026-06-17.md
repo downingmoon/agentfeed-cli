@@ -48,5 +48,6 @@ After the worklog detail strict field fixture split, the next contract size re-s
 ## Follow-up
 
 - Keep review response fixtures, review response malformed cases, and action response malformed cases separated when adding future worklog review/action coverage.
+- [x] Next re-scan found `api-request-contracts.contract.test.ts` as the largest contract file and split fixtures in [[Frontend API Request Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

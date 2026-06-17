@@ -14,6 +14,11 @@ updated: 2026-06-17
 
 ## 현재 결론
 
+> [!success] 2026-06-17 Frontend API request fixture split
+> Frontend API request contract response stubs/project fixture를 `api-request-contracts.contract.test.ts`에서 `api-request-contract-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend API Request Fixture Split 2026-06-17]]
+
+
 > [!success] 2026-06-17 Frontend worklog action response guard split
 > Frontend worklog review response fixture and action response fail-closed cases를 `worklog-review-action-response-guards.contract.test.ts`에서 `worklog-review-response-fixtures.ts`와 `worklog-action-malformed-response-guards.contract.test.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Worklog Action Response Guard Split 2026-06-17]]

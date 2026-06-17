@@ -47,5 +47,6 @@ After the settings profile save expectation move, the next contract size re-scan
 ## Follow-up
 
 - Keep API response auth-event action/window helpers in `api-response-hardening-fixtures.ts`.
+- Re-scan found `moderation-report-contracts.contract.test.ts` as the largest contract file and split fixtures in [[Frontend Moderation Report Contract Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

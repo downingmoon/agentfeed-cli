@@ -45,6 +45,6 @@ The post-identity-profile contract size re-scan showed `agentfeed-frontend/src/l
 ## Follow-up
 
 - Keep auth/theme/social contract cases in `auth-theme-social-contract-fixtures.ts`.
-- Next re-scan candidates: `cli-authorize-session.contract.test.ts` and `remaining-read-malformed-response-guards.contract.test.ts` tied at 65 pure LOC.
+- [x] `cli-authorize-session.contract.test.ts` handled in [[Frontend CLI Authorize Session Contract Fixture Split 2026-06-18]]. Remaining next re-scan candidate: `remaining-read-malformed-response-guards.contract.test.ts` at 65 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

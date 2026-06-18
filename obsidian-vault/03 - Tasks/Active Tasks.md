@@ -14,6 +14,12 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend CLI authorize session contract fixture split
+> Frontend CLI authorize session source-safety, fake window/sessionStorage, stored/malformed session, incoming query cleanup, and clear-session assertions를 `cli-authorize-session.contract.test.ts`에서 `cli-authorize-session-contract-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend CLI Authorize Session Contract Fixture Split 2026-06-18]]
+
+
+
 > [!success] 2026-06-18 Frontend auth theme social contract fixture split
 > Frontend follow/auth/comment intent, optimistic social action, and theme bootstrap assertions를 `auth-theme-social-contracts.contract.test.ts`에서 `auth-theme-social-contract-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Auth Theme Social Contract Fixture Split 2026-06-18]]

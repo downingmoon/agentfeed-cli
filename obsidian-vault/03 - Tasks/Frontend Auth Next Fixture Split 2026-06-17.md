@@ -20,6 +20,7 @@ After the worklog review action fixture split, the next contract size re-scan sh
 
 - Added `src/lib/auth-next-contract-fixtures.ts` for OAuth next path cases, unsafe hash fragments, and unsafe next values.
 - Kept `src/lib/auth-next-contracts.contract.test.ts` focused on asserting `authNextPath` and `auth.githubUrl` behavior.
+- 2026-06-18 [[Frontend Auth Next Assertion Move 2026-06-18]] moved the runner-owned assertion flow into `src/lib/auth-next-contract-assertions.ts` without growing `auth-next-contract-fixtures.ts`.
 - Preserved existing auth-next contract behavior without runtime app changes.
 - Did not update `scripts/contract-test-sources.mjs` because the new file is an imported fixture helper, not a standalone contract source.
 
@@ -34,7 +35,7 @@ After the worklog review action fixture split, the next contract size re-scan sh
 - Frontend `git diff --check` ✅
 - Changed-file no-excuse grep ✅ — no `as any`, `as unknown`, `@ts-ignore`, `@ts-expect-error`, non-null assertions, empty catches, eslint-disable, TODO, or FIXME additions.
 - Changed-file size audit:
-  - `src/lib/auth-next-contracts.contract.test.ts`: 54 lines / 44 pure LOC
+  - `src/lib/auth-next-contracts.contract.test.ts`: originally 54 lines / 44 pure LOC; 2026-06-18 split result is 3 lines / 2 pure LOC runner plus 77 lines / 67 pure LOC assertion helper
   - `src/lib/auth-next-contract-fixtures.ts`: 163 lines / 160 pure LOC
 - Visual QA: not run because this was a non-UI contract-test refactor.
 
@@ -44,6 +45,7 @@ After the worklog review action fixture split, the next contract size re-scan sh
 
 ## Follow-up
 
+- [x] OAuth URL assertion flow moved in [[Frontend Auth Next Assertion Move 2026-06-18]].
 - Keep OAuth next route/hash/query cases separate from OAuth URL assertion flow when adding future auth redirect coverage.
 - [x] Next re-scan found `project-mutation-contracts.contract.test.ts` tied as the largest contract file and split fixtures in [[Frontend Project Mutation Contract Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.

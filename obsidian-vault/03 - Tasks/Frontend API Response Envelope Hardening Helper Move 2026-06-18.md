@@ -46,6 +46,6 @@ The post-feed-filter contract size re-scan showed `agentfeed-frontend/src/lib/ap
 
 - Keep API response envelope hardening helpers in `api-response-envelope-hardening-fixtures.ts`.
 - Re-scan fixture/helper sizes before adding more cases to `api-response-envelope-hardening-fixtures.ts`, now 122 pure LOC.
-- Next re-scan candidate from latest scan should be documented in the central log after the final scan.
+- Next re-scan candidates: `project-mutation-contracts.contract.test.ts`, `settings-profile-validation-save.contract.test.ts`, `integration-status-contracts.contract.test.ts`, and `me-client-mutation-contracts.contract.test.ts` tied at 61 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

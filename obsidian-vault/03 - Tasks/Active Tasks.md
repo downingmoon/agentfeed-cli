@@ -14,6 +14,11 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend remaining mutation response fixture split
+> Frontend remaining worklog/comment/privacy/moderation/notification mutation malformed response cases and fail-closed runner를 `remaining-mutation-response-guards.contract.test.ts`에서 `remaining-mutation-response-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Remaining Mutation Response Fixture Split 2026-06-18]]
+
+
 > [!success] 2026-06-18 Frontend settings profile save contract scenario move
 > Frontend settings profile save partial/failure/network/success scenario runners를 `settings-profile-save.contract.test.ts`에서 existing `settings-profile-save.contract-fixtures.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Settings Profile Save Contract Scenario Move 2026-06-18]]

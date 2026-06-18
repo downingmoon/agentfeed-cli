@@ -46,6 +46,6 @@ The post-project-summary contract size re-scan showed `agentfeed-frontend/src/li
 
 - Keep settings profile save scenario runners in `settings-profile-save.contract-fixtures.ts`.
 - Re-scan fixture/helper sizes before adding more cases to `settings-profile-save.contract-fixtures.ts`, now 156 pure LOC.
-- Next re-scan candidate: `remaining-mutation-response-guards.contract.test.ts` at 71 pure LOC.
+- Re-scan found `remaining-mutation-response-guards.contract.test.ts` as the largest contract file and split fixtures in [[Frontend Remaining Mutation Response Fixture Split 2026-06-18]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

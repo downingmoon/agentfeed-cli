@@ -18,7 +18,7 @@ status: done
 
 ## Changed
 
-- Moved existing direct worklog body and API surface assertions into `src/lib/api-surface-contracts.contract.test.ts`.
+- Moved existing direct worklog body and API surface assertions into `src/lib/api-surface-contracts.contract.test.ts`. 2026-06-18 follow-up moved those assertions into [[Frontend API Surface Fixture Split 2026-06-18]].
 - Registered the focused contract in `scripts/run-contract-tests.mjs`.
 - Removed now-unused API surface imports and 56 lines from `api-contract.test.ts` without changing runtime behavior.
 - Preserved these existing guarantees:
@@ -39,7 +39,7 @@ status: done
 - Changed-file no-excuse grep ✅ — no `as any`, `as unknown`, `@ts-ignore`, `@ts-expect-error`, non-null assertions, empty catches, eslint-disable, TODO, or FIXME additions.
 - Changed-file size audit:
   - `src/lib/api-contract.test.ts`: 581 lines / 509 pure LOC
-  - `src/lib/api-surface-contracts.contract.test.ts`: 56 lines / 47 pure LOC
+  - `src/lib/api-surface-contracts.contract.test.ts`: 56 lines / 47 pure LOC at split time; 2026-06-18 follow-up reduced it to 3 lines / 2 pure LOC.
   - `scripts/run-contract-tests.mjs`: 157 lines / 148 pure LOC
 
 ## Follow-up

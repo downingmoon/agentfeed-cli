@@ -45,6 +45,6 @@ The post-pagination request fixture split re-scan showed `agentfeed-frontend/src
 ## Follow-up
 
 - Keep metric/source malformed fixtures and rejection assertion flow in `worklog-metric-evidence-fixtures.ts`.
-- Remaining next re-scan candidate: `project-schema-variants-strict-fields.contract.test.ts` at 45 pure LOC.
+- [x] Remaining next re-scan candidate `project-schema-variants-strict-fields.contract.test.ts` handled in [[Frontend Project Schema Variant Strict Assertion Move 2026-06-18]]. Next re-scan candidates: `auth-next-contracts.contract.test.ts`, `worklog-review-strict-fields.contract.test.ts`, and `project-malformed-response-contracts.contract.test.ts` at 44 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

@@ -29,6 +29,7 @@ Frontend는 일부 경로에서 ProjectResponse에 가까운 broad allowlist를 
 - `/projects`와 project detail은 기존 `ProjectResponse` normalizer 경로를 유지하되 명시적으로 분리했다.
 - 기존 정상 fixture 중 WorklogCard 중첩 project에 섞여 있던 `tags`, `last_worklog_at`, `stats`, `owner`, `description`을 Backend `ProjectSummary` 기준으로 정정했다.
 - `project-schema-variants-strict-fields.contract.test.ts`를 추가해 다음을 고정했다.
+- 2026-06-18 [[Frontend Project Schema Variant Strict Assertion Move 2026-06-18]]에서 runner-owned valid preservation assertion flow를 `project-schema-variant-strict-field-assertions.ts`로 이동했다.
   - `users.projects`는 `UserProjectSummary`를 보존한다.
   - `users.projects`는 `owner_id`, `stats`가 섞인 ProjectResponse형 payload를 거부한다.
   - `worklogs.get`의 중첩 `project`는 `ProjectSummary`를 보존한다.
@@ -46,12 +47,13 @@ LSP diagnostics는 로컬 `typescript-language-server` 미설치로 실행되지
 ## LOC / 구조 메모
 
 - `src/lib/api-project-summary.ts`: 205 pure LOC
-- 신규 `src/lib/project-schema-variants-strict-fields.contract.test.ts`: 130 pure LOC
+- 신규 `src/lib/project-schema-variants-strict-fields.contract.test.ts`: originally 130 pure LOC; later split to 5 pure LOC runner plus 50 pure LOC assertion helper in [[Frontend Project Schema Variant Strict Assertion Move 2026-06-18]]
 
 > [!warning]
 > `api-project-summary.ts`가 200 LOC warning band에 들어왔다. 다음 Project contract 작업에서 이 파일에 의미 있는 로직을 더 추가해야 한다면 `api-project-stats.ts`, `api-project-summary-variants.ts`처럼 책임별 분리를 먼저 검토한다.
 
 ## 후속 과제
 
+- [x] Valid schema variant preservation assertion flow moved in [[Frontend Project Schema Variant Strict Assertion Move 2026-06-18]].
 - `ProjectResponse` read normalizer가 Backend required fields(`created_at`, `updated_at`, `owner_id` 등)를 충분히 강제하는지 별도 슬라이스로 검증한다.
 - 기존 `api-contract.test.ts`는 5,000 LOC 이상이므로, 추가 계약 테스트는 가능한 한 별도 focused contract file로 분리한다.

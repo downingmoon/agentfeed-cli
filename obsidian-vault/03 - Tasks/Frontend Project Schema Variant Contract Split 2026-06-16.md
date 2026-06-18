@@ -22,6 +22,7 @@ After the project mutation response split, the next contract size re-scan showed
 - Added `src/lib/project-schema-variant-fixtures.ts` for public owner, user project summary, nested project summary, project response, and worklog detail fixtures.
 - Moved malformed strict-field cases into `src/lib/project-schema-variants-malformed-strict-fields.contract.test.ts`.
 - Kept `src/lib/project-schema-variants-strict-fields.contract.test.ts` focused on valid variant preservation for `users.projects`, `worklogs.get`, and `projects.list`.
+- 2026-06-18 [[Frontend Project Schema Variant Strict Assertion Move 2026-06-18]] moved the runner-owned valid preservation assertion flow into `src/lib/project-schema-variant-strict-field-assertions.ts` without growing `project-schema-variant-fixtures.ts`.
 - Registered the malformed schema variant contract in `scripts/run-contract-tests.mjs`.
 - Preserved these existing guarantees:
   - user project summaries preserve exact backend owner fields while synthesizing only frontend empty stats.
@@ -40,7 +41,7 @@ After the project mutation response split, the next contract size re-scan showed
 - Frontend `git diff --check` ✅
 - Changed-file no-excuse grep ✅ — no `as any`, `as unknown`, `@ts-ignore`, `@ts-expect-error`, non-null assertions, empty catches, eslint-disable, TODO, or FIXME additions.
 - Changed-file size audit:
-  - `src/lib/project-schema-variants-strict-fields.contract.test.ts`: 51 lines / 45 pure LOC
+  - `src/lib/project-schema-variants-strict-fields.contract.test.ts`: originally 51 lines / 45 pure LOC; 2026-06-18 split result is 6 lines / 5 pure LOC runner plus 56 lines / 50 pure LOC assertion helper
   - `src/lib/project-schema-variants-malformed-strict-fields.contract.test.ts`: 102 lines / 96 pure LOC
   - `src/lib/project-schema-variant-fixtures.ts`: 75 lines / 71 pure LOC
   - `scripts/run-contract-tests.mjs`: 173 lines / 164 pure LOC
@@ -52,6 +53,7 @@ After the project mutation response split, the next contract size re-scan showed
 
 ## Follow-up
 
+- [x] Valid schema variant preservation assertion flow moved in [[Frontend Project Schema Variant Strict Assertion Move 2026-06-18]].
 - Keep valid schema variant preservation checks, malformed strict-field cases, and shared fixtures separated when adding future project schema coverage.
 - [x] Next re-scan found `me-client-mutation-contracts.contract.test.ts` near 200 pure LOC and split it in [[Frontend Me Settings Mutation Contract Split 2026-06-16]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.

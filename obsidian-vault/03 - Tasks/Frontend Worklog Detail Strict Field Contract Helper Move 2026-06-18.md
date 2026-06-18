@@ -46,6 +46,6 @@ The post-social-report contract size re-scan showed `agentfeed-frontend/src/lib/
 
 - Keep worklog detail/card strict-field helpers in `worklog-detail-strict-fields-fixtures.ts`.
 - Re-scan fixture/helper sizes before adding more cases to `worklog-detail-strict-fields-fixtures.ts`, now 139 pure LOC.
-- Next re-scan candidates: `worklog-card-share-actions.contract.test.ts`, `user-activity-contracts.contract.test.ts`, `api-error-diagnostics.contract.test.ts`, `api-response-body-hardening.contract.test.ts`, and `api-response-hardening.contract.test.ts` tied at 68 pure LOC.
+- Re-scan found `worklog-card-share-actions.contract.test.ts` tied as the largest contract file and split fixtures in [[Frontend Worklog Card Share Action Fixture Split 2026-06-18]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

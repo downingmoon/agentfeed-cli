@@ -47,6 +47,6 @@ The post-explore-response-guard contract size re-scan showed `agentfeed-frontend
 
 - Keep remaining-read valid response helpers in `remaining-read-response-fixtures.ts`.
 - Re-scan fixture/helper sizes before adding more cases to `remaining-read-response-fixtures.ts`; current size is 108 pure LOC.
-- Remaining next re-scan candidates: `settings-profile-validation.contract.test.ts`, `worklog-mutation-body-contracts.contract.test.ts`, and `api-fetch-timeout-cancellation.contract.test.ts` at 59 pure LOC.
+- [x] `settings-profile-validation.contract.test.ts` handled in [[Frontend Settings Profile Validation Fixture Split 2026-06-18]]. Remaining next re-scan candidates: `worklog-mutation-body-contracts.contract.test.ts` and `api-fetch-timeout-cancellation.contract.test.ts` at 59 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

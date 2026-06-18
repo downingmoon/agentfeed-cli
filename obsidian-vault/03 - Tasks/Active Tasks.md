@@ -14,6 +14,11 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend settings profile validation fixture split
+> Frontend invalid profile form helper, text-bound validation cases, backend-aligned URL validation cases, no-profile-mutation assertions, and validation runners를 `settings-profile-validation.contract.test.ts`에서 `settings-profile-validation-fixtures.ts`로 분리했다. Shared `settings-profile-save.contract-fixtures.ts`가 156 pure LOC라 grow하지 않았다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Settings Profile Validation Fixture Split 2026-06-18]]
+
+
 > [!success] 2026-06-18 Frontend remaining read response contract helper move
 > Frontend valid remaining-read JSON response helper, path-based valid response dispatcher, moderation/dashboard/recent-worklog/notification/activity/suggestion/tag preservation assertions, and fetch restore runner를 `remaining-read-response-guards.contract.test.ts`에서 existing `remaining-read-response-fixtures.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Remaining Read Response Contract Helper Move 2026-06-18]]

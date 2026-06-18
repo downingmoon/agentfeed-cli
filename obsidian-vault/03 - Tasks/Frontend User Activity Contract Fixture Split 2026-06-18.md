@@ -45,6 +45,6 @@ The post-worklog-card-share contract size re-scan showed `agentfeed-frontend/src
 ## Follow-up
 
 - Keep user activity fixtures and contract runner in `user-activity-contract-fixtures.ts`.
-- Next re-scan candidates: `api-error-diagnostics.contract.test.ts`, `api-response-body-hardening.contract.test.ts`, and `api-response-hardening.contract.test.ts` tied at 68 pure LOC.
+- Re-scan found `api-error-diagnostics.contract.test.ts` tied as the largest contract file and moved helpers in [[Frontend API Error Diagnostic Contract Helper Move 2026-06-18]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

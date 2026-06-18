@@ -46,5 +46,6 @@ The post-project-mutation-detail contract size re-scan showed `agentfeed-fronten
 
 - Keep identity/profile contract helpers in `identity-profile-contract-fixtures.ts`.
 - Re-scan fixture/helper sizes before adding more cases to `identity-profile-contract-fixtures.ts`, now 154 pure LOC.
+- Next re-scan candidates: `auth-theme-social-contracts.contract.test.ts`, `cli-authorize-session.contract.test.ts`, and `remaining-read-malformed-response-guards.contract.test.ts` tied at 65 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

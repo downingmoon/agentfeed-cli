@@ -46,6 +46,6 @@ The post-auth.me fixture split re-scan showed `agentfeed-frontend/src/lib/projec
 
 - Keep project schema variant valid/malformed payloads and malformed assertion flow in `project-schema-variant-fixtures.ts`.
 - Re-check `project-schema-variant-fixtures.ts` before adding new cases; current size is 172 pure LOC.
-- [x] Next re-scan candidate `api-surface-contracts.contract.test.ts` handled in [[Frontend API Surface Fixture Split 2026-06-18]]. Remaining next re-scan candidate: `read-side-strict-fields.contract.test.ts` at 47 pure LOC.
+- [x] Next re-scan candidate `api-surface-contracts.contract.test.ts` handled in [[Frontend API Surface Fixture Split 2026-06-18]]. Subsequent candidate `read-side-strict-fields.contract.test.ts` handled in [[Frontend Read Side Strict Field Fixture Split 2026-06-18]]. Current next re-scan candidate: `api-pagination-request-contracts.contract.test.ts` at 46 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

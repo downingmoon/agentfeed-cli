@@ -50,6 +50,6 @@ The post-project-schema-variant strict assertion move re-scan showed `agentfeed-
 
 - Keep OAuth next assertion flow in `auth-next-contract-assertions.ts`.
 - Keep OAuth next route/hash/query cases in `auth-next-contract-fixtures.ts`; re-check size before adding cases because it is 160 pure LOC.
-- [x] Tied next re-scan candidate `worklog-review-strict-fields.contract.test.ts` handled in [[Frontend Worklog Review Strict Field Assertion Move 2026-06-18]]. Subsequent candidate `project-malformed-response-contracts.contract.test.ts` handled in [[Frontend Project Malformed Response Assertion Move 2026-06-18]]. Current next re-scan candidates: `leaderboard-response-contracts.contract.test.ts` and `worklog-card-response-guards.contract.test.ts` at 43 pure LOC.
+- [x] Tied next re-scan candidate `worklog-review-strict-fields.contract.test.ts` handled in [[Frontend Worklog Review Strict Field Assertion Move 2026-06-18]]. Subsequent candidates `project-malformed-response-contracts.contract.test.ts` and `leaderboard-response-contracts.contract.test.ts` handled in [[Frontend Project Malformed Response Assertion Move 2026-06-18]] and [[Frontend Leaderboard Response Assertion Move 2026-06-18]]. Current next re-scan candidate: `worklog-card-response-guards.contract.test.ts` at 43 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

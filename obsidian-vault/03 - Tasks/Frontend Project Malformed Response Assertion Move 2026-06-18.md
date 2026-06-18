@@ -50,6 +50,6 @@ The post-worklog-review strict-field assertion move re-scan showed `agentfeed-fr
 
 - Keep project malformed response assertion flow in `project-malformed-response-assertions.ts`.
 - Keep project response fixtures and malformed cases in `project-response-fixtures.ts`; re-check size before adding cases because it is 150 pure LOC.
-- Remaining next re-scan candidates: `leaderboard-response-contracts.contract.test.ts` and `worklog-card-response-guards.contract.test.ts` at 43 pure LOC.
+- [x] Tied next re-scan candidate `leaderboard-response-contracts.contract.test.ts` handled in [[Frontend Leaderboard Response Assertion Move 2026-06-18]]. Remaining next re-scan candidate: `worklog-card-response-guards.contract.test.ts` at 43 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

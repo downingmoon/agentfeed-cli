@@ -14,6 +14,11 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend leaderboard response assertion move
+> Frontend response helper setup, fetch override/restore handling, valid leaderboard preservation assertions, and malformed leaderboard fail-closed assertion flow를 `leaderboard-response-contracts.contract.test.ts`에서 새 `leaderboard-response-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Leaderboard Response Assertion Move 2026-06-18]]
+
+
 > [!success] 2026-06-18 Frontend project malformed response assertion move
 > Frontend response helper setup, project API action dispatch, fetch wiring, and malformed project fail-closed assertion flow를 `project-malformed-response-contracts.contract.test.ts`에서 새 `project-malformed-response-assertions.ts`로 이동했다. 기존 `project-response-fixtures.ts`는 150 pure LOC라 grow하지 않았다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Project Malformed Response Assertion Move 2026-06-18]]

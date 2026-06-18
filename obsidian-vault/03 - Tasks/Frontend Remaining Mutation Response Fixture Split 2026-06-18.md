@@ -45,6 +45,6 @@ The post-settings-profile contract size re-scan showed `agentfeed-frontend/src/l
 ## Follow-up
 
 - Keep remaining mutation malformed response cases and fail-closed runner in `remaining-mutation-response-fixtures.ts`.
-- Next re-scan candidates: `integration-guide-contracts.contract.test.ts` and `me-settings-mutation-contracts.contract.test.ts` tied at 70 pure LOC.
+- Re-scan found `integration-guide-contracts.contract.test.ts` tied as the largest contract file and split fixtures in [[Frontend Integration Guide Contract Fixture Split 2026-06-18]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

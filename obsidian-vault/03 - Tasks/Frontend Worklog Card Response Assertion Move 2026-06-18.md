@@ -48,6 +48,6 @@ The post-leaderboard assertion move re-scan showed `agentfeed-frontend/src/lib/w
 
 - Keep worklog card response assertion flow in `worklog-card-response-assertions.ts`.
 - Keep worklog card response payload/cases in `worklog-card-response-fixtures.ts`.
-- Remaining next re-scan candidates: `social-action-response-guards.contract.test.ts` and `api-fetch-request-hardening.contract.test.ts` at 42 pure LOC.
+- [x] Tied next re-scan candidate `social-action-response-guards.contract.test.ts` handled in [[Frontend Social Action Response Assertion Move 2026-06-18]]. Remaining next re-scan candidate: `api-fetch-request-hardening.contract.test.ts` at 42 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

@@ -46,6 +46,6 @@ The post-owner-project-detail contract size re-scan showed `agentfeed-frontend/s
 
 - Keep notification URL/path-segment/external URL sanitizer assertions in `notification-url-contract-fixtures.ts`.
 - Re-scan fixture/helper sizes before adding more cases to `notification-url-contract-fixtures.ts`, now 127 pure LOC.
-- Next re-scan candidates: `project-summary-adapters.contract.test.ts`, `settings-profile-save.contract.test.ts`, and `remaining-mutation-response-guards.contract.test.ts` tied at 71 pure LOC.
+- Re-scan found `project-summary-adapters.contract.test.ts` tied as the largest contract file and moved helpers in [[Frontend Project Summary Adapter Contract Helper Move 2026-06-18]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

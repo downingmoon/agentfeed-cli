@@ -45,6 +45,6 @@ The post-worklog-review-action assertion split re-scan showed `agentfeed-fronten
 ## Follow-up
 
 - Keep project response fixtures, malformed cases, and valid response assertion harness in `project-response-fixtures.ts`.
-- Remaining next re-scan candidates: `metadata-strict-fields.contract.test.ts` and `auth-me-contracts.contract.test.ts` at 50 pure LOC.
+- [x] Next re-scan candidate `metadata-strict-fields.contract.test.ts` handled in [[Frontend Metadata Strict Field Assertion Move 2026-06-18]]. Remaining next re-scan candidate: `auth-me-contracts.contract.test.ts` at 50 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

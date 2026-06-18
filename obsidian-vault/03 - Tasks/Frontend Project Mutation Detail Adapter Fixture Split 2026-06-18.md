@@ -45,6 +45,6 @@ The post-URL-navigation contract size re-scan showed `agentfeed-frontend/src/lib
 ## Follow-up
 
 - Keep project mutation/detail adapter cases in `project-mutation-detail-adapter-fixtures.ts`.
-- Next re-scan candidate: `identity-profile-contracts.contract.test.ts` at 67 pure LOC.
+- [x] `identity-profile-contracts.contract.test.ts` handled in [[Frontend Identity Profile Contract Helper Move 2026-06-18]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

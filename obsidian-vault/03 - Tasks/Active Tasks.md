@@ -14,6 +14,11 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend worklog metric evidence fixture split
+> Frontend malformed metric/source fixtures, metric evidence mismatch factory, malformed metric rejection loop, and malformed source rejection loop를 `worklog-metric-evidence.contract.test.ts`에서 `worklog-metric-evidence-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Worklog Metric Evidence Fixture Split 2026-06-18]]
+
+
 > [!success] 2026-06-18 Frontend API pagination request fixture split
 > Frontend pagination response helper, fetch request recorder, URL lookup helper, endpoint exercise calls, encoded path checks, and cursor/limit assertions를 `api-pagination-request-contracts.contract.test.ts`에서 `api-pagination-request-contract-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend API Pagination Request Fixture Split 2026-06-18]]

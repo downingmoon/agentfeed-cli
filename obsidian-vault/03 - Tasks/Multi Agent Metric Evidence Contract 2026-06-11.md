@@ -62,7 +62,7 @@ Result: passed.
 LOC check:
 
 - `src/lib/api-worklog-metrics-source.ts`: 179 pure LOC
-- `src/lib/worklog-metric-evidence.contract.test.ts`: 41 pure LOC
+- `src/lib/worklog-metric-evidence.contract.test.ts`: originally 41 pure LOC; 2026-06-18 split result is 2 pure LOC runner plus 53 pure LOC fixture module
 
 ### Backend
 
@@ -101,5 +101,6 @@ Result: 5 files / 221 tests passed.
 
 ## 후행 과제
 
+- [x] Frontend runner-owned metric evidence fixtures/assertions moved in [[Frontend Worklog Metric Evidence Fixture Split 2026-06-18]].
 - 다음 반복에서는 댓글/소셜 액션/알림 등 write-action response가 모두 `Ok/Data/List` envelope 계약을 일관되게 쓰는지 cross-repo로 검증한다.
 - 서버/인프라/CICD/배포는 현재 goal 규칙에 따라 계속 보류한다.

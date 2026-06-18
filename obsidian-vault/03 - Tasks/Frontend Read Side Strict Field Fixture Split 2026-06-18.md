@@ -45,6 +45,6 @@ The post-API-surface fixture split re-scan showed `agentfeed-frontend/src/lib/re
 ## Follow-up
 
 - Keep read-side strict-field payload fixtures and assertions in `read-side-strict-fields-fixtures.ts`.
-- [x] Remaining next re-scan candidate `api-pagination-request-contracts.contract.test.ts` handled in [[Frontend API Pagination Request Fixture Split 2026-06-18]]. Next re-scan candidates: `worklog-metric-evidence.contract.test.ts` and `project-schema-variants-strict-fields.contract.test.ts` at 45 pure LOC.
+- [x] Remaining next re-scan candidate `api-pagination-request-contracts.contract.test.ts` handled in [[Frontend API Pagination Request Fixture Split 2026-06-18]]. Tied candidate `worklog-metric-evidence.contract.test.ts` handled in [[Frontend Worklog Metric Evidence Fixture Split 2026-06-18]]. Current next re-scan candidate: `project-schema-variants-strict-fields.contract.test.ts` at 45 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

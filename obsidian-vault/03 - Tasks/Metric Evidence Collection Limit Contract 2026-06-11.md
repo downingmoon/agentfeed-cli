@@ -58,6 +58,8 @@ That made the CLI/API/Frontend contract weaker for `collection_sources` than for
   - Review evidence helpers reject oversized evidence arrays.
 - `src/lib/worklog-metric-evidence.contract.test.ts`
   - Added oversized evidence-array rejection cases.
+- `src/lib/worklog-metric-evidence-fixtures.ts`
+  - 2026-06-18 [[Frontend Worklog Metric Evidence Fixture Split 2026-06-18]] moved runner-owned metric evidence fixtures/assertions into this helper module.
 
 ## Verification
 
@@ -93,13 +95,14 @@ npm run lint && npm test
 | Frontend | `src/lib/api-worklog-metrics-source.ts` | 190 | Healthy |
 | Frontend | `src/lib/worklog-evidence-adapters.ts` | 233 | Warning band, no split required yet |
 | Frontend | `src/lib/collection-evidence.ts` | 189 | Healthy |
-| Frontend | `src/lib/worklog-metric-evidence.contract.test.ts` | 45 | Healthy |
+| Frontend | `src/lib/worklog-metric-evidence.contract.test.ts` | originally 45; 2026-06-18 split runner 2 + fixture 53 | Healthy |
 
 > [!warning]
 > `src/lib/worklog-evidence-adapters.ts` and `src/draft/validation.ts` are still in the warning band. Split them before the next non-trivial logic addition.
 
 ## Follow-up
 
+- [x] Frontend runner-owned metric evidence fixtures/assertions moved in [[Frontend Worklog Metric Evidence Fixture Split 2026-06-18]].
 - [ ] Continue cross-repo contract slices, especially publish/review error envelopes.
 - [ ] Split Frontend `worklog-evidence-adapters.ts` if future adapter behavior grows.
 - [ ] Split CLI `validation.ts` if future draft validation logic grows.

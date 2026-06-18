@@ -1,0 +1,50 @@
+---
+title: Frontend Worklog Metric Evidence Fixture Split 2026-06-18
+date: 2026-06-18
+tags:
+  - agentfeed
+  - frontend
+  - contract
+  - metrics
+  - enterprise-readiness
+status: done
+---
+
+# Frontend Worklog Metric Evidence Fixture Split 2026-06-18
+
+## Context
+
+The post-pagination request fixture split re-scan showed `agentfeed-frontend/src/lib/worklog-metric-evidence.contract.test.ts` tied as the largest remaining contract test at 45 pure LOC. It still owned malformed metric/source fixtures, the contract error factory, malformed metric rejection loop, and malformed source rejection loop directly in the runner.
+
+## Changed
+
+- Added `src/lib/worklog-metric-evidence-fixtures.ts` for malformed metric/source fixtures and rejection assertion flow.
+- Reduced `src/lib/worklog-metric-evidence.contract.test.ts` to invoking `assertWorklogMetricEvidenceContracts()`.
+- Preserved existing metric evidence fail-closed coverage for blank labels, oversized evidence arrays, raw payload extras, source raw path, and source raw collection-window fields without runtime app changes.
+- Did not update `scripts/contract-test-sources.mjs` because the new file is an imported fixture/helper module, not a standalone contract source.
+
+## Verification
+
+> [!success]
+> Baseline and post-split verification passed.
+
+- Baseline before edit: `npm run test:contracts` ✅
+- Frontend after edit: `npm run test:contracts` ✅
+- Frontend after edit: `npm run lint` ✅
+- Frontend `git diff --check` ✅
+- Changed-file no-excuse grep ✅ — no `as any`, `as unknown`, `@ts-ignore`, `@ts-expect-error`, non-null assertions, empty catches, eslint-disable, TODO, or FIXME additions.
+- Changed-file size audit:
+  - `src/lib/worklog-metric-evidence.contract.test.ts`: 3 lines / 2 pure LOC
+  - `src/lib/worklog-metric-evidence-fixtures.ts`: 60 lines / 53 pure LOC
+- Visual QA: not run because this was a non-UI contract-test refactor.
+
+## Commits
+
+- Frontend: `e2d1e84` — `Split worklog metric evidence fixtures`
+
+## Follow-up
+
+- Keep metric/source malformed fixtures and rejection assertion flow in `worklog-metric-evidence-fixtures.ts`.
+- Remaining next re-scan candidate: `project-schema-variants-strict-fields.contract.test.ts` at 45 pure LOC.
+- Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
+- Server/infra/CI/CD work remains held by the active goal constraint.

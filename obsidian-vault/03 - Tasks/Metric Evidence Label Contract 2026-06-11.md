@@ -51,6 +51,7 @@ Local draft validation now rejects blank metric evidence labels before upload.
 - `src/lib/api-contract-primitives.ts`
 - `src/lib/api-worklog-metrics-source.ts`
 - `src/lib/worklog-metric-evidence.contract.test.ts`
+- `src/lib/worklog-metric-evidence-fixtures.ts` (added by [[Frontend Worklog Metric Evidence Fixture Split 2026-06-18]])
 - `scripts/run-contract-tests.mjs`
 
 API response normalization now rejects blank metric evidence labels before adapters or components render feed/review UI.
@@ -87,6 +88,7 @@ Evidence:
 
 ## Remaining follow-up
 
+- [x] Frontend runner-owned metric evidence fixtures/assertions moved in [[Frontend Worklog Metric Evidence Fixture Split 2026-06-18]].
 > [!todo]
 > Continue the enterprise-quality contract sweep with review URL trust assumptions and public/private `source` field scopes. Explorer review found the current differences appear intentional, but they should remain documented as explicit scope boundaries.
 

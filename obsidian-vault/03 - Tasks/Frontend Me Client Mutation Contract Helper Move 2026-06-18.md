@@ -46,6 +46,6 @@ The post-integration-status contract size re-scan showed `agentfeed-frontend/src
 
 - Keep me client mutation helpers in `me-client-mutation-contract-fixtures.ts`.
 - Re-scan fixture/helper sizes before adding more cases to `me-client-mutation-contract-fixtures.ts`; current size is 121 pure LOC.
-- Remaining next re-scan candidates: `worklog-list-adapters.contract.test.ts`, `ingestion-token-mutation-contracts.contract.test.ts`, `security-headers.contract.test.ts`, `explore-response-guards.contract.test.ts`, and `remaining-read-response-guards.contract.test.ts` tied at 60 pure LOC.
+- [x] `worklog-list-adapters.contract.test.ts` handled in [[Frontend Worklog List Adapter Fixture Split 2026-06-18]]. Remaining next re-scan candidates: `ingestion-token-mutation-contracts.contract.test.ts`, `security-headers.contract.test.ts`, `explore-response-guards.contract.test.ts`, and `remaining-read-response-guards.contract.test.ts` tied at 60 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

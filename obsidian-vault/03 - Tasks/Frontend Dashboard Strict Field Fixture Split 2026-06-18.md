@@ -45,6 +45,6 @@ The post-worklog-review-action-response contract size re-scan showed `agentfeed-
 ## Follow-up
 
 - Keep dashboard strict-field cases in `dashboard-strict-fields-fixtures.ts`.
-- Remaining next re-scan candidate: `user-account-response-guards.contract.test.ts` at 55 pure LOC.
+- [x] Remaining next re-scan candidate `user-account-response-guards.contract.test.ts` handled in [[Frontend User Account Response Guard Assertion Move 2026-06-18]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

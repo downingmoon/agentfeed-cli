@@ -44,7 +44,7 @@ After the me client mutation fixture split, the next contract size re-scan showe
 
 ## Follow-up
 
-- Keep user/account response fixtures and malformed cases separate from guard assertion flow when adding future account response coverage.
+- [x] Follow-up shrink handled in [[Frontend User Account Response Guard Assertion Move 2026-06-18]]; future user/account guard payloads, malformed cases, and assertion harness now belong in `user-account-response-guard-fixtures.ts`.
 - [x] Next re-scan found `public-user-leaderboard-contracts.contract.test.ts` as the largest contract file and split fixtures in [[Frontend Public User Leaderboard Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

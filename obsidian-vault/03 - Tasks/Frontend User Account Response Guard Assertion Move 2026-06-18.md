@@ -45,6 +45,6 @@ The post-dashboard strict-field re-scan showed `agentfeed-frontend/src/lib/user-
 ## Follow-up
 
 - Keep user/account guard payloads, malformed cases, and assertion harness in `user-account-response-guard-fixtures.ts`.
-- Remaining next re-scan candidates: `worklog-review-url-scope.contract.test.ts` and `api-request-contracts.contract.test.ts` at 54 pure LOC.
+- [x] Next re-scan candidate `worklog-review-url-scope.contract.test.ts` handled in [[Frontend Worklog Review URL Scope Fixture Split 2026-06-18]]. Remaining next re-scan candidate: `api-request-contracts.contract.test.ts` at 54 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

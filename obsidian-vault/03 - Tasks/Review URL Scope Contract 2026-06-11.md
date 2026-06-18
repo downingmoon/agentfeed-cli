@@ -38,6 +38,7 @@ tags:
 - `agentfeed-frontend` commit: `00051e2 Pin frontend review URL scope contract`
   - `src/lib/worklog-review-url-scope.contract.test.ts` 추가
   - `scripts/run-contract-tests.mjs`에 계약 테스트 등록
+- 2026-06-18 follow-up: [[Frontend Worklog Review URL Scope Fixture Split 2026-06-18]]에서 source-contract helpers and assertions를 `src/lib/worklog-review-url-scope-fixtures.ts`로 분리
 
 ## 검증 증거
 
@@ -51,7 +52,7 @@ npm run lint && npm test
 추가 LOC 점검:
 
 - `scripts/run-contract-tests.mjs`: 90 pure LOC
-- `src/lib/worklog-review-url-scope.contract.test.ts`: 54 pure LOC
+- `src/lib/worklog-review-url-scope.contract.test.ts`: 54 pure LOC at creation; 2026-06-18 follow-up split reduced runner to 2 pure LOC and moved assertions to `src/lib/worklog-review-url-scope-fixtures.ts` at 56 pure LOC.
 
 ## 남은 후행 과제
 

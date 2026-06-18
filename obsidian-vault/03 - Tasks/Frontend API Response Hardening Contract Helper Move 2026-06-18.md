@@ -46,6 +46,6 @@ The post-API-response-body-hardening contract size re-scan showed `agentfeed-fro
 
 - Keep API response hardening contract helpers in `api-response-hardening-fixtures.ts`.
 - Re-scan fixture/helper sizes before adding more cases to `api-response-hardening-fixtures.ts`, now 154 pure LOC.
-- Next re-scan candidates: `url-navigation-contracts.contract.test.ts`, `project-mutation-detail-adapters.contract.test.ts`, and `identity-profile-contracts.contract.test.ts` tied at 67 pure LOC.
+- [x] `url-navigation-contracts.contract.test.ts` handled in [[Frontend URL Navigation Contract Fixture Split 2026-06-18]]. Remaining next re-scan candidates: `project-mutation-detail-adapters.contract.test.ts` and `identity-profile-contracts.contract.test.ts` tied at 67 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

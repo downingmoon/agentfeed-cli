@@ -45,6 +45,6 @@ The post-API-error-diagnostics contract size re-scan showed `agentfeed-frontend/
 ## Follow-up
 
 - Keep API response body hardening scenarios in `api-response-body-hardening-fixtures.ts`.
-- Next re-scan candidate: `api-response-hardening.contract.test.ts` at 68 pure LOC.
+- Re-scan found `api-response-hardening.contract.test.ts` as the largest contract file and moved helpers in [[Frontend API Response Hardening Contract Helper Move 2026-06-18]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

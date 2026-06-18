@@ -47,6 +47,6 @@ The post-API-fetch-timeout contract size re-scan showed `agentfeed-frontend/src/
 
 - Keep worklog card malformed response cases in `worklog-card-malformed-response-fixtures.ts`.
 - Keep checking `worklog-card-response-fixtures.ts` before adding cases; current size is 112 pure LOC.
-- Remaining next re-scan candidates: `worklog-review-action-response-guards.contract.test.ts`, `dashboard-strict-fields.contract.test.ts`, and `user-account-response-guards.contract.test.ts` at 55 pure LOC.
+- [x] `worklog-review-action-response-guards.contract.test.ts` handled in [[Frontend Worklog Review Action Response Fixture Split 2026-06-18]]. Remaining next re-scan candidates: `dashboard-strict-fields.contract.test.ts` and `user-account-response-guards.contract.test.ts` at 55 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

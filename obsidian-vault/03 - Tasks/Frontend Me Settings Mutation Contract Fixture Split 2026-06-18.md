@@ -45,6 +45,6 @@ The post-integration-guide contract size re-scan showed `agentfeed-frontend/src/
 ## Follow-up
 
 - Keep me settings mutation fixtures and contract runner in `me-settings-mutation-contract-fixtures.ts`.
-- Next re-scan candidate: `social-report-contracts.contract.test.ts` at 69 pure LOC.
+- Re-scan found `social-report-contracts.contract.test.ts` as the largest contract file and split fixtures in [[Frontend Social Report Contract Fixture Split 2026-06-18]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

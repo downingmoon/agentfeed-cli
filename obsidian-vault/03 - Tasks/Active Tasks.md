@@ -14,6 +14,11 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend social report contract fixture split
+> Frontend social report request recorder, JSON response helper, worklog/comment report assertions, and fetch restore runner를 `social-report-contracts.contract.test.ts`에서 `social-report-contract-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Social Report Contract Fixture Split 2026-06-18]]
+
+
 > [!success] 2026-06-18 Frontend me settings mutation contract fixture split
 > Frontend me settings privacy/notification response fixtures, PATCH request capture, unwrap assertions, and request-body assertions를 `me-settings-mutation-contracts.contract.test.ts`에서 `me-settings-mutation-contract-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Me Settings Mutation Contract Fixture Split 2026-06-18]]

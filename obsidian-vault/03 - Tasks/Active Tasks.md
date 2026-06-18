@@ -7,12 +7,17 @@ status: active
 tags:
   - agentfeed/todo
   - project/tasks
-updated: 2026-06-17
+updated: 2026-06-18
 ---
 
 # Active Tasks
 
 ## 현재 결론
+
+> [!success] 2026-06-18 Frontend public user strict stats fixture split
+> Frontend public user strict stats valid payload, malformed strict stats/viewer-state cases, API response helper, and fail-closed capture helper를 `public-user-strict-stats.contract.test.ts`에서 `public-user-strict-stats-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Public User Strict Stats Fixture Split 2026-06-18]]
+
 
 > [!success] 2026-06-17 Frontend worklog card adapter expectation move
 > Frontend worklog card adapter collection source, multi-agent metrics, hidden metrics, and viewer-state/social expectation helpers를 `worklog-card-adapter.contract.test.ts`에서 existing `worklog-card-contract-fixtures.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.

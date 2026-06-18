@@ -45,6 +45,7 @@ After the worklog review action case move, the next contract size re-scan showed
 
 ## Follow-up
 
+- Re-scan found `public-user-strict-stats.contract.test.ts` as the largest contract file and split fixtures in [[Frontend Public User Strict Stats Fixture Split 2026-06-18]].
 - Keep worklog card adapter expectation helpers in `worklog-card-contract-fixtures.ts`.
 - Re-scan fixture/helper sizes before adding more cases to `worklog-card-contract-fixtures.ts`, now 187 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.

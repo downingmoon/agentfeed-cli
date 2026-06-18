@@ -14,6 +14,11 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend worklog detail malformed response fixture split
+> Frontend malformed detail cases, JSON response helper, fail-closed contract mismatch assertion, and fetch restore runner를 `worklog-detail-malformed-response-guards.contract.test.ts`에서 `worklog-detail-malformed-response-fixtures.ts`로 분리했다. Shared `worklog-detail-response-fixtures.ts`가 142 pure LOC라 grow하지 않았다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Worklog Detail Malformed Response Fixture Split 2026-06-18]]
+
+
 > [!success] 2026-06-18 Frontend public user leaderboard assertion move
 > Frontend public user extra-field fail-closed assertion, leaderboard row preservation/fail-closed assertions, public stats assertions, and malformed public stats assertion을 `public-user-leaderboard-contracts.contract.test.ts`에서 `public-user-leaderboard-contract-fixtures.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Public User Leaderboard Assertion Move 2026-06-18]]

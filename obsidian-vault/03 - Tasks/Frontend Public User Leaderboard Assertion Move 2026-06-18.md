@@ -45,6 +45,6 @@ The post-API-request assertion move re-scan showed `agentfeed-frontend/src/lib/p
 ## Follow-up
 
 - Keep public user/leaderboard fixtures, malformed cases, and assertion harness in `public-user-leaderboard-contract-fixtures.ts`.
-- Remaining next re-scan candidate: `worklog-detail-malformed-response-guards.contract.test.ts` at 51 pure LOC.
+- [x] Remaining next re-scan candidate `worklog-detail-malformed-response-guards.contract.test.ts` handled in [[Frontend Worklog Detail Malformed Response Fixture Split 2026-06-18]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

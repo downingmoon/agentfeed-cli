@@ -46,6 +46,6 @@ The post-notification-URL contract size re-scan showed `agentfeed-frontend/src/l
 
 - Keep project summary adapter contract assertions in `project-summary-adapter-fixtures.ts`.
 - Re-scan fixture/helper sizes before adding more cases to `project-summary-adapter-fixtures.ts`, now 131 pure LOC.
-- Next re-scan candidates: `settings-profile-save.contract.test.ts` and `remaining-mutation-response-guards.contract.test.ts` tied at 71 pure LOC.
+- Re-scan found `settings-profile-save.contract.test.ts` tied as the largest contract file and moved scenarios in [[Frontend Settings Profile Save Contract Scenario Move 2026-06-18]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

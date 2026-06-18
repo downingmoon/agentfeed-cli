@@ -20,7 +20,7 @@ After the worklog card adapter split, the next contract size re-scan showed `age
 
 - Added `src/lib/project-response-fixtures.ts` for shared project owner, summary, and detail response fixtures.
 - Moved malformed project response fail-closed cases into `src/lib/project-malformed-response-contracts.contract.test.ts`.
-- Kept `src/lib/project-response-contracts.contract.test.ts` focused on valid project list, user project list, direct project detail, and owner/slug detail payload preservation.
+- Kept `src/lib/project-response-contracts.contract.test.ts` focused on valid project list, user project list, direct project detail, and owner/slug detail payload preservation. 2026-06-18 follow-up moved that assertion harness into [[Frontend Project Response Assertion Move 2026-06-18]].
 - Registered the malformed project response contract in `scripts/run-contract-tests.mjs`.
 - Preserved these existing guarantees:
   - project list/detail guards preserve valid pagination, owner metadata, nullable stats, repository URL, and agent stats.
@@ -37,7 +37,7 @@ After the worklog card adapter split, the next contract size re-scan showed `age
 - Frontend `git diff --check` ✅
 - Changed-file no-excuse grep ✅ — no `as any`, `as unknown`, `@ts-ignore`, `@ts-expect-error`, non-null assertions, empty catches, eslint-disable, TODO, or FIXME additions.
 - Changed-file size audit:
-  - `src/lib/project-response-contracts.contract.test.ts`: 56 lines / 50 pure LOC
+  - `src/lib/project-response-contracts.contract.test.ts`: 56 lines / 50 pure LOC at split time; 2026-06-18 follow-up reduced it to 6 lines / 5 pure LOC.
   - `src/lib/project-malformed-response-contracts.contract.test.ts`: 107 lines / 102 pure LOC
   - `src/lib/project-response-fixtures.ts`: 49 lines / 47 pure LOC
   - `scripts/run-contract-tests.mjs`: 171 lines / 162 pure LOC

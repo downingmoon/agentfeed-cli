@@ -14,6 +14,11 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend project response assertion move
+> Frontend valid project list, user project list, direct project detail, owner/slug detail response dispatcher, fetch restore handling, and preservation assertions를 `project-response-contracts.contract.test.ts`에서 `project-response-fixtures.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Project Response Assertion Move 2026-06-18]]
+
+
 > [!success] 2026-06-18 Frontend worklog review action assertion helper split
 > Frontend action-control assertion loops, review preview safety assertions, and malformed privacy finding fail-closed assertion을 `worklog-review-action-contracts.contract.test.ts`에서 `worklog-review-action-contract-assertions.ts`로 분리했다. Existing `worklog-review-action-contract-fixtures.ts`가 150 pure LOC라 grow하지 않았다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Worklog Review Action Assertion Helper Split 2026-06-18]]

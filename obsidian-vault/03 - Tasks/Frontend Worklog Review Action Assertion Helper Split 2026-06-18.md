@@ -48,6 +48,6 @@ The post-worklog-detail-malformed fixture split re-scan showed `agentfeed-fronte
 
 - Keep review action assertion flow in `worklog-review-action-contract-assertions.ts`.
 - Keep review action payload and case fixtures in `worklog-review-action-contract-fixtures.ts`; current size is 150 pure LOC.
-- Remaining next re-scan candidates: `project-response-contracts.contract.test.ts`, `metadata-strict-fields.contract.test.ts`, and `auth-me-contracts.contract.test.ts` at 50 pure LOC.
+- [x] Next re-scan candidate `project-response-contracts.contract.test.ts` handled in [[Frontend Project Response Assertion Move 2026-06-18]]. Remaining next re-scan candidates: `metadata-strict-fields.contract.test.ts` and `auth-me-contracts.contract.test.ts` at 50 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

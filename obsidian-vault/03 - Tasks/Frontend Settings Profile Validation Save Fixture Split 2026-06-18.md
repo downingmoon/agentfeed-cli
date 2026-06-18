@@ -47,6 +47,6 @@ The post-project-mutation contract size re-scan showed `agentfeed-frontend/src/l
 
 - Keep settings validation-save cases in `settings-profile-validation-save-fixtures.ts`.
 - Keep checking `settings-profile-save.contract-fixtures.ts` before adding cases; it remains near-200 at 156 pure LOC.
-- Remaining next re-scan candidates from previous scan: `integration-status-contracts.contract.test.ts` and `me-client-mutation-contracts.contract.test.ts` at 61 pure LOC.
+- [x] `integration-status-contracts.contract.test.ts` handled in [[Frontend Integration Status Contract Fixture Split 2026-06-18]]. Remaining next re-scan candidate: `me-client-mutation-contracts.contract.test.ts` at 61 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

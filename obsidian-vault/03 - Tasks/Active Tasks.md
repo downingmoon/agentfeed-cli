@@ -14,6 +14,12 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend integration status contract fixture split
+> Frontend valid integration status payloads, malformed type/status cases, response helper, preservation assertion, and fail-closed runner를 `integration-status-contracts.contract.test.ts`에서 `integration-status-contract-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Integration Status Contract Fixture Split 2026-06-18]]
+
+
+
 > [!success] 2026-06-18 Frontend settings profile validation save fixture split
 > Frontend missing-username validation and invalid-username-format no-partial-save assertions를 `settings-profile-validation-save.contract.test.ts`에서 `settings-profile-validation-save-fixtures.ts`로 분리했다. Existing `settings-profile-save.contract-fixtures.ts`가 156 pure LOC라 grow하지 않았다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Settings Profile Validation Save Fixture Split 2026-06-18]]

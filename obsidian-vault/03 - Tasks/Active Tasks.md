@@ -14,6 +14,11 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend API fetch timeout contract helper move
+> Frontend timeout-to-504 assertion, shared timeout constant assertion, caller AbortSignal propagation assertion, following-feed cancellation/safe-param assertion, and fetch/timer restore runner를 `api-fetch-timeout-cancellation.contract.test.ts`에서 existing `api-fetch-timeout-cancellation-fixtures.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend API Fetch Timeout Contract Helper Move 2026-06-18]]
+
+
 > [!success] 2026-06-18 Frontend worklog mutation body contract helper move
 > Frontend worklog mutation JSON response helper, fetch request recorder, comment/finding-resolution/publish/unpublish response assertions, exact route/body assertions, and fetch restore runner를 `worklog-mutation-body-contracts.contract.test.ts`에서 existing `worklog-mutation-body-contract-fixtures.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Worklog Mutation Body Contract Helper Move 2026-06-18]]

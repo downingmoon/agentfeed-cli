@@ -46,6 +46,6 @@ The post-settings-profile-validation contract size re-scan showed `agentfeed-fro
 
 - Keep worklog mutation body helpers in `worklog-mutation-body-contract-fixtures.ts`.
 - Re-scan fixture/helper sizes before adding more cases to `worklog-mutation-body-contract-fixtures.ts`; current size is 108 pure LOC.
-- Remaining next re-scan candidate: `api-fetch-timeout-cancellation.contract.test.ts` at 59 pure LOC.
+- [x] `api-fetch-timeout-cancellation.contract.test.ts` handled in [[Frontend API Fetch Timeout Contract Helper Move 2026-06-18]]. Remaining next re-scan candidate: `worklog-card-malformed-response-guards.contract.test.ts` at 58 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

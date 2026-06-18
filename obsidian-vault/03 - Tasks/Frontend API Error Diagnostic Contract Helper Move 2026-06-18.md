@@ -45,6 +45,6 @@ The post-user-activity contract size re-scan showed `agentfeed-frontend/src/lib/
 ## Follow-up
 
 - Keep API error diagnostic assertions in `api-error-diagnostics-contract-fixtures.ts`.
-- Next re-scan candidates: `api-response-body-hardening.contract.test.ts` and `api-response-hardening.contract.test.ts` tied at 68 pure LOC.
+- Re-scan found `api-response-body-hardening.contract.test.ts` tied as the largest contract file and split fixtures in [[Frontend API Response Body Hardening Fixture Split 2026-06-18]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

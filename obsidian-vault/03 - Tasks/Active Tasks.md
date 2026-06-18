@@ -14,6 +14,11 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend API response body hardening fixture split
+> Frontend oversized response body, body stream read failure, and malformed successful response fail-closed scenarios를 `api-response-body-hardening.contract.test.ts`에서 `api-response-body-hardening-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend API Response Body Hardening Fixture Split 2026-06-18]]
+
+
 > [!success] 2026-06-18 Frontend API error diagnostic contract helper move
 > Frontend non-JSON auth/mutation error redaction assertions and JSON backend envelope diagnostics assertions를 `api-error-diagnostics.contract.test.ts`에서 existing `api-error-diagnostics-contract-fixtures.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend API Error Diagnostic Contract Helper Move 2026-06-18]]

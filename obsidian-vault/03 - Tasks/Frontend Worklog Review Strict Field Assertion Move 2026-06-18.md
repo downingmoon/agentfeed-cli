@@ -50,6 +50,6 @@ The post-auth-next assertion move re-scan showed `agentfeed-frontend/src/lib/wor
 
 - Keep worklog review strict-field assertion flow in `worklog-review-strict-field-assertions.ts`.
 - Keep worklog review response fixtures and malformed cases in `worklog-review-response-fixtures.ts`; re-check size before adding cases because it is 112 pure LOC.
-- Remaining next re-scan candidate: `project-malformed-response-contracts.contract.test.ts` at 44 pure LOC.
+- [x] Remaining next re-scan candidate `project-malformed-response-contracts.contract.test.ts` handled in [[Frontend Project Malformed Response Assertion Move 2026-06-18]]. Next re-scan candidates: `leaderboard-response-contracts.contract.test.ts` and `worklog-card-response-guards.contract.test.ts` at 43 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

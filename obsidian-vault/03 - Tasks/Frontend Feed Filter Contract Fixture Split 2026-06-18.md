@@ -45,6 +45,6 @@ The post-search-response contract size re-scan showed `agentfeed-frontend/src/li
 ## Follow-up
 
 - Keep feed filter contract cases in `feed-filter-contract-fixtures.ts`.
-- Next re-scan candidate: `api-response-envelope-hardening.contract.test.ts` at 62 pure LOC.
+- [x] `api-response-envelope-hardening.contract.test.ts` handled in [[Frontend API Response Envelope Hardening Helper Move 2026-06-18]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

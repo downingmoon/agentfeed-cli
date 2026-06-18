@@ -48,6 +48,6 @@ The post-remaining-read-response contract size re-scan showed `agentfeed-fronten
 
 - Keep settings profile validation cases in `settings-profile-validation-fixtures.ts`.
 - Keep checking `settings-profile-save.contract-fixtures.ts` before adding cases; it remains near-200 at 156 pure LOC.
-- Remaining next re-scan candidates: `worklog-mutation-body-contracts.contract.test.ts` and `api-fetch-timeout-cancellation.contract.test.ts` at 59 pure LOC.
+- [x] `worklog-mutation-body-contracts.contract.test.ts` handled in [[Frontend Worklog Mutation Body Contract Helper Move 2026-06-18]]. Remaining next re-scan candidate: `api-fetch-timeout-cancellation.contract.test.ts` at 59 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

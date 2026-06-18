@@ -45,6 +45,6 @@ The post-CLI-authorize-session contract size re-scan showed `agentfeed-frontend/
 ## Follow-up
 
 - Keep remaining read malformed response cases in `remaining-read-malformed-response-fixtures.ts`.
-- Next re-scan candidate from latest scan should be documented in the central log after the final scan.
+- Next re-scan candidate: `search-response-guards.contract.test.ts` at 64 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

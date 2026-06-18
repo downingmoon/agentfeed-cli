@@ -45,6 +45,6 @@ The post-settings-profile-validation-save contract size re-scan showed `agentfee
 ## Follow-up
 
 - Keep integration status contract cases in `integration-status-contract-fixtures.ts`.
-- Remaining next re-scan candidate from previous scan: `me-client-mutation-contracts.contract.test.ts` at 61 pure LOC.
+- [x] `me-client-mutation-contracts.contract.test.ts` handled in [[Frontend Me Client Mutation Contract Helper Move 2026-06-18]]. Remaining next re-scan candidates: `worklog-list-adapters.contract.test.ts`, `ingestion-token-mutation-contracts.contract.test.ts`, `security-headers.contract.test.ts`, `explore-response-guards.contract.test.ts`, and `remaining-read-response-guards.contract.test.ts` tied at 60 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

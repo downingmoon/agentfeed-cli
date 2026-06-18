@@ -14,6 +14,11 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend ingestion token mutation contract helper move
+> Frontend ingestion-token mutation JSON response helper, fetch request recorder, create/rotate/revoke response assertions, exact route/body assertions, and fetch restore runner를 `ingestion-token-mutation-contracts.contract.test.ts`에서 existing `ingestion-token-mutation-contract-fixtures.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Ingestion Token Mutation Contract Helper Move 2026-06-18]]
+
+
 > [!success] 2026-06-18 Frontend worklog list adapter fixture split
 > Frontend valid worklog row preservation, malformed worklog row fail-closed cases, public worklog filtering, valid user preservation, and malformed user fail-closed cases를 `worklog-list-adapters.contract.test.ts`에서 `worklog-list-adapter-fixtures.ts`로 분리했다. Shared `worklog-card-contract-fixtures.ts`가 187 pure LOC라 grow하지 않았다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Worklog List Adapter Fixture Split 2026-06-18]]

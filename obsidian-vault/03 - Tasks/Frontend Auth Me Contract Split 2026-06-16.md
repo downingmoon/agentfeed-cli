@@ -18,7 +18,7 @@ status: done
 
 ## Changed
 
-- Moved existing `normalizeAuthMe` assertions into `src/lib/auth-me-contracts.contract.test.ts`.
+- Moved existing `normalizeAuthMe` assertions into `src/lib/auth-me-contracts.contract.test.ts`. 2026-06-18 follow-up moved the payload fixtures and assertion flow into [[Frontend Auth Me Fixture Split 2026-06-18]].
 - Registered the focused contract in `scripts/run-contract-tests.mjs`.
 - Removed now-unused auth normalizer import and 53 lines from `api-contract.test.ts` without changing runtime behavior.
 - Preserved these existing guarantees:
@@ -39,7 +39,7 @@ status: done
 - Changed-file no-excuse grep ✅ — no `as any`, `as unknown`, `@ts-ignore`, `@ts-expect-error`, non-null assertions, empty catches, eslint-disable, TODO, or FIXME additions.
 - Changed-file size audit:
   - `src/lib/api-contract.test.ts`: 529 lines / 460 pure LOC
-  - `src/lib/auth-me-contracts.contract.test.ts`: 53 lines / 50 pure LOC
+  - `src/lib/auth-me-contracts.contract.test.ts`: 53 lines / 50 pure LOC at split time; 2026-06-18 follow-up reduced it to 3 lines / 2 pure LOC.
   - `scripts/run-contract-tests.mjs`: 158 lines / 149 pure LOC
 
 ## Follow-up

@@ -45,6 +45,6 @@ The post-project-response assertion move re-scan showed `agentfeed-frontend/src/
 ## Follow-up
 
 - Keep metadata compatibility fixtures, cases, and assertion flow in `metadata-strict-fields-fixtures.ts`.
-- Remaining next re-scan candidate: `auth-me-contracts.contract.test.ts` at 50 pure LOC.
+- [x] Remaining next re-scan candidate `auth-me-contracts.contract.test.ts` handled in [[Frontend Auth Me Fixture Split 2026-06-18]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

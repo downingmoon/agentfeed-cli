@@ -14,6 +14,11 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend explore response guard fixture split
+> Frontend valid explore section preservation, malformed nested worklog/project/prompt/builder/category cases, JSON response helper, fail-closed ApiError assertion, and fetch restore runner를 `explore-response-guards.contract.test.ts`에서 `explore-response-guard-fixtures.ts`로 분리했다. Shared `search-explore-response-fixtures.ts`가 136 pure LOC라 grow하지 않았다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Explore Response Guard Fixture Split 2026-06-18]]
+
+
 > [!success] 2026-06-18 Frontend security header contract helper move
 > Frontend static security header checks, IP-only server-test header checks, required CSP directive checks, arbitrary inline CSP rejection checks, and API-origin CSP handling checks를 `security-headers.contract.test.ts`에서 existing `security-headers-contract-fixtures.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Security Header Contract Helper Move 2026-06-18]]

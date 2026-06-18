@@ -46,6 +46,6 @@ The post-worklog-mutation-body contract size re-scan showed `agentfeed-frontend/
 
 - Keep API fetch timeout/cancellation helpers in `api-fetch-timeout-cancellation-fixtures.ts`.
 - Re-scan fixture/helper sizes before adding more cases to `api-fetch-timeout-cancellation-fixtures.ts`; current size is 87 pure LOC.
-- Remaining next re-scan candidate: `worklog-card-malformed-response-guards.contract.test.ts` at 58 pure LOC.
+- [x] `worklog-card-malformed-response-guards.contract.test.ts` handled in [[Frontend Worklog Card Malformed Response Fixture Split 2026-06-18]]. Remaining next re-scan candidates: `worklog-review-action-response-guards.contract.test.ts`, `dashboard-strict-fields.contract.test.ts`, and `user-account-response-guards.contract.test.ts` at 55 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

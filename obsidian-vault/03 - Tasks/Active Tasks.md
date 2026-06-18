@@ -14,6 +14,11 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend worklog card malformed response fixture split
+> Frontend malformed worklog card response cases, JSON response helper, feed-list fail-closed assertion, and fetch restore runner를 `worklog-card-malformed-response-guards.contract.test.ts`에서 `worklog-card-malformed-response-fixtures.ts`로 분리했다. Shared `worklog-card-response-fixtures.ts`가 112 pure LOC라 grow하지 않았다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Worklog Card Malformed Response Fixture Split 2026-06-18]]
+
+
 > [!success] 2026-06-18 Frontend API fetch timeout contract helper move
 > Frontend timeout-to-504 assertion, shared timeout constant assertion, caller AbortSignal propagation assertion, following-feed cancellation/safe-param assertion, and fetch/timer restore runner를 `api-fetch-timeout-cancellation.contract.test.ts`에서 existing `api-fetch-timeout-cancellation-fixtures.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend API Fetch Timeout Contract Helper Move 2026-06-18]]

@@ -45,6 +45,6 @@ The post-worklog-review-URL-scope re-scan showed `agentfeed-frontend/src/lib/api
 ## Follow-up
 
 - Keep API request response fixtures, expected request matrix, and assertion harness in `api-request-contract-fixtures.ts`.
-- Remaining next re-scan candidate: `public-user-leaderboard-contracts.contract.test.ts` at 53 pure LOC.
+- [x] Remaining next re-scan candidate `public-user-leaderboard-contracts.contract.test.ts` handled in [[Frontend Public User Leaderboard Assertion Move 2026-06-18]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

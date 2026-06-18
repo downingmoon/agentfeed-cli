@@ -14,6 +14,11 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend dashboard strict field fixture split
+> Frontend dashboard summary/recent valid payload fixtures, strict-field rejection helper, root/period/recent extra-field rejection cases, and strict-field assertion runner를 `dashboard-strict-fields.contract.test.ts`에서 `dashboard-strict-fields-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Dashboard Strict Field Fixture Split 2026-06-18]]
+
+
 > [!success] 2026-06-18 Frontend worklog review action response fixture split
 > Frontend valid review response preservation checks, malformed review response cases, JSON response helper, fail-closed ApiError assertion, and fetch restore runner를 `worklog-review-action-response-guards.contract.test.ts`에서 `worklog-review-action-response-fixtures.ts`로 분리했다. Shared `worklog-review-response-fixtures.ts`가 112 pure LOC라 grow하지 않았다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Worklog Review Action Response Fixture Split 2026-06-18]]

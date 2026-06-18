@@ -47,6 +47,6 @@ The post-worklog-card-malformed-response contract size re-scan showed `agentfeed
 
 - Keep worklog review action response cases in `worklog-review-action-response-fixtures.ts`.
 - Keep checking `worklog-review-response-fixtures.ts` before adding cases; current size is 112 pure LOC.
-- Remaining next re-scan candidates: `dashboard-strict-fields.contract.test.ts` and `user-account-response-guards.contract.test.ts` at 55 pure LOC.
+- [x] `dashboard-strict-fields.contract.test.ts` handled in [[Frontend Dashboard Strict Field Fixture Split 2026-06-18]]. Remaining next re-scan candidate: `user-account-response-guards.contract.test.ts` at 55 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

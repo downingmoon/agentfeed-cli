@@ -47,6 +47,6 @@ The post-security-header contract size re-scan showed `agentfeed-frontend/src/li
 
 - Keep explore response guard cases in `explore-response-guard-fixtures.ts`.
 - Keep checking `search-explore-response-fixtures.ts` before adding cases; current size is 136 pure LOC.
-- Remaining next re-scan candidate: `remaining-read-response-guards.contract.test.ts` at 60 pure LOC.
+- [x] `remaining-read-response-guards.contract.test.ts` handled in [[Frontend Remaining Read Response Contract Helper Move 2026-06-18]]. Remaining next re-scan candidates: `settings-profile-validation.contract.test.ts`, `worklog-mutation-body-contracts.contract.test.ts`, and `api-fetch-timeout-cancellation.contract.test.ts` at 59 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

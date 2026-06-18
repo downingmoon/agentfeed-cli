@@ -14,6 +14,11 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend worklog review strict field assertion move
+> Frontend response helper, fetch override/restore handling, valid review preservation assertions, and malformed strict-field rejection flow를 `worklog-review-strict-fields.contract.test.ts`에서 새 `worklog-review-strict-field-assertions.ts`로 이동했다. 기존 `worklog-review-response-fixtures.ts`는 112 pure LOC라 grow하지 않았다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Worklog Review Strict Field Assertion Move 2026-06-18]]
+
+
 > [!success] 2026-06-18 Frontend auth next assertion move
 > Frontend OAuth next path assertions, unsafe hash/next rejection assertions, and GitHub OAuth URL next-param assertions를 `auth-next-contracts.contract.test.ts`에서 새 `auth-next-contract-assertions.ts`로 이동했다. 기존 `auth-next-contract-fixtures.ts`는 160 pure LOC라 grow하지 않았다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Auth Next Assertion Move 2026-06-18]]

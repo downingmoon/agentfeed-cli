@@ -21,6 +21,7 @@ After the metadata strict field fixture split, the next contract size re-scan sh
 - Reused `validWorklogReviewResponse` from `src/lib/worklog-review-response-fixtures.ts`.
 - Added malformed worklog review strict-field cases to `src/lib/worklog-review-response-fixtures.ts`.
 - Kept `src/lib/worklog-review-strict-fields.contract.test.ts` focused on valid review preservation and fail-closed strict-field assertions.
+- 2026-06-18 [[Frontend Worklog Review Strict Field Assertion Move 2026-06-18]] moved the runner-owned assertion flow into `src/lib/worklog-review-strict-field-assertions.ts` without growing `worklog-review-response-fixtures.ts`.
 - Preserved existing worklog review strict-field contract behavior without runtime app changes.
 - Did not update `scripts/contract-test-sources.mjs` because no standalone contract source was added.
 
@@ -35,7 +36,7 @@ After the metadata strict field fixture split, the next contract size re-scan sh
 - Frontend `git diff --check` ✅
 - Changed-file no-excuse grep ✅ — no `as any`, `as unknown`, `@ts-ignore`, `@ts-expect-error`, non-null assertions, empty catches, eslint-disable, TODO, or FIXME additions.
 - Changed-file size audit:
-  - `src/lib/worklog-review-strict-fields.contract.test.ts`: 49 lines / 44 pure LOC
+  - `src/lib/worklog-review-strict-fields.contract.test.ts`: originally 49 lines / 44 pure LOC; 2026-06-18 split result is 6 lines / 5 pure LOC runner plus 51 lines / 46 pure LOC assertion helper
   - `src/lib/worklog-review-response-fixtures.ts`: 79 lines / 78 pure LOC
 - Visual QA: not run because this was a non-UI contract-test refactor.
 
@@ -45,6 +46,7 @@ After the metadata strict field fixture split, the next contract size re-scan sh
 
 ## Follow-up
 
+- [x] Worklog review strict-field assertion flow moved in [[Frontend Worklog Review Strict Field Assertion Move 2026-06-18]].
 - Keep worklog review response fixtures and strict-field malformed cases in `worklog-review-response-fixtures.ts`.
 - [x] Next re-scan found `collection-evidence-malformed.contract.test.ts` as the largest contract file and moved fixtures in [[Frontend Collection Evidence Malformed Fixture Move 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.

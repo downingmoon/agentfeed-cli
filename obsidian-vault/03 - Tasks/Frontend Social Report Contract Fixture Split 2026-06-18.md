@@ -45,6 +45,6 @@ The post-me-settings-mutation contract size re-scan showed `agentfeed-frontend/s
 ## Follow-up
 
 - Keep social report request fixtures and contract runner in `social-report-contract-fixtures.ts`.
-- Next re-scan candidates: `worklog-detail-strict-fields.contract.test.ts`, `worklog-card-share-actions.contract.test.ts`, `user-activity-contracts.contract.test.ts`, `api-error-diagnostics.contract.test.ts`, `api-response-body-hardening.contract.test.ts`, and `api-response-hardening.contract.test.ts` tied at 68 pure LOC.
+- Re-scan found `worklog-detail-strict-fields.contract.test.ts` tied as the largest contract file and moved helpers in [[Frontend Worklog Detail Strict Field Contract Helper Move 2026-06-18]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

@@ -14,6 +14,12 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend project mutation detail adapter fixture split
+> Frontend project mutation URL/timestamp/tag/stat preservation, malformed mutation, detail stat preservation, and malformed detail assertions를 `project-mutation-detail-adapters.contract.test.ts`에서 `project-mutation-detail-adapter-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Project Mutation Detail Adapter Fixture Split 2026-06-18]]
+
+
+
 > [!success] 2026-06-18 Frontend URL navigation contract fixture split
 > Frontend review origin, worklog detail/review/permalink, project href, and dashboard recent worklog URL assertions를 `url-navigation-contracts.contract.test.ts`에서 `url-navigation-contract-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend URL Navigation Contract Fixture Split 2026-06-18]]

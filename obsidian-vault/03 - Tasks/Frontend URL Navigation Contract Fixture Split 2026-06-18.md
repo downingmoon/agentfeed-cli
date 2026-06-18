@@ -45,6 +45,6 @@ The next frontend contract size scan after [[Frontend API Response Hardening Con
 ## Follow-up
 
 - Keep URL navigation cases in `url-navigation-contract-fixtures.ts`.
-- Next re-scan candidates: `project-mutation-detail-adapters.contract.test.ts` and `identity-profile-contracts.contract.test.ts` tied at 67 pure LOC.
+- [x] `project-mutation-detail-adapters.contract.test.ts` handled in [[Frontend Project Mutation Detail Adapter Fixture Split 2026-06-18]]. Remaining next re-scan candidate: `identity-profile-contracts.contract.test.ts` at 67 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

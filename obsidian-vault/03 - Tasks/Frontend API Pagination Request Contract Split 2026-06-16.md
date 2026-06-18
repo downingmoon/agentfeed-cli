@@ -20,6 +20,7 @@ After the settings profile validation save split, the next contract size re-scan
 ## Changed
 
 - Added `src/lib/api-pagination-request-contracts.contract.test.ts` for public/profile/project/explore cursor pagination request contracts.
+- 2026-06-18 [[Frontend API Pagination Request Fixture Split 2026-06-18]] moved runner-owned pagination helpers/assertions into `src/lib/api-pagination-request-contract-fixtures.ts`.
 - Kept `src/lib/api-request-contracts.contract.test.ts` focused on mixed endpoint URL/method/query contracts for project list/detail, search, leaderboard, me lists, and notification read actions.
 - Registered the pagination request contract in `scripts/run-contract-tests.mjs`.
 - Preserved these existing guarantees:
@@ -38,7 +39,7 @@ After the settings profile validation save split, the next contract size re-scan
 - Changed-file no-excuse grep ✅ — no `as any`, `as unknown`, `@ts-ignore`, `@ts-expect-error`, non-null assertions, empty catches, eslint-disable, TODO, or FIXME additions.
 - Changed-file size audit:
   - `src/lib/api-request-contracts.contract.test.ts`: 152 lines / 132 pure LOC
-  - `src/lib/api-pagination-request-contracts.contract.test.ts`: 56 lines / 46 pure LOC
+  - `src/lib/api-pagination-request-contracts.contract.test.ts`: originally 56 lines / 46 pure LOC; 2026-06-18 split result is 6 lines / 5 pure LOC runner plus 56 lines / 46 pure LOC fixture module
   - `scripts/run-contract-tests.mjs`: 176 lines / 167 pure LOC
 - Visual QA: not run because this was a non-UI contract-test refactor.
 
@@ -48,6 +49,7 @@ After the settings profile validation save split, the next contract size re-scan
 
 ## Follow-up
 
+- [x] Runner-owned pagination request fixtures/assertions moved in [[Frontend API Pagination Request Fixture Split 2026-06-18]].
 - Keep mixed endpoint URL/method contracts separate from cursor pagination request contracts when adding future API client request coverage.
 - [x] Next re-scan found `api-fetch-request-hardening.contract.test.ts` near 200 pure LOC and split it in [[Frontend API Fetch Timeout Contract Split 2026-06-16]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.

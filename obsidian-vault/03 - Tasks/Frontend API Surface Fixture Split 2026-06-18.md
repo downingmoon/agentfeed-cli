@@ -45,6 +45,6 @@ The post-project-schema-variant malformed assertion move re-scan showed `agentfe
 ## Follow-up
 
 - Keep API surface checks in `api-surface-contract-fixtures.ts`.
-- [x] Remaining next re-scan candidate `read-side-strict-fields.contract.test.ts` handled in [[Frontend Read Side Strict Field Fixture Split 2026-06-18]]. Next re-scan candidate: `api-pagination-request-contracts.contract.test.ts` at 46 pure LOC.
+- [x] Remaining next re-scan candidate `read-side-strict-fields.contract.test.ts` handled in [[Frontend Read Side Strict Field Fixture Split 2026-06-18]]. Subsequent candidate `api-pagination-request-contracts.contract.test.ts` handled in [[Frontend API Pagination Request Fixture Split 2026-06-18]]. Current next re-scan candidates: `worklog-metric-evidence.contract.test.ts` and `project-schema-variants-strict-fields.contract.test.ts` at 45 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

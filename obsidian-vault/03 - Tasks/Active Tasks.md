@@ -14,6 +14,11 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend API pagination request fixture split
+> Frontend pagination response helper, fetch request recorder, URL lookup helper, endpoint exercise calls, encoded path checks, and cursor/limit assertions를 `api-pagination-request-contracts.contract.test.ts`에서 `api-pagination-request-contract-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend API Pagination Request Fixture Split 2026-06-18]]
+
+
 > [!success] 2026-06-18 Frontend read-side strict field fixture split
 > Frontend activity/integration valid payload fixtures, strict-field rejection helper, valid payload assertions, and extra-field rejection assertions를 `read-side-strict-fields.contract.test.ts`에서 `read-side-strict-fields-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Read Side Strict Field Fixture Split 2026-06-18]]

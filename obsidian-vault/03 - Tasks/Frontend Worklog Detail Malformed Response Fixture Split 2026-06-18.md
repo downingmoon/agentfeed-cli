@@ -47,6 +47,6 @@ The post-public-user-leaderboard assertion move re-scan showed `agentfeed-fronte
 
 - Keep malformed worklog detail response cases in `worklog-detail-malformed-response-fixtures.ts`.
 - Keep checking `worklog-detail-response-fixtures.ts` before adding cases; current size is 142 pure LOC.
-- Remaining next re-scan candidates: `worklog-review-action-contracts.contract.test.ts`, `project-response-contracts.contract.test.ts`, `metadata-strict-fields.contract.test.ts`, and `auth-me-contracts.contract.test.ts` at 50 pure LOC.
+- [x] Next re-scan candidate `worklog-review-action-contracts.contract.test.ts` handled in [[Frontend Worklog Review Action Assertion Helper Split 2026-06-18]]. Remaining next re-scan candidates: `project-response-contracts.contract.test.ts`, `metadata-strict-fields.contract.test.ts`, and `auth-me-contracts.contract.test.ts` at 50 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

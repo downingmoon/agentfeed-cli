@@ -14,6 +14,11 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend security header contract helper move
+> Frontend static security header checks, IP-only server-test header checks, required CSP directive checks, arbitrary inline CSP rejection checks, and API-origin CSP handling checks를 `security-headers.contract.test.ts`에서 existing `security-headers-contract-fixtures.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Security Header Contract Helper Move 2026-06-18]]
+
+
 > [!success] 2026-06-18 Frontend ingestion token mutation contract helper move
 > Frontend ingestion-token mutation JSON response helper, fetch request recorder, create/rotate/revoke response assertions, exact route/body assertions, and fetch restore runner를 `ingestion-token-mutation-contracts.contract.test.ts`에서 existing `ingestion-token-mutation-contract-fixtures.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Ingestion Token Mutation Contract Helper Move 2026-06-18]]

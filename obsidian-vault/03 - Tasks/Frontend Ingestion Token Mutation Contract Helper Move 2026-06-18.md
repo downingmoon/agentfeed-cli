@@ -46,6 +46,6 @@ The post-worklog-list-adapter contract size re-scan showed `agentfeed-frontend/s
 
 - Keep ingestion-token mutation helpers in `ingestion-token-mutation-contract-fixtures.ts`.
 - Re-scan fixture/helper sizes before adding more cases to `ingestion-token-mutation-contract-fixtures.ts`; current size is 104 pure LOC.
-- Remaining next re-scan candidates: `security-headers.contract.test.ts`, `explore-response-guards.contract.test.ts`, and `remaining-read-response-guards.contract.test.ts` tied at 60 pure LOC.
+- [x] `security-headers.contract.test.ts` handled in [[Frontend Security Header Contract Helper Move 2026-06-18]]. Remaining next re-scan candidates: `explore-response-guards.contract.test.ts` and `remaining-read-response-guards.contract.test.ts` tied at 60 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

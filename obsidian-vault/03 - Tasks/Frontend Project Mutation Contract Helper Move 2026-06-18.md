@@ -46,6 +46,6 @@ The post-API-response-envelope contract size re-scan showed `agentfeed-frontend/
 
 - Keep project mutation contract helpers in `project-mutation-contract-fixtures.ts`.
 - Re-scan fixture/helper sizes before adding more cases to `project-mutation-contract-fixtures.ts`, now 125 pure LOC.
-- Remaining next re-scan candidates from previous scan: `settings-profile-validation-save.contract.test.ts`, `integration-status-contracts.contract.test.ts`, and `me-client-mutation-contracts.contract.test.ts` at 61 pure LOC.
+- [x] `settings-profile-validation-save.contract.test.ts` handled in [[Frontend Settings Profile Validation Save Fixture Split 2026-06-18]]. Remaining next re-scan candidates: `integration-status-contracts.contract.test.ts` and `me-client-mutation-contracts.contract.test.ts` tied at 61 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

@@ -45,6 +45,6 @@ The post-remaining-read-malformed contract size re-scan showed `agentfeed-fronte
 ## Follow-up
 
 - Keep search response guard cases in `search-response-guard-fixtures.ts`.
-- Next re-scan candidate from latest scan should be documented in the central log after the final scan.
+- Next re-scan candidates: `feed-filter-contracts.contract.test.ts` and `api-response-envelope-hardening.contract.test.ts` tied at 62 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

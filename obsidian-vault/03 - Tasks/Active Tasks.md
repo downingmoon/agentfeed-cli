@@ -14,6 +14,11 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend worklog card malformed adapter fixture split
+> Frontend malformed worklog card source, multi-agent metrics, and viewer-state cases plus adapter mismatch assertion helper를 `worklog-card-malformed-adapter.contract.test.ts`에서 `worklog-card-malformed-adapter-fixtures.ts`로 분리했다. Existing `worklog-card-contract-fixtures.ts`가 187 pure LOC로 near-200 상태라 별도 malformed fixture module을 만들었다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Worklog Card Malformed Adapter Fixture Split 2026-06-18]]
+
+
 > [!success] 2026-06-18 Frontend public user strict stats fixture split
 > Frontend public user strict stats valid payload, malformed strict stats/viewer-state cases, API response helper, and fail-closed capture helper를 `public-user-strict-stats.contract.test.ts`에서 `public-user-strict-stats-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Public User Strict Stats Fixture Split 2026-06-18]]

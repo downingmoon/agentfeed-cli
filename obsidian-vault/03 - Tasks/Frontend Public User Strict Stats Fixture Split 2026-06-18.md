@@ -45,6 +45,6 @@ The post-worklog-card-adapter contract size re-scan showed `agentfeed-frontend/s
 ## Follow-up
 
 - Keep public user strict stats fixtures and capture helper in `public-user-strict-stats-fixtures.ts`.
-- Next re-scan candidate: `worklog-card-malformed-adapter.contract.test.ts` at 74 pure LOC.
+- Re-scan found `worklog-card-malformed-adapter.contract.test.ts` as the largest contract file and split fixtures in [[Frontend Worklog Card Malformed Adapter Fixture Split 2026-06-18]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

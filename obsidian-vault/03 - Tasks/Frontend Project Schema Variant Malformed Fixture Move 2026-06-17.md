@@ -45,7 +45,7 @@ After the worklog mutation body fixture split, the next contract size re-scan sh
 
 ## Follow-up
 
-- Keep project schema variant valid and malformed data in `project-schema-variant-fixtures.ts`.
+- [x] Follow-up shrink handled in [[Frontend Project Schema Variant Malformed Assertion Move 2026-06-18]]; project schema variant valid/malformed data and malformed assertion flow now belong in `project-schema-variant-fixtures.ts`.
 - [x] Next re-scan found `leaderboard-response-contracts.contract.test.ts` tied as the largest contract file and split fixtures in [[Frontend Leaderboard Response Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

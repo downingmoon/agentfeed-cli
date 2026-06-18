@@ -14,6 +14,11 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend project schema variant malformed assertion move
+> Frontend API/list response helpers, project/user/worklog action selection, fail-closed capture, fetch restore handling, and malformed variant assertion runner를 `project-schema-variants-malformed-strict-fields.contract.test.ts`에서 `project-schema-variant-fixtures.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Project Schema Variant Malformed Assertion Move 2026-06-18]]
+
+
 > [!success] 2026-06-18 Frontend auth.me fixture split
 > Frontend valid auth.me payload, malformed auth.me cases, normalization assertion, and fail-closed assertion flow를 `auth-me-contracts.contract.test.ts`에서 `auth-me-contract-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Auth Me Fixture Split 2026-06-18]]

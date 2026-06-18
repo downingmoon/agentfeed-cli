@@ -45,6 +45,6 @@ The post-worklog-detail-strict-field contract size re-scan showed `agentfeed-fro
 ## Follow-up
 
 - Keep worklog card share action scenarios in `worklog-card-share-action-fixtures.ts`.
-- Next re-scan candidates: `user-activity-contracts.contract.test.ts`, `api-error-diagnostics.contract.test.ts`, `api-response-body-hardening.contract.test.ts`, and `api-response-hardening.contract.test.ts` tied at 68 pure LOC.
+- Re-scan found `user-activity-contracts.contract.test.ts` tied as the largest contract file and split fixtures in [[Frontend User Activity Contract Fixture Split 2026-06-18]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

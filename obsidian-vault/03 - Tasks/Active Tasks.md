@@ -14,6 +14,11 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend user activity contract fixture split
+> Frontend user activity surface check, request recorder, response fixture, encoded username/path/query assertions, and fetch restore runner를 `user-activity-contracts.contract.test.ts`에서 `user-activity-contract-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend User Activity Contract Fixture Split 2026-06-18]]
+
+
 > [!success] 2026-06-18 Frontend worklog card share action fixture split
 > Frontend worklog card native-share, clipboard fallback, blocked clipboard, native+clipboard failure, and user-facing share result message assertions를 `worklog-card-share-actions.contract.test.ts`에서 `worklog-card-share-action-fixtures.ts`로 분리했다. Baseline `npm run test:contracts` 통과 후 분리했고, post-split `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Worklog Card Share Action Fixture Split 2026-06-18]]

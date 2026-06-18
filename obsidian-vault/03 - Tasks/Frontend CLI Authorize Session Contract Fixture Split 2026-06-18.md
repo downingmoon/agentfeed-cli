@@ -45,6 +45,6 @@ The post-auth-theme-social contract size re-scan showed `agentfeed-frontend/src/
 ## Follow-up
 
 - Keep CLI authorize session contract cases in `cli-authorize-session-contract-fixtures.ts`.
-- Next re-scan candidate: `remaining-read-malformed-response-guards.contract.test.ts` at 65 pure LOC.
+- [x] `remaining-read-malformed-response-guards.contract.test.ts` handled in [[Frontend Remaining Read Malformed Response Fixture Split 2026-06-18]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

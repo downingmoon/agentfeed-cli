@@ -20,7 +20,7 @@ After the collection evidence split, the next contract size re-scan showed `agen
 
 - Added `src/lib/worklog-card-response-fixtures.ts` for shared raw worklog card list response fixtures.
 - Moved malformed card row fail-closed cases into `src/lib/worklog-card-malformed-response-guards.contract.test.ts`.
-- Kept `src/lib/worklog-card-response-guards.contract.test.ts` focused on valid card row/public author metadata/pagination preservation and missing-pagination fail-closed behavior.
+- Kept `src/lib/worklog-card-response-guards.contract.test.ts` focused on valid card row/public author metadata/pagination preservation and missing-pagination fail-closed behavior. 2026-06-18 [[Frontend Worklog Card Response Assertion Move 2026-06-18]] moved that runner-owned assertion flow into `src/lib/worklog-card-response-assertions.ts`.
 - Registered the malformed worklog card response guard in `scripts/run-contract-tests.mjs`.
 - Preserved these existing guarantees:
   - valid worklog card list rows keep multi-agent metrics, public author metadata, nullable author viewer state, and pagination.
@@ -38,7 +38,7 @@ After the collection evidence split, the next contract size re-scan showed `agen
 - Frontend `git diff --check` ✅
 - Changed-file no-excuse grep ✅ — no `as any`, `as unknown`, `@ts-ignore`, `@ts-expect-error`, non-null assertions, empty catches, eslint-disable, TODO, or FIXME additions.
 - Changed-file size audit:
-  - `src/lib/worklog-card-response-guards.contract.test.ts`: 47 lines / 43 pure LOC
+  - `src/lib/worklog-card-response-guards.contract.test.ts`: originally 47 lines / 43 pure LOC; 2026-06-18 split result is 6 lines / 5 pure LOC runner plus 55 lines / 50 pure LOC assertion helper
   - `src/lib/worklog-card-malformed-response-guards.contract.test.ts`: 63 lines / 58 pure LOC
   - `src/lib/worklog-card-response-fixtures.ts`: 119 lines / 112 pure LOC
   - `scripts/run-contract-tests.mjs`: 169 lines / 160 pure LOC
@@ -50,8 +50,9 @@ After the collection evidence split, the next contract size re-scan showed `agen
 
 ## Follow-up
 
-- Keep raw worklog card response fixtures, valid list response checks, and malformed row fail-closed cases separated when adding future card-list coverage.
+- Keep raw worklog card response fixtures, valid list response assertions, and malformed row fail-closed cases separated when adding future card-list coverage. The valid/missing-pagination assertion flow now lives in [[Frontend Worklog Card Response Assertion Move 2026-06-18]].
 - [x] Next re-scan found `worklog-card-adapter.contract.test.ts` near 200 pure LOC and split it in [[Frontend Worklog Card Adapter Contract Split 2026-06-16]].
+- [x] Later re-scan found `worklog-card-response-guards.contract.test.ts` at 43 pure LOC and moved assertion flow in [[Frontend Worklog Card Response Assertion Move 2026-06-18]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.
 - Server/infra/CI/CD work remains held by the active goal constraint.

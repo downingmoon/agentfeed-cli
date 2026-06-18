@@ -48,6 +48,6 @@ The post-project-malformed-response assertion move re-scan showed `agentfeed-fro
 
 - Keep leaderboard response assertion flow in `leaderboard-response-assertions.ts`.
 - Keep leaderboard response payload/cases in `leaderboard-response-fixtures.ts`.
-- Remaining next re-scan candidate: `worklog-card-response-guards.contract.test.ts` at 43 pure LOC.
+- [x] Remaining next re-scan candidate `worklog-card-response-guards.contract.test.ts` handled in [[Frontend Worklog Card Response Assertion Move 2026-06-18]]. Current next re-scan candidates: `social-action-response-guards.contract.test.ts` and `api-fetch-request-hardening.contract.test.ts` at 42 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

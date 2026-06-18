@@ -14,6 +14,11 @@ updated: 2026-06-18
 
 ## 현재 결론
 
+> [!success] 2026-06-18 Frontend notification URL contract helper move
+> Frontend notification href/path-segment/external-url sanitizer assertions를 `notification-url-contracts.contract.test.ts`에서 existing `notification-url-contract-fixtures.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Notification URL Contract Helper Move 2026-06-18]]
+
+
 > [!success] 2026-06-18 Frontend owner project detail contract helper move
 > Frontend owner-aware project detail surface/request/normalization contract helpers를 `owner-project-detail-contracts.contract.test.ts`에서 existing `owner-project-detail-fixtures.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Owner Project Detail Contract Helper Move 2026-06-18]]

@@ -50,7 +50,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Current next re-scan candidate: `collection-evidence.contract.test.ts` at 19 pure LOC, followed by `account-strict-fields.contract.test.ts` and `feed-filter-keyboard.contract.test.ts` at 19 pure LOC.
+> Candidate `collection-evidence.contract.test.ts` handled in [[Frontend Collection Evidence Assertion Move 2026-06-19]]. Current next re-scan candidates: `account-strict-fields.contract.test.ts` and `feed-filter-keyboard.contract.test.ts` at 19 pure LOC.
 
 > [!todo]
 > Keep dashboard action URL dot-segment fallback assertions in `dashboard-action-assertions.ts`; keep the focused runner at `dashboard-actions.contract.test.ts` slim.

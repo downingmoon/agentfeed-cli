@@ -50,7 +50,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Candidate `dashboard-actions.contract.test.ts` handled in [[Frontend Dashboard Action Assertion Move 2026-06-19]]. Current next re-scan candidate: `collection-evidence.contract.test.ts` at 19 pure LOC, followed by `account-strict-fields.contract.test.ts` and `feed-filter-keyboard.contract.test.ts` at 19 pure LOC.
+> Candidate `dashboard-actions.contract.test.ts` handled in [[Frontend Dashboard Action Assertion Move 2026-06-19]]. Candidate `collection-evidence.contract.test.ts` handled in [[Frontend Collection Evidence Assertion Move 2026-06-19]]. Current next re-scan candidates: `account-strict-fields.contract.test.ts` and `feed-filter-keyboard.contract.test.ts` at 19 pure LOC.
 
 > [!todo]
 > Keep username check strict-field semantics and fail-closed assertions in `username-check-strict-field-assertions.ts`; keep the focused runner at `username-check-strict-fields.contract.test.ts` slim.

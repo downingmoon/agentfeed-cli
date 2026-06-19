@@ -20,7 +20,7 @@ After splitting worklog detail guards, `agentfeed-frontend/src/lib/collection-ev
 
 - Added `src/lib/collection-evidence-fixtures.ts` for the shared review payload with collection evidence.
 - Moved malformed evidence fail-closed cases into `src/lib/collection-evidence-malformed.contract.test.ts`.
-- Kept `src/lib/collection-evidence.contract.test.ts` focused on valid model, per-agent metric, collection quality, and collection source evidence display.
+- Kept `src/lib/collection-evidence.contract.test.ts` focused on valid model, per-agent metric, collection quality, and collection source evidence display. 2026-06-19 follow-up moved those assertions into `src/lib/collection-evidence-assertions.ts` and left the runner slim.
 - Registered the malformed evidence contract in `scripts/run-contract-tests.mjs`.
 - Preserved these existing guarantees:
   - review evidence exposes all collected models for publish decisions.

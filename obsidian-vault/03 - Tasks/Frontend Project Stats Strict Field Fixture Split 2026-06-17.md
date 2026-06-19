@@ -44,6 +44,8 @@ After the worklog detail adapter fixture split, the next contract size re-scan s
 
 ## Follow-up
 
+- [x] 2026-06-19 follow-up: `project-stats-strict-fields.contract.test.ts` runner slimming handled in [[Frontend Project Stats Strict Field Assertion Move 2026-06-19]]; fixtures remain in `project-stats-strict-fields-fixtures.ts` and assertions now live in `project-stats-strict-field-assertions.ts`.
+
 - Keep project stats strict-field fixtures and legacy alias cases in `project-stats-strict-fields-fixtures.ts`.
 - Re-scan found `ingestion-token-response-guards.contract.test.ts` as the largest contract file and split fixtures in [[Frontend Ingestion Token Response Guard Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.

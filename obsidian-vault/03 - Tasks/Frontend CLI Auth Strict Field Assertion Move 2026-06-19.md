@@ -49,7 +49,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Current next re-scan candidates: `project-stats-strict-fields.contract.test.ts` and `explore-strict-fields.contract.test.ts` at 33 pure LOC, followed by `header-logic.contract.test.ts` at 32 pure LOC.
+> [x] Candidate `project-stats-strict-fields.contract.test.ts` handled in [[Frontend Project Stats Strict Field Assertion Move 2026-06-19]]. Current next re-scan candidate: `explore-strict-fields.contract.test.ts` at 33 pure LOC, followed by `header-logic.contract.test.ts` at 32 pure LOC.
 
 > [!todo]
 > Keep CLI auth strict-field assertion orchestration in `cli-auth-strict-field-assertions.ts`.

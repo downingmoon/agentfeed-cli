@@ -57,3 +57,7 @@ LSP diagnostics는 로컬 `typescript-language-server` 미설치로 실행되지
   - `ProjectResponse`: full project fields + `owner` + `stats`
   - `UserProjectSummary` / `ProjectSearchResult`: Backend schema별 필드만 허용
 - 특히 Worklog에 중첩되는 `project`는 Backend `ProjectSummary` 계약을 따르므로, 현재 broad ProjectResponse allowlist가 과허용인지 별도 슬라이스로 검증한다.
+
+## Follow-up
+
+- [x] 2026-06-19 follow-up: `project-stats-strict-fields.contract.test.ts` runner slimming handled in [[Frontend Project Stats Strict Field Assertion Move 2026-06-19]]; fixtures remain in `project-stats-strict-fields-fixtures.ts` and assertions now live in `project-stats-strict-field-assertions.ts`.

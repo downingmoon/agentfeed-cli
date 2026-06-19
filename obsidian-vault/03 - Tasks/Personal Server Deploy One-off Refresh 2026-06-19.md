@@ -78,3 +78,50 @@ Frontend build/start evidence from container logs:
 
 > [!todo]
 > 실제 GitHub OAuth 승인, CLI `login -> collect -> publish -> review` 원격 전체 플로우는 계정/세션 의도가 필요한 수동 smoke로 별도 확인한다.
+
+## 2026-06-19 07:48 UTC — Post CLI auth strict-field assertion move refresh
+
+> [!success]
+> 사용자의 명시 요청으로 `cli-auth-strict-fields` assertion move 작업 완료 후 현재 서버 `/home/ubuntu/agentfeed`에 최신 소스를 1회 재배포했다. 이번 예외 이후 기존 “서버/인프라/CI/CD 보류” 및 “서버 배포 금지” 제약은 다시 유지한다.
+
+### Deploy source
+
+- `agentfeed-frontend` `main` @ `924dd48` — `Move CLI auth strict field assertions`
+- `agentfeed-cli` `main` @ `2551508` — `Document CLI auth strict field assertion move`
+- `agentfeed-dev` `main` @ `72425c7` — `Log CLI auth strict field assertion move`
+- `agentfeed-backend` `master` @ `63c918d` — `Propagate richer outcomes through public card contracts`
+
+### Actions
+
+1. `/home/ubuntu/dev/agentfeed`의 4개 repo를 `/home/ubuntu/agentfeed`로 `rsync --delete` 동기화했다.
+2. 기존 server `.env`는 유지했다.
+3. `docker compose --env-file .env config`로 compose config를 검증했다.
+4. `postgres`는 기존 컨테이너/볼륨을 유지했다.
+5. `backend`와 `frontend`를 `docker compose --env-file .env up -d --force-recreate backend frontend`로 재생성했다.
+
+### Verification Evidence
+
+```text
+backend health: healthy
+frontend health: healthy
+postgres health: healthy
+```
+
+Readiness:
+
+```json
+{"status":"ready","database":{"connected":true,"revision":"027_browser_session_version","error":null},"migration":{"head":"027_browser_session_version","up_to_date":true,"error":null}}
+```
+
+HTTP checks:
+
+- `GET http://127.0.0.1:18080/health/ready` → `200` ✅
+- `HEAD http://127.0.0.1:13030/` → `200 OK` ✅
+
+Compose status after deploy:
+
+```text
+agentfeed-server-backend-1    Up About a minute (healthy)   0.0.0.0:18080->8000/tcp
+agentfeed-server-frontend-1   Up About a minute (healthy)   0.0.0.0:13030->3000/tcp
+agentfeed-server-postgres-1   Up 13 days (healthy)          127.0.0.1:15432->5432/tcp
+```

@@ -52,7 +52,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Current next re-scan candidate: `ingestion-token-response-guards.contract.test.ts` at 25 pure LOC, followed by `worklog-detail-response-guards.contract.test.ts` at 24 pure LOC and `worklog-detail-adapter.contract.test.ts` / `select-value-parsers.contract.test.ts` / `api-error-list-contracts.contract.test.ts` at 23 pure LOC.
+> Candidate `ingestion-token-response-guards.contract.test.ts` handled in [[Frontend Ingestion Token Response Assertion Move 2026-06-19]]. Current next re-scan candidate: `worklog-detail-response-guards.contract.test.ts` at 24 pure LOC, followed by `worklog-detail-adapter.contract.test.ts`, `select-value-parsers.contract.test.ts`, and `api-error-list-contracts.contract.test.ts` at 23 pure LOC.
 
 > [!todo]
 > Keep malformed CLI auth response fixtures in `cli-auth-malformed-response-fixtures.ts` and assertion orchestration in `cli-auth-malformed-response-assertions.ts`.

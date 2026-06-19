@@ -45,6 +45,7 @@ After the project stats strict field fixture split, the next contract size re-sc
 ## Follow-up
 
 - Keep ingestion token response guard malformed cases in `ingestion-token-response-guard-fixtures.ts`.
+- [x] Follow-up assertion orchestration move completed in [[Frontend Ingestion Token Response Assertion Move 2026-06-19]].
 - Re-scan found `worklog-review-action-contracts.contract.test.ts` tied as the largest contract file and moved cases in [[Frontend Worklog Review Action Case Move 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

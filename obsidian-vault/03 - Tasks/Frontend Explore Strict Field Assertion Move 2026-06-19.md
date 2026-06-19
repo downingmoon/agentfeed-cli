@@ -52,7 +52,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> [x] Candidate `header-logic.contract.test.ts` handled in [[Frontend Header Logic Assertion Move 2026-06-19]]. [x] Candidate `project-mutation-response-contracts.contract.test.ts` handled in [[Frontend Project Mutation Response Assertion Move 2026-06-19]]. [x] Candidate `cli-auth-malformed-response.contract.test.ts` handled in [[Frontend CLI Auth Malformed Response Assertion Move 2026-06-19]]. Current next re-scan candidate: `ingestion-token-response-guards.contract.test.ts` at 25 pure LOC.
+> [x] Candidate `header-logic.contract.test.ts` handled in [[Frontend Header Logic Assertion Move 2026-06-19]]. [x] Candidate `project-mutation-response-contracts.contract.test.ts` handled in [[Frontend Project Mutation Response Assertion Move 2026-06-19]]. [x] Candidate `cli-auth-malformed-response.contract.test.ts` handled in [[Frontend CLI Auth Malformed Response Assertion Move 2026-06-19]]. Candidate `ingestion-token-response-guards.contract.test.ts` handled in [[Frontend Ingestion Token Response Assertion Move 2026-06-19]]. Current next re-scan candidate: `worklog-detail-response-guards.contract.test.ts` at 24 pure LOC.
 
 > [!todo]
 > Keep explore strict-field fixtures in `explore-strict-fields-fixtures.ts` and assertion orchestration in `explore-strict-field-assertions.ts`.

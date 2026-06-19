@@ -14,6 +14,12 @@ updated: 2026-06-19
 
 ## 현재 결론
 
+> [!success] 2026-06-19 Personal server one-off deploy refresh
+> 사용자의 이번 턴 한정 명시 요청으로 현재 서버 `/home/ubuntu/agentfeed`에 최신 작업분을 동기화하고 `agentfeed-server` backend/frontend 컨테이너를 force-recreate했다. `postgres` 볼륨은 유지했다. Frontend/backend/postgres 모두 healthy, 외부 `http://161.33.171.81:13030/` 및 `http://161.33.171.81:18080/health/ready` 모두 `200` 확인. 이번 1회 예외 이후 기존 “서버/인프라/CI/CD 보류” 및 “서버 배포 금지” 제약은 유지한다.
+> - [[Personal Server Deploy One-off Refresh 2026-06-19]]
+
+
+
 > [!success] 2026-06-19 Frontend leaderboard user key assertion move
 > Frontend malformed leaderboard row fixture and missing-identity fail-closed assertion을 `leaderboard-user-key.contract.test.ts`에서 새 `leaderboard-user-key-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Leaderboard User Key Assertion Move 2026-06-19]]

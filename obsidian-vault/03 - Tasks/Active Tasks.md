@@ -14,6 +14,11 @@ updated: 2026-06-19
 
 ## 현재 결론
 
+> [!success] 2026-06-19 Personal server one-off deploy after ingestion token response assertion move
+> 사용자의 이번 턴 한정 명시 요청으로 `ingestion-token-response` assertion move 및 문서화 완료 후 현재 서버 `/home/ubuntu/agentfeed`에 최신 작업분을 1회 재배포했다. Frontend/backend/postgres healthcheck, backend readiness, frontend root `200 OK`, 외부 frontend/backend HTTP `200`을 확인했다. 이번 예외 이후 기존 “서버/인프라/CI/CD 보류” 및 “서버 배포 금지” 제약은 다시 유지한다.
+> - [[Personal Server Deploy One-off Refresh 2026-06-19#2026-06-19 14:49 UTC — Post ingestion token response assertion move refresh]]
+
+
 > [!success] 2026-06-19 Frontend ingestion token response assertion move
 > Frontend malformed ingestion token list/create/rotate response cases iteration, fetch override/restore flow, API call exercise, and 502 diagnostic fail-closed assertion을 `ingestion-token-response-guards.contract.test.ts`에서 새 `ingestion-token-response-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 없음. 사용자 요청 1회 예외 배포는 작업 완료 후 별도 실행/검증한다.
 > - [[Frontend Ingestion Token Response Assertion Move 2026-06-19]]

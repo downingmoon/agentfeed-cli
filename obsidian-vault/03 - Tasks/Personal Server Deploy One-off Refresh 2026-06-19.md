@@ -125,3 +125,58 @@ agentfeed-server-backend-1    Up About a minute (healthy)   0.0.0.0:18080->8000/
 agentfeed-server-frontend-1   Up About a minute (healthy)   0.0.0.0:13030->3000/tcp
 agentfeed-server-postgres-1   Up 13 days (healthy)          127.0.0.1:15432->5432/tcp
 ```
+
+## 2026-06-19 14:49 UTC — Post ingestion token response assertion move refresh
+
+> [!success]
+> 사용자의 명시 요청으로 `ingestion-token-response` assertion move 작업과 문서화 완료 후 현재 서버 `/home/ubuntu/agentfeed`에 최신 소스를 1회 재배포했다. 이번 예외 이후 기존 “서버/인프라/CI/CD 보류” 및 “서버 배포 금지” 제약은 다시 유지한다.
+
+### Deploy source
+
+- `agentfeed-frontend` `main` @ `9cb1885` — `Move ingestion token response assertions`
+- `agentfeed-cli` `main` @ `3aa2d69` — `Document ingestion token response assertion move`
+- `agentfeed-dev` `main` @ `62efe87` — `Log ingestion token response assertion move`
+- `agentfeed-backend` `master` @ `63c918d` — `Propagate richer outcomes through public card contracts`
+
+### Actions
+
+1. `/home/ubuntu/dev/agentfeed`의 4개 repo를 `/home/ubuntu/agentfeed`로 `rsync --delete` 동기화했다.
+2. 기존 server `.env`는 유지했다.
+3. `docker compose --env-file .env config`로 compose config를 검증했다.
+4. `postgres`는 기존 컨테이너/볼륨을 유지했다.
+5. `backend`와 `frontend`를 `docker compose --env-file .env up -d --force-recreate backend frontend`로 재생성했다.
+
+### Verification Evidence
+
+```text
+backend=healthy frontend=healthy postgres=healthy
+agentfeed-server-backend-1    Up 3 minutes (healthy)   0.0.0.0:18080->8000/tcp
+agentfeed-server-frontend-1   Up 2 minutes (healthy)   0.0.0.0:13030->3000/tcp
+agentfeed-server-postgres-1   Up 2 weeks (healthy)     127.0.0.1:15432->5432/tcp
+```
+
+Readiness:
+
+```json
+{"status":"ready","database":{"connected":true,"revision":"027_browser_session_version","error":null},"migration":{"head":"027_browser_session_version","up_to_date":true,"error":null}}
+```
+
+HTTP checks:
+
+- `HEAD http://127.0.0.1:13030/` → `200 OK` ✅
+- `GET http://127.0.0.1:18080/health/ready` → ready/database connected/migration up-to-date ✅
+- `GET http://161.33.171.81:13030/` → `200` ✅
+- `GET http://161.33.171.81:18080/health/ready` → `200` ✅
+
+Frontend build/start evidence from container logs:
+
+```text
+✓ Compiled successfully in 27.2s
+✓ Generating static pages (18/18)
+✓ Ready in 1015ms
+```
+
+Deployed source spot-check:
+
+- `/home/ubuntu/agentfeed/agentfeed-frontend/src/lib/ingestion-token-response-guards.contract.test.ts` imports `assertIngestionTokenResponseGuardContracts` from `ingestion-token-response-assertions`.
+- `/home/ubuntu/agentfeed/agentfeed-frontend/src/lib/ingestion-token-response-assertions.ts` contains the moved fail-closed assertion orchestration.

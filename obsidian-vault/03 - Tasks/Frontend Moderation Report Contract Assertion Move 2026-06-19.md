@@ -48,6 +48,6 @@ The post-account/project mutation assertion move re-scan showed `agentfeed-front
 
 - Keep moderation report assertion flow in `moderation-report-contract-assertions.ts`.
 - Keep moderation report request/response fixtures in `moderation-report-contract-fixtures.ts`.
-- [x] Remaining next re-scan candidate `leaderboard-user-key.contract.test.ts` handled in [[Frontend Leaderboard User Key Assertion Move 2026-06-19]]. [x] Candidate `worklog-author-avatar.contract.test.ts` handled in [[Frontend Worklog Author Avatar Assertion Move 2026-06-19]]. Current next re-scan candidate: `privacy-scan-strict-fields.contract.test.ts` at 39 pure LOC.
+- [x] Remaining next re-scan candidate `leaderboard-user-key.contract.test.ts` handled in [[Frontend Leaderboard User Key Assertion Move 2026-06-19]]. [x] Candidate `worklog-author-avatar.contract.test.ts` handled in [[Frontend Worklog Author Avatar Assertion Move 2026-06-19]]. [x] Candidate `privacy-scan-strict-fields.contract.test.ts` handled in [[Frontend Privacy Scan Strict Field Assertion Move 2026-06-19]]. Current next re-scan candidate: `worklog-review-validation.contract.test.ts` at 38 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work and server deployment remain held by the active goal constraint.

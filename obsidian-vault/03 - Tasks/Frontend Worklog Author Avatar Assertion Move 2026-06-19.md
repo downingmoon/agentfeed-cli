@@ -50,7 +50,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Current next re-scan candidate: `privacy-scan-strict-fields.contract.test.ts` at 39 pure LOC, followed by `worklog-review-validation.contract.test.ts` at 38 pure LOC.
+> [x] Candidate `privacy-scan-strict-fields.contract.test.ts` handled in [[Frontend Privacy Scan Strict Field Assertion Move 2026-06-19]]. Current next re-scan candidate: `worklog-review-validation.contract.test.ts` at 38 pure LOC.
 
 > [!todo]
 > Keep worklog author avatar preservation and malformed-author fail-closed checks in `worklog-author-avatar-assertions.ts`.

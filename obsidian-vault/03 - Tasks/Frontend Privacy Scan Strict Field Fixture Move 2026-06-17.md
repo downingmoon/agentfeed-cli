@@ -49,3 +49,6 @@ After the collection evidence malformed fixture move, the next contract size re-
 - [x] Next re-scan found `project-malformed-response-contracts.contract.test.ts` as the largest contract file and moved fixtures in [[Frontend Project Malformed Response Fixture Move 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.
+
+> [!success] 2026-06-19 follow-up
+> The remaining assertion orchestration in `privacy-scan-strict-fields.contract.test.ts` was moved to `privacy-scan-strict-field-assertions.ts` in [[Frontend Privacy Scan Strict Field Assertion Move 2026-06-19]]. The runner is now 5 pure LOC; `worklog-review-response-fixtures.ts` remains the fixture owner.

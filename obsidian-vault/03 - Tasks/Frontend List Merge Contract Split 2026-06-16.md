@@ -48,3 +48,6 @@ status: done
 - Continue splitting remaining `api-contract.test.ts` clusters: direct worklog body/API surface checks, auth.me normalization, feed filters, and review action guards.
 - Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.
 - Server/infra/CI/CD work remains held by the active goal constraint.
+
+> [!success] 2026-06-19 follow-up
+> The remaining list merge/project result key assertion orchestration in `list-merge-contracts.contract.test.ts` was moved to `list-merge-contract-assertions.ts` in [[Frontend List Merge Contract Assertion Move 2026-06-19]]. The runner is now 2 pure LOC.

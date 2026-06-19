@@ -50,7 +50,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> [x] Candidate `privacy-scan-strict-fields.contract.test.ts` handled in [[Frontend Privacy Scan Strict Field Assertion Move 2026-06-19]]. [x] Candidate `worklog-review-validation.contract.test.ts` handled in [[Frontend Worklog Review Validation Assertion Move 2026-06-19]]. [x] Candidate `worklog-card-adapter.contract.test.ts` handled in [[Frontend Worklog Card Adapter Assertion Move 2026-06-19]]. Current next re-scan candidates: `list-merge-contracts.contract.test.ts`, `project-mutation-form-contracts.contract.test.ts`, and `comment-response-guards.contract.test.ts` at 36 pure LOC.
+> [x] Candidate `privacy-scan-strict-fields.contract.test.ts` handled in [[Frontend Privacy Scan Strict Field Assertion Move 2026-06-19]]. [x] Candidate `worklog-review-validation.contract.test.ts` handled in [[Frontend Worklog Review Validation Assertion Move 2026-06-19]]. [x] Candidate `worklog-card-adapter.contract.test.ts` handled in [[Frontend Worklog Card Adapter Assertion Move 2026-06-19]]. [x] Candidate `list-merge-contracts.contract.test.ts` handled in [[Frontend List Merge Contract Assertion Move 2026-06-19]]. Current next re-scan candidates: `project-mutation-form-contracts.contract.test.ts` and `comment-response-guards.contract.test.ts` at 36 pure LOC.
 
 > [!todo]
 > Keep worklog author avatar preservation and malformed-author fail-closed checks in `worklog-author-avatar-assertions.ts`.

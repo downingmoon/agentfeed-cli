@@ -51,7 +51,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Current next re-scan candidates: `list-merge-contracts.contract.test.ts`, `project-mutation-form-contracts.contract.test.ts`, and `comment-response-guards.contract.test.ts` at 36 pure LOC.
+> [x] Candidate `list-merge-contracts.contract.test.ts` handled in [[Frontend List Merge Contract Assertion Move 2026-06-19]]. Current next re-scan candidates: `project-mutation-form-contracts.contract.test.ts` and `comment-response-guards.contract.test.ts` at 36 pure LOC.
 
 > [!todo]
 > Keep worklog card adapter assertion orchestration in `worklog-card-adapter-assertions.ts` and payload fixtures in `worklog-card-contract-fixtures.ts`.

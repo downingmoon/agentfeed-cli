@@ -45,6 +45,8 @@ status: done
 
 ## Follow-up
 
+
+- 2026-06-19: feed filter keyboard source-contract assertion orchestration은 [[Frontend Feed Filter Keyboard Assertion Move 2026-06-19]]에서 `feed-filter-keyboard-assertions.ts`로 이동했고 focused runner는 2 pure LOC로 축소했다.
 - Continue splitting remaining `api-contract.test.ts` clusters: direct worklog body/API surface checks, auth.me normalization, and review action guards.
 - Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.
 - Server/infra/CI/CD work remains held by the active goal constraint.

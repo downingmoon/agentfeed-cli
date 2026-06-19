@@ -51,7 +51,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Current next re-scan candidate: `feed-filter-keyboard.contract.test.ts` at 19 pure LOC.
+> Candidate `feed-filter-keyboard.contract.test.ts` handled in [[Frontend Feed Filter Keyboard Assertion Move 2026-06-19]]. Current next re-scan candidate: `worklog-card-malformed-adapter.contract.test.ts` at 10 pure LOC.
 
 > [!todo]
 > Keep set-username strict-field assertions in `account-strict-field-assertions.ts`; keep the focused runner at `account-strict-fields.contract.test.ts` slim.

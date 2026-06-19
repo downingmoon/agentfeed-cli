@@ -53,7 +53,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Current next re-scan candidates: `worklog-review-publish.contract.test.ts` and `cli-auth-strict-fields.contract.test.ts` at 34 pure LOC, followed by `project-stats-strict-fields.contract.test.ts` and `explore-strict-fields.contract.test.ts` at 33 pure LOC.
+> [x] Candidate `worklog-review-publish.contract.test.ts` handled in [[Frontend Worklog Review Publish Assertion Move 2026-06-19]]. Current next re-scan candidate: `cli-auth-strict-fields.contract.test.ts` at 34 pure LOC, followed by `project-stats-strict-fields.contract.test.ts` and `explore-strict-fields.contract.test.ts` at 33 pure LOC.
 
 > [!todo]
 > Keep comment response fixtures/malformed cases in `comment-response-guard-fixtures.ts` and assertion orchestration in `comment-response-guard-assertions.ts`.

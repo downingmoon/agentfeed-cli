@@ -49,7 +49,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> [x] Candidate `comment-response-guards.contract.test.ts` handled in [[Frontend Comment Response Guard Assertion Move 2026-06-19]]. Current next re-scan candidates: `worklog-review-publish.contract.test.ts` and `cli-auth-strict-fields.contract.test.ts` at 34 pure LOC.
+> [x] Candidate `comment-response-guards.contract.test.ts` handled in [[Frontend Comment Response Guard Assertion Move 2026-06-19]]. [x] Candidate `worklog-review-publish.contract.test.ts` handled in [[Frontend Worklog Review Publish Assertion Move 2026-06-19]]. Current next re-scan candidate: `cli-auth-strict-fields.contract.test.ts` at 34 pure LOC.
 
 > [!todo]
 > Keep project mutation form serializer/null-clear semantics assertions in `project-mutation-form-assertions.ts`.

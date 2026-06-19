@@ -14,6 +14,12 @@ updated: 2026-06-19
 
 ## 현재 결론
 
+> [!success] 2026-06-19 Frontend explore strict field assertion move
+> Frontend explore section valid normalization and top-level/trending-project/popular-prompt/featured-category extra-field fail-closed assertions를 `explore-strict-fields.contract.test.ts`에서 새 `explore-strict-field-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Explore Strict Field Assertion Move 2026-06-19]]
+
+
+
 > [!success] 2026-06-19 Frontend project stats strict field assertion move
 > Frontend exact backend ProjectStats field preservation, malformed project stats fail-closed checks, and fetch override/restore flow를 `project-stats-strict-fields.contract.test.ts`에서 새 `project-stats-strict-field-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Project Stats Strict Field Assertion Move 2026-06-19]]

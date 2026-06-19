@@ -43,6 +43,8 @@ After the owner project detail fixture split, the next contract size re-scan sho
 
 ## Follow-up
 
+- [x] 2026-06-19 follow-up: `explore-strict-fields.contract.test.ts` runner slimming handled in [[Frontend Explore Strict Field Assertion Move 2026-06-19]]; fixtures remain in `explore-strict-fields-fixtures.ts` and assertions now live in `explore-strict-field-assertions.ts`.
+
 - Keep explore strict-field fixtures separate from normalization/fail-closed assertions when adding future explore response coverage.
 - [x] Next re-scan found `worklog-detail-strict-fields.contract.test.ts` tied as largest and split fixtures in [[Frontend Worklog Detail Strict Field Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.

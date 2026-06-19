@@ -53,7 +53,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> [x] Candidate `worklog-review-publish.contract.test.ts` handled in [[Frontend Worklog Review Publish Assertion Move 2026-06-19]]. [x] Candidate `cli-auth-strict-fields.contract.test.ts` handled in [[Frontend CLI Auth Strict Field Assertion Move 2026-06-19]]. [x] Candidate `project-stats-strict-fields.contract.test.ts` handled in [[Frontend Project Stats Strict Field Assertion Move 2026-06-19]]. Current next re-scan candidate: `explore-strict-fields.contract.test.ts` at 33 pure LOC.
+> [x] Candidate `worklog-review-publish.contract.test.ts` handled in [[Frontend Worklog Review Publish Assertion Move 2026-06-19]]. [x] Candidate `cli-auth-strict-fields.contract.test.ts` handled in [[Frontend CLI Auth Strict Field Assertion Move 2026-06-19]]. [x] Candidate `project-stats-strict-fields.contract.test.ts` handled in [[Frontend Project Stats Strict Field Assertion Move 2026-06-19]]. [x] Candidate `explore-strict-fields.contract.test.ts` handled in [[Frontend Explore Strict Field Assertion Move 2026-06-19]]. Current next re-scan candidate: `header-logic.contract.test.ts` at 32 pure LOC.
 
 > [!todo]
 > Keep comment response fixtures/malformed cases in `comment-response-guard-fixtures.ts` and assertion orchestration in `comment-response-guard-assertions.ts`.

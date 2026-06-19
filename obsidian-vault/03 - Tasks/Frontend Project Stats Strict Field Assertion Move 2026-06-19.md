@@ -52,7 +52,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Current next re-scan candidate: `explore-strict-fields.contract.test.ts` at 33 pure LOC, followed by `header-logic.contract.test.ts` at 32 pure LOC and `project-mutation-response-contracts.contract.test.ts` at 29 pure LOC.
+> [x] Candidate `explore-strict-fields.contract.test.ts` handled in [[Frontend Explore Strict Field Assertion Move 2026-06-19]]. Current next re-scan candidate: `header-logic.contract.test.ts` at 32 pure LOC, followed by `project-mutation-response-contracts.contract.test.ts` at 29 pure LOC.
 
 > [!todo]
 > Keep project stats fixtures/API response helper in `project-stats-strict-fields-fixtures.ts` and assertion orchestration in `project-stats-strict-field-assertions.ts`.

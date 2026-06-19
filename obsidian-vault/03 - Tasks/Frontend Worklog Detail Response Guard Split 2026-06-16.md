@@ -50,6 +50,7 @@ After the documented warning-band splits, `agentfeed-frontend/src/lib/worklog-de
 ## Follow-up
 
 - Keep valid detail fixture ownership in `worklog-detail-response-fixtures.ts` and malformed detail cases in the focused malformed response guard.
+- [x] Follow-up valid response assertion orchestration move completed in [[Frontend Worklog Detail Response Assertion Move 2026-06-19]].
 - [x] Next re-scan found `collection-evidence.contract.test.ts` near 200 pure LOC and split it in [[Frontend Collection Evidence Contract Split 2026-06-16]].
 - Continue re-scanning current contract file sizes before adding new cases to near-200 LOC files.
 - Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.

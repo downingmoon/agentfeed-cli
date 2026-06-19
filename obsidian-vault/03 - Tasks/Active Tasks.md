@@ -14,6 +14,11 @@ updated: 2026-06-19
 
 ## 현재 결론
 
+> [!success] 2026-06-19 Frontend dashboard action assertion move
+> Frontend dashboard recent worklog raw/encoded dot-segment action URL fallback assertions를 `dashboard-actions.contract.test.ts`에서 새 `dashboard-action-assertions.ts`로 이동했다. Post-move `npm run test:contracts`, `npx tsc --noEmit`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 없음. 사용자 요청 1회 예외 배포는 작업 완료 후 별도 실행/검증한다.
+> - [[Frontend Dashboard Action Assertion Move 2026-06-19]]
+
+
 > [!success] 2026-06-19 Frontend username check strict field assertion move
 > Frontend username check valid reason semantics and extra-field fail-closed assertion을 `username-check-strict-fields.contract.test.ts`에서 새 `username-check-strict-field-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Username Check Strict Field Assertion Move 2026-06-19]]

@@ -71,6 +71,7 @@ Dashboard action URLs may preserve backend-provided paths only when the worklog 
 
 ## Follow-up
 
+- [x] Frontend `dashboard-actions.contract.test.ts` runner slimming handled in [[Frontend Dashboard Action Assertion Move 2026-06-19]].
 - [ ] Backend `requireDashboardActionUrl`에도 dot-segment raw/encoded 거부 contract가 필요한지 별도 pass에서 확인한다. 현재 Frontend UI helper는 fail-closed 되었지만, API boundary 자체의 방어도 중복으로 점검할 가치가 있다.
 
 ## Related

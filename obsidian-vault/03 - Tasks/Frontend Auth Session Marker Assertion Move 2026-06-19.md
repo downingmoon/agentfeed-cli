@@ -50,7 +50,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Candidate `public-user-strict-stats.contract.test.ts` handled in [[Frontend Public User Strict Stats Assertion Move 2026-06-19]]. Candidate `username-check-strict-fields.contract.test.ts` handled in [[Frontend Username Check Strict Field Assertion Move 2026-06-19]]. Current next re-scan candidate: `dashboard-actions.contract.test.ts` at 21 pure LOC, followed by `collection-evidence.contract.test.ts`, `account-strict-fields.contract.test.ts`, and `feed-filter-keyboard.contract.test.ts` at 19 pure LOC.
+> Candidate `public-user-strict-stats.contract.test.ts` handled in [[Frontend Public User Strict Stats Assertion Move 2026-06-19]]. Candidate `username-check-strict-fields.contract.test.ts` handled in [[Frontend Username Check Strict Field Assertion Move 2026-06-19]]. Candidate `dashboard-actions.contract.test.ts` handled in [[Frontend Dashboard Action Assertion Move 2026-06-19]]. Current next re-scan candidate: `collection-evidence.contract.test.ts` at 19 pure LOC, followed by `account-strict-fields.contract.test.ts` and `feed-filter-keyboard.contract.test.ts` at 19 pure LOC.
 
 > [!todo]
 > Keep auth session marker/no-probe/probe route assertions in `auth-session-marker-assertions.ts`; keep the focused runner at `auth-session-marker.contract.test.ts` slim.

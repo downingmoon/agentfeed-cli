@@ -54,6 +54,8 @@ Backend `SetUsernameResponse`는 `extra="forbid"`인데 Frontend `normalizeSetUs
 
 ## 후행 과제
 
+
+- 2026-06-19: assertion orchestration은 [[Frontend Account Strict Field Assertion Move 2026-06-19]]에서 `account-strict-field-assertions.ts`로 이동했고 focused runner는 2 pure LOC로 축소했다.
 - Integration guide는 이미 root/step allowlist와 source contract가 있어 이번 슬라이스에서 변경하지 않았다.
 - 다음 후보: username check response, notification action/read response, integration guide의 runtime focused test 보강 여부를 Backend schema 기준으로 계속 점검한다.
 - 기존 `api-contract.test.ts`는 계속 oversized 상태이므로 신규 coverage는 focused file로 유지한다.

@@ -51,7 +51,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Current next re-scan candidates: `account-strict-fields.contract.test.ts` and `feed-filter-keyboard.contract.test.ts` at 19 pure LOC.
+> Candidate `account-strict-fields.contract.test.ts` handled in [[Frontend Account Strict Field Assertion Move 2026-06-19]]. Current next re-scan candidate: `feed-filter-keyboard.contract.test.ts` at 19 pure LOC.
 
 > [!todo]
 > Keep collection evidence valid display assertions in `collection-evidence-assertions.ts`; keep the focused runner at `collection-evidence.contract.test.ts` slim.

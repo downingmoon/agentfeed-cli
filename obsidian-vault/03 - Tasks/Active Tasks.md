@@ -14,6 +14,12 @@ updated: 2026-06-19
 
 ## 현재 결론
 
+
+> [!success] 2026-06-19 Frontend account strict field assertion move
+> Frontend set-username valid backend response preservation and extra-field fail-closed assertions를 `account-strict-fields.contract.test.ts`에서 새 `account-strict-field-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npx tsc --noEmit`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 없음. 사용자 요청 1회 예외 배포는 작업 완료 후 별도 실행/검증한다.
+> - [[Frontend Account Strict Field Assertion Move 2026-06-19]]
+
+
 > [!success] 2026-06-19 Frontend collection evidence assertion move
 > Frontend collection evidence valid models, per-agent metrics, collection quality, and source trust review assertions를 `collection-evidence.contract.test.ts`에서 새 `collection-evidence-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npx tsc --noEmit`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Collection Evidence Assertion Move 2026-06-19]]

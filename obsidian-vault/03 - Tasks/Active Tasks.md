@@ -14,6 +14,11 @@ updated: 2026-06-19
 
 ## 현재 결론
 
+> [!success] 2026-06-19 Personal server one-off deploy after dashboard action assertion move
+> 사용자의 이번 작업 완료 후 1회 배포 요청으로 `dashboard-actions` assertion move 및 문서화 완료 후 현재 서버 `/home/ubuntu/agentfeed`에 최신 작업분을 1회 재배포했다. Frontend/backend/postgres healthcheck, backend readiness, frontend root `200 OK`, 외부 frontend/backend HTTP `200`을 확인했다. 이번 예외 이후 기존 “서버/인프라/CI/CD 보류” 및 “서버 배포 금지” 제약은 다시 유지한다.
+> - [[Personal Server Deploy One-off Refresh 2026-06-19#2026-06-19 20:00 UTC — Post dashboard action assertion move refresh]]
+
+
 > [!success] 2026-06-19 Frontend dashboard action assertion move
 > Frontend dashboard recent worklog raw/encoded dot-segment action URL fallback assertions를 `dashboard-actions.contract.test.ts`에서 새 `dashboard-action-assertions.ts`로 이동했다. Post-move `npm run test:contracts`, `npx tsc --noEmit`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 없음. 사용자 요청 1회 예외 배포는 작업 완료 후 별도 실행/검증한다.
 > - [[Frontend Dashboard Action Assertion Move 2026-06-19]]

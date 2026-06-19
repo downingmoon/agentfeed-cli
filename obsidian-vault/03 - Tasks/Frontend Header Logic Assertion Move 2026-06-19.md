@@ -49,7 +49,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Current next re-scan candidate: `project-mutation-response-contracts.contract.test.ts` at 29 pure LOC, followed by `cli-auth-malformed-response.contract.test.ts` at 26 pure LOC and `ingestion-token-response-guards.contract.test.ts` at 25 pure LOC.
+> [x] Candidate `project-mutation-response-contracts.contract.test.ts` handled in [[Frontend Project Mutation Response Assertion Move 2026-06-19]]. Current next re-scan candidate: `cli-auth-malformed-response.contract.test.ts` at 26 pure LOC, followed by `ingestion-token-response-guards.contract.test.ts` at 25 pure LOC.
 
 > [!todo]
 > Keep header navigation/search logic assertions in `header-logic-assertions.ts`.

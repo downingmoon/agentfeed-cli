@@ -52,6 +52,8 @@ After the project response split, the next contract size re-scan showed `agentfe
 
 ## Follow-up
 
+- [x] 2026-06-19 follow-up: `project-mutation-response-contracts.contract.test.ts` runner slimming handled in [[Frontend Project Mutation Response Assertion Move 2026-06-19]]; fixtures remain in `project-mutation-response-fixtures.ts` and assertions now live in `project-mutation-response-assertions.ts`.
+
 - Keep project mutation request/body contracts, response fixtures, and strict response fail-closed checks separated when adding future mutation coverage.
 - [x] Next re-scan found `project-schema-variants-strict-fields.contract.test.ts` near 200 pure LOC and split it in [[Frontend Project Schema Variant Contract Split 2026-06-16]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.

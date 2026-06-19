@@ -67,3 +67,7 @@ Backend CLI auth status/approve 응답은 `extra="forbid"`인데 Frontend `norma
 
 - [[CLI Auth Session Strict Field Guard 2026-06-11]]
 - [[Username Check Strict Field Guard 2026-06-11]]
+
+## Follow-up
+
+- [x] 2026-06-19 follow-up: `cli-auth-strict-fields.contract.test.ts` runner slimming handled in [[Frontend CLI Auth Strict Field Assertion Move 2026-06-19]]; strict-field assertions now live in `cli-auth-strict-field-assertions.ts`.

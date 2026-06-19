@@ -1,0 +1,55 @@
+---
+title: Frontend CLI Auth Strict Field Assertion Move 2026-06-19
+date: 2026-06-19
+tags:
+  - agentfeed/frontend
+  - agentfeed/contracts
+  - refactor
+status: done
+aliases:
+  - 2026-06-19 CLI auth strict field assertion move
+---
+
+# Frontend CLI Auth Strict Field Assertion Move 2026-06-19
+
+> [!success]
+> `cli-auth-strict-fields.contract.test.ts`의 CLI auth session/approve strict-field preservation and fail-closed assertions를 새 `cli-auth-strict-field-assertions.ts`로 이동했다.
+
+## Scope
+
+- 대상: `agentfeed-frontend/src/lib/cli-auth-strict-fields.contract.test.ts`
+- 신규 helper: `agentfeed-frontend/src/lib/cli-auth-strict-field-assertions.ts`
+- 성격: contract-test runner slimming / assertion ownership split
+- 신규 런타임 기능: 없음
+- 서버/인프라/CI/CD 변경: 없음
+- 서버 배포: 작업 단위 자체에서는 없음. 사용자 요청 1회 예외 배포는 작업 완료 후 별도 실행/검증한다.
+- Visual QA: 비-UI contract-test refactor라 생략
+
+## Changes
+
+- `cli-auth-strict-fields.contract.test.ts`는 `assertCliAuthStrictFieldContracts()` runner만 호출하도록 축소했다.
+- Valid CLI auth session semantics, valid approve semantics, session extra-field fail-closed behavior, and approve extra-field fail-closed behavior는 `cli-auth-strict-field-assertions.ts`가 소유한다.
+- `scripts/contract-test-sources.mjs`는 변경하지 않았다. 신규 파일은 imported assertion/helper module이고 standalone contract source가 아니다.
+
+## Verification Evidence
+
+- Baseline before edit: `npm run test:contracts` ✅
+- After edit: `npm run test:contracts` ✅
+- After edit: `npm run lint` ✅ — `tsc --noEmit`
+- `git diff --check` ✅
+- Changed-file no-excuse grep ✅ — no `as any`, `as unknown`, `@ts-ignore`, `@ts-expect-error`, non-null assertions, empty catches, eslint-disable, TODO, or FIXME additions in changed frontend TS files.
+- Pure LOC:
+  - `cli-auth-strict-fields.contract.test.ts`: 2 pure LOC, 3 total LOC
+  - `cli-auth-strict-field-assertions.ts`: 36 pure LOC, 41 total LOC
+
+## Commits
+
+- `agentfeed-frontend` `924dd48` — `Move CLI auth strict field assertions`
+
+## Follow-up
+
+> [!todo]
+> Current next re-scan candidates: `project-stats-strict-fields.contract.test.ts` and `explore-strict-fields.contract.test.ts` at 33 pure LOC, followed by `header-logic.contract.test.ts` at 32 pure LOC.
+
+> [!todo]
+> Keep CLI auth strict-field assertion orchestration in `cli-auth-strict-field-assertions.ts`.

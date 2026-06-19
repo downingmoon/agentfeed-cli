@@ -50,7 +50,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Current next re-scan candidate: `cli-auth-strict-fields.contract.test.ts` at 34 pure LOC, followed by `project-stats-strict-fields.contract.test.ts` and `explore-strict-fields.contract.test.ts` at 33 pure LOC.
+> [x] Candidate `cli-auth-strict-fields.contract.test.ts` handled in [[Frontend CLI Auth Strict Field Assertion Move 2026-06-19]]. Current next re-scan candidates: `project-stats-strict-fields.contract.test.ts` and `explore-strict-fields.contract.test.ts` at 33 pure LOC.
 
 > [!todo]
 > Keep worklog review publish source assertions in `worklog-review-publish-assertions.ts`.

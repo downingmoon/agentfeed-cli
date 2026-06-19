@@ -1614,6 +1614,7 @@ updated: 2026-06-19
 - [x] [[Frontend Profile Link Identity Guard 2026-06-08]] — Header, Feed, Search, Explore, Leaderboard, and Worklog Detail now avoid backend-id profile links for username-missing users.
 
 ## Completed
+- [x] [[Personal Server Deploy One-off Refresh 2026-06-19#2026-06-19 22:26 UTC — Post owner project detail assertion move refresh]] — owner-project-detail assertion move 후 사용자 요청 1회 현재 서버 배포와 readiness smoke 완료.
 - [x] [[Frontend Owner Project Detail Assertion Move 2026-06-19]] — owner project detail contract runner orchestration을 `owner-project-detail-assertions.ts`로 이동하고 focused runner를 5 pure LOC로 축소.
 - [x] [[CLI Command Recovery Refactor 2026-06-11]] — command help/usage/conflict recovery message formatting을 `src/cli/command-recovery.ts`로 분리하고 focused + full CLI suite 통과 확인.
 - [x] [[CLI Closest Match Refactor 2026-06-11]] — command/help/option suggestion typo matching을 `src/cli/closest-match.ts`로 분리하고 focused + full CLI suite 통과 확인.

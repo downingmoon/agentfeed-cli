@@ -49,7 +49,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> [x] Candidate `worklog-card-adapter.contract.test.ts` handled in [[Frontend Worklog Card Adapter Assertion Move 2026-06-19]]. [x] Candidate `list-merge-contracts.contract.test.ts` handled in [[Frontend List Merge Contract Assertion Move 2026-06-19]]. [x] Candidate `project-mutation-form-contracts.contract.test.ts` handled in [[Frontend Project Mutation Form Assertion Move 2026-06-19]]. Current next re-scan candidate: `comment-response-guards.contract.test.ts` at 36 pure LOC.
+> [x] Candidate `worklog-card-adapter.contract.test.ts` handled in [[Frontend Worklog Card Adapter Assertion Move 2026-06-19]]. [x] Candidate `list-merge-contracts.contract.test.ts` handled in [[Frontend List Merge Contract Assertion Move 2026-06-19]]. [x] Candidate `project-mutation-form-contracts.contract.test.ts` handled in [[Frontend Project Mutation Form Assertion Move 2026-06-19]]. [x] Candidate `comment-response-guards.contract.test.ts` handled in [[Frontend Comment Response Guard Assertion Move 2026-06-19]]. Current next re-scan candidates: `worklog-review-publish.contract.test.ts` and `cli-auth-strict-fields.contract.test.ts` at 34 pure LOC.
 
 > [!todo]
 > Keep worklog review validation assertion orchestration in `worklog-review-validation-assertions.ts`.

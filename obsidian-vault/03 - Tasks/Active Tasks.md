@@ -14,6 +14,12 @@ updated: 2026-06-19
 
 ## 현재 결론
 
+> [!success] 2026-06-19 Frontend comment response guard assertion move
+> Frontend valid comment list field preservation, public author metadata mapping, pagination preservation, and malformed comment fail-closed assertions를 `comment-response-guards.contract.test.ts`에서 새 `comment-response-guard-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move/current re-check `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 없음. 배포는 이 contract refactor 단위에 포함하지 않았고 사용자 요청 1회 예외는 별도 노트에 기록했다.
+> - [[Frontend Comment Response Guard Assertion Move 2026-06-19]]
+
+
+
 > [!success] 2026-06-19 Frontend project mutation form assertion move
 > Frontend project mutation form create/update serializer and nullable clear semantics assertions를 `project-mutation-form-contracts.contract.test.ts`에서 새 `project-mutation-form-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Project Mutation Form Assertion Move 2026-06-19]]

@@ -59,6 +59,10 @@ status: done
 
 - 서버 배포는 하지 않았다. 현재 goal 규칙 6을 유지한다.
 
+## 후속 처리
+
+- [x] `src/lib/select-value-parsers.contract.test.ts` assertion orchestration은 [[Frontend Select Value Parser Assertion Move 2026-06-19]]에서 `select-value-parser-assertions.ts`로 이동했다.
+
 ## 후속 후보
 
 - `src/lib/adapters.ts`의 `as Worklog & { _author: User }` 반환 경계 제거 여부 검토.

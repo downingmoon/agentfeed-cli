@@ -50,7 +50,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Current next re-scan candidates: `auth-session-marker.contract.test.ts` and `public-user-strict-stats.contract.test.ts` at 22 pure LOC, followed by `username-check-strict-fields.contract.test.ts` and `dashboard-actions.contract.test.ts` at 21 pure LOC.
+> Candidate `auth-session-marker.contract.test.ts` handled in [[Frontend Auth Session Marker Assertion Move 2026-06-19]]. Current next re-scan candidate: `public-user-strict-stats.contract.test.ts` at 22 pure LOC, followed by `username-check-strict-fields.contract.test.ts` and `dashboard-actions.contract.test.ts` at 21 pure LOC.
 
 > [!todo]
 > Keep API error/list fallback assertion ownership in `api-error-list-contract-assertions.ts`; keep the focused runner at `api-error-list-contracts.contract.test.ts` slim.

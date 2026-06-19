@@ -54,7 +54,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Candidate `worklog-detail-adapter.contract.test.ts` handled in [[Frontend Worklog Detail Adapter Assertion Move 2026-06-19]]. Candidate `select-value-parsers.contract.test.ts` handled in [[Frontend Select Value Parser Assertion Move 2026-06-19]]. Current next re-scan candidate: `api-error-list-contracts.contract.test.ts` at 23 pure LOC, followed by `auth-session-marker.contract.test.ts` and `public-user-strict-stats.contract.test.ts` at 22 pure LOC.
+> Candidate `worklog-detail-adapter.contract.test.ts` handled in [[Frontend Worklog Detail Adapter Assertion Move 2026-06-19]]. Candidate `select-value-parsers.contract.test.ts` handled in [[Frontend Select Value Parser Assertion Move 2026-06-19]]. Candidate `api-error-list-contracts.contract.test.ts` handled in [[Frontend API Error List Assertion Move 2026-06-19]]. Current next re-scan candidates: `auth-session-marker.contract.test.ts` and `public-user-strict-stats.contract.test.ts` at 22 pure LOC, followed by `username-check-strict-fields.contract.test.ts` and `dashboard-actions.contract.test.ts` at 21 pure LOC.
 
 > [!todo]
 > Keep valid worklog detail fixtures in `worklog-detail-response-fixtures.ts`, malformed response cases in `worklog-detail-malformed-response-fixtures.ts`, and valid response assertion orchestration in `worklog-detail-response-assertions.ts`.

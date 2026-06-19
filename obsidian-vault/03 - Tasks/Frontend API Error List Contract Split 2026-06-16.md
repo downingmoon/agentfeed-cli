@@ -51,6 +51,7 @@ status: done
 
 ## Follow-up
 
+- [x] Focused runner assertion ownership moved in [[Frontend API Error List Assertion Move 2026-06-19]].
 - [x] Theme/auth-action/social-action helpers were split in [[Frontend Auth Theme Social Contract Split 2026-06-16]], removing the final `api-contract.test.ts` omnibus file.
 - Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.
 - Server/infra/CI/CD work remains held by the active goal constraint.

@@ -14,6 +14,11 @@ updated: 2026-06-19
 
 ## 현재 결론
 
+> [!success] 2026-06-19 Frontend API error list assertion move
+> Frontend safe API error display/diagnostic retention/status category/list fallback assertions를 `api-error-list-contracts.contract.test.ts`에서 새 `api-error-list-contract-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend API Error List Assertion Move 2026-06-19]]
+
+
 > [!success] 2026-06-19 Frontend select value parser assertion move
 > Frontend project sort, moderation report status, and worklog report reason select parser allowed-value/unsupported-value assertions를 `select-value-parsers.contract.test.ts`에서 새 `select-value-parser-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Select Value Parser Assertion Move 2026-06-19]]

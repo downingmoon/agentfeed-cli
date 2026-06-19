@@ -1,0 +1,56 @@
+---
+title: Frontend API Error List Assertion Move 2026-06-19
+date: 2026-06-19
+tags:
+  - agentfeed/frontend
+  - agentfeed/contracts
+  - refactor
+status: done
+aliases:
+  - 2026-06-19 API error list assertion move
+---
+
+# Frontend API Error List Assertion Move 2026-06-19
+
+> [!success]
+> `api-error-list-contracts.contract.test.ts`의 API error display safety and malformed list-envelope fallback assertions를 새 `api-error-list-contract-assertions.ts`로 이동했다.
+
+## Scope
+
+- 대상: `agentfeed-frontend/src/lib/api-error-list-contracts.contract.test.ts`
+- 신규 helper: `agentfeed-frontend/src/lib/api-error-list-contract-assertions.ts`
+- 성격: contract-test runner slimming / assertion ownership split
+- 신규 런타임 기능: 없음
+- 서버/인프라/CI/CD 변경: 없음
+- 서버 배포: 없음
+- Visual QA: 비-UI contract-test refactor라 생략
+
+## Changes
+
+- `api-error-list-contracts.contract.test.ts`는 `assertApiErrorListContracts()` runner만 호출하도록 축소했다.
+- Safe `ApiError.message`, raw `body`/`diagnosticBody` retention, `apiErrorCategory` / `apiErrorDisplayMessage` generic display assertions, malformed list envelope fallback assertions는 `api-error-list-contract-assertions.ts`가 소유한다.
+- `scripts/contract-test-sources.mjs`는 변경하지 않았다. 신규 파일은 imported assertion/helper module이고 standalone contract source가 아니다.
+
+## Verification Evidence
+
+- Baseline before edit: `npm run test:contracts` ✅
+- After edit: `npm run test:contracts` ✅
+- After edit: `npm run lint` ✅ — `tsc --noEmit`
+- `git diff --check` ✅
+- Changed-file no-excuse grep ✅ — no `as any`, `as unknown`, `@ts-ignore`, `@ts-expect-error`, non-null assertions, empty catches, eslint-disable, TODO, or FIXME additions in changed frontend TS files.
+- Pure LOC:
+  - `api-error-list-contracts.contract.test.ts`: 2 pure LOC, 3 total LOC
+  - `api-error-list-contract-assertions.ts`: 25 pure LOC, 28 total LOC
+- LSP diagnostics: TypeScript LSP server is not installed in this environment; `npm run lint` (`tsc --noEmit`) passed as the type-check substitute.
+
+## Commits
+
+- `agentfeed-frontend` `d807cc0` — `Move API error list assertions`
+
+## Follow-up
+
+> [!todo]
+> Current next re-scan candidates: `auth-session-marker.contract.test.ts` and `public-user-strict-stats.contract.test.ts` at 22 pure LOC, followed by `username-check-strict-fields.contract.test.ts` and `dashboard-actions.contract.test.ts` at 21 pure LOC.
+
+> [!todo]
+> Keep API error/list fallback assertion ownership in `api-error-list-contract-assertions.ts`; keep the focused runner at `api-error-list-contracts.contract.test.ts` slim.

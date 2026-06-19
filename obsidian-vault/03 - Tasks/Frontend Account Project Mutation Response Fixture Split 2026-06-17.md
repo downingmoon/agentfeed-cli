@@ -20,7 +20,7 @@ After the owner project detail fixture move, the next contract size re-scan show
 ## Changed
 
 - Added `src/lib/account-project-mutation-response-fixtures.ts` for valid project/profile/settings fixtures and malformed account/project mutation response cases.
-- Kept `src/lib/account-project-mutation-response-guards.contract.test.ts` focused on response wrapping, API action dispatch, and fail-closed assertion flow.
+- Kept `src/lib/account-project-mutation-response-guards.contract.test.ts` focused on response wrapping, API action dispatch, and fail-closed assertion flow. 2026-06-19 [[Frontend Account Project Mutation Response Assertion Move 2026-06-19]] moved that runner-owned assertion flow into `src/lib/account-project-mutation-response-assertions.ts`.
 - Preserved existing account/project mutation response guard behavior without runtime app changes.
 - Did not update `scripts/contract-test-sources.mjs` because the new file is an imported fixture module, not a standalone contract source.
 
@@ -35,7 +35,7 @@ After the owner project detail fixture move, the next contract size re-scan show
 - Frontend `git diff --check` ✅
 - Changed-file no-excuse grep ✅ — no `as any`, `as unknown`, `@ts-ignore`, `@ts-expect-error`, non-null assertions, empty catches, eslint-disable, TODO, or FIXME additions.
 - Changed-file size audit:
-  - `src/lib/account-project-mutation-response-guards.contract.test.ts`: 45 lines / 41 pure LOC
+  - `src/lib/account-project-mutation-response-guards.contract.test.ts`: originally 45 lines / 41 pure LOC; 2026-06-19 split result is 6 lines / 5 pure LOC runner plus 50 lines / 45 pure LOC assertion helper
   - `src/lib/account-project-mutation-response-fixtures.ts`: 63 lines / 60 pure LOC
 - Visual QA: not run because this was a non-UI contract-test refactor.
 

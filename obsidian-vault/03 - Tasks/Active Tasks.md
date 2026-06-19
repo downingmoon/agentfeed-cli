@@ -7,12 +7,17 @@ status: active
 tags:
   - agentfeed/todo
   - project/tasks
-updated: 2026-06-18
+updated: 2026-06-19
 ---
 
 # Active Tasks
 
 ## 현재 결론
+
+> [!success] 2026-06-19 Frontend account/project mutation response assertion move
+> Frontend response helper setup, account/project mutation API action dispatch, fetch override/restore handling, and fail-closed assertion flow를 `account-project-mutation-response-guards.contract.test.ts`에서 새 `account-project-mutation-response-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Account Project Mutation Response Assertion Move 2026-06-19]]
+
 
 > [!success] 2026-06-18 Frontend worklog action malformed response assertion move
 > Frontend malformed publish/unpublish/resolveFinding cases, response helper setup, fetch override/restore handling, and fail-closed assertion flow를 `worklog-action-malformed-response-guards.contract.test.ts`에서 새 `worklog-action-malformed-response-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.

@@ -48,6 +48,6 @@ The post-social-action assertion move re-scan showed `agentfeed-frontend/src/lib
 
 - Keep API fetch request hardening assertion flow in `api-fetch-request-hardening-assertions.ts`.
 - Keep API fetch request header scenarios and response stubs in `api-fetch-request-hardening-fixtures.ts`.
-- [x] Tied next re-scan candidate `worklog-action-malformed-response-guards.contract.test.ts` handled in [[Frontend Worklog Action Malformed Response Assertion Move 2026-06-18]]. Remaining next re-scan candidate: `account-project-mutation-response-guards.contract.test.ts` at 41 pure LOC.
+- [x] Tied next re-scan candidate `worklog-action-malformed-response-guards.contract.test.ts` handled in [[Frontend Worklog Action Malformed Response Assertion Move 2026-06-18]]. [x] Remaining next re-scan candidate `account-project-mutation-response-guards.contract.test.ts` handled in [[Frontend Account Project Mutation Response Assertion Move 2026-06-19]]. Current next re-scan candidates: `moderation-report-contracts.contract.test.ts` and `leaderboard-user-key.contract.test.ts` at 40 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

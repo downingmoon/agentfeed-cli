@@ -44,6 +44,8 @@ After the identity profile fixture split, the next contract size re-scan showed 
 
 ## Follow-up
 
+- [x] 2026-06-19 follow-up: `cli-auth-malformed-response.contract.test.ts` runner slimming handled in [[Frontend CLI Auth Malformed Response Assertion Move 2026-06-19]]; fixtures remain in `cli-auth-malformed-response-fixtures.ts` and assertions now live in `cli-auth-malformed-response-assertions.ts`.
+
 - Keep malformed CLI auth response cases separate from fail-closed assertion flow when adding future CLI auth response coverage.
 - [x] Next re-scan found `project-summary-adapters.contract.test.ts` as the largest contract file and split fixtures in [[Frontend Project Summary Adapter Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.

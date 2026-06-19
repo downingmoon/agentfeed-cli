@@ -52,7 +52,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Current next re-scan candidate: `cli-auth-malformed-response.contract.test.ts` at 26 pure LOC, followed by `ingestion-token-response-guards.contract.test.ts` at 25 pure LOC and `worklog-detail-response-guards.contract.test.ts` at 24 pure LOC.
+> [x] Candidate `cli-auth-malformed-response.contract.test.ts` handled in [[Frontend CLI Auth Malformed Response Assertion Move 2026-06-19]]. Current next re-scan candidate: `ingestion-token-response-guards.contract.test.ts` at 25 pure LOC, followed by `worklog-detail-response-guards.contract.test.ts` at 24 pure LOC.
 
 > [!todo]
 > Keep project mutation response fixtures in `project-mutation-response-fixtures.ts` and assertion orchestration in `project-mutation-response-assertions.ts`.

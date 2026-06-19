@@ -45,6 +45,6 @@ The post-moderation-report assertion move re-scan showed `agentfeed-frontend/src
 ## Follow-up
 
 - Keep leaderboard user-key fail-closed assertion flow in `leaderboard-user-key-assertions.ts`.
-- Remaining next re-scan candidates: `worklog-author-avatar.contract.test.ts` and `privacy-scan-strict-fields.contract.test.ts` at 39 pure LOC.
+- [x] Candidate `worklog-author-avatar.contract.test.ts` handled in [[Frontend Worklog Author Avatar Assertion Move 2026-06-19]]. Current next re-scan candidate: `privacy-scan-strict-fields.contract.test.ts` at 39 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work and server deployment remain held by the active goal constraint.

@@ -54,3 +54,6 @@ status: done
 - [x] `search-explore-response-guards.contract.test.ts` warning-band split was handled in [[Frontend Search Explore Response Guard Split 2026-06-16]].
 - Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.
 - Server/infra/CI/CD work remains held by the active goal constraint.
+
+> [!success] 2026-06-19 follow-up
+> The remaining project mutation form serializer/null-clear assertion orchestration in `project-mutation-form-contracts.contract.test.ts` was moved to `project-mutation-form-assertions.ts` in [[Frontend Project Mutation Form Assertion Move 2026-06-19]]. The runner is now 2 pure LOC.

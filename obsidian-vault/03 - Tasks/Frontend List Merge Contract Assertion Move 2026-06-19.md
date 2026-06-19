@@ -49,7 +49,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Current next re-scan candidates: `project-mutation-form-contracts.contract.test.ts` and `comment-response-guards.contract.test.ts` at 36 pure LOC, followed by `worklog-review-publish.contract.test.ts` and `cli-auth-strict-fields.contract.test.ts` at 34 pure LOC.
+> [x] Candidate `project-mutation-form-contracts.contract.test.ts` handled in [[Frontend Project Mutation Form Assertion Move 2026-06-19]]. Current next re-scan candidate: `comment-response-guards.contract.test.ts` at 36 pure LOC.
 
 > [!todo]
 > Keep list merge and project result key contract assertions in `list-merge-contract-assertions.ts`.

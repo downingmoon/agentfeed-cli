@@ -48,3 +48,6 @@ After the public user leaderboard fixture split, the next contract size re-scan 
 - [x] Next re-scan found `settings-profile-save.contract.test.ts` as the largest contract file and moved fixtures in [[Frontend Settings Profile Save Fixture Move 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.
+
+> [!success] 2026-06-19 follow-up
+> The remaining adapter assertion orchestration in `worklog-card-adapter.contract.test.ts` was moved to `worklog-card-adapter-assertions.ts` in [[Frontend Worklog Card Adapter Assertion Move 2026-06-19]]. The runner is now 2 pure LOC; `worklog-card-contract-fixtures.ts` remains the fixture owner.

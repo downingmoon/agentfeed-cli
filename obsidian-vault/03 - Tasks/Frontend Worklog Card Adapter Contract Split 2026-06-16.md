@@ -56,3 +56,6 @@ After the worklog card response guard split, the next contract size re-scan show
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Keep `scripts/run-contract-tests.mjs` readable; if contract source registration grows materially, split the source list into a dedicated helper module.
 - Server/infra/CI/CD work remains held by the active goal constraint.
+
+> [!success] 2026-06-19 follow-up
+> The remaining adapter assertion orchestration in `worklog-card-adapter.contract.test.ts` was moved to `worklog-card-adapter-assertions.ts` in [[Frontend Worklog Card Adapter Assertion Move 2026-06-19]]. The runner is now 2 pure LOC; `worklog-card-contract-fixtures.ts` remains the fixture owner.

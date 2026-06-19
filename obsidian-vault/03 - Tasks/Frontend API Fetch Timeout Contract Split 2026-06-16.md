@@ -20,7 +20,7 @@ After the API pagination request split, the next contract size re-scan showed `a
 ## Changed
 
 - Added `src/lib/api-fetch-timeout-cancellation.contract.test.ts` for API timeout and caller cancellation behavior.
-- Kept `src/lib/api-fetch-request-hardening.contract.test.ts` focused on GET/POST/DELETE Content-Type and CSRF intent header behavior.
+- Kept `src/lib/api-fetch-request-hardening.contract.test.ts` focused on GET/POST/DELETE Content-Type and CSRF intent header behavior. 2026-06-18 [[Frontend API Fetch Request Hardening Assertion Move 2026-06-18]] moved that runner-owned assertion flow into `src/lib/api-fetch-request-hardening-assertions.ts`.
 - Registered the timeout/cancellation contract in `scripts/run-contract-tests.mjs`.
 - Preserved these existing guarantees:
   - safe GET requests avoid unnecessary Content-Type and CSRF intent headers.

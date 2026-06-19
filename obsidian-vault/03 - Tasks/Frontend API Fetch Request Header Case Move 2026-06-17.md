@@ -19,7 +19,7 @@ After the CLI auth contract fixture split, the next contract size re-scan showed
 ## Changed
 
 - Moved API fetch request header scenarios into `src/lib/api-fetch-request-hardening-fixtures.ts`.
-- Kept `src/lib/api-fetch-request-hardening.contract.test.ts` focused on API action dispatch, fetch interception, and table-driven header assertions.
+- Kept `src/lib/api-fetch-request-hardening.contract.test.ts` focused on API action dispatch, fetch interception, and table-driven header assertions. 2026-06-18 [[Frontend API Fetch Request Hardening Assertion Move 2026-06-18]] moved that runner-owned assertion flow into `src/lib/api-fetch-request-hardening-assertions.ts`.
 - Preserved existing GET/POST/DELETE Content-Type and CSRF intent contract behavior without runtime app changes.
 - Did not update `scripts/contract-test-sources.mjs` because no standalone contract source was added.
 
@@ -34,7 +34,7 @@ After the CLI auth contract fixture split, the next contract size re-scan showed
 - Frontend `git diff --check` ✅
 - Changed-file no-excuse grep ✅ — no `as any`, `as unknown`, `@ts-ignore`, `@ts-expect-error`, non-null assertions, empty catches, eslint-disable, TODO, or FIXME additions.
 - Changed-file size audit:
-  - `src/lib/api-fetch-request-hardening.contract.test.ts`: 46 lines / 42 pure LOC
+  - `src/lib/api-fetch-request-hardening.contract.test.ts`: originally 46 lines / 42 pure LOC; 2026-06-18 split result is 6 lines / 5 pure LOC runner plus 49 lines / 44 pure LOC assertion helper
   - `src/lib/api-fetch-request-hardening-fixtures.ts`: 64 lines / 60 pure LOC
 - Visual QA: not run because this was a non-UI contract-test refactor.
 
@@ -44,7 +44,7 @@ After the CLI auth contract fixture split, the next contract size re-scan showed
 
 ## Follow-up
 
-- Keep API fetch request header scenarios in `api-fetch-request-hardening-fixtures.ts`.
+- Keep API fetch request header scenarios in `api-fetch-request-hardening-fixtures.ts`; keep runner-owned assertion flow in [[Frontend API Fetch Request Hardening Assertion Move 2026-06-18]].
 - [x] Next re-scan found `project-mutation-contracts.contract.test.ts` tied as the largest contract file and moved expectations in [[Frontend Project Mutation Request Expectation Move 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

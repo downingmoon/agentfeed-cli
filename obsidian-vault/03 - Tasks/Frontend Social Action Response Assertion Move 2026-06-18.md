@@ -45,6 +45,6 @@ The post-worklog-card assertion move re-scan showed `agentfeed-frontend/src/lib/
 ## Follow-up
 
 - Keep social action malformed response assertion flow in `social-action-response-assertions.ts`.
-- Remaining next re-scan candidate: `api-fetch-request-hardening.contract.test.ts` at 42 pure LOC.
+- [x] Remaining next re-scan candidate `api-fetch-request-hardening.contract.test.ts` handled in [[Frontend API Fetch Request Hardening Assertion Move 2026-06-18]]. Current next re-scan candidates: `worklog-action-malformed-response-guards.contract.test.ts` and `account-project-mutation-response-guards.contract.test.ts` at 41 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

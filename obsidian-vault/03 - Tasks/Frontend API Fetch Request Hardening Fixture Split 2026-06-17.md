@@ -19,7 +19,7 @@ After the leaderboard response fixture split, the next contract size re-scan sho
 ## Changed
 
 - Added `src/lib/api-fetch-request-hardening-fixtures.ts` for auth, social like/unlike, and publish response stubs.
-- Kept `src/lib/api-fetch-request-hardening.contract.test.ts` focused on GET/POST/DELETE header and CSRF intent assertions.
+- Kept `src/lib/api-fetch-request-hardening.contract.test.ts` focused on GET/POST/DELETE header and CSRF intent assertions. 2026-06-18 [[Frontend API Fetch Request Hardening Assertion Move 2026-06-18]] moved that runner-owned assertion flow into `src/lib/api-fetch-request-hardening-assertions.ts`.
 - Preserved existing API fetch request header hardening contract behavior without runtime app changes.
 - Did not update `scripts/contract-test-sources.mjs` because the new file is an imported fixture module, not a standalone contract source.
 
@@ -44,7 +44,7 @@ After the leaderboard response fixture split, the next contract size re-scan sho
 
 ## Follow-up
 
-- Keep API fetch request hardening response stubs in `api-fetch-request-hardening-fixtures.ts`.
+- Keep API fetch request hardening response stubs in `api-fetch-request-hardening-fixtures.ts`; keep assertion flow in [[Frontend API Fetch Request Hardening Assertion Move 2026-06-18]].
 - [x] Next re-scan found `api-response-hardening.contract.test.ts` as the largest contract file and moved scenarios in [[Frontend API Response Hardening Scenario Move 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

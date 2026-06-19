@@ -51,7 +51,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Current next re-scan candidate: `worklog-review-validation.contract.test.ts` at 38 pure LOC, followed by `worklog-card-adapter.contract.test.ts` at 37 pure LOC.
+> [x] Candidate `worklog-review-validation.contract.test.ts` handled in [[Frontend Worklog Review Validation Assertion Move 2026-06-19]]. Current next re-scan candidate: `worklog-card-adapter.contract.test.ts` at 37 pure LOC.
 
 > [!todo]
 > Keep privacy scan response fixtures in `worklog-review-response-fixtures.ts` and assertion orchestration in `privacy-scan-strict-field-assertions.ts`.

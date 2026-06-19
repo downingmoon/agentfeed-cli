@@ -66,3 +66,6 @@ status: done
 - `src/lib/adapters.ts`의 `_author` 반환 assertion 제거 또는 명시 타입 생성.
 - `src/hooks/useWorklog.ts`의 `_author` 접근 assertion 제거.
 - `src/lib/collection-evidence.ts`의 agent type parser assertion을 switch/guard로 축소할 수 있는지 검토.
+
+> [!success] 2026-06-19 follow-up
+> The remaining validation assertions in `worklog-review-validation.contract.test.ts` were moved to `worklog-review-validation-assertions.ts` in [[Frontend Worklog Review Validation Assertion Move 2026-06-19]]. The runner is now 2 pure LOC.

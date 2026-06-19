@@ -85,3 +85,6 @@ uv run pytest tests/test_worklog_review_privacy_contracts.py::test_worklog_revie
 
 - [[Frontend API Contract Hub Split Candidate 2026-06-11]] 문서로 `api.ts` / `api-contract.test.ts` 분리 계획을 별도 관리한다.
 - review privacy finding의 `resolution`을 UI에서 더 명확히 보여주는 것은 신규 UX 기능이므로, 필요 시 별도 설계 후 진행한다.
+
+> [!success] 2026-06-19 follow-up
+> The remaining validation assertions in `worklog-review-validation.contract.test.ts` were moved to `worklog-review-validation-assertions.ts` in [[Frontend Worklog Review Validation Assertion Move 2026-06-19]]. The runner is now 2 pure LOC.

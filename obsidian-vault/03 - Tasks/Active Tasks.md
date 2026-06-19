@@ -14,6 +14,12 @@ updated: 2026-06-19
 
 ## 현재 결론
 
+> [!success] 2026-06-19 Frontend worklog review validation assertion move
+> Frontend privacy finding normalization/rejection assertions와 review public fields validation assertions를 `worklog-review-validation.contract.test.ts`에서 새 `worklog-review-validation-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Worklog Review Validation Assertion Move 2026-06-19]]
+
+
+
 > [!success] 2026-06-19 Frontend privacy scan strict field assertion move
 > Frontend valid privacy scan preservation, malformed privacy scan strict-field fail-closed assertions, fetch override/restore flow를 `privacy-scan-strict-fields.contract.test.ts`에서 새 `privacy-scan-strict-field-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Privacy Scan Strict Field Assertion Move 2026-06-19]]

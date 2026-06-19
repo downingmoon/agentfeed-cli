@@ -14,6 +14,11 @@ updated: 2026-06-19
 
 ## 현재 결론
 
+> [!success] 2026-06-19 Frontend leaderboard user key assertion move
+> Frontend malformed leaderboard row fixture and missing-identity fail-closed assertion을 `leaderboard-user-key.contract.test.ts`에서 새 `leaderboard-user-key-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Leaderboard User Key Assertion Move 2026-06-19]]
+
+
 > [!success] 2026-06-19 Frontend moderation report contract assertion move
 > Frontend moderation list/status-update API exercise calls, response unwrap assertions, request count assertions, and request method/path/query/body assertions를 `moderation-report-contracts.contract.test.ts`에서 새 `moderation-report-contract-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Moderation Report Contract Assertion Move 2026-06-19]]

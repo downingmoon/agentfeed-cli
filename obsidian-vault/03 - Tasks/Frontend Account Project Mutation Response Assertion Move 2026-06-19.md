@@ -49,6 +49,6 @@ The post-worklog-action assertion move re-scan showed `agentfeed-frontend/src/li
 
 - Keep account/project mutation malformed response assertion flow in `account-project-mutation-response-assertions.ts`.
 - Keep account/project mutation malformed cases in `account-project-mutation-response-fixtures.ts`.
-- [x] Tied next re-scan candidate `moderation-report-contracts.contract.test.ts` handled in [[Frontend Moderation Report Contract Assertion Move 2026-06-19]]. Remaining next re-scan candidate: `leaderboard-user-key.contract.test.ts` at 40 pure LOC.
+- [x] Tied next re-scan candidate `moderation-report-contracts.contract.test.ts` handled in [[Frontend Moderation Report Contract Assertion Move 2026-06-19]]. [x] Remaining next re-scan candidate `leaderboard-user-key.contract.test.ts` handled in [[Frontend Leaderboard User Key Assertion Move 2026-06-19]]. Current next re-scan candidates: `worklog-author-avatar.contract.test.ts` and `privacy-scan-strict-fields.contract.test.ts` at 39 pure LOC.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work and server deployment remain held by the active goal constraint.

@@ -47,5 +47,6 @@ The post-worklog-card-malformed-adapter contract size re-scan showed `agentfeed-
 - Keep owner-aware project detail contract helpers in `owner-project-detail-fixtures.ts`.
 - Re-scan fixture/helper sizes before adding more cases to `owner-project-detail-fixtures.ts`, now 132 pure LOC.
 - Re-scan found `notification-url-contracts.contract.test.ts` as the largest contract file and moved helpers in [[Frontend Notification URL Contract Helper Move 2026-06-18]].
+- Later runner orchestration residue was moved in [[Frontend Owner Project Detail Assertion Move 2026-06-19]], leaving `owner-project-detail-contracts.contract.test.ts` as a slim imported assertion runner.
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

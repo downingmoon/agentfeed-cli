@@ -15,6 +15,12 @@ updated: 2026-06-19
 ## 현재 결론
 
 
+> [!success] 2026-06-19 Personal server one-off deploy after account strict field assertion move
+> 사용자의 이번 턴 한정 명시 요청으로 `account-strict-fields` assertion move 및 문서화 완료 후 현재 서버 `/home/ubuntu/agentfeed`에 최신 작업분을 1회 재배포했다. Frontend/backend/postgres healthcheck, backend readiness, frontend root `200 OK`, 외부 frontend/backend HTTP `200`을 확인했다. 이번 예외 이후 기존 “서버/인프라/CI/CD 보류” 및 “서버 배포 금지” 제약은 다시 유지한다.
+> - [[Personal Server Deploy One-off Refresh 2026-06-19#2026-06-19 21:12 UTC — Post account strict field assertion move refresh]]
+
+
+
 > [!success] 2026-06-19 Frontend account strict field assertion move
 > Frontend set-username valid backend response preservation and extra-field fail-closed assertions를 `account-strict-fields.contract.test.ts`에서 새 `account-strict-field-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npx tsc --noEmit`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 없음. 사용자 요청 1회 예외 배포는 작업 완료 후 별도 실행/검증한다.
 > - [[Frontend Account Strict Field Assertion Move 2026-06-19]]

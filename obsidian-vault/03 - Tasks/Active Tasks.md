@@ -14,6 +14,11 @@ updated: 2026-06-19
 
 ## 현재 결론
 
+> [!success] 2026-06-19 Frontend public user strict stats assertion move
+> Frontend `users.get()` strict public-user stats preservation, malformed strict stats/viewer-state fail-closed iteration, and fetch override/restore flow를 `public-user-strict-stats.contract.test.ts`에서 새 `public-user-strict-stats-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Public User Strict Stats Assertion Move 2026-06-19]]
+
+
 > [!success] 2026-06-19 Frontend auth session marker assertion move
 > Frontend anonymous public route no-probe, browser session marker-present public probe, auth-required/review route probe, and CLI authorize marker assertions를 `auth-session-marker.contract.test.ts`에서 새 `auth-session-marker-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Auth Session Marker Assertion Move 2026-06-19]]

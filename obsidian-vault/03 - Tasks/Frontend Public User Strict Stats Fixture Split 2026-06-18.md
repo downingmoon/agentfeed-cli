@@ -44,6 +44,7 @@ The post-worklog-card-adapter contract size re-scan showed `agentfeed-frontend/s
 
 ## Follow-up
 
+- [x] Focused runner assertion ownership moved in [[Frontend Public User Strict Stats Assertion Move 2026-06-19]].
 - Keep public user strict stats fixtures and capture helper in `public-user-strict-stats-fixtures.ts`.
 - Re-scan found `worklog-card-malformed-adapter.contract.test.ts` as the largest contract file and split fixtures in [[Frontend Worklog Card Malformed Adapter Fixture Split 2026-06-18]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.

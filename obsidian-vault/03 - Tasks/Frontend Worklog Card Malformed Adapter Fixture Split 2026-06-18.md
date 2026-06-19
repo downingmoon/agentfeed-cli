@@ -45,6 +45,8 @@ The post-public-user strict stats contract size re-scan showed `agentfeed-fronte
 
 ## Follow-up
 
+
+- 2026-06-19: assertion orchestration은 [[Frontend Worklog Card Malformed Adapter Assertion Move 2026-06-19]]에서 `worklog-card-malformed-adapter-assertions.ts`로 이동했고 focused runner는 2 pure LOC로 축소했다.
 - Keep malformed worklog card adapter source, metrics, and viewer-state cases in `worklog-card-malformed-adapter-fixtures.ts`.
 - Keep `worklog-card-contract-fixtures.ts` protected from additional malformed cases while it remains near 200 pure LOC.
 - Re-scan found `owner-project-detail-contracts.contract.test.ts` as the largest contract file and moved helpers in [[Frontend Owner Project Detail Contract Helper Move 2026-06-18]].

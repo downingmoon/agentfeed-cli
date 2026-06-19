@@ -50,7 +50,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Candidate `collection-evidence.contract.test.ts` handled in [[Frontend Collection Evidence Assertion Move 2026-06-19]]. Candidate `account-strict-fields.contract.test.ts` handled in [[Frontend Account Strict Field Assertion Move 2026-06-19]]. Candidate `feed-filter-keyboard.contract.test.ts` handled in [[Frontend Feed Filter Keyboard Assertion Move 2026-06-19]]. Current next re-scan candidate: `worklog-card-malformed-adapter.contract.test.ts` at 10 pure LOC.
+> Candidate `collection-evidence.contract.test.ts` handled in [[Frontend Collection Evidence Assertion Move 2026-06-19]]. Candidate `account-strict-fields.contract.test.ts` handled in [[Frontend Account Strict Field Assertion Move 2026-06-19]]. Candidate `feed-filter-keyboard.contract.test.ts` handled in [[Frontend Feed Filter Keyboard Assertion Move 2026-06-19]]. Candidate `worklog-card-malformed-adapter.contract.test.ts` handled in [[Frontend Worklog Card Malformed Adapter Assertion Move 2026-06-19]]. Current next re-scan candidate: `owner-project-detail-contracts.contract.test.ts` at 9 pure LOC.
 
 > [!todo]
 > Keep dashboard action URL dot-segment fallback assertions in `dashboard-action-assertions.ts`; keep the focused runner at `dashboard-actions.contract.test.ts` slim.

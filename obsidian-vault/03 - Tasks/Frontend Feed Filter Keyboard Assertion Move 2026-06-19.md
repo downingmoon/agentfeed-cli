@@ -51,7 +51,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Current next re-scan candidate: `worklog-card-malformed-adapter.contract.test.ts` at 10 pure LOC.
+> Candidate `worklog-card-malformed-adapter.contract.test.ts` handled in [[Frontend Worklog Card Malformed Adapter Assertion Move 2026-06-19]]. Current next re-scan candidate: `owner-project-detail-contracts.contract.test.ts` at 9 pure LOC.
 
 > [!todo]
 > Keep feed filter keyboard source-contract assertions in `feed-filter-keyboard-assertions.ts`; keep the focused runner at `feed-filter-keyboard.contract.test.ts` slim.

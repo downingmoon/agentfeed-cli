@@ -19,7 +19,7 @@ After the worklog detail strict field fixture split, the next contract size re-s
 ## Changed
 
 - Added `src/lib/worklog-review-response-fixtures.ts` for the valid worklog review response fixture.
-- Added `src/lib/worklog-action-malformed-response-guards.contract.test.ts` for malformed publish/unpublish/resolveFinding action response cases.
+- Added `src/lib/worklog-action-malformed-response-guards.contract.test.ts` for malformed publish/unpublish/resolveFinding action response cases. 2026-06-18 [[Frontend Worklog Action Malformed Response Assertion Move 2026-06-18]] moved that runner-owned assertion flow into `src/lib/worklog-action-malformed-response-assertions.ts`.
 - Kept `src/lib/worklog-review-action-response-guards.contract.test.ts` focused on valid review payload preservation and malformed review response fail-closed cases.
 - Registered the action response guard in `scripts/contract-test-sources.mjs`.
 - Preserved existing worklog review/action response behavior without runtime app changes.
@@ -36,7 +36,7 @@ After the worklog detail strict field fixture split, the next contract size re-s
 - Changed-file no-excuse grep ✅ — no `as any`, `as unknown`, `@ts-ignore`, `@ts-expect-error`, non-null assertions, empty catches, eslint-disable, TODO, or FIXME additions.
 - Changed-file size audit:
   - `src/lib/worklog-review-action-response-guards.contract.test.ts`: 63 lines / 55 pure LOC
-  - `src/lib/worklog-action-malformed-response-guards.contract.test.ts`: 46 lines / 41 pure LOC
+  - `src/lib/worklog-action-malformed-response-guards.contract.test.ts`: originally 46 lines / 41 pure LOC; 2026-06-18 split result is 6 lines / 5 pure LOC runner plus 53 lines / 47 pure LOC assertion helper
   - `src/lib/worklog-review-response-fixtures.ts`: 60 lines / 60 pure LOC
   - `scripts/contract-test-sources.mjs`: 133 lines / 131 pure LOC
 - Visual QA: not run because this was a non-UI contract-test refactor.

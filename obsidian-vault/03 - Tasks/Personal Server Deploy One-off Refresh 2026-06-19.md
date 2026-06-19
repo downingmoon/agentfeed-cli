@@ -235,3 +235,58 @@ Deployed source spot-check:
 
 - `/home/ubuntu/agentfeed/agentfeed-frontend/src/lib/api-error-list-contracts.contract.test.ts` imports `assertApiErrorListContracts` from `api-error-list-contract-assertions`.
 - `/home/ubuntu/agentfeed/agentfeed-frontend/src/lib/api-error-list-contract-assertions.ts` exports `assertApiErrorListContracts()`.
+
+## 2026-06-19 19:12 UTC — Post public user strict stats assertion move refresh
+
+> [!success]
+> 사용자의 명시 요청으로 `public-user-strict-stats` assertion move 작업과 문서화 완료 후 현재 서버 `/home/ubuntu/agentfeed`에 최신 소스를 1회 재배포했다. 이번 예외 이후 기존 “서버/인프라/CI/CD 보류” 및 “서버 배포 금지” 제약은 다시 유지한다.
+
+### Deploy source
+
+- `agentfeed-frontend` `main` @ `5c9836d` — `Move public user strict stats assertions`
+- `agentfeed-cli` `main` @ `0b2f5b9` — `Document public user strict stats assertion move`
+- `agentfeed-dev` `main` @ `6a8a950` — `Log public user strict stats assertion move`
+- `agentfeed-backend` `master` @ `63c918d` — `Propagate richer outcomes through public card contracts`
+
+### Actions
+
+1. `/home/ubuntu/dev/agentfeed`의 4개 repo를 `/home/ubuntu/agentfeed`로 동기화했다.
+2. 기존 server `.env`는 유지했다.
+3. `docker compose --env-file .env config`로 compose config를 검증했다.
+4. `postgres`는 기존 컨테이너/볼륨을 유지했다.
+5. `backend`와 `frontend`를 `docker compose --env-file .env up -d --force-recreate backend frontend`로 재생성했다.
+
+### Verification Evidence
+
+```text
+agentfeed-server-backend-1    Up 2 minutes (healthy)   0.0.0.0:18080->8000/tcp
+agentfeed-server-frontend-1   Up 2 minutes (healthy)   0.0.0.0:13030->3000/tcp
+agentfeed-server-postgres-1   Up 2 weeks (healthy)     127.0.0.1:15432->5432/tcp
+```
+
+Readiness:
+
+```json
+{"status":"ready","database":{"connected":true,"revision":"027_browser_session_version","error":null},"migration":{"head":"027_browser_session_version","up_to_date":true,"error":null}}
+```
+
+HTTP checks:
+
+- `HEAD http://127.0.0.1:13030/` → `200 OK` ✅
+- `GET http://127.0.0.1:18080/health/ready` → `200`, ready/database connected/migration up-to-date ✅
+- `GET http://161.33.171.81:13030/` → `200`, `41923` bytes ✅
+- `GET http://161.33.171.81:18080/health/ready` → `200`, `184` bytes ✅
+- `ENV_FILE=/home/ubuntu/agentfeed/agentfeed-dev/.env /home/ubuntu/agentfeed/agentfeed-dev/scripts/wait-ready.sh` → passed ✅
+
+Frontend build/start evidence from container logs:
+
+```text
+✓ Compiled successfully in 21.6s
+✓ Generating static pages (18/18)
+✓ Ready in 832ms
+```
+
+Deployed source spot-check:
+
+- `/home/ubuntu/agentfeed/agentfeed-frontend/src/lib/public-user-strict-stats.contract.test.ts` imports `assertPublicUserStrictStatsContracts` from `public-user-strict-stats-assertions`.
+- `/home/ubuntu/agentfeed/agentfeed-frontend/src/lib/public-user-strict-stats-assertions.ts` exports `assertPublicUserStrictStatsContracts()`.

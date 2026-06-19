@@ -45,6 +45,7 @@ After the moderation report contract fixture split, the next contract size re-sc
 ## Follow-up
 
 - Keep worklog detail adapter fixtures and malformed cases in `worklog-detail-adapter-fixtures.ts`.
+- [x] Follow-up adapter assertion orchestration move completed in [[Frontend Worklog Detail Adapter Assertion Move 2026-06-19]].
 - Re-scan found `project-stats-strict-fields.contract.test.ts` as the largest contract file and split fixtures in [[Frontend Project Stats Strict Field Fixture Split 2026-06-17]].
 - Continue re-scanning current contract file sizes before adding cases to near-200 LOC files.
 - Server/infra/CI/CD work remains held by the active goal constraint.

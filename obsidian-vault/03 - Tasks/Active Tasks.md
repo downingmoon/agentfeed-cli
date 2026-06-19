@@ -14,6 +14,11 @@ updated: 2026-06-19
 
 ## 현재 결론
 
+> [!success] 2026-06-19 Frontend worklog detail adapter assertion move
+> Frontend `adaptWorklog()` valid detail outcome/timeline preservation, public `user_note` dropping, malformed payload fail-closed loop, and expected diagnostic assertion을 `worklog-detail-adapter.contract.test.ts`에서 새 `worklog-detail-adapter-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Worklog Detail Adapter Assertion Move 2026-06-19]]
+
+
 > [!success] 2026-06-19 Frontend worklog detail response assertion move
 > Frontend valid worklog detail payload preservation, fetch override/restore flow, and multi-agent metrics/updated timestamp checks를 `worklog-detail-response-guards.contract.test.ts`에서 새 `worklog-detail-response-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Worklog Detail Response Assertion Move 2026-06-19]]

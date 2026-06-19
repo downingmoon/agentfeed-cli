@@ -69,3 +69,7 @@ Backend `UsernameCheckResponse`는 `extra="forbid"`인데 Frontend `normalizeUse
 
 - [[Set Username Strict Field Guard 2026-06-11]]
 - [[Read Side Strict Field Guards 2026-06-11]]
+
+## Follow-up
+
+- [x] Focused runner assertion ownership moved in [[Frontend Username Check Strict Field Assertion Move 2026-06-19]].

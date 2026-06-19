@@ -53,7 +53,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Current next re-scan candidates: `username-check-strict-fields.contract.test.ts` and `dashboard-actions.contract.test.ts` at 21 pure LOC, followed by `collection-evidence.contract.test.ts`, `account-strict-fields.contract.test.ts`, and `feed-filter-keyboard.contract.test.ts` at 19 pure LOC.
+> Candidate `username-check-strict-fields.contract.test.ts` handled in [[Frontend Username Check Strict Field Assertion Move 2026-06-19]]. Current next re-scan candidate: `dashboard-actions.contract.test.ts` at 21 pure LOC, followed by `collection-evidence.contract.test.ts`, `account-strict-fields.contract.test.ts`, and `feed-filter-keyboard.contract.test.ts` at 19 pure LOC.
 
 > [!todo]
 > Keep public user strict stats assertions in `public-user-strict-stats-assertions.ts`; keep fixtures and capture helper in `public-user-strict-stats-fixtures.ts`.

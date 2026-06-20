@@ -54,7 +54,10 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Current next re-scan candidate: `api-json-boundary.contract.test.ts` at 8 pure LOC.
+> Candidate `api-json-boundary.contract.test.ts` handled in [[Frontend API JSON Boundary Assertion Move 2026-06-20]]. Current next re-scan candidate: `worklog-review-strict-fields.contract.test.ts` at 5 pure LOC.
 
 > [!todo]
 > Keep collection evidence valid and malformed assertion orchestration in `collection-evidence-assertions.ts`; keep malformed review cases in `collection-evidence-fixtures.ts`; keep the focused runners slim.
+
+> [!done]
+> API JSON boundary runner residue moved in [[Frontend API JSON Boundary Assertion Move 2026-06-20]].

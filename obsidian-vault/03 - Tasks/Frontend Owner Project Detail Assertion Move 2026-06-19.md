@@ -53,7 +53,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Current next re-scan candidate: `collection-evidence-malformed.contract.test.ts` at 9 pure LOC.
+> Candidate `collection-evidence-malformed.contract.test.ts` handled in [[Frontend Collection Evidence Malformed Assertion Move 2026-06-20]]. Current next re-scan candidate: `api-json-boundary.contract.test.ts` at 8 pure LOC.
 
 > [!todo]
 > Keep owner-aware project detail assertion orchestration in `owner-project-detail-assertions.ts`; keep owner project detail fixtures and API response checks in `owner-project-detail-fixtures.ts`; keep the focused runner at `owner-project-detail-contracts.contract.test.ts` slim.

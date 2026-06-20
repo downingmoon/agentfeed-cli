@@ -53,7 +53,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Candidate `owner-project-detail-contracts.contract.test.ts` handled in [[Frontend Owner Project Detail Assertion Move 2026-06-19]]. Current next re-scan candidate: `collection-evidence-malformed.contract.test.ts` at 9 pure LOC.
+> Candidate `owner-project-detail-contracts.contract.test.ts` handled in [[Frontend Owner Project Detail Assertion Move 2026-06-19]]. Candidate `collection-evidence-malformed.contract.test.ts` handled in [[Frontend Collection Evidence Malformed Assertion Move 2026-06-20]]. Current next re-scan candidate: `api-json-boundary.contract.test.ts` at 8 pure LOC.
 
 > [!todo]
 > Keep malformed worklog card adapter assertion loops in `worklog-card-malformed-adapter-assertions.ts`; keep malformed card cases in `worklog-card-malformed-adapter-fixtures.ts`; keep the focused runner at `worklog-card-malformed-adapter.contract.test.ts` slim.

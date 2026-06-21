@@ -120,6 +120,45 @@ describe('upload preflight recovery', () => {
     ].join('\n'));
   });
 
+  it('includes credential context when a saved-token ingestion preflight fails', async () => {
+    const result: ApiCheckResult = {
+      ok: false,
+      url: 'http://127.0.0.1:3001/v1/ingest/status',
+      status: 401,
+      error: 'invalid ingestion token'
+    };
+
+    await expect(requireIngestionTokenBeforeUpload(credentials(), {
+      retryCommand: 'agentfeed publish --id draft_context --yes',
+      credentialContext: {
+        tokenSourceLabel: 'OS keychain',
+        credentialStoreLabel: 'OS keychain',
+        apiBaseUrl: 'http://127.0.0.1:3001/v1',
+        apiBaseSourceLabel: 'saved credentials file',
+        credentialsFilePath: '/Users/test/.agentfeed/credentials.json'
+      },
+      checkIngestionToken: async () => result
+    })).rejects.toThrow([
+      'Ingestion token check failed for http://127.0.0.1:3001/v1/ingest/status: HTTP 401: invalid ingestion token before uploading drafts.',
+      '',
+      'Fix first:',
+      'Run: agentfeed login',
+      'Run: agentfeed rotate',
+      'Run: agentfeed status',
+      '',
+      'Credential context:',
+      '- User/token source: OS keychain',
+      '- Credential store: OS keychain',
+      '- API base URL: http://127.0.0.1:3001/v1',
+      '- API base URL source: saved credentials file',
+      '- Credentials file: /Users/test/.agentfeed/credentials.json',
+      '- AGENTFEED_TOKEN is not exported by browser login; an empty echo "$AGENTFEED_TOKEN" can be normal when using saved credentials.',
+      '',
+      'Then retry:',
+      'Run: agentfeed publish --id draft_context --yes'
+    ].join('\n'));
+  });
+
   it('prioritizes clearing AGENTFEED_TOKEN when env-token ingestion preflight fails', async () => {
     const previousToken = process.env.AGENTFEED_TOKEN;
     process.env.AGENTFEED_TOKEN = 'af_live_stale_env_token';

@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { ApiMetadata, PublishDraftResult } from '../src/api/client.js';
+import type { CredentialsResolution } from '../src/config/credentials.js';
 import { createEmptyDraft } from '../src/draft/create.js';
 import type { AgentFeedCredentials, LocalDraft, ReviewUrlHandoff } from '../src/types.js';
 import { runPublishCommand } from '../src/cli/publish-execution.js';
+import type { UploadPreflightOptions } from '../src/cli/upload-guidance.js';
 
 const credentials: AgentFeedCredentials = {
   api_base_url: 'https://api.agentfeed.dev/v1',
@@ -159,5 +161,52 @@ describe('publish execution', () => {
       }
     })).rejects.toThrow('AgentFeed token is missing.');
     expect(preflightCalled).toBe(false);
+  });
+
+  it('passes saved credential provenance into upload preflight diagnostics', async () => {
+    // Given: publish is using a saved keychain token, not AGENTFEED_TOKEN.
+    const draft = draftWithId('draft_publish_keychain_context');
+    const savedDraft = draftWithId('draft_publish_keychain_context');
+    const resolution: CredentialsResolution = {
+      credentials,
+      token_source: 'keychain',
+      credentials_file_path: '/Users/test/.agentfeed/credentials.json',
+      credentials_file_exists: true,
+      credential_store: 'keychain',
+      api_base_url: credentials.api_base_url,
+      api_base_url_source: 'stored_credentials',
+      warnings: []
+    };
+    let preflightOptions: UploadPreflightOptions | null = null;
+
+    // When: publish reaches upload preflight.
+    await runPublishCommand({
+      cwd: '/tmp/agentfeed-publish-execution',
+      id: draft.id,
+      flags: { ...defaultFlags(), yes: true },
+      dependencies: {
+        readDraft: async () => preflightOptions ? savedDraft : draft,
+        loadCredentialsWithMetadata: async () => resolution,
+        requireUploadPreflight: async (_credentials, options) => {
+          preflightOptions = options;
+          return metadata;
+        },
+        publishDraft: async () => upload,
+        shouldOpenReviewAfterUpload: async () => false,
+        handoffReviewUrl: async () => noHandoff
+      }
+    });
+
+    // Then: a 401 preflight failure can explain that an empty AGENTFEED_TOKEN is normal for saved credentials.
+    expect(preflightOptions).toEqual({
+      retryCommand: 'agentfeed publish --id draft_publish_keychain_context --yes',
+      credentialContext: {
+        tokenSourceLabel: 'OS keychain',
+        credentialStoreLabel: 'OS keychain',
+        apiBaseUrl: 'https://api.agentfeed.dev/v1',
+        apiBaseSourceLabel: 'saved credentials file',
+        credentialsFilePath: '/Users/test/.agentfeed/credentials.json'
+      }
+    });
   });
 });

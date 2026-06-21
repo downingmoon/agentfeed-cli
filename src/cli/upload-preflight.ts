@@ -26,22 +26,24 @@ export async function requireApiCompatibilityBeforeUpload(apiBaseUrl: string, op
   const checkApiCompatibility = options.checkApiCompatibility ?? defaultCheckApiCompatibility;
   const result = await checkApiCompatibility(apiBaseUrl);
   if (result.compatible && result.data) return result.data;
-  throw new Error(formatUploadRecoveryMessage(
-    `API compatibility check failed for ${result.url}: ${apiCompatibilityFailureDetail(result)} before uploading drafts.`,
-    apiCompatibilityRecoveryCommands(result),
-    options.retryCommand
-  ));
+  throw new Error(formatUploadRecoveryMessage({
+    firstLine: `API compatibility check failed for ${result.url}: ${apiCompatibilityFailureDetail(result)} before uploading drafts.`,
+    fixCommands: apiCompatibilityRecoveryCommands(result),
+    retryCommand: options.retryCommand,
+    credentialContext: options.credentialContext
+  }));
 }
 
 export async function requireIngestionTokenBeforeUpload(credentials: AgentFeedCredentials, options: UploadPreflightCheckOptions = {}): Promise<void> {
   const checkIngestionToken = options.checkIngestionToken ?? defaultCheckIngestionToken;
   const result = await checkIngestionToken(credentials);
   if (result.ok) return;
-  throw new Error(formatUploadRecoveryMessage(
-    `Ingestion token check failed for ${result.url}: ${apiCheckFailureDetail(result)} before uploading drafts.`,
-    ingestionTokenRecoveryCommands(result),
-    options.retryCommand
-  ));
+  throw new Error(formatUploadRecoveryMessage({
+    firstLine: `Ingestion token check failed for ${result.url}: ${apiCheckFailureDetail(result)} before uploading drafts.`,
+    fixCommands: ingestionTokenRecoveryCommands(result),
+    retryCommand: options.retryCommand,
+    credentialContext: options.credentialContext
+  }));
 }
 
 export async function requireUploadPreflight(credentials: AgentFeedCredentials, options: UploadPreflightCheckOptions = {}): Promise<ApiMetadata> {

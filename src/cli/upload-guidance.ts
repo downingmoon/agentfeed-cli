@@ -1,5 +1,14 @@
 export type UploadPreflightOptions = {
   readonly retryCommand?: string;
+  readonly credentialContext?: UploadCredentialContext;
+};
+
+export type UploadCredentialContext = {
+  readonly tokenSourceLabel: string;
+  readonly credentialStoreLabel: string;
+  readonly apiBaseUrl: string;
+  readonly apiBaseSourceLabel?: string;
+  readonly credentialsFilePath?: string;
 };
 
 export type UploadApiCheckResult = {
@@ -38,15 +47,38 @@ export function apiCompatibilityFailureDetail(result: UploadApiCheckResult): str
   return result.error ?? 'unknown compatibility failure';
 }
 
-export function formatUploadRecoveryMessage(firstLine: string, fixCommands: readonly string[], retryCommand?: string): string {
+type UploadRecoveryMessageInput = {
+  readonly firstLine: string;
+  readonly fixCommands: readonly string[];
+  readonly retryCommand?: string;
+  readonly credentialContext?: UploadCredentialContext;
+};
+
+function credentialContextLines(context: UploadCredentialContext): string[] {
+  return [
+    '',
+    'Credential context:',
+    `- User/token source: ${context.tokenSourceLabel}`,
+    `- Credential store: ${context.credentialStoreLabel}`,
+    `- API base URL: ${context.apiBaseUrl}`,
+    ...(context.apiBaseSourceLabel ? [`- API base URL source: ${context.apiBaseSourceLabel}`] : []),
+    ...(context.credentialsFilePath ? [`- Credentials file: ${context.credentialsFilePath}`] : []),
+    '- AGENTFEED_TOKEN is not exported by browser login; an empty echo "$AGENTFEED_TOKEN" can be normal when using saved credentials.'
+  ];
+}
+
+export function formatUploadRecoveryMessage(input: UploadRecoveryMessageInput): string {
   const lines = [
-    firstLine,
+    input.firstLine,
     '',
     'Fix first:',
-    ...uniqueUploadCommands(fixCommands).map((command) => `Run: ${command}`)
+    ...uniqueUploadCommands(input.fixCommands).map((command) => `Run: ${command}`)
   ];
-  if (retryCommand) {
-    lines.push('', 'Then retry:', `Run: ${retryCommand}`);
+  if (input.credentialContext) {
+    lines.push(...credentialContextLines(input.credentialContext));
+  }
+  if (input.retryCommand) {
+    lines.push('', 'Then retry:', `Run: ${input.retryCommand}`);
   }
   return lines.join('\n');
 }

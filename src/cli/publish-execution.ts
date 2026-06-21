@@ -1,11 +1,13 @@
 import { cachedUploadReuseStatusForCredentials, publishDraft as defaultPublishDraft, type ApiMetadata, type CachedUploadReuseFailureReason, type PublishDraftResult } from '../api/client.js';
-import { loadCredentials as defaultLoadCredentials } from '../config/credentials.js';
+import { loadCredentialsWithMetadata as defaultLoadCredentialsWithMetadata, type CredentialsResolution } from '../config/credentials.js';
 import { readDraft as defaultReadDraft } from '../draft/read.js';
 import type { AgentFeedCredentials, LocalDraft, ReviewUrlHandoff } from '../types.js';
 import { missingTokenMessage } from './auth-token-input.js';
+import { apiBaseSourceLabel, credentialSourceLabel, credentialStoreLabel } from './diagnostic-formatters.js';
 import { handoffReviewUrl as defaultHandoffReviewUrl, shouldCopyReviewUrl, type ReviewUrlHandoffOptions } from './review-handoff.js';
 import { shouldOpenReviewAfterUpload as defaultShouldOpenReviewAfterUpload, type ReviewOpenPolicyOptions } from './runtime-policy.js';
 import { requireUploadPreflight as defaultRequireUploadPreflight } from './upload-preflight.js';
+import type { UploadCredentialContext, UploadPreflightOptions } from './upload-guidance.js';
 
 export type PublishCommandFlags = {
   readonly json: boolean;
@@ -18,7 +20,8 @@ export type PublishCommandFlags = {
 
 type ReadDraft = (cwd: string, id: string) => Promise<LocalDraft>;
 type LoadCredentials = () => Promise<AgentFeedCredentials | null>;
-type RequireUploadPreflight = (credentials: AgentFeedCredentials, options: { readonly retryCommand?: string }) => Promise<ApiMetadata>;
+type LoadCredentialsWithMetadata = (options: { readonly cwd?: string }) => Promise<CredentialsResolution>;
+type RequireUploadPreflight = (credentials: AgentFeedCredentials, options: UploadPreflightOptions) => Promise<ApiMetadata>;
 type PublishDraft = (options: {
   readonly cwd: string;
   readonly id: string;
@@ -31,6 +34,7 @@ type HandoffReviewUrl = (reviewUrl: string, options: ReviewUrlHandoffOptions) =>
 export type PublishCommandDependencies = {
   readonly readDraft?: ReadDraft;
   readonly loadCredentials?: LoadCredentials;
+  readonly loadCredentialsWithMetadata?: LoadCredentialsWithMetadata;
   readonly requireUploadPreflight?: RequireUploadPreflight;
   readonly publishDraft?: PublishDraft;
   readonly shouldOpenReviewAfterUpload?: ShouldOpenReviewAfterUpload;
@@ -83,14 +87,46 @@ function shouldCopyReviewAfterPublish(flags: PublishCommandFlags): boolean {
   return shouldCopyReviewUrl({ noClipboard: flags.noClipboard });
 }
 
+function credentialResolutionFromLegacyLoader(credentials: AgentFeedCredentials | null): CredentialsResolution {
+  return {
+    credentials,
+    token_source: credentials ? 'credentials_file' : 'missing',
+    credentials_file_path: '',
+    credentials_file_exists: false,
+    credential_store: credentials ? 'file' : 'missing',
+    ...(credentials ? { api_base_url: credentials.api_base_url } : {}),
+    warnings: []
+  };
+}
+
+async function loadPublishCredentialResolution(options: PublishCommandOptions): Promise<CredentialsResolution> {
+  if (options.dependencies?.loadCredentialsWithMetadata) {
+    return await options.dependencies.loadCredentialsWithMetadata({ cwd: options.cwd });
+  }
+  if (options.dependencies?.loadCredentials) {
+    return credentialResolutionFromLegacyLoader(await options.dependencies.loadCredentials());
+  }
+  return await defaultLoadCredentialsWithMetadata({ cwd: options.cwd });
+}
+
+function publishCredentialContext(resolution: CredentialsResolution, credentials: AgentFeedCredentials): UploadCredentialContext {
+  return {
+    tokenSourceLabel: credentialSourceLabel(resolution.token_source),
+    credentialStoreLabel: credentialStoreLabel(resolution.credential_store),
+    apiBaseUrl: credentials.api_base_url,
+    ...(resolution.api_base_url_source ? { apiBaseSourceLabel: apiBaseSourceLabel(resolution.api_base_url_source, resolution.api_base_url_source_detail) } : {}),
+    ...(resolution.credentials_file_path ? { credentialsFilePath: resolution.credentials_file_path } : {})
+  };
+}
+
 export async function runPublishCommand(options: PublishCommandOptions): Promise<PublishCommandResult> {
   const readDraft = options.dependencies?.readDraft ?? defaultReadDraft;
-  const loadCredentials = options.dependencies?.loadCredentials ?? defaultLoadCredentials;
   const requireUploadPreflight = options.dependencies?.requireUploadPreflight ?? defaultRequireUploadPreflight;
   const publishDraft = options.dependencies?.publishDraft ?? defaultPublishDraft;
   const handoffReviewUrl = options.dependencies?.handoffReviewUrl ?? defaultHandoffReviewUrl;
   const existingDraft = await readDraft(options.cwd, options.id);
-  const credentials = await loadCredentials();
+  const credentialResolution = await loadPublishCredentialResolution(options);
+  const credentials = credentialResolution.credentials;
   if (!credentials) throw new Error(missingTokenMessage());
 
   const cacheReuseStatus = cachedUploadReuseStatusForCredentials(existingDraft, credentials);
@@ -98,7 +134,10 @@ export async function runPublishCommand(options: PublishCommandOptions): Promise
     return uploadConfirmationResult(existingDraft, cacheReuseStatus.reason);
   }
 
-  const metadata = await requireUploadPreflight(credentials, { retryCommand: `agentfeed publish --id ${options.id} --yes` });
+  const metadata = await requireUploadPreflight(credentials, {
+    retryCommand: `agentfeed publish --id ${options.id} --yes`,
+    credentialContext: publishCredentialContext(credentialResolution, credentials)
+  });
   const upload = await publishDraft({
     cwd: options.cwd,
     id: options.id,

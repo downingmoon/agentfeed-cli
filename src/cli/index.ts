@@ -9,6 +9,7 @@ import { findLatestDraft, listDrafts, readLatestDraft } from '../draft/read.js';
 import { formatCollectionExplain } from '../draft/explain.js';
 import { checkApiCompatibility, checkApiReachability, checkIngestionToken } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
+import { requireValidLoginTokenBeforeCredentialSave } from '../auth/login-token-validation.js';
 import type { AgentFeedCredentials, LocalDraft } from '../types.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { detectAgentSignals, formatAgentSignalLines, summarizeAgentSignals } from '../collectors/agent-discovery.js';
@@ -191,12 +192,11 @@ async function cmdLogin(args: string[]) {
   }
   const loginApiOptions = { apiBaseUrl, cwd: process.cwd(), trustRepoDiscoveredApiBase: process.env.AGENTFEED_TRUST_REPO_API_BASE === '1' };
   const tokenCredentials = await credentialsFromToken(token, loginApiOptions);
+  if (!noSave) await requireApiCompatibilityBeforeCredentialSave(tokenCredentials.api_base_url);
+  await requireValidLoginTokenBeforeCredentialSave(tokenCredentials);
   const creds = noSave
     ? tokenCredentials
-    : await (async () => {
-      await requireApiCompatibilityBeforeCredentialSave(tokenCredentials.api_base_url);
-      return saveCredentials(token, { ...loginApiOptions, apiBaseUrl: tokenCredentials.api_base_url });
-    })();
+    : await saveCredentials(token, { ...loginApiOptions, apiBaseUrl: tokenCredentials.api_base_url });
   const warnings: string[] = [];
   if (!noSave) {
     const saved = await loadCredentialsWithMetadata({ cwd: process.cwd() });

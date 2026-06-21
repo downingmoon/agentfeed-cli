@@ -528,6 +528,26 @@ describe('status and doctor provenance output', () => {
         res.end(JSON.stringify(compatibleMetadata()));
         return;
       }
+      if (req.url === '/v1/ingest/status') {
+        expect(req.headers.authorization).toBe(`Bearer ${token}`);
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({
+          data: {
+            ok: true,
+            user: { id: 'user-stdin', username: 'stdin-user', display_name: 'Stdin User', avatar_url: null },
+            token: {
+              id: 'token-stdin',
+              name: 'CLI stdin token',
+              created_at: '2026-06-01T00:00:00Z',
+              last_used_at: null,
+              expires_at: '2026-06-15T00:00:00Z',
+              expires_in_seconds: 1_000_000,
+              expiring_soon: false,
+            }
+          }
+        }));
+        return;
+      }
       res.writeHead(404).end();
     }));
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -574,6 +594,26 @@ describe('status and doctor provenance output', () => {
       if (req.url === '/v1/metadata') {
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end(JSON.stringify(compatibleMetadata()));
+        return;
+      }
+      if (req.url === '/v1/ingest/status') {
+        expect(req.headers.authorization).toBe(`Bearer ${token}`);
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({
+          data: {
+            ok: true,
+            user: { id: 'user-stdin-json', username: 'stdin-json-user', display_name: 'Stdin JSON User', avatar_url: null },
+            token: {
+              id: 'token-stdin-json',
+              name: 'CLI stdin JSON token',
+              created_at: '2026-06-01T00:00:00Z',
+              last_used_at: null,
+              expires_at: '2026-06-15T00:00:00Z',
+              expires_in_seconds: 1_000_000,
+              expiring_soon: false,
+            }
+          }
+        }));
         return;
       }
       res.writeHead(404).end();
@@ -692,6 +732,59 @@ describe('status and doctor provenance output', () => {
 
       expect(failure).toBeTruthy();
       expect(failure?.stderr).toContain('API compatibility check failed');
+      expect(failure?.stderr).toContain('before saving credentials');
+      expect(failure?.stderr).not.toContain(token);
+      expect(failure?.stdout ?? '').toBe('');
+      await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('refuses token-stdin login before writing credentials when the ingestion token is invalid', async () => {
+    const token = 'af_live_invalid_stdin_secret';
+    const server = await import('node:http').then(({ createServer }) => createServer((req, res) => {
+      if (req.url === '/v1/metadata') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify(compatibleMetadata()));
+        return;
+      }
+      if (req.url === '/v1/ingest/status') {
+        expect(req.headers.authorization).toBe(`Bearer ${token}`);
+        res.writeHead(401, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid or revoked ingestion token.', details: {} } }));
+        return;
+      }
+      res.writeHead(404).end();
+    }));
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('test server did not bind');
+
+    try {
+      let failure: { stderr?: string; stdout?: string } | undefined;
+      try {
+        await execFileWithInput(
+          ['login', '--token-stdin', '--api-base-url', `http://127.0.0.1:${address.port}/v1`],
+          `${token}\n`,
+          {
+            cwd: dir,
+            encoding: 'utf8',
+            env: {
+              ...process.env,
+              HOME: home,
+              AGENTFEED_TOKEN: '',
+              AGENTFEED_CI: '1',
+              AGENTFEED_CREDENTIAL_STORE: 'file'
+            }
+          }
+        );
+      } catch (error) {
+        failure = error as { stderr?: string; stdout?: string };
+      }
+
+      expect(failure).toBeTruthy();
+      expect(failure?.stderr).toContain('Ingestion token check failed');
       expect(failure?.stderr).toContain('before saving credentials');
       expect(failure?.stderr).not.toContain(token);
       expect(failure?.stdout ?? '').toBe('');

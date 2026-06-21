@@ -68,5 +68,5 @@ Full CLI suite: 110 test files passed, 830 tests passed.
 > [!note]
 > macOS `security` CLI의 non-interactive 저장 제약 때문에 token은 `security` process argv로 전달된다. Shell은 사용하지 않고 helper environment는 계속 scrub한다. 실제 장기 저장 위치는 OS Keychain이다.
 
-> [!todo]
-> `agentfeed login --token-stdin` 경로도 browser login과 같은 `/ingest/status` 선검증을 공유하도록 후속 정리할 수 있다.
+> [!success]
+> 2026-06-21 follow-up: `agentfeed login --token-stdin`도 browser login과 같은 `/ingest/status` 선검증을 공유하도록 처리했다. See [[CLI Token Stdin Login Validation 2026-06-21]].

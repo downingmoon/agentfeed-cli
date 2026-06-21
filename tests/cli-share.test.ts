@@ -653,7 +653,7 @@ describe('share CLI command', () => {
       const output = JSON.parse(failure?.stdout ?? '{}') as { error: { message: string }; next_actions?: string[] };
       expect(output.error.message).toContain('Ingestion token check failed');
       expect(output.error.message).toContain('HTTP 401: INGESTION_TOKEN_INVALID: Invalid ingestion token');
-      expect(output.next_actions).toEqual(['agentfeed login', 'agentfeed rotate', 'agentfeed status']);
+      expect(output.next_actions).toEqual(['unset AGENTFEED_TOKEN', 'agentfeed status', 'agentfeed login', 'agentfeed rotate']);
       expect(failure?.stderr ?? '').toBe('');
       expect(tokenStatusCount).toBe(1);
       expect(ingestRequestCount).toBe(0);
@@ -709,9 +709,10 @@ describe('share CLI command', () => {
       expect(humanFailure?.stderr ?? '').toContain('Ingestion token check failed');
       expect(humanFailure?.stderr ?? '').toContain('HTTP 401: INGESTION_TOKEN_INVALID: Invalid ingestion token');
       expect(humanFailure?.stderr ?? '').toContain('Fix first');
+      expect(humanFailure?.stderr ?? '').toContain('Run: unset AGENTFEED_TOKEN');
+      expect(humanFailure?.stderr ?? '').toContain('Run: agentfeed status');
       expect(humanFailure?.stderr ?? '').toContain('Run: agentfeed login');
       expect(humanFailure?.stderr ?? '').toContain('Run: agentfeed rotate');
-      expect(humanFailure?.stderr ?? '').toContain('Run: agentfeed status');
       expect(humanFailure?.stderr ?? '').toContain('Then retry');
       expect(humanFailure?.stderr ?? '').toContain(`Run: agentfeed publish --id ${draft.id} --yes`);
 
@@ -735,9 +736,10 @@ describe('share CLI command', () => {
       expect(jsonOutput.error?.message).toContain('Ingestion token check failed');
       expect(jsonOutput.error?.message).toContain('HTTP 401: INGESTION_TOKEN_INVALID: Invalid ingestion token');
       expect(jsonOutput.next_actions).toEqual([
+        'unset AGENTFEED_TOKEN',
+        'agentfeed status',
         'agentfeed login',
         'agentfeed rotate',
-        'agentfeed status',
         `agentfeed publish --id ${draft.id} --yes`
       ]);
       expect(tokenStatusCount).toBe(2);

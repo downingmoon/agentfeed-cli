@@ -59,7 +59,9 @@ export function apiCompatibilityRecoveryCommands(result: UploadApiCheckResult): 
 
 export function ingestionTokenRecoveryCommands(result: UploadApiCheckResult): string[] {
   if (result.status === 401 || result.status === 403) {
-    return ['agentfeed login', 'agentfeed rotate', 'agentfeed status'];
+    return process.env.AGENTFEED_TOKEN
+      ? ['unset AGENTFEED_TOKEN', 'agentfeed status', 'agentfeed login', 'agentfeed rotate']
+      : ['agentfeed login', 'agentfeed rotate', 'agentfeed status'];
   }
   if (result.status == null || (result.status >= 500 && result.status <= 599)) {
     return ['agentfeed doctor', 'agentfeed status'];

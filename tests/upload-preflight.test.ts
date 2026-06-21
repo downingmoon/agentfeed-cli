@@ -120,6 +120,34 @@ describe('upload preflight recovery', () => {
     ].join('\n'));
   });
 
+  it('prioritizes clearing AGENTFEED_TOKEN when env-token ingestion preflight fails', async () => {
+    const previousToken = process.env.AGENTFEED_TOKEN;
+    process.env.AGENTFEED_TOKEN = 'af_live_stale_env_token';
+    const result: ApiCheckResult = {
+      ok: false,
+      url: 'http://127.0.0.1:3001/v1/ingest/status',
+      status: 401,
+      error: 'invalid ingestion token'
+    };
+
+    try {
+      await expect(requireIngestionTokenBeforeUpload(credentials(), {
+        checkIngestionToken: async () => result
+      })).rejects.toThrow([
+        'Ingestion token check failed for http://127.0.0.1:3001/v1/ingest/status: HTTP 401: invalid ingestion token before uploading drafts.',
+        '',
+        'Fix first:',
+        'Run: unset AGENTFEED_TOKEN',
+        'Run: agentfeed status',
+        'Run: agentfeed login',
+        'Run: agentfeed rotate'
+      ].join('\n'));
+    } finally {
+      if (previousToken === undefined) delete process.env.AGENTFEED_TOKEN;
+      else process.env.AGENTFEED_TOKEN = previousToken;
+    }
+  });
+
   it('checks API compatibility before checking the ingestion token', async () => {
     const metadata = compatibleMetadata();
     let compatibilityChecks = 0;

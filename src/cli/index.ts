@@ -5,13 +5,13 @@ import { credentialsFromToken, deleteSavedCredentials, loadCredentials, loadCred
 import { resolveApiBaseUrl, resolveApiBaseUrlWithMetadata } from '../config/api-base.js';
 import { markCollectionComplete, readCollectionStateWithDiagnostics, resolveCollectionWindowWithDiagnostics } from '../config/collection-state.js';
 import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
-import { findLatestDraft, listDrafts, readDraft, readLatestDraft } from '../draft/read.js';
+import { findLatestDraft, listDrafts, readLatestDraft } from '../draft/read.js';
 import { writeDraft } from '../draft/write.js';
 import { formatCollectionExplain } from '../draft/explain.js';
-import { checkApiCompatibility, checkApiReachability, checkIngestionToken, publishDraft } from '../api/client.js';
+import { checkApiCompatibility, checkApiReachability, checkIngestionToken } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
 import { scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
-import type { AgentFeedCredentials, LocalDraft, ReviewUrlHandoff } from '../types.js';
+import type { AgentFeedCredentials, LocalDraft } from '../types.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { detectAgentSignals, formatAgentSignalLines, summarizeAgentSignals } from '../collectors/agent-discovery.js';
 import { hasAgentFeedHook, installClaudeCodeHook, uninstallClaudeCodeHook, resolveClaudeSettingsPath } from '../hooks/claude-code-settings.js';
@@ -23,7 +23,7 @@ import { doctorNextActions, doctorReadinessItems } from './doctor-readiness.js';
 import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialResult, tokenLoginCredentialResult } from './auth-result.js';
 import { missingTokenMessage, resolveLoginTokenInput } from './auth-token-input.js';
 import { loadDiagnosticCredentialsWithMetadata } from './diagnostic-credentials.js';
-import { requireApiCompatibilityBeforeCredentialSave, requireApiCompatibilityBeforeUpload, requireUploadPreflight } from './upload-preflight.js';
+import { requireApiCompatibilityBeforeCredentialSave, requireApiCompatibilityBeforeUpload } from './upload-preflight.js';
 import { collectJsonNextActions } from './draft-next-actions.js';
 import { commandCatalogNextActions } from './guidance-actions.js';
 import { renderGuidedNextCommandLines, renderNextCommandLines, renderRecommendedCommandLines } from './guided-next-command-renderer.js';
@@ -59,9 +59,9 @@ import { renderUploadConfirmationRequiredLines, renderUploadResultLines } from '
 import { renderShareLocalNextLines, shareLocalJsonPayload, shareUploadedJsonPayload } from './share-output.js';
 import { runShareCollectionCommand } from './share-collection-execution.js';
 import { runShareUploadCommand } from './share-upload-execution.js';
+import { runCollectJsonUploadCommand } from './collect-upload-execution.js';
 import { publishJsonPayload, renderPublishUploadResultLines } from './publish-output.js';
 import { runPublishCommand } from './publish-execution.js';
-import { handoffReviewUrl, reviewUrlHandoffLines } from './review-handoff.js';
 import { createCommandCatalog } from './command-catalog.js';
 import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
 import { COMMAND_WORKFLOWS, renderCommandCatalogLines, renderCommandWorkflowLines } from './command-catalog-renderer.js';
@@ -396,13 +396,13 @@ async function cmdCollect(args: string[]) {
   const warnings = [...collectionWindow.warnings, ...collection.warnings];
   if (flag(args, '--json')) {
     if (uploadRequested && uploadCredentials) {
-      const creds = uploadCredentials;
-      const metadata = await requireUploadPreflight(creds, { retryCommand: 'agentfeed collect --json --upload' });
-      const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds, reviewBaseUrl: metadata.review_base_url });
-      draft = await sanitizeDraftForCliOutput(process.cwd(), await readDraft(process.cwd(), draft.id));
-      if (flag(args, '--open-review')) {
-        draft.upload.handoff = await handoffReviewUrl(result.review_url, { copy: false, open: true, apiBaseUrl: creds.api_base_url, reviewBaseUrl: result.review_base_url ?? metadata.review_base_url });
-      }
+      draft = await runCollectJsonUploadCommand({
+        cwd: process.cwd(),
+        draft,
+        credentials: uploadCredentials,
+        openReview: flag(args, '--open-review'),
+        dependencies: { sanitizeDraftForOutput: sanitizeDraftForCliOutput }
+      });
     }
     if (!flag(args, '--no-save-cursor')) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
     print(JSON.stringify(collectJsonPayload({ draft, warnings }), null, 2));

@@ -171,3 +171,48 @@ Manual QA   collect_next_actions includes agentfeed collect --json --upload
 
 > [!todo]
 > 유지보수 시 `share --json` retry가 새 draft collection을 다시 수행한다는 점을 UX 문서에 명시할지 검토한다. 현재 duplicate detection이 같은 draft를 재사용하도록 설계되어 있어 동작 계약은 유지된다.
+
+## 2026-06-21 17:25 UTC — Collect JSON upload execution extraction
+
+> [!success]
+> `collect --json --upload`의 preflight/publish/handoff 실행 경로를 `cmdCollect` inline 구현에서 전용 실행 모듈로 분리했다. `publish`와 `share`처럼 upload 계약을 단위 테스트 가능한 경계가 소유하게 되어 CLI-Backend 계약 drift를 줄인다.
+
+### Additional Action
+
+- `src/cli/collect-upload-execution.ts`를 추가해 다음 계약을 한 곳에서 소유하게 했다.
+  - upload preflight retry command: `agentfeed collect --json --upload`
+  - metadata `review_base_url`을 publish에 전달
+  - 업로드 후 저장된 draft를 다시 읽고 CLI 출력용 sanitizer 적용
+  - `--open-review`일 때 `copy: false`, `open: true`, active API base와 review base로 handoff 수행
+- `src/cli/index.ts`의 `cmdCollect` JSON upload 분기에서 inline preflight/publish/handoff 코드를 제거하고 새 실행 모듈 호출로 대체했다.
+- `tests/collect-upload-execution.test.ts`를 추가해 retry guidance, saved-draft refresh, open-review handoff를 회귀 보호한다.
+- `tests/cli-handoff-policy.test.ts`의 handoff trust source assertion을 새 collect upload 모듈까지 확장했다.
+
+### Verification Evidence
+
+```text
+npm test -- --run tests/collect-upload-execution.test.ts
+npm run typecheck
+npm run build
+npm test -- --run tests/collect-upload-execution.test.ts tests/cli-handoff-policy.test.ts tests/cli-collect.test.ts
+node --input-type=module - <<'NODE' # fake API manual QA for dist CLI collect --json --upload
+```
+
+Result:
+
+```text
+Red: tests/collect-upload-execution.test.ts failed because collect-upload-execution module did not exist.
+tsc --noEmit passed
+tsc build passed
+Test Files  3 passed (3)
+Tests       28 passed (28)
+Manual QA   statusCount=1, ingestCount=1, uploaded=true, payloadHasWorklog=true
+```
+
+> [!note]
+> 첫 `cli-collect` targeted run은 `beforeAll`의 CLI build hook timeout 10s로 중단됐다. `npm run build`를 먼저 실행한 뒤 동일 테스트를 재실행해 통과했다.
+
+## Follow-up
+
+> [!todo]
+> `src/cli/index.ts`는 기존부터 900 pure LOC 이상인 command multiplexer다. 이번 변경은 upload 경로 일부를 분리했지만, 후속 작업에서 `collect` command orchestration 자체를 `collect-execution` 계열로 더 나눌지 검토한다.

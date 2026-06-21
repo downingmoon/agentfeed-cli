@@ -16,6 +16,12 @@ updated: 2026-06-21
 
 
 
+> [!success] 2026-06-21 CLI collect command split
+> `agentfeed collect` CLI surface orchestration을 `src/cli/index.ts`에서 `src/cli/collect-command.ts`로 분리했다. 새 wrapper tests, focused collect tests, typecheck/build, full suite, dist CLI collect smoke를 통과했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Collect Command Split 2026-06-21]]
+
+
+
 > [!success] 2026-06-21 CLI share command split
 > `agentfeed share` CLI surface orchestration을 `src/cli/index.ts`에서 `src/cli/share-command.ts`로 분리했다. 새 wrapper tests, focused share tests, typecheck/build, full suite, dist CLI share dry-run/token-missing smoke를 통과했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Share Command Split 2026-06-21]]

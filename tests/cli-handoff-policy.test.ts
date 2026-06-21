@@ -27,11 +27,12 @@ describe('CLI review URL handoff trust policy', () => {
 
   it('passes the active API and review bases into every upload handoff call', () => {
     const cli = source('src/cli/index.ts');
+    const collectCommand = source('src/cli/collect-command.ts');
     const publishExecution = source('src/cli/publish-execution.ts');
     const shareUploadExecution = source('src/cli/share-upload-execution.ts');
     const collectUploadExecution = source('src/cli/collect-upload-execution.ts');
-    const uploadHandoffSources = `${cli}\n${publishExecution}\n${shareUploadExecution}\n${collectUploadExecution}`;
-    expect(cli).toContain('runCollectJsonUploadCommand');
+    const uploadHandoffSources = `${cli}\n${collectCommand}\n${publishExecution}\n${shareUploadExecution}\n${collectUploadExecution}`;
+    expect(collectCommand).toContain('runCollectJsonUploadCommand');
     expect((publishExecution.match(/handoffReviewUrl\(upload\.review_url/g) ?? []).length).toBe(1);
     expect((shareUploadExecution.match(/handoffReviewUrl\(upload\.review_url/g) ?? []).length).toBe(1);
     expect((collectUploadExecution.match(/handoffReviewUrl\(upload\.review_url/g) ?? []).length).toBe(1);

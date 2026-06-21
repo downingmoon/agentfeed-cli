@@ -1,15 +1,14 @@
 #!/usr/bin/env node
 import { initProject, loadProjectConfig } from '../config/project-config.js';
-import { deleteSavedCredentials, loadCredentials } from '../config/credentials.js';
-import { markCollectionComplete, readCollectionStateWithDiagnostics, resolveCollectionWindowWithDiagnostics } from '../config/collection-state.js';
-import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
+import { deleteSavedCredentials } from '../config/credentials.js';
+import { readCollectionStateWithDiagnostics } from '../config/collection-state.js';
+import { collectDraft } from '../draft/create.js';
 import { findLatestDraft, readLatestDraft } from '../draft/read.js';
 import type { AgentFeedCredentials, LocalDraft } from '../types.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { flag, option } from './args.js';
 import { unknownCommandError } from './unknown-command-error.js';
 import { resolveStatusProject } from './status-project.js';
-import { missingTokenMessage } from './auth-token-input.js';
 import { requireApiCompatibilityBeforeUpload } from './upload-preflight.js';
 import { collectJsonNextActions } from './draft-next-actions.js';
 import { commandCatalogNextActions } from './guidance-actions.js';
@@ -24,7 +23,6 @@ import { runPreviewCommand } from './preview-execution.js';
 import { formatPrivacyScanReport, privacyScanJsonOutput } from './privacy-scan-output.js';
 import { runPrivacyScanCommand } from './scan-command.js';
 import { readinessMarker } from './diagnostic-formatters.js';
-import { collectJsonPayload, renderCollectAutoUploadIgnoredWarningLines, renderCollectHumanLines } from './collect-output.js';
 import { logoutJsonPayload, renderLogoutHumanLines } from './logout-output.js';
 import { initJsonPayload, renderInitHumanLines } from './init-output.js';
 import { runLoginCommand } from './login-command.js';
@@ -32,8 +30,6 @@ import { runRotateCommand } from './rotate-command.js';
 import { runStatusCommand } from './status-command.js';
 import { runDoctorCommand } from './doctor-command.js';
 import { runHookCommand } from './hook-command.js';
-import { runCollectJsonUploadCommand } from './collect-upload-execution.js';
-import { sanitizeDraftForCliOutput } from './draft-output-sanitizer.js';
 import { runPublishCliCommand } from './publish-command.js';
 import { runShareCliCommand } from './share-command.js';
 import { runDiscardCliCommand, runDraftsCliCommand, runOpenCliCommand } from './local-draft-command.js';
@@ -41,7 +37,7 @@ import { KNOWN_COMMANDS, PUBLIC_COMMANDS } from './command-definitions.js';
 import { COMMAND_ARG_SPECS } from './command-arg-specs.js';
 import { validateCommandArgs } from './command-argument-validator.js';
 import { printCommandHelp as printSurfaceCommandHelp, printHelp as printSurfaceHelp, printHelpTopic as printSurfaceHelpTopic, runCommandsCommand, runCompletionCommand } from './command-surface-command.js';
-import { parseAgentSource } from './source.js';
+import { runCollectCliCommand } from './collect-command.js';
 import { readJson } from '../utils/fs.js';
 import { AGENTFEED_CLI_VERSION } from '../version.js';
 import * as ui from './ui.js';
@@ -152,45 +148,12 @@ async function cmdLogout(args: string[]) {
 }
 
 async function cmdCollect(args: string[]) {
-  const source = parseAgentSource(option(args, '--source'), 'collect');
-  const config = await loadProjectConfig(process.cwd());
-  const collectionWindow = await resolveCollectionWindowWithDiagnostics({ cwd: process.cwd(), args });
-  const window = collectionWindow.window;
-  const uploadRequested = flag(args, '--upload');
-  const uploadCredentials = uploadRequested ? await loadCredentials() : null;
-  if (uploadRequested && !uploadCredentials) throw new Error(missingTokenMessage());
-  const collection = await collectDraftWithStatus({ cwd: process.cwd(), source, sessionFile: option(args, '--session-file') ?? null, since: window.since, until: window.until, force: flag(args, '--force') || flag(args, '--all'), runConfiguredCommands: flag(args, '--run-configured-commands') });
-  let draft = await sanitizeDraftForCliOutput(process.cwd(), collection.draft);
-  const warnings = [...collectionWindow.warnings, ...collection.warnings];
-  if (flag(args, '--json')) {
-    if (uploadRequested && uploadCredentials) {
-      draft = await runCollectJsonUploadCommand({
-        cwd: process.cwd(),
-        draft,
-        credentials: uploadCredentials,
-        openReview: flag(args, '--open-review'),
-        dependencies: { sanitizeDraftForOutput: sanitizeDraftForCliOutput }
-      });
-    }
-    if (!flag(args, '--no-save-cursor')) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
-    print(JSON.stringify(collectJsonPayload({ draft, warnings }), null, 2));
-    return;
-  }
-  printLines(renderCollectHumanLines({
-    draft,
-    warnings,
-    reusedExisting: collection.reusedExisting,
-    dryRun: flag(args, '--dry') || flag(args, '--dry-run'),
-    explain: flag(args, '--explain')
-  }));
-  if (uploadRequested) {
-    await cmdPublish(['--id', draft.id, '--yes', ...(flag(args, '--open-review') ? ['--open-review'] : []), ...(flag(args, '--no-open-review') ? ['--no-open-review'] : [])]);
-  } else {
-    if (!flag(args, '--no-upload') && config.collection.auto_upload) {
-      printLines(renderCollectAutoUploadIgnoredWarningLines());
-    }
-  }
-  if (!flag(args, '--no-save-cursor')) await markCollectionComplete(process.cwd(), draft.source.collection_window, new Date(draft.source.created_at));
+  await runCollectCliCommand(args, {
+    cwd: process.cwd(),
+    print,
+    printLines,
+    publish: cmdPublish
+  });
 }
 
 async function cmdShare(args: string[]) {

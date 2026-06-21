@@ -445,6 +445,26 @@ describe('status and doctor provenance output', () => {
         }));
         return;
       }
+      if (req.url === '/v1/ingest/status') {
+        expect(req.headers.authorization).toBe('Bearer af_live_cli_ux_secret');
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({
+          data: {
+            ok: true,
+            user: { id: 'user-cli-ux', username: 'cli-ux-user', display_name: 'CLI UX User', avatar_url: null },
+            token: {
+              id: 'token-cli-ux',
+              name: 'CLI UX token',
+              created_at: '2026-06-01T00:00:00Z',
+              last_used_at: null,
+              expires_at: '2026-06-15T00:00:00Z',
+              expires_in_seconds: 1_000_000,
+              expiring_soon: false,
+            }
+          }
+        }));
+        return;
+      }
       res.writeHead(404).end();
     }));
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -1006,20 +1026,22 @@ describe('status and doctor provenance output', () => {
         return;
       }
       if (req.url === '/v1/ingest/status') {
-        expect(req.headers.authorization).toBe('Bearer af_live_old_secret');
+        const authorization = req.headers.authorization;
+        expect(['Bearer af_live_old_secret', 'Bearer af_live_new_secret']).toContain(authorization);
+        const oldToken = authorization === 'Bearer af_live_old_secret';
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end(JSON.stringify({
           data: {
             ok: true,
             user: { id: 'user-1', username: 'downingmoon' },
             token: {
-              id: 'token-old',
-              name: 'CLI: old',
-              created_at: '2026-05-30T00:00:00Z',
+              id: oldToken ? 'token-old' : 'token-new',
+              name: oldToken ? 'CLI: old' : 'CLI: new',
+              created_at: oldToken ? '2026-05-30T00:00:00Z' : '2026-05-30T00:01:00Z',
               last_used_at: null,
-              expires_at: '2026-06-01T00:00:00Z',
-              expires_in_seconds: 3600,
-              expiring_soon: true,
+              expires_at: oldToken ? '2026-06-01T00:00:00Z' : newExpiry,
+              expires_in_seconds: oldToken ? 3600 : 2_592_000,
+              expiring_soon: oldToken,
             }
           }
         }));

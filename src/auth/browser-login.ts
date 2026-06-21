@@ -1,15 +1,33 @@
 import { randomBytes } from 'node:crypto';
 import { hostname } from 'node:os';
 import { stdin as input, stdout as output } from 'node:process';
-import { createCliAuthSession, exchangeCliAuthSession, AgentFeedApiError, checkApiCompatibility } from '../api/client.js';
+import { createCliAuthSession, exchangeCliAuthSession, AgentFeedApiError, checkApiCompatibility, checkIngestionToken, type ApiCheckResult } from '../api/client.js';
 import { resolveApiBaseUrlWithMetadata } from '../config/api-base.js';
 import { credentialsFromToken, saveCredentials } from '../config/credentials.js';
 import { openBrowser } from '../utils/open-browser.js';
-import type { CliAuthExchangeResult, CliAuthSession } from '../types.js';
+import type { AgentFeedCredentials, CliAuthExchangeResult, CliAuthSession } from '../types.js';
 import * as ui from '../cli/ui.js';
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function apiCheckFailureDetail(result: ApiCheckResult): string {
+  if (result.status != null) {
+    return result.error ? `HTTP ${result.status}: ${result.error}` : `HTTP ${result.status}`;
+  }
+  return result.error ?? 'unknown token check failure';
+}
+
+async function requireValidExchangedToken(credentials: AgentFeedCredentials): Promise<void> {
+  const result = await checkIngestionToken(credentials);
+  if (result.ok) return;
+  throw new Error([
+    `Ingestion token check failed for ${result.url}: ${apiCheckFailureDetail(result)} before saving credentials.`,
+    'Run: agentfeed status',
+    'Run: agentfeed login',
+    'Run: agentfeed rotate'
+  ].join('\n'));
 }
 
 function isDefaultRetryableCliAuthExchangeError(error: unknown): boolean {
@@ -145,6 +163,8 @@ export async function browserLogin(options: { apiBaseUrl?: string; noOpen?: bool
   if (input.isTTY) output.write('Keep this command running; no Enter key is required.\n');
 
   const exchange = await waitForCliAuthExchange({ apiBaseUrl, session, verifier, waitMs: options.waitMs });
-  if (options.save === false) return credentialsFromToken(exchange.token, { apiBaseUrl, tokenId: exchange.token_id, user: exchange.user, tokenExpiresAt: exchange.token_expires_at });
+  const credentials = await credentialsFromToken(exchange.token, { apiBaseUrl, tokenId: exchange.token_id, user: exchange.user, tokenExpiresAt: exchange.token_expires_at });
+  await requireValidExchangedToken(credentials);
+  if (options.save === false) return credentials;
   return saveCredentials(exchange.token, { apiBaseUrl, tokenId: exchange.token_id, user: exchange.user, tokenExpiresAt: exchange.token_expires_at });
 }

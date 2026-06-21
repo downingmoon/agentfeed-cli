@@ -28,6 +28,24 @@ const oldAgentFeedDraftUploadLockHeartbeatMs = process.env.AGENTFEED_DRAFT_UPLOA
 
 const defaultPublishCredentials = { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' };
 
+function validIngestionStatusResponse(tokenId = 'token-login-ok'): Response {
+  return new Response(JSON.stringify({
+    data: {
+      ok: true,
+      user: { id: 'user-login-ok', username: 'cli-user', display_name: 'CLI User', avatar_url: null },
+      token: {
+        id: tokenId,
+        name: 'CLI login token',
+        created_at: '2026-06-01T00:00:00Z',
+        last_used_at: null,
+        expires_at: '2026-06-15T00:00:00Z',
+        expires_in_seconds: 1_000_000,
+        expiring_soon: false
+      }
+    }
+  }), { status: 200, headers: { 'content-type': 'application/json' } });
+}
+
 function uploadBinding(credentials: typeof defaultPublishCredentials & { token_id?: string | null; user?: { id?: string } } = defaultPublishCredentials) {
   return {
     api_base_url: credentials.api_base_url,
@@ -1702,6 +1720,8 @@ describe('api client', () => {
         }), { status: 200, headers: { 'content-type': 'application/json' } });
       }
 
+      if (url.endsWith('/ingest/status')) return validIngestionStatusResponse('token-no-open');
+
       return new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found', details: {} } }), { status: 404, headers: { 'content-type': 'application/json' } });
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -1735,6 +1755,61 @@ describe('api client', () => {
         avatar_url: 'https://avatars.githubusercontent.com/u/4242?v=4'
       }
     });
+  });
+
+  it('refuses browser login before saving when the exchanged ingestion token is invalid', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.endsWith('/metadata')) {
+        return new Response(JSON.stringify({
+          data: {
+            service: 'agentfeed-api',
+            api_version: 'v1',
+            backend_version: '0.1.0',
+            contract_version: '2026-06-03',
+            review_base_url: 'https://agentfeed.dev',
+            supported_clients: {
+              cli: { min_version: '0.2.0', contract_version: '2026-06-03' },
+              frontend: { min_version: '0.1.0', contract_version: '2026-06-03' }
+            }
+          }
+        }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      if (url.endsWith('/auth/cli/sessions')) {
+        return new Response(JSON.stringify({
+          data: {
+            session_id: 'session-invalid-token',
+            authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-invalid-token',
+            user_code: '123-456',
+            expires_at: '2026-05-20T00:05:00Z',
+            poll_interval_seconds: 1
+          }
+        }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      if (url.endsWith('/auth/cli/sessions/session-invalid-token/exchange')) {
+        return new Response(JSON.stringify({
+          data: {
+            token: 'af_live_invalid_after_exchange',
+            token_id: 'token-invalid-after-exchange',
+            token_expires_at: '2026-06-15T00:00:00Z',
+            user: { id: 'user-invalid-token', username: 'bad-token-user', display_name: 'Bad Token User' }
+          }
+        }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      if (url.endsWith('/ingest/status')) {
+        return new Response(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid or revoked ingestion token.', details: {} } }), { status: 401, headers: { 'content-type': 'application/json' } });
+      }
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found', details: {} } }), { status: 404, headers: { 'content-type': 'application/json' } });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1', noOpen: true, waitMs: 50, allowCiBrowser: true }))
+      .rejects.toThrow(/Ingestion token check failed.*before saving credentials/);
+
+    expect(fetchMock).toHaveBeenCalledWith('https://api.agentfeed.dev/v1/ingest/status', expect.objectContaining({
+      method: 'GET',
+      headers: { authorization: 'Bearer af_live_invalid_after_exchange' }
+    }));
+    await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
   it('refuses browser login before session creation and credential saving when API metadata is incompatible', async () => {
@@ -1779,6 +1854,8 @@ describe('api client', () => {
         }), { status: 200, headers: { 'content-type': 'application/json' } });
       }
 
+      if (url.endsWith('/ingest/status')) return validIngestionStatusResponse('token-ephemeral');
+
       return new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found', details: {} } }), { status: 404, headers: { 'content-type': 'application/json' } });
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -1813,6 +1890,7 @@ describe('api client', () => {
       if (url.endsWith('/auth/cli/sessions/session-default-api/exchange')) {
         return new Response(JSON.stringify({ data: { token: 'af_live_default_api', token_id: 'token-default-api', token_expires_at: '2026-06-15T00:00:00Z', user: { id: 'user-default-api', display_name: 'Default API User' } } }), { status: 200, headers: { 'content-type': 'application/json' } });
       }
+      if (url.endsWith('/ingest/status')) return validIngestionStatusResponse('token-default-api');
       return new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found', details: {} } }), { status: 404, headers: { 'content-type': 'application/json' } });
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -1841,6 +1919,7 @@ describe('api client', () => {
       if (url.endsWith('/auth/cli/sessions/session-trusted-api/exchange')) {
         return new Response(JSON.stringify({ data: { token: 'af_live_trusted_api', token_id: 'token-trusted-api', token_expires_at: '2026-06-15T00:00:00Z', user: { id: 'user-trusted-api', display_name: 'Trusted API User' } } }), { status: 200, headers: { 'content-type': 'application/json' } });
       }
+      if (url.endsWith('/ingest/status')) return validIngestionStatusResponse('token-trusted-api');
       return new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found', details: {} } }), { status: 404, headers: { 'content-type': 'application/json' } });
     });
     vi.stubGlobal('fetch', fetchMock);

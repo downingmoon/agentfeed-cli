@@ -95,7 +95,7 @@ Smoke assertions:
 ## Follow-up
 
 > [!success]
-> 후속 doctor command split은 [[CLI Doctor Command Split 2026-06-21]]에서 처리했다. 남은 구조 정리 후보는 hook, collect/share/publish, help/completion dispatch다.
+> 후속 doctor command split은 [[CLI Doctor Command Split 2026-06-21]]에서 처리했다. 후속 hook command split은 [[CLI Hook Command Split 2026-06-21]]에서 처리했다. 남은 구조 정리 후보는 collect/share/publish, help/completion dispatch다.
 
 > [!todo]
 > LSP diagnostics currently fail locally with `Transport closed`. This slice used `tsc --noEmit`, focused Vitest, build, and dist CLI smoke as replacement evidence.

@@ -8,7 +8,6 @@ import { findLatestDraft, listDrafts, readLatestDraft } from '../draft/read.js';
 import { formatCollectionExplain } from '../draft/explain.js';
 import type { AgentFeedCredentials, LocalDraft } from '../types.js';
 import { collectGitMetrics } from '../collectors/git.js';
-import { installClaudeCodeHook, uninstallClaudeCodeHook } from '../hooks/claude-code-settings.js';
 import { flag, option } from './args.js';
 import { unknownCommandError } from './unknown-command-error.js';
 import { resolveStatusProject } from './status-project.js';
@@ -18,7 +17,6 @@ import { collectJsonNextActions } from './draft-next-actions.js';
 import { commandCatalogNextActions } from './guidance-actions.js';
 import { renderGuidedNextCommandLines, renderNextCommandLines, renderRecommendedCommandLines } from './guided-next-command-renderer.js';
 import { jsonErrorFromMessage } from './error-output.js';
-import { commandHelpHint, hookUsageMessage, unsupportedHookTargetMessage } from './command-recovery.js';
 import { leadingOptionError } from './leading-option-error.js';
 import { hasHelpFlag } from './help-flag.js';
 import { isTrailingHelpAlias } from './trailing-help-alias.js';
@@ -41,11 +39,11 @@ import { formatWarningLines, readinessMarker } from './diagnostic-formatters.js'
 import { collectJsonPayload, renderCollectAutoUploadIgnoredWarningLines, renderCollectHumanLines } from './collect-output.js';
 import { logoutJsonPayload, renderLogoutHumanLines } from './logout-output.js';
 import { initJsonPayload, renderInitHumanLines } from './init-output.js';
-import { hookJsonPayload, renderHookHumanLines, type HookInstallOutputInput, type HookUninstallOutputInput } from './hook-output.js';
 import { runLoginCommand } from './login-command.js';
 import { runRotateCommand } from './rotate-command.js';
 import { runStatusCommand } from './status-command.js';
 import { runDoctorCommand } from './doctor-command.js';
+import { runHookCommand } from './hook-command.js';
 import { renderUploadConfirmationRequiredLines, renderUploadResultLines } from './upload-output.js';
 import { renderShareLocalNextLines, shareLocalJsonPayload, shareUploadedJsonPayload } from './share-output.js';
 import { runShareCollectionCommand } from './share-collection-execution.js';
@@ -374,42 +372,11 @@ async function cmdScan(args: string[]) {
 }
 
 async function cmdHook(args: string[]) {
-  const action = args[0];
-  const target = args[1];
-  if (target !== 'claude-code') throw new Error(unsupportedHookTargetMessage());
-  const root = await resolveProjectRoot(process.cwd());
-  const scope = flag(args, '--global') ? 'global' : 'project';
-  const settingsPath = option(args, '--settings-path');
-  if (action === 'install') {
-    await loadProjectConfig(process.cwd());
-    const dryRun = flag(args, '--dry-run');
-    const result = await installClaudeCodeHook({ projectRoot: root, scope, settingsPath, dryRun });
-    const hookOutput = {
-      action: 'install',
-      scope,
-      dryRun,
-      settingsPath: result.path,
-      backupPath: result.backupPath ?? null
-    } satisfies HookInstallOutputInput;
-    if (flag(args, '--json')) {
-      print(JSON.stringify(hookJsonPayload(hookOutput), null, 2));
-      return;
-    }
-    printLines(renderHookHumanLines(hookOutput));
-  } else if (action === 'uninstall') {
-    const result = await uninstallClaudeCodeHook({ projectRoot: root, scope, settingsPath });
-    const hookOutput = {
-      action: 'uninstall',
-      scope,
-      settingsPath: result.path,
-      backupPath: result.backupPath ?? null
-    } satisfies HookUninstallOutputInput;
-    if (flag(args, '--json')) {
-      print(JSON.stringify(hookJsonPayload(hookOutput), null, 2));
-      return;
-    }
-    printLines(renderHookHumanLines(hookOutput));
-  } else throw new Error(hookUsageMessage());
+  await runHookCommand(args, {
+    cwd: process.cwd(),
+    print,
+    printLines
+  });
 }
 
 async function cmdDoctor(args: string[] = []) {

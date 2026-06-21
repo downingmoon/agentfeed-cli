@@ -123,7 +123,7 @@ dist CLI doctor smoke: passed; summary status attention_needed, ready 3, attenti
 ## Follow-up
 
 > [!todo]
-> `src/cli/index.ts` remains above the 250 pure LOC target because hook, collect/share/publish, help/completion dispatch still live there. Next structural slices should prefer the most isolated command with strong existing tests.
+> 후속 hook command split은 [[CLI Hook Command Split 2026-06-21]]에서 처리했다. `src/cli/index.ts` remains above the 250 pure LOC target because collect/share/publish and help/completion dispatch still live there.
 
 > [!todo]
 > LSP diagnostics currently fail locally with `Transport closed`. This slice used `tsc --noEmit`, focused Vitest, build, and dist CLI smoke as replacement evidence.

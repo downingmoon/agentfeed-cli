@@ -15,6 +15,11 @@ updated: 2026-06-21
 ## 현재 결론
 
 
+> [!success] 2026-06-21 CLI command surface split
+> CLI help/completion/commands command surface orchestration을 `src/cli/index.ts`에서 `src/cli/command-surface-command.ts`로 분리했다. Focused command-surface tests, typecheck/build, full suite, dist CLI help/completion/commands smoke를 통과했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Command Surface Split 2026-06-21]]
+
+
 > [!success] 2026-06-21 CLI publish credential context diagnostics
 > `agentfeed publish`의 upload preflight 401 실패 메시지에 저장 토큰 출처(OS keychain/file/environment), credential store, API base URL/source, credentials file path를 포함하도록 보강했다. `AGENTFEED_TOKEN`이 비어있어도 browser login 저장 방식에서는 정상일 수 있음을 메시지에 명시했다. Focused upload-preflight/publish-execution tests와 typecheck를 통과했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Publish Credential Context Diagnostics 2026-06-21]]

@@ -20,10 +20,6 @@ import { jsonErrorFromMessage } from './error-output.js';
 import { leadingOptionError } from './leading-option-error.js';
 import { hasHelpFlag } from './help-flag.js';
 import { isTrailingHelpAlias } from './trailing-help-alias.js';
-import { createCompletionVocabulary } from './completion-vocabulary.js';
-import { createCompletionOptionMetadata } from './completion-option-metadata.js';
-import { createCompletionScriptRenderer } from './completion-script-renderer.js';
-import { completionCommandResult, unexpectedCompletionCommandResult } from './completion-command.js';
 import { versionCommandOutput } from './version-command.js';
 import { discardCompletePayload, discardConfirmationPayload, renderDiscardCompleteHumanLines, renderDiscardConfirmationHumanLines } from './discard-command.js';
 import { openJsonPayload, renderOpenHumanLines } from './open-command.js';
@@ -52,16 +48,12 @@ import { runCollectJsonUploadCommand } from './collect-upload-execution.js';
 import { sanitizeDraftForCliOutput } from './draft-output-sanitizer.js';
 import { publishJsonPayload, renderPublishUploadResultLines } from './publish-output.js';
 import { runPublishCommand } from './publish-execution.js';
-import { createCommandCatalog } from './command-catalog.js';
-import { buildCommandsJsonPayload, renderCommandsHumanLines } from './commands-output-renderer.js';
-import { COMMAND_WORKFLOWS, renderCommandCatalogLines, renderCommandWorkflowLines } from './command-catalog-renderer.js';
-import { COMMAND_DESCRIPTIONS, COMMAND_EXAMPLES, COMMAND_GROUPS, COMMAND_USAGE_OVERRIDES, KNOWN_COMMANDS, PUBLIC_COMMANDS } from './command-definitions.js';
-import { COMMAND_ARG_SPECS, SUPPORTED_COMPLETION_SHELLS } from './command-arg-specs.js';
+import { KNOWN_COMMANDS, PUBLIC_COMMANDS } from './command-definitions.js';
+import { COMMAND_ARG_SPECS } from './command-arg-specs.js';
 import { validateCommandArgs } from './command-argument-validator.js';
-import { commandHelpText } from './command-help-text.js';
-import { renderRootHelpLines } from './root-help-renderer.js';
+import { printCommandHelp as printSurfaceCommandHelp, printHelp as printSurfaceHelp, printHelpTopic as printSurfaceHelpTopic, runCommandsCommand, runCompletionCommand } from './command-surface-command.js';
 import { formatSharePreview, parseShareArgs } from './share.js';
-import { parseAgentSource, SUPPORTED_SOURCES } from './source.js';
+import { parseAgentSource } from './source.js';
 import { readJson, pathExists } from '../utils/fs.js';
 import { AGENTFEED_CLI_VERSION } from '../version.js';
 import { draftPaths } from '../draft/paths.js';
@@ -456,111 +448,27 @@ async function cmdOpen(args: string[]) {
 
 
 async function cmdCompletion(args: string[]) {
-  const result = completionCommandResult({
-    args,
-    scriptFor: (shell) => COMPLETION_SCRIPT_RENDERER.scriptFor(shell),
-    supportedShells: SUPPORTED_COMPLETION_SHELLS
-  });
-  switch (result.kind) {
-    case 'help': return printCommandHelp(result.command);
-    case 'script': return print(result.script);
-    default: return unexpectedCompletionCommandResult(result);
-  }
+  await runCompletionCommand(args, { print });
 }
 
 async function cmdVersion(args: string[]) {
   print(versionCommandOutput({ args, version: AGENTFEED_CLI_VERSION }));
 }
 
-function commandWorkflowLines(): string[] {
-  return renderCommandWorkflowLines({
-    workflows: COMMAND_WORKFLOWS,
-    section: ui.section,
-    command: ui.command
-  });
-}
-
 async function cmdCommands(args: string[]) {
-  const nextActions = commandCatalogNextActions();
-  if (flag(args, '--json')) {
-    print(JSON.stringify(buildCommandsJsonPayload({
-      nextActions,
-      workflows: COMMAND_WORKFLOWS,
-      groups: COMMAND_GROUPS,
-      descriptions: COMMAND_DESCRIPTIONS,
-      examples: COMMAND_EXAMPLES,
-      usageOverrides: COMMAND_USAGE_OVERRIDES,
-      catalog: COMMAND_CATALOG
-    }), null, 2));
-    return;
-  }
-  for (const line of renderCommandsHumanLines({
-    heading: ui.heading,
-    section: ui.section,
-    command: ui.command,
-    commandCatalogLines: commandCatalogLines(),
-    workflowLines: commandWorkflowLines(),
-    nextActionLines: renderGuidedNextCommandLines({ commands: nextActions, command: ui.command })
-  })) print(line);
-}
-
-const COMPLETION_VOCABULARY = createCompletionVocabulary({
-  commandSpecs: COMMAND_ARG_SPECS,
-  publicCommands: PUBLIC_COMMANDS,
-  completionShells: SUPPORTED_COMPLETION_SHELLS
-});
-const COMPLETION_OPTION_METADATA = createCompletionOptionMetadata({
-  commandSpecs: COMMAND_ARG_SPECS,
-  valueChoices: {
-    '--source': SUPPORTED_SOURCES,
-    '--token': ['-']
-  }
-});
-const COMPLETION_SCRIPT_RENDERER = createCompletionScriptRenderer({
-  commands: PUBLIC_COMMANDS.map((command) => ({ name: command, description: COMMAND_DESCRIPTIONS[command] })),
-  sourceValues: SUPPORTED_SOURCES,
-  vocabulary: COMPLETION_VOCABULARY,
-  optionMetadata: COMPLETION_OPTION_METADATA
-});
-const COMMAND_CATALOG = createCommandCatalog({
-  commandSpecs: COMMAND_ARG_SPECS,
-  vocabulary: COMPLETION_VOCABULARY,
-  optionMetadata: COMPLETION_OPTION_METADATA
-});
-
-function commandCatalogLines(): string[] {
-  return renderCommandCatalogLines({
-    groups: COMMAND_GROUPS,
-    descriptions: COMMAND_DESCRIPTIONS,
-    section: ui.section,
-    command: ui.command
-  });
+  await runCommandsCommand(args, { print });
 }
 
 function printHelp(): void {
-  for (const line of renderRootHelpLines({
-    version: AGENTFEED_CLI_VERSION,
-    heading: ui.heading,
-    section: ui.section,
-    command: ui.command,
-    commandCatalogLines: commandCatalogLines()
-  })) print(line);
+  printSurfaceHelp({ print });
 }
 
 function printCommandHelp(command: string): void {
-  print(commandHelpText(command));
+  printSurfaceCommandHelp(command, { print });
 }
 
 function printHelpTopic(args: string[]): void {
-  if (args.length === 0) {
-    printHelp();
-    return;
-  }
-  if (args[0] === 'token') {
-    printCommandHelp('token');
-    return;
-  }
-  printCommandHelp(args[0]);
+  printSurfaceHelpTopic(args, { print });
 }
 async function main() {
   const [command, ...args] = process.argv.slice(2);

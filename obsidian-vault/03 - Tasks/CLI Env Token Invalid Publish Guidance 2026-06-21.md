@@ -117,3 +117,20 @@ AGENTFEED_API_BASE_URL=http://161.33.171.81:18080/v1 \
 AGENTFEED_CREDENTIAL_STORE=file \
 agentfeed login
 ```
+
+## 2026-06-21 16:34 UTC — Publish preflight status-first recovery
+
+> [!success]
+> `/v1/ingest/status`가 `401/403`이고 `AGENTFEED_API_BASE_URL`이 설정된 경우, publish/share recovery가 `agentfeed login`보다 `agentfeed status`를 먼저 제시하게 했다. saved-token API host mismatch warning은 `status`에서 노출되므로, 사용자가 같은 로그인 반복으로 빠지는 루프를 줄인다.
+
+### Additional Action
+
+- `src/cli/upload-guidance.ts`에서 env token이 없고 env API base만 있는 401/403 recovery 순서를 `agentfeed status -> agentfeed login -> agentfeed rotate`로 조정했다.
+- `tests/upload-preflight.test.ts`에 API-base env override 의심 상황에서 status-first recovery를 보장하는 회귀 테스트를 추가했다.
+
+### Verification
+
+```text
+npm test -- --run tests/upload-preflight.test.ts tests/config.test.ts
+npm run typecheck
+```

@@ -59,8 +59,11 @@ export function apiCompatibilityRecoveryCommands(result: UploadApiCheckResult): 
 
 export function ingestionTokenRecoveryCommands(result: UploadApiCheckResult): string[] {
   if (result.status === 401 || result.status === 403) {
-    return process.env.AGENTFEED_TOKEN
-      ? ['unset AGENTFEED_TOKEN', 'agentfeed status', 'agentfeed login', 'agentfeed rotate']
+    if (process.env.AGENTFEED_TOKEN) {
+      return ['unset AGENTFEED_TOKEN', 'agentfeed status', 'agentfeed login', 'agentfeed rotate'];
+    }
+    return process.env.AGENTFEED_API_BASE_URL
+      ? ['agentfeed status', 'agentfeed login', 'agentfeed rotate']
       : ['agentfeed login', 'agentfeed rotate', 'agentfeed status'];
   }
   if (result.status == null || (result.status >= 500 && result.status <= 599)) {

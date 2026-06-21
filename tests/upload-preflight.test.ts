@@ -148,6 +148,33 @@ describe('upload preflight recovery', () => {
     }
   });
 
+  it('prioritizes status when API base env may override saved-token host', async () => {
+    const previousBaseUrl = process.env.AGENTFEED_API_BASE_URL;
+    process.env.AGENTFEED_API_BASE_URL = 'http://localhost:8001/v1';
+    const result: ApiCheckResult = {
+      ok: false,
+      url: 'http://localhost:8001/v1/ingest/status',
+      status: 401,
+      error: 'invalid ingestion token'
+    };
+
+    try {
+      await expect(requireIngestionTokenBeforeUpload(credentials(), {
+        checkIngestionToken: async () => result
+      })).rejects.toThrow([
+        'Ingestion token check failed for http://localhost:8001/v1/ingest/status: HTTP 401: invalid ingestion token before uploading drafts.',
+        '',
+        'Fix first:',
+        'Run: agentfeed status',
+        'Run: agentfeed login',
+        'Run: agentfeed rotate'
+      ].join('\n'));
+    } finally {
+      if (previousBaseUrl === undefined) delete process.env.AGENTFEED_API_BASE_URL;
+      else process.env.AGENTFEED_API_BASE_URL = previousBaseUrl;
+    }
+  });
+
   it('checks API compatibility before checking the ingestion token', async () => {
     const metadata = compatibleMetadata();
     let compatibilityChecks = 0;

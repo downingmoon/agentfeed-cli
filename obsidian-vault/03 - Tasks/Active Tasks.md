@@ -15,6 +15,11 @@ updated: 2026-06-21
 ## 현재 결론
 
 
+> [!success] 2026-06-21 CLI status command split
+> `agentfeed status` orchestration을 `src/cli/index.ts`에서 `src/cli/status-command.ts`로 분리했다. Baseline/focused status tests, typecheck/build, dist CLI human/json status smoke를 통과했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Status Command Split 2026-06-21]]
+
+
 > [!success] 2026-06-21 CLI rotate command split
 > `agentfeed rotate` orchestration을 `src/cli/index.ts`에서 `src/cli/rotate-command.ts`로 분리했다. Focused rotate tests, full CLI suite, typecheck/build, dist CLI fake API smoke를 통과했고 old-token status check, `replace_token_id`, new-token pre-save validation, secret non-leak을 확인했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Rotate Command Split 2026-06-21]]

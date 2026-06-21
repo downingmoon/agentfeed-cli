@@ -11,11 +11,10 @@ import { checkApiCompatibility, checkApiReachability, checkIngestionToken } from
 import type { AgentFeedCredentials, LocalDraft } from '../types.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { detectAgentSignals, formatAgentSignalLines, summarizeAgentSignals } from '../collectors/agent-discovery.js';
-import { hasAgentFeedHook, installClaudeCodeHook, uninstallClaudeCodeHook, resolveClaudeSettingsPath } from '../hooks/claude-code-settings.js';
+import { installClaudeCodeHook, uninstallClaudeCodeHook } from '../hooks/claude-code-settings.js';
 import { flag, option } from './args.js';
 import { unknownCommandError } from './unknown-command-error.js';
 import { resolveStatusProject } from './status-project.js';
-import { setupProgressText, statusNextActions, statusReadinessItems } from './status-readiness.js';
 import { doctorNextActions, doctorReadinessItems } from './doctor-readiness.js';
 import { missingTokenMessage } from './auth-token-input.js';
 import { loadDiagnosticCredentialsWithMetadata } from './diagnostic-credentials.js';
@@ -44,13 +43,13 @@ import { runPrivacyScanCommand } from './scan-command.js';
 import { draftListJsonOutput, renderDraftListHumanLines } from './draft-list-output.js';
 import { buildDraftListRow } from './draft-list-rows.js';
 import { formatCollectionCursor, nextDefaultCollectionSince, formatTokenExpiry, formatWarningLines, credentialSourceLabel, credentialStoreLabel, apiBaseSourceLabel, readinessMarker, tokenExpiryWarning } from './diagnostic-formatters.js';
-import { renderStatusHumanLines, statusJsonPayload, type StatusHealth, type StatusOutputInput } from './status-output.js';
 import { collectJsonPayload, renderCollectAutoUploadIgnoredWarningLines, renderCollectHumanLines } from './collect-output.js';
 import { logoutJsonPayload, renderLogoutHumanLines } from './logout-output.js';
 import { initJsonPayload, renderInitHumanLines } from './init-output.js';
 import { hookJsonPayload, renderHookHumanLines, type HookInstallOutputInput, type HookUninstallOutputInput } from './hook-output.js';
 import { runLoginCommand } from './login-command.js';
 import { runRotateCommand } from './rotate-command.js';
+import { runStatusCommand } from './status-command.js';
 import { doctorJsonPayload, renderDoctorHumanLines, type DoctorCheckTuple } from './doctor-output.js';
 import { renderUploadConfirmationRequiredLines, renderUploadResultLines } from './upload-output.js';
 import { renderShareLocalNextLines, shareLocalJsonPayload, shareUploadedJsonPayload } from './share-output.js';
@@ -168,103 +167,13 @@ async function cmdRotate(args: string[]) {
   });
 }
 
-async function draftUploadPendingForStatus(path: string): Promise<boolean> {
-  try {
-    const draft = await readJson<unknown>(path);
-    if (typeof draft !== 'object' || draft === null || Array.isArray(draft)) return false;
-    const upload = (draft as { upload?: unknown }).upload;
-    if (typeof upload !== 'object' || upload === null || Array.isArray(upload)) return true;
-    return (upload as { uploaded?: unknown }).uploaded !== true;
-  } catch {
-    return false;
-  }
-}
-
 async function cmdStatus(args: string[] = []) {
-  const diagnostics = await loadDiagnosticCredentialsWithMetadata({ cwd: process.cwd() });
-  const credentialResolution = diagnostics.metadata;
-  const creds = credentialResolution.credentials;
-  const hasToken = Boolean(creds) || credentialResolution.token_source !== 'missing';
-  const projectResolution = await resolveStatusProject(process.cwd());
-  const config = projectResolution.config;
-  const root = projectResolution.root;
-  const projectConfigError = projectResolution.configError;
-  const drafts = config ? await listDrafts(root) : [];
-  const pending = (await Promise.all(drafts.map((d) => draftUploadPendingForStatus(d.path)))).filter(Boolean).length;
-  const collectionStateResult = config ? await readCollectionStateWithDiagnostics(root) : null;
-  const collectionState = collectionStateResult?.state ?? {};
-  const settingsPath = config ? resolveClaudeSettingsPath({ projectRoot: root, scope: config.agents.claude_code.hook_scope }) : '';
-  let hook = 'unknown';
-  const statusWarnings: string[] = [];
-  if (settingsPath && await pathExists(settingsPath)) {
-    try {
-      hook = hasAgentFeedHook(await readJson<Record<string, unknown>>(settingsPath)) ? 'installed' : 'not installed';
-    } catch {
-      statusWarnings.push(`Claude Code settings could not be parsed at ${settingsPath}; hook status is unknown.`);
-    }
-  }
-  const allWarnings = [
-    ...credentialResolution.warnings,
-    ...(projectConfigError ? [projectConfigError] : []),
-    ...statusWarnings,
-    ...(collectionStateResult?.warnings ?? [])
-  ];
-  const apiBaseUrl = credentialResolution.api_base_url ?? creds?.api_base_url ?? await resolveApiBaseUrl();
-  const git = await collectGitMetrics(process.cwd());
-  const insideGitRepository = Boolean(git.repository_root);
-  const health: StatusHealth = diagnostics.invalidApiBaseUrl
-    ? 'attention needed'
-    : allWarnings.length || pending > 0
-      ? 'attention needed'
-      : !config
-        ? 'attention needed'
-        : !hasToken
-          ? 'setup needed'
-          : 'ready';
-  const statusOptions = {
-    invalidApiBaseUrl: diagnostics.invalidApiBaseUrl,
-    projectInitialized: Boolean(config),
-    projectConfigError,
-    hasToken,
-    insideGitRepository,
-    pendingUploads: pending
-  };
-  const nextActions = statusNextActions(statusOptions);
-  const readiness = statusReadinessItems(statusOptions);
-  const statusOutput: StatusOutputInput = {
-    health,
-    readiness,
-    hasToken,
-    tokenSource: credentialResolution.token_source,
-    credentialStore: credentialResolution.credential_store,
-    credentialsFileExists: credentialResolution.credentials_file_exists,
-    credentialsFilePath: credentialResolution.credentials_file_path,
-    tokenExpiresAt: creds?.token_expires_at ?? null,
-    apiBaseUrl,
-    apiBaseUrlSource: credentialResolution.api_base_url_source,
-    apiBaseUrlSourceDetail: credentialResolution.api_base_url_source_detail,
-    invalidApiBaseUrl: diagnostics.invalidApiBaseUrl,
-    projectInitialized: Boolean(config),
-    projectName: config?.project.name ?? null,
-    projectRoot: config ? root : null,
-    projectConfigError,
-    insideGitRepository,
-    claudeCodeHook: hook,
-    localDraftsCount: drafts.length,
-    pendingUploadCount: pending,
-    lastCollectionCursor: collectionState.last_collected_at ?? null,
-    warnings: allWarnings,
-    nextActions
-  };
-
-  if (flag(args, '--json')) {
-    print(JSON.stringify(statusJsonPayload(statusOutput), null, 2));
-    return;
-  }
-
-  printLines(renderStatusHumanLines(statusOutput));
+  await runStatusCommand(args, {
+    cwd: process.cwd(),
+    print,
+    printLines
+  });
 }
-
 
 async function cmdLogout(args: string[]) {
   const result = await deleteSavedCredentials();

@@ -105,8 +105,8 @@ Smoke assertions:
 
 ## Follow-up
 
-> [!todo]
-> `src/cli/index.ts` remains above the 250 pure LOC target because it still owns multiple command dispatchers. Next slices should consider `status` and `doctor` command extraction, with focused status/doctor tests pinned before each move.
+> [!success]
+> 후속 status command split은 [[CLI Status Command Split 2026-06-21]]에서 처리했다. 남은 구조 정리 후보는 `doctor` command extraction이다.
 
 > [!todo]
 > LSP diagnostics currently fail locally with `Transport closed`. This slice used `tsc --noEmit`, focused Vitest, build, and dist CLI smoke as replacement evidence.

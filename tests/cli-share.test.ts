@@ -597,7 +597,7 @@ describe('share CLI command', () => {
       const output = JSON.parse(failure?.stdout ?? '{}') as { error: { message: string }; next_actions: string[] };
       expect(output.error.message).toContain('API compatibility check failed');
       expect(output.error.message).toContain('HTTP 200: AgentFeed API metadata response data is invalid.');
-      expect(output.next_actions).toEqual(['agentfeed doctor', 'agentfeed status']);
+      expect(output.next_actions).toEqual(['agentfeed doctor', 'agentfeed status', 'agentfeed share --json --yes']);
       expect(failure?.stderr ?? '').toBe('');
       expect(ingestRequestCount).toBe(0);
     } finally {
@@ -653,7 +653,13 @@ describe('share CLI command', () => {
       const output = JSON.parse(failure?.stdout ?? '{}') as { error: { message: string }; next_actions?: string[] };
       expect(output.error.message).toContain('Ingestion token check failed');
       expect(output.error.message).toContain('HTTP 401: INGESTION_TOKEN_INVALID: Invalid ingestion token');
-      expect(output.next_actions).toEqual(['unset AGENTFEED_TOKEN', 'agentfeed status', 'agentfeed login', 'agentfeed rotate']);
+      expect(output.next_actions).toEqual([
+        'unset AGENTFEED_TOKEN',
+        'agentfeed status',
+        'agentfeed login',
+        'agentfeed rotate',
+        'agentfeed share --json --yes'
+      ]);
       expect(failure?.stderr ?? '').toBe('');
       expect(tokenStatusCount).toBe(1);
       expect(ingestRequestCount).toBe(0);

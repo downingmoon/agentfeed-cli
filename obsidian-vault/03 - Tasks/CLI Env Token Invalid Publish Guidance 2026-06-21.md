@@ -134,3 +134,40 @@ agentfeed login
 npm test -- --run tests/upload-preflight.test.ts tests/config.test.ts
 npm run typecheck
 ```
+
+
+## 2026-06-21 17:00 UTC — Upload preflight retry command parity
+
+> [!bug]
+> `publish` preflight failures already included `Then retry`, but `share` upload and `collect --json --upload` hit the same compatibility/token checks without passing a contextual retry command. JSON `next_actions` therefore omitted the command users should run after fixing the API/token problem.
+
+### Additional Action
+
+- `src/cli/share-upload-execution.ts` now passes retry guidance into upload preflight:
+  - JSON share upload: `agentfeed share --json --yes`
+  - human share upload: `agentfeed publish --id <draft-id> --yes`
+- `src/cli/index.ts` now passes `agentfeed collect --json --upload` for `collect --json --upload` preflight failures.
+- Regression coverage was added/updated in `tests/share-upload-execution.test.ts`, `tests/cli-share.test.ts`, and `tests/cli-collect.test.ts`.
+
+### Verification Evidence
+
+```text
+npm test -- --run tests/share-upload-execution.test.ts tests/cli-share.test.ts tests/cli-collect.test.ts
+npm run typecheck
+npm run build
+node --input-type=module - <<'NODE' # fake API manual QA for share/collect JSON 401 next_actions
+```
+
+Result:
+
+```text
+Test Files  3 passed (3)
+Tests       82 passed (82)
+tsc --noEmit passed
+tsc build passed
+Manual QA   share_next_actions includes agentfeed share --json --yes
+Manual QA   collect_next_actions includes agentfeed collect --json --upload
+```
+
+> [!todo]
+> 유지보수 시 `share --json` retry가 새 draft collection을 다시 수행한다는 점을 UX 문서에 명시할지 검토한다. 현재 duplicate detection이 같은 draft를 재사용하도록 설계되어 있어 동작 계약은 유지된다.

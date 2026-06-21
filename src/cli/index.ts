@@ -397,7 +397,7 @@ async function cmdCollect(args: string[]) {
   if (flag(args, '--json')) {
     if (uploadRequested && uploadCredentials) {
       const creds = uploadCredentials;
-      const metadata = await requireUploadPreflight(creds);
+      const metadata = await requireUploadPreflight(creds, { retryCommand: 'agentfeed collect --json --upload' });
       const result = await publishDraft({ cwd: process.cwd(), id: draft.id, credentials: creds, reviewBaseUrl: metadata.review_base_url });
       draft = await sanitizeDraftForCliOutput(process.cwd(), await readDraft(process.cwd(), draft.id));
       if (flag(args, '--open-review')) {

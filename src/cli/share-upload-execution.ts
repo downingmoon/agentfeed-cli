@@ -18,7 +18,7 @@ export type ShareUploadFlags = {
   readonly noSaveCursor: boolean;
 };
 
-type RequireUploadPreflight = (credentials: AgentFeedCredentials) => Promise<ApiMetadata>;
+type RequireUploadPreflight = (credentials: AgentFeedCredentials, options: { readonly retryCommand?: string }) => Promise<ApiMetadata>;
 type PublishDraft = (options: {
   readonly cwd: string;
   readonly id: string;
@@ -97,6 +97,11 @@ function shouldCopyReview(flags: ShareUploadFlags): boolean {
   return shouldCopyReviewUrl({ noClipboard: flags.noClipboard });
 }
 
+function shareUploadRetryCommand(options: ShareUploadOptions): string {
+  if (options.flags.json) return 'agentfeed share --json --yes';
+  return `agentfeed publish --id ${options.draft.id} --yes`;
+}
+
 export async function runShareUploadCommand(options: ShareUploadOptions): Promise<ShareUploadResult> {
   if (!options.flags.json && shouldRequireUploadConfirmation({ yes: options.flags.yes })) {
     return {
@@ -109,7 +114,7 @@ export async function runShareUploadCommand(options: ShareUploadOptions): Promis
 
   const requireUploadPreflight = options.dependencies?.requireUploadPreflight ?? defaultRequireUploadPreflight;
   const publishDraft = options.dependencies?.publishDraft ?? defaultPublishDraft;
-  const metadata = await requireUploadPreflight(options.credentials);
+  const metadata = await requireUploadPreflight(options.credentials, { retryCommand: shareUploadRetryCommand(options) });
   const upload = await publishDraft({
     cwd: options.cwd,
     id: options.draft.id,

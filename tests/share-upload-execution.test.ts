@@ -93,6 +93,62 @@ describe('share upload execution', () => {
     expect(publishCalled).toBe(false);
   });
 
+  it('passes a retry command into upload preflight for JSON share uploads', async () => {
+    // Given: JSON share upload has credentials and a collected draft id.
+    const draft = draftWithId('draft_share_upload_json_retry_guidance');
+    const preflightCalls: unknown[][] = [];
+
+    // When: upload preflight runs before publish.
+    await runShareUploadCommand({
+      cwd: '/tmp/agentfeed-share-upload-execution',
+      draft,
+      credentials,
+      flags: { ...defaultFlags(), json: true, clipboard: true },
+      dependencies: {
+        requireUploadPreflight: async (...args) => {
+          preflightCalls.push(args);
+          return metadata;
+        },
+        publishDraft: async () => upload,
+        readDraft: async () => draft,
+        sanitizeDraftForOutput: async (_cwd, nextDraft) => nextDraft,
+        markCollectionComplete: async () => undefined,
+        shouldOpenReviewAfterUpload: async () => false,
+        handoffReviewUrl: async () => noHandoff
+      }
+    });
+
+    // Then: recovery output can tell JSON users exactly which share command to retry.
+    expect(preflightCalls).toEqual([[credentials, { retryCommand: 'agentfeed share --json --yes' }]]);
+  });
+
+  it('passes a retry command into upload preflight for human share uploads', async () => {
+    // Given: human share upload has explicit confirmation and a collected draft id.
+    const draft = draftWithId('draft_share_upload_human_retry_guidance');
+    const preflightCalls: unknown[][] = [];
+
+    // When: upload preflight runs before publish.
+    await runShareUploadCommand({
+      cwd: '/tmp/agentfeed-share-upload-execution',
+      draft,
+      credentials,
+      flags: { ...defaultFlags(), yes: true },
+      dependencies: {
+        requireUploadPreflight: async (...args) => {
+          preflightCalls.push(args);
+          return metadata;
+        },
+        publishDraft: async () => upload,
+        markCollectionComplete: async () => undefined,
+        shouldOpenReviewAfterUpload: async () => false,
+        handoffReviewUrl: async () => noHandoff
+      }
+    });
+
+    // Then: recovery output can tell human users exactly which publish command to retry.
+    expect(preflightCalls).toEqual([[credentials, { retryCommand: 'agentfeed publish --id draft_share_upload_human_retry_guidance --yes' }]]);
+  });
+
   it('publishes JSON share uploads with explicit clipboard handoff and saved draft cursor update', async () => {
     // Given: JSON share upload has credentials and explicit clipboard handoff.
     const draft = draftWithId('draft_share_upload_json_execution');

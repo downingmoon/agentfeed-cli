@@ -563,7 +563,7 @@ describe('collect CLI command', () => {
       const output = JSON.parse(failure?.stdout ?? '{}') as { error: { message: string }; next_actions: string[] };
       expect(output.error.message).toContain('API compatibility check failed');
       expect(output.error.message).toContain('before uploading drafts');
-      expect(output.next_actions).toEqual(['agentfeed doctor', 'agentfeed status']);
+      expect(output.next_actions).toEqual(['agentfeed doctor', 'agentfeed status', 'agentfeed collect --json --upload']);
       expect(failure?.stdout ?? '').not.toContain('af_live_collect_incompatible_api');
       expect(failure?.stderr ?? '').toBe('');
       expect(metadataCount).toBe(1);
@@ -774,8 +774,15 @@ describe('collect CLI command', () => {
       } catch (error) {
         failure = error as { stdout?: string; stderr?: string };
       }
-      const output = JSON.parse(failure?.stdout ?? '{}') as { error: { message: string } };
+      const output = JSON.parse(failure?.stdout ?? '{}') as { error: { message: string }; next_actions?: string[] };
       expect(output.error.message).toContain('Ingestion token check failed');
+      expect(output.next_actions).toEqual([
+        'unset AGENTFEED_TOKEN',
+        'agentfeed status',
+        'agentfeed login',
+        'agentfeed rotate',
+        'agentfeed collect --json --upload'
+      ]);
       expect(failure?.stderr ?? '').toBe('');
       expect(tokenStatusCount).toBe(1);
       expect(ingestRequestCount).toBe(0);

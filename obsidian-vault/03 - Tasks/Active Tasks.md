@@ -16,6 +16,12 @@ updated: 2026-06-21
 
 
 
+> [!success] 2026-06-21 CLI share command split
+> `agentfeed share` CLI surface orchestration을 `src/cli/index.ts`에서 `src/cli/share-command.ts`로 분리했다. 새 wrapper tests, focused share tests, typecheck/build, full suite, dist CLI share dry-run/token-missing smoke를 통과했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Share Command Split 2026-06-21]]
+
+
+
 > [!success] 2026-06-21 CLI local draft command split
 > `agentfeed drafts`, `agentfeed discard`, `agentfeed open` local draft orchestration을 `src/cli/index.ts`에서 `src/cli/local-draft-command.ts`로 분리했다. 새 wrapper tests, focused local draft tests, typecheck/build, full suite, dist CLI drafts/discard/open smoke를 통과했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Local Draft Command Split 2026-06-21]]

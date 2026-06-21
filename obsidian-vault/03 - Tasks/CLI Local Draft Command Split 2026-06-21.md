@@ -104,7 +104,7 @@ Smoke result:
 ## Follow-up
 
 > [!todo]
-> `src/cli/index.ts` remains above the 250 pure LOC target. Remaining structural candidates are collect/share orchestration.
+> `src/cli/index.ts` remains above the 250 pure LOC target. 후속 share command split은 [[CLI Share Command Split 2026-06-21]]에서 처리했다. Remaining structural candidate is collect orchestration.
 
 > [!todo]
 > LSP diagnostics still fails locally with `Transport closed`; use `tsc --noEmit`, focused Vitest, build, full suite, and dist CLI smoke as replacement evidence for this slice.

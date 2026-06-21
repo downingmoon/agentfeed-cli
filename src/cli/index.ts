@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 import { initProject, loadProjectConfig } from '../config/project-config.js';
-import { deleteSavedCredentials, loadCredentials, loadCredentialsWithMetadata } from '../config/credentials.js';
+import { deleteSavedCredentials, loadCredentials } from '../config/credentials.js';
 import { markCollectionComplete, readCollectionStateWithDiagnostics, resolveCollectionWindowWithDiagnostics } from '../config/collection-state.js';
 import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
 import { findLatestDraft, readLatestDraft } from '../draft/read.js';
-import { formatCollectionExplain } from '../draft/explain.js';
 import type { AgentFeedCredentials, LocalDraft } from '../types.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { flag, option } from './args.js';
@@ -24,7 +23,7 @@ import { localPreviewJsonPayload, remotePreviewJsonPayload, renderLocalPreviewHu
 import { runPreviewCommand } from './preview-execution.js';
 import { formatPrivacyScanReport, privacyScanJsonOutput } from './privacy-scan-output.js';
 import { runPrivacyScanCommand } from './scan-command.js';
-import { formatWarningLines, readinessMarker } from './diagnostic-formatters.js';
+import { readinessMarker } from './diagnostic-formatters.js';
 import { collectJsonPayload, renderCollectAutoUploadIgnoredWarningLines, renderCollectHumanLines } from './collect-output.js';
 import { logoutJsonPayload, renderLogoutHumanLines } from './logout-output.js';
 import { initJsonPayload, renderInitHumanLines } from './init-output.js';
@@ -33,19 +32,15 @@ import { runRotateCommand } from './rotate-command.js';
 import { runStatusCommand } from './status-command.js';
 import { runDoctorCommand } from './doctor-command.js';
 import { runHookCommand } from './hook-command.js';
-import { renderUploadConfirmationRequiredLines, renderUploadResultLines } from './upload-output.js';
-import { renderShareLocalNextLines, shareLocalJsonPayload, shareUploadedJsonPayload } from './share-output.js';
-import { runShareCollectionCommand } from './share-collection-execution.js';
-import { runShareUploadCommand } from './share-upload-execution.js';
 import { runCollectJsonUploadCommand } from './collect-upload-execution.js';
 import { sanitizeDraftForCliOutput } from './draft-output-sanitizer.js';
 import { runPublishCliCommand } from './publish-command.js';
+import { runShareCliCommand } from './share-command.js';
 import { runDiscardCliCommand, runDraftsCliCommand, runOpenCliCommand } from './local-draft-command.js';
 import { KNOWN_COMMANDS, PUBLIC_COMMANDS } from './command-definitions.js';
 import { COMMAND_ARG_SPECS } from './command-arg-specs.js';
 import { validateCommandArgs } from './command-argument-validator.js';
 import { printCommandHelp as printSurfaceCommandHelp, printHelp as printSurfaceHelp, printHelpTopic as printSurfaceHelpTopic, runCommandsCommand, runCompletionCommand } from './command-surface-command.js';
-import { formatSharePreview, parseShareArgs } from './share.js';
 import { parseAgentSource } from './source.js';
 import { readJson } from '../utils/fs.js';
 import { AGENTFEED_CLI_VERSION } from '../version.js';
@@ -59,12 +54,6 @@ function safeTerminalText(value: string | null | undefined): string {
   return ui.sanitizeTerminalText(value ?? '');
 }
 
-
-function printWarningLines(warnings: readonly string[]): void {
-  for (const warning of warnings) {
-    for (const line of formatWarningLines(warning)) print(line);
-  }
-}
 
 function jsonModeRequested(argv = process.argv.slice(2)): boolean {
   return argv.some((arg) => arg === '--json');
@@ -205,104 +194,7 @@ async function cmdCollect(args: string[]) {
 }
 
 async function cmdShare(args: string[]) {
-  const opts = parseShareArgs(args);
-  const collection = await runShareCollectionCommand({ cwd: process.cwd(), args, share: opts });
-  const draft = collection.draft;
-  const creds = collection.credentials;
-  const warnings = collection.warnings;
-
-  if (opts.json) {
-    if (opts.dryRun || !creds) {
-      const hasCredentials = Boolean(creds) || await hasCredentialsForPublishGuidance();
-      print(JSON.stringify(shareLocalJsonPayload({
-        dryRun: opts.dryRun,
-        hasCredentials,
-        reusedExistingDraft: collection.reusedExistingDraft,
-        draft,
-        warnings,
-        explain: opts.explain
-      }), null, 2));
-      return;
-    }
-    const upload = await runShareUploadCommand({
-      cwd: process.cwd(),
-      draft,
-      credentials: creds,
-      flags: {
-        json: true,
-        yes: opts.yes,
-        clipboard: flag(args, '--clipboard'),
-        noClipboard: opts.noClipboard,
-        openReview: opts.openReview,
-        noOpenReview: opts.noOpenReview,
-        noSaveCursor: opts.noSaveCursor
-      }
-    });
-    if (upload.kind === 'confirmation_required') throw new Error('Internal error: JSON share upload should not require confirmation.');
-    print(JSON.stringify(shareUploadedJsonPayload({
-      reusedExistingDraft: collection.reusedExistingDraft,
-      draft: upload.draft,
-      upload: upload.upload,
-      handoff: upload.handoff,
-      warnings,
-      explain: opts.explain
-    }), null, 2));
-    return;
-  }
-
-  if (collection.reusedExistingDraft) print(`Reusing existing matching draft: ${draft.id}\n`);
-  if (warnings.length) {
-    print(ui.section('Warnings'));
-    printWarningLines(warnings);
-    print();
-  }
-  print(formatSharePreview(draft, { explainDetailsFollow: opts.explain }));
-  print();
-  if (opts.explain) {
-    print(ui.section('Collection details'));
-    print(formatCollectionExplain(draft));
-    print();
-  }
-
-  if (opts.dryRun || !creds) {
-    const hasCredentials = Boolean(creds) || await hasCredentialsForPublishGuidance();
-    printLines(renderShareLocalNextLines({ dryRun: opts.dryRun, draftId: draft.id, hasCredentials }));
-    return;
-  }
-
-  const upload = await runShareUploadCommand({
-    cwd: process.cwd(),
-    draft,
-    credentials: creds,
-    flags: {
-      json: false,
-      yes: opts.yes,
-      clipboard: flag(args, '--clipboard'),
-      noClipboard: opts.noClipboard,
-      openReview: opts.openReview,
-      noOpenReview: opts.noOpenReview,
-      noSaveCursor: opts.noSaveCursor
-    }
-  });
-  if (upload.kind === 'confirmation_required') {
-    printLines(renderUploadConfirmationRequiredLines(upload.draft, upload.command, upload.extraCommand));
-    return;
-  }
-  printLines(renderUploadResultLines({
-    heading: upload.upload.reused_existing ? 'AgentFeed upload reused' : 'AgentFeed upload complete',
-    message: upload.upload.reused_existing ? 'Worklog already uploaded; reusing existing review URL.' : 'Worklog uploaded.',
-    draftId: upload.draft.id,
-    result: upload.upload,
-    handoff: upload.handoff
-  }));
-}
-
-async function hasCredentialsForPublishGuidance(): Promise<boolean> {
-  try {
-    return Boolean((await loadCredentialsWithMetadata({ cwd: process.cwd() })).credentials);
-  } catch {
-    return false;
-  }
+  await runShareCliCommand(args, { cwd: process.cwd(), print, printLines });
 }
 
 async function cmdPreview(args: string[]) {

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { rm } from 'node:fs/promises';
 import { initProject, loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
-import { credentialsFromToken, deleteSavedCredentials, loadCredentials, loadCredentialsWithMetadata, saveCredentials } from '../config/credentials.js';
+import { deleteSavedCredentials, loadCredentials, loadCredentialsWithMetadata } from '../config/credentials.js';
 import { resolveApiBaseUrl, resolveApiBaseUrlWithMetadata } from '../config/api-base.js';
 import { markCollectionComplete, readCollectionStateWithDiagnostics, resolveCollectionWindowWithDiagnostics } from '../config/collection-state.js';
 import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
@@ -9,7 +9,6 @@ import { findLatestDraft, listDrafts, readLatestDraft } from '../draft/read.js';
 import { formatCollectionExplain } from '../draft/explain.js';
 import { checkApiCompatibility, checkApiReachability, checkIngestionToken } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
-import { requireValidLoginTokenBeforeCredentialSave } from '../auth/login-token-validation.js';
 import type { AgentFeedCredentials, LocalDraft } from '../types.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { detectAgentSignals, formatAgentSignalLines, summarizeAgentSignals } from '../collectors/agent-discovery.js';
@@ -19,10 +18,10 @@ import { unknownCommandError } from './unknown-command-error.js';
 import { resolveStatusProject } from './status-project.js';
 import { setupProgressText, statusNextActions, statusReadinessItems } from './status-readiness.js';
 import { doctorNextActions, doctorReadinessItems } from './doctor-readiness.js';
-import { browserLoginCredentialResult, credentialJsonResult, rotateCredentialResult, tokenLoginCredentialResult } from './auth-result.js';
-import { missingTokenMessage, resolveLoginTokenInput } from './auth-token-input.js';
+import { rotateCredentialResult } from './auth-result.js';
+import { missingTokenMessage } from './auth-token-input.js';
 import { loadDiagnosticCredentialsWithMetadata } from './diagnostic-credentials.js';
-import { requireApiCompatibilityBeforeCredentialSave, requireApiCompatibilityBeforeUpload } from './upload-preflight.js';
+import { requireApiCompatibilityBeforeUpload } from './upload-preflight.js';
 import { collectJsonNextActions } from './draft-next-actions.js';
 import { commandCatalogNextActions } from './guidance-actions.js';
 import { renderGuidedNextCommandLines, renderNextCommandLines, renderRecommendedCommandLines } from './guided-next-command-renderer.js';
@@ -53,6 +52,7 @@ import { logoutJsonPayload, renderLogoutHumanLines } from './logout-output.js';
 import { initJsonPayload, renderInitHumanLines } from './init-output.js';
 import { hookJsonPayload, renderHookHumanLines, type HookInstallOutputInput, type HookUninstallOutputInput } from './hook-output.js';
 import { renderCredentialResultLines } from './auth-output.js';
+import { runLoginCommand } from './login-command.js';
 import { doctorJsonPayload, renderDoctorHumanLines, type DoctorCheckTuple } from './doctor-output.js';
 import { renderUploadConfirmationRequiredLines, renderUploadResultLines } from './upload-output.js';
 import { renderShareLocalNextLines, shareLocalJsonPayload, shareUploadedJsonPayload } from './share-output.js';
@@ -98,12 +98,6 @@ function jsonModeRequested(argv = process.argv.slice(2)): boolean {
 
 
 
-async function readStdinText(): Promise<string> {
-  let text = '';
-  process.stdin.setEncoding('utf8');
-  for await (const chunk of process.stdin) text += chunk;
-  return text;
-}
 function printNextCommands(commands: string[]): void {
   for (const line of renderNextCommandLines({ commands, command: ui.command })) print(line);
 }
@@ -161,58 +155,12 @@ async function cmdInit(args: string[]) {
 }
 
 async function cmdLogin(args: string[]) {
-  const tokenOption = option(args, '--token');
-  const json = flag(args, '--json');
-  const token = await resolveLoginTokenInput({
-    tokenOption,
-    tokenStdinFlag: flag(args, '--token-stdin'),
-    json,
-    allowUnsafeArgvToken: process.env.AGENTFEED_ALLOW_UNSAFE_ARGV_TOKEN === '1',
-    readStdinText
+  await runLoginCommand(args, {
+    cwd: process.cwd(),
+    env: process.env,
+    print,
+    printLines
   });
-  const apiBaseUrl = option(args, '--api-base-url');
-  const noSave = flag(args, '--no-save');
-  if (!token) {
-    if (json) {
-      throw new Error([
-        'login --json requires token input so stdout stays machine-readable.',
-        'Run: printf %s "$TOKEN" | agentfeed login --token-stdin --json',
-        'Run: printf %s "$TOKEN" | agentfeed login --token - --json --no-save'
-      ].join('\n'));
-    }
-    const existing = await loadCredentialsWithMetadata({ cwd: process.cwd() });
-    const creds = await browserLogin({ apiBaseUrl, noOpen: flag(args, '--no-open'), save: !noSave, cwd: process.cwd(), storedApiBaseUrl: existing.credentials?.api_base_url, allowCiBrowser: flag(args, '--browser') });
-    const warnings: string[] = [];
-    if (!noSave) {
-      const saved = await loadCredentialsWithMetadata({ cwd: process.cwd() });
-      warnings.push(...saved.warnings);
-    }
-    printLines(renderCredentialResultLines(browserLoginCredentialResult({ noSave, credentials: creds, warnings })));
-    return;
-  }
-  const loginApiOptions = { apiBaseUrl, cwd: process.cwd(), trustRepoDiscoveredApiBase: process.env.AGENTFEED_TRUST_REPO_API_BASE === '1' };
-  const tokenCredentials = await credentialsFromToken(token, loginApiOptions);
-  if (!noSave) await requireApiCompatibilityBeforeCredentialSave(tokenCredentials.api_base_url);
-  await requireValidLoginTokenBeforeCredentialSave(tokenCredentials);
-  const creds = noSave
-    ? tokenCredentials
-    : await saveCredentials(token, { ...loginApiOptions, apiBaseUrl: tokenCredentials.api_base_url });
-  const warnings: string[] = [];
-  if (!noSave) {
-    const saved = await loadCredentialsWithMetadata({ cwd: process.cwd() });
-    warnings.push(...saved.warnings);
-  }
-  const next = noSave ? ['agentfeed status'] : ['agentfeed status', 'agentfeed share --dry'];
-  if (json) {
-    print(JSON.stringify(credentialJsonResult({
-      saved: !noSave,
-      credentials: creds,
-      warnings,
-      next
-    }), null, 2));
-    return;
-  }
-  printLines(renderCredentialResultLines(tokenLoginCredentialResult({ noSave, credentials: creds, warnings })));
 }
 
 async function replacementTokenIdForSavedCredentials(creds: NonNullable<Awaited<ReturnType<typeof loadCredentialsWithMetadata>>['credentials']>): Promise<string | undefined> {

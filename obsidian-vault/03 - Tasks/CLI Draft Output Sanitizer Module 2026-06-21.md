@@ -73,4 +73,4 @@ Manual QA: outputContainsSecret=false, savedContainsSecret=false, note="Manual Q
 > `src/cli/scan-command.ts` intentionally remains separate because it computes a scan result and writes it as command behavior, not just output sanitization. If scan command behavior is refactored later, keep this distinction explicit.
 
 > [!todo]
-> `src/cli/index.ts` is still oversized as a command multiplexer. Continue extracting command execution modules without changing CLI behavior.
+> `src/cli/index.ts` is still oversized as a command multiplexer. 2026-06-21 follow-up split `agentfeed login` into [[CLI Login Command Split 2026-06-21]], but additional command clusters still need behavior-preserving extraction.

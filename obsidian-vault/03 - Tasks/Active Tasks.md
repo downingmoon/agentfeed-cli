@@ -14,6 +14,11 @@ updated: 2026-06-19
 
 ## 현재 결론
 
+> [!success] 2026-06-21 CLI login command split
+> `agentfeed login` orchestration을 `src/cli/index.ts`에서 `src/cli/login-command.ts`로 분리했다. Baseline/focused login tests, auth/keychain regression, full CLI suite, typecheck/build, dist CLI token-stdin smoke를 통과했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Login Command Split 2026-06-21]]
+
+
 
 > [!success] 2026-06-19 Frontend worklog card malformed adapter assertion move
 > Frontend malformed worklog card adapter source/metrics/viewer_state fail-closed assertion loops를 `worklog-card-malformed-adapter.contract.test.ts`에서 새 `worklog-card-malformed-adapter-assertions.ts`로 이동했다. Baseline `npm run test:contracts` 통과 후 이동했고, post-move `npm run test:contracts`, `npx tsc --noEmit`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 런타임 기능 추가 없음, 서버/인프라/CI/CD 변경 및 배포 없음.

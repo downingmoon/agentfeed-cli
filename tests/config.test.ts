@@ -604,6 +604,25 @@ describe('project config', () => {
     expect(explicit.warnings.join('\n')).not.toContain('ignored saved AgentFeed API base');
   });
 
+  it('warns when an environment API base overrides the saved-token API host', async () => {
+    await mkdir(globalAgentFeedDir(), { recursive: true });
+    await writeFile(credentialsPath(), JSON.stringify({
+      api_base_url: 'https://collector.example/v1',
+      ingestion_token: 'af_live_saved_secret',
+      created_at: '2026-06-01T00:00:00.000Z'
+    }));
+    process.env.AGENTFEED_API_BASE_URL = 'http://localhost:8001/v1';
+
+    const resolved = await loadCredentialsWithMetadata({ cwd: dir });
+
+    expect(resolved.credentials?.ingestion_token).toBe('af_live_saved_secret');
+    expect(resolved.token_source).toBe('credentials_file');
+    expect(resolved.credentials?.api_base_url).toBe('http://localhost:8001/v1');
+    expect(resolved.api_base_url_source).toBe('environment');
+    expect(resolved.warnings.join('\n')).toContain('saved AgentFeed token belongs to https://collector.example/v1');
+    expect(resolved.warnings.join('\n')).toContain('AGENTFEED_API_BASE_URL is sending requests to http://localhost:8001/v1');
+  });
+
   it('keeps saved API bases for saved credentials when no environment token is set', async () => {
     await mkdir(globalAgentFeedDir(), { recursive: true });
     await writeFile(credentialsPath(), JSON.stringify({

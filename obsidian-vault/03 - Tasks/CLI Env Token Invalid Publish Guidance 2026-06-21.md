@@ -83,3 +83,37 @@ agentfeed login
 
 > [!todo]
 > 추후 release/preflight 문서에서 `AGENTFEED_TOKEN`이 저장 credential보다 우선한다는 설명을 더 눈에 띄게 배치할지 검토한다.
+
+## 2026-06-21 16:18 UTC — Saved token API-base override warning
+
+> [!bug]
+> 추가 확인: `unset AGENTFEED_TOKEN -> agentfeed login -> agentfeed publish` 후에도 `INGESTION_TOKEN_INVALID`가 날 수 있다. `echo "$AGENTFEED_TOKEN"`이 빈 것은 정상이다. CLI 로그인은 부모 shell env를 설정하지 않고, 토큰을 keychain/file credential store에 저장한다.
+
+### Additional Root Cause
+
+저장 credential에는 토큰을 발급받은 `api_base_url`이 남지만, publish 실행 시 `AGENTFEED_API_BASE_URL`이 설정되어 있으면 저장 credential의 API host보다 환경변수 API host가 우선한다. 이때 저장 토큰이 다른 host에서 발급된 것이면 `/v1/ingest/status`는 `401 INGESTION_TOKEN_INVALID`를 반환한다.
+
+### Additional Action
+
+- `src/config/credentials.ts`에서 저장 토큰의 saved API base와 현재 `AGENTFEED_API_BASE_URL`이 다른 경우 warning을 생성한다.
+- `tests/config.test.ts`에 saved-token API host override 회귀 테스트를 추가했다.
+
+### Correct Diagnostic Sequence
+
+```bash
+unset AGENTFEED_TOKEN
+export AGENTFEED_ALLOW_INSECURE_API=1
+export AGENTFEED_API_BASE_URL=http://161.33.171.81:18080/v1
+agentfeed status
+agentfeed doctor
+```
+
+`status`/`doctor`에서 saved token host mismatch warning이 보이면, 같은 API base로 다시 로그인한다.
+
+```bash
+unset AGENTFEED_TOKEN
+AGENTFEED_ALLOW_INSECURE_API=1 \
+AGENTFEED_API_BASE_URL=http://161.33.171.81:18080/v1 \
+AGENTFEED_CREDENTIAL_STORE=file \
+agentfeed login
+```

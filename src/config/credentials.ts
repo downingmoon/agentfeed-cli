@@ -9,6 +9,7 @@ import { pathExists, readJson, writeTextFileAtomic } from '../utils/fs.js';
 import { createScrubbedCommandEnv } from '../utils/subprocess-env.js';
 import { DEFAULT_API_BASE_URL } from './defaults.js';
 import { normalizeApiBaseUrl, resolveApiBaseUrl, resolveApiBaseUrlWithMetadata, type ApiBaseUrlResolution } from './api-base.js';
+import { savedApiBaseWarnings, savedTokenApiBaseOverrideWarnings } from './credentials-api-base-warnings.js';
 
 const execFileAsync = promisify(execFile);
 const KEYCHAIN_SERVICE = 'AgentFeed CLI';
@@ -449,11 +450,6 @@ function savedApiBaseUrlForTokenSource(base: StoredCredentialRecord | null, toke
   return base?.api_base_url;
 }
 
-function savedApiBaseWarnings(base: StoredCredentialRecord | null, tokenSource: CredentialTokenSource): string[] {
-  if (tokenSource !== 'environment' || !base?.api_base_url || process.env.AGENTFEED_API_BASE_URL) return [];
-  return ['ignored saved AgentFeed API base while using AGENTFEED_TOKEN; set AGENTFEED_API_BASE_URL to intentionally choose a non-default API host.'];
-}
-
 export async function credentialsFromToken(token: string, options: { apiBaseUrl?: string; tokenId?: string | null; user?: AgentFeedCredentials['user']; tokenExpiresAt?: string | null; cwd?: string; trustRepoDiscoveredApiBase?: boolean } = {}): Promise<AgentFeedCredentials> {
   return {
     api_base_url: await resolveApiBaseUrl({ explicitApiBaseUrl: options.apiBaseUrl, cwd: options.cwd, trustRepoDiscoveredApiBase: options.trustRepoDiscoveredApiBase }),
@@ -622,6 +618,7 @@ export async function loadCredentialsWithMetadata(options: { cwd?: string } & Cr
     ...stored.warnings,
     ...(persistedStoreWarning && tokenSource === 'credentials_file' ? [persistedStoreWarning] : []),
     ...savedApiBaseWarnings(base, tokenSource),
+    ...savedTokenApiBaseOverrideWarnings(base, tokenSource, api),
     ...api.warnings
   ];
   const tokenExpiresAt = process.env.AGENTFEED_TOKEN ? null : base?.token_expires_at ?? null;

@@ -15,6 +15,12 @@ updated: 2026-06-21
 ## 현재 결론
 
 
+
+> [!success] 2026-06-21 CLI local draft command split
+> `agentfeed drafts`, `agentfeed discard`, `agentfeed open` local draft orchestration을 `src/cli/index.ts`에서 `src/cli/local-draft-command.ts`로 분리했다. 새 wrapper tests, focused local draft tests, typecheck/build, full suite, dist CLI drafts/discard/open smoke를 통과했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Local Draft Command Split 2026-06-21]]
+
+
 > [!success] 2026-06-21 CLI publish command split
 > `agentfeed publish` CLI surface orchestration을 `src/cli/index.ts`에서 `src/cli/publish-command.ts`로 분리했다. Publish wrapper tests, publish execution/output focused tests, typecheck/build, full suite, dist CLI publish smoke를 통과했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Publish Command Split 2026-06-21]]

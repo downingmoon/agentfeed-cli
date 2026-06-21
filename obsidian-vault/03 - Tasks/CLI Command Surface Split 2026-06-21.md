@@ -100,7 +100,7 @@ Smoke assertions:
 ## Follow-up
 
 > [!todo]
-> `src/cli/index.ts` remains above the 250 pure LOC target. 후속 publish command split은 [[CLI Publish Command Split 2026-06-21]]에서 처리했다. Remaining structural candidates are collect/share orchestration and local draft/open/scan/discard dispatch.
+> `src/cli/index.ts` remains above the 250 pure LOC target. 후속 publish command split은 [[CLI Publish Command Split 2026-06-21]]에서 처리했다. 후속 local draft command split은 [[CLI Local Draft Command Split 2026-06-21]]에서 처리했다. Remaining structural candidates are collect/share orchestration.
 
 > [!todo]
 > LSP diagnostics currently fail locally with `Transport closed`. This slice used `tsc --noEmit`, focused Vitest, build, full suite, and dist CLI smoke as replacement evidence.

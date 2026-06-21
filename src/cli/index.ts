@@ -1,10 +1,9 @@
 #!/usr/bin/env node
-import { rm } from 'node:fs/promises';
-import { initProject, loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
+import { initProject, loadProjectConfig } from '../config/project-config.js';
 import { deleteSavedCredentials, loadCredentials, loadCredentialsWithMetadata } from '../config/credentials.js';
 import { markCollectionComplete, readCollectionStateWithDiagnostics, resolveCollectionWindowWithDiagnostics } from '../config/collection-state.js';
 import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
-import { findLatestDraft, listDrafts, readLatestDraft } from '../draft/read.js';
+import { findLatestDraft, readLatestDraft } from '../draft/read.js';
 import { formatCollectionExplain } from '../draft/explain.js';
 import type { AgentFeedCredentials, LocalDraft } from '../types.js';
 import { collectGitMetrics } from '../collectors/git.js';
@@ -21,16 +20,10 @@ import { leadingOptionError } from './leading-option-error.js';
 import { hasHelpFlag } from './help-flag.js';
 import { isTrailingHelpAlias } from './trailing-help-alias.js';
 import { versionCommandOutput } from './version-command.js';
-import { discardCompletePayload, discardConfirmationPayload, renderDiscardCompleteHumanLines, renderDiscardConfirmationHumanLines } from './discard-command.js';
-import { openJsonPayload, renderOpenHumanLines } from './open-command.js';
-import { openReviewDraft } from './open-execution.js';
-import { resolveOpenDraft } from './open-draft-resolver.js';
 import { localPreviewJsonPayload, remotePreviewJsonPayload, renderLocalPreviewHumanLines, renderRemotePreviewHumanLines } from './preview-command.js';
 import { runPreviewCommand } from './preview-execution.js';
 import { formatPrivacyScanReport, privacyScanJsonOutput } from './privacy-scan-output.js';
 import { runPrivacyScanCommand } from './scan-command.js';
-import { draftListJsonOutput, renderDraftListHumanLines } from './draft-list-output.js';
-import { buildDraftListRow } from './draft-list-rows.js';
 import { formatWarningLines, readinessMarker } from './diagnostic-formatters.js';
 import { collectJsonPayload, renderCollectAutoUploadIgnoredWarningLines, renderCollectHumanLines } from './collect-output.js';
 import { logoutJsonPayload, renderLogoutHumanLines } from './logout-output.js';
@@ -47,15 +40,15 @@ import { runShareUploadCommand } from './share-upload-execution.js';
 import { runCollectJsonUploadCommand } from './collect-upload-execution.js';
 import { sanitizeDraftForCliOutput } from './draft-output-sanitizer.js';
 import { runPublishCliCommand } from './publish-command.js';
+import { runDiscardCliCommand, runDraftsCliCommand, runOpenCliCommand } from './local-draft-command.js';
 import { KNOWN_COMMANDS, PUBLIC_COMMANDS } from './command-definitions.js';
 import { COMMAND_ARG_SPECS } from './command-arg-specs.js';
 import { validateCommandArgs } from './command-argument-validator.js';
 import { printCommandHelp as printSurfaceCommandHelp, printHelp as printSurfaceHelp, printHelpTopic as printSurfaceHelpTopic, runCommandsCommand, runCompletionCommand } from './command-surface-command.js';
 import { formatSharePreview, parseShareArgs } from './share.js';
 import { parseAgentSource } from './source.js';
-import { readJson, pathExists } from '../utils/fs.js';
+import { readJson } from '../utils/fs.js';
 import { AGENTFEED_CLI_VERSION } from '../version.js';
-import { draftPaths } from '../draft/paths.js';
 import * as ui from './ui.js';
 
 function print(text = '') { process.stdout.write(`${text}\n`); }
@@ -364,69 +357,15 @@ async function cmdDoctor(args: string[] = []) {
 }
 
 async function cmdDrafts(args: string[]) {
-  await loadProjectConfig(process.cwd());
-  const cwd = process.cwd();
-  const rows = await Promise.all((await listDrafts(cwd)).map((row) => buildDraftListRow(cwd, row)));
-  if (flag(args, '--json')) {
-    print(JSON.stringify(draftListJsonOutput(rows), null, 2));
-    return;
-  }
-
-  printLines(renderDraftListHumanLines(rows));
+  await runDraftsCliCommand(args, { cwd: process.cwd(), print, printLines });
 }
 
 async function cmdDiscard(args: string[]) {
-  const id = await resolveDraftId(process.cwd(), args);
-  const root = await resolveProjectRoot(process.cwd());
-  const { jsonPath, markdownPath } = draftPaths(root, id);
-  const hadJson = await pathExists(jsonPath);
-  const hadMarkdown = await pathExists(markdownPath);
-  if (!hadJson && !hadMarkdown) {
-    throw new Error([
-      `Draft not found: ${id}`,
-      '',
-      'Inspect saved drafts:',
-      'Run: agentfeed drafts',
-      '',
-      'Create a fresh draft:',
-      'Run: agentfeed collect --explain'
-    ].join('\n'));
-  }
-  if (!flag(args, '--yes') && !flag(args, '-y')) {
-    if (flag(args, '--json')) {
-      print(JSON.stringify(discardConfirmationPayload({ draftId: id, hadJson, hadMarkdown }), null, 2));
-      return;
-    }
-    printLines(renderDiscardConfirmationHumanLines({ draftId: id, hadJson, hadMarkdown }));
-    return;
-  }
-  await rm(jsonPath, { force: true });
-  await rm(markdownPath, { force: true });
-  if (flag(args, '--json')) {
-    print(JSON.stringify(discardCompletePayload({ draftId: id, hadJson, hadMarkdown }), null, 2));
-    return;
-  }
-  printLines(renderDiscardCompleteHumanLines({ draftId: id, hadJson, hadMarkdown }));
+  await runDiscardCliCommand(args, { cwd: process.cwd(), print, printLines, resolveDraftId });
 }
 
 async function cmdOpen(args: string[]) {
-  const draft = await resolveOpenDraft({ cwd: process.cwd(), id: option(args, '--id'), latest: flag(args, '--latest') });
-  const result = await openReviewDraft({ cwd: process.cwd(), draft });
-  if (flag(args, '--json')) {
-    print(JSON.stringify(openJsonPayload({
-      draftId: result.draftId,
-      reviewUrl: result.reviewUrl,
-      opened: result.opened,
-      warnings: result.jsonWarnings
-    }), null, 2));
-    return;
-  }
-  printLines(renderOpenHumanLines({
-    draftId: result.draftId,
-    reviewUrl: result.reviewUrl,
-    opened: result.opened,
-    warnings: result.warnings
-  }));
+  await runOpenCliCommand(args, { cwd: process.cwd(), print, printLines });
 }
 
 

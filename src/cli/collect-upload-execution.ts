@@ -1,8 +1,7 @@
 import { publishDraft as defaultPublishDraft, type ApiMetadata, type PublishDraftResult } from '../api/client.js';
 import { readDraft as defaultReadDraft } from '../draft/read.js';
-import { writeDraft } from '../draft/write.js';
-import { scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
 import type { AgentFeedCredentials, LocalDraft, ReviewUrlHandoff } from '../types.js';
+import { sanitizeDraftForCliOutput as defaultSanitizeDraftForOutput } from './draft-output-sanitizer.js';
 import { handoffReviewUrl as defaultHandoffReviewUrl, type ReviewUrlHandoffOptions } from './review-handoff.js';
 import { requireUploadPreflight as defaultRequireUploadPreflight } from './upload-preflight.js';
 
@@ -32,13 +31,6 @@ export type CollectJsonUploadOptions = {
   readonly openReview: boolean;
   readonly dependencies?: CollectJsonUploadDependencies;
 };
-
-async function defaultSanitizeDraftForOutput(cwd: string, draft: LocalDraft): Promise<LocalDraft> {
-  scanAndRedactDraftPublicFields(draft);
-  await writeDraft(cwd, draft);
-  return draft;
-}
-
 export async function runCollectJsonUploadCommand(options: CollectJsonUploadOptions): Promise<LocalDraft> {
   const requireUploadPreflight = options.dependencies?.requireUploadPreflight ?? defaultRequireUploadPreflight;
   const publishDraft = options.dependencies?.publishDraft ?? defaultPublishDraft;

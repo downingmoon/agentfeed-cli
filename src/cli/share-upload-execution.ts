@@ -1,10 +1,9 @@
 import { publishDraft as defaultPublishDraft, type ApiMetadata, type PublishDraftResult } from '../api/client.js';
 import { markCollectionComplete as defaultMarkCollectionComplete } from '../config/collection-state.js';
 import { readDraft as defaultReadDraft } from '../draft/read.js';
-import { writeDraft } from '../draft/write.js';
-import { scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
 import type { AgentFeedCredentials, CollectionWindow, LocalDraft, ReviewUrlHandoff } from '../types.js';
 import { handoffReviewUrl as defaultHandoffReviewUrl, shouldCopyReviewUrl, type ReviewUrlHandoffOptions } from './review-handoff.js';
+import { sanitizeDraftForCliOutput as defaultSanitizeDraftForOutput } from './draft-output-sanitizer.js';
 import { shouldOpenReviewAfterUpload as defaultShouldOpenReviewAfterUpload, shouldRequireUploadConfirmation, type ReviewOpenPolicyOptions } from './runtime-policy.js';
 import { requireUploadPreflight as defaultRequireUploadPreflight } from './upload-preflight.js';
 
@@ -64,13 +63,6 @@ export type ShareUploadComplete = {
 };
 
 export type ShareUploadResult = ShareUploadConfirmationRequired | ShareUploadComplete;
-
-async function defaultSanitizeDraftForOutput(cwd: string, draft: LocalDraft): Promise<LocalDraft> {
-  scanAndRedactDraftPublicFields(draft);
-  await writeDraft(cwd, draft);
-  return draft;
-}
-
 async function markCursorIfNeeded(options: ShareUploadOptions, draft: LocalDraft): Promise<void> {
   if (options.flags.noSaveCursor) return;
   const markCollectionComplete = options.dependencies?.markCollectionComplete ?? defaultMarkCollectionComplete;

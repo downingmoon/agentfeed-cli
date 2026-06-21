@@ -1,10 +1,9 @@
 import { previewDraftRemote, type RemotePreviewResult } from '../api/client.js';
 import { loadCredentials } from '../config/credentials.js';
 import { readDraft } from '../draft/read.js';
-import { writeDraft } from '../draft/write.js';
-import { scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
 import type { LocalDraft } from '../types.js';
 import { missingTokenMessage } from './auth-token-input.js';
+import { sanitizeDraftForCliOutput } from './draft-output-sanitizer.js';
 import { requireApiCompatibilityBeforeUpload } from './upload-preflight.js';
 
 export type PreviewExecutionOptions = {
@@ -18,10 +17,7 @@ export type PreviewExecutionResult =
   | { readonly kind: 'remote'; readonly draft: LocalDraft; readonly remote: RemotePreviewResult };
 
 async function sanitizedDraftForPreview(cwd: string, id: string): Promise<LocalDraft> {
-  const draft = await readDraft(cwd, id);
-  scanAndRedactDraftPublicFields(draft);
-  await writeDraft(cwd, draft);
-  return draft;
+  return await sanitizeDraftForCliOutput(cwd, await readDraft(cwd, id));
 }
 
 export async function runPreviewCommand(options: PreviewExecutionOptions): Promise<PreviewExecutionResult> {

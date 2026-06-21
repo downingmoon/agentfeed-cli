@@ -2,10 +2,9 @@ import { loadCredentials as defaultLoadCredentials } from '../config/credentials
 import { loadProjectConfig as defaultLoadProjectConfig } from '../config/project-config.js';
 import { resolveCollectionWindowWithDiagnostics as defaultResolveCollectionWindowWithDiagnostics } from '../config/collection-state.js';
 import { collectDraftWithStatus as defaultCollectDraftWithStatus, type CollectDraftOptions, type CollectDraftStatus } from '../draft/create.js';
-import { writeDraft } from '../draft/write.js';
-import { scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
 import type { AgentFeedCredentials, AgentType, LocalDraft } from '../types.js';
 import { flag } from './args.js';
+import { sanitizeDraftForCliOutput as defaultSanitizeDraftForOutput } from './draft-output-sanitizer.js';
 
 type LoadProjectConfig = (cwd: string) => Promise<unknown>;
 type LoadCredentials = () => Promise<AgentFeedCredentials | null>;
@@ -42,13 +41,6 @@ export type ShareCollectionResult = {
   readonly reusedExistingDraft: boolean;
   readonly warnings: readonly string[];
 };
-
-async function defaultSanitizeDraftForOutput(cwd: string, draft: LocalDraft): Promise<LocalDraft> {
-  scanAndRedactDraftPublicFields(draft);
-  await writeDraft(cwd, draft);
-  return draft;
-}
-
 function mutableArgs(args: readonly string[]): string[] {
   return [...args];
 }

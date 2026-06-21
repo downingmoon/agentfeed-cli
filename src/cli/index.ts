@@ -6,11 +6,9 @@ import { resolveApiBaseUrl, resolveApiBaseUrlWithMetadata } from '../config/api-
 import { markCollectionComplete, readCollectionStateWithDiagnostics, resolveCollectionWindowWithDiagnostics } from '../config/collection-state.js';
 import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readLatestDraft } from '../draft/read.js';
-import { writeDraft } from '../draft/write.js';
 import { formatCollectionExplain } from '../draft/explain.js';
 import { checkApiCompatibility, checkApiReachability, checkIngestionToken } from '../api/client.js';
 import { browserLogin } from '../auth/browser-login.js';
-import { scanAndRedactDraftPublicFields } from '../privacy/draft-sanitizer.js';
 import type { AgentFeedCredentials, LocalDraft } from '../types.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { detectAgentSignals, formatAgentSignalLines, summarizeAgentSignals } from '../collectors/agent-discovery.js';
@@ -60,6 +58,7 @@ import { renderShareLocalNextLines, shareLocalJsonPayload, shareUploadedJsonPayl
 import { runShareCollectionCommand } from './share-collection-execution.js';
 import { runShareUploadCommand } from './share-upload-execution.js';
 import { runCollectJsonUploadCommand } from './collect-upload-execution.js';
+import { sanitizeDraftForCliOutput } from './draft-output-sanitizer.js';
 import { publishJsonPayload, renderPublishUploadResultLines } from './publish-output.js';
 import { runPublishCommand } from './publish-execution.js';
 import { createCommandCatalog } from './command-catalog.js';
@@ -104,13 +103,6 @@ async function readStdinText(): Promise<string> {
   for await (const chunk of process.stdin) text += chunk;
   return text;
 }
-
-async function sanitizeDraftForCliOutput(cwd: string, draft: LocalDraft): Promise<LocalDraft> {
-  scanAndRedactDraftPublicFields(draft);
-  await writeDraft(cwd, draft);
-  return draft;
-}
-
 function printNextCommands(commands: string[]): void {
   for (const line of renderNextCommandLines({ commands, command: ui.command })) print(line);
 }

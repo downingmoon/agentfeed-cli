@@ -2,22 +2,17 @@
 import { rm } from 'node:fs/promises';
 import { initProject, loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
 import { deleteSavedCredentials, loadCredentials, loadCredentialsWithMetadata } from '../config/credentials.js';
-import { resolveApiBaseUrl, resolveApiBaseUrlWithMetadata } from '../config/api-base.js';
 import { markCollectionComplete, readCollectionStateWithDiagnostics, resolveCollectionWindowWithDiagnostics } from '../config/collection-state.js';
 import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readLatestDraft } from '../draft/read.js';
 import { formatCollectionExplain } from '../draft/explain.js';
-import { checkApiCompatibility, checkApiReachability, checkIngestionToken } from '../api/client.js';
 import type { AgentFeedCredentials, LocalDraft } from '../types.js';
 import { collectGitMetrics } from '../collectors/git.js';
-import { detectAgentSignals, formatAgentSignalLines, summarizeAgentSignals } from '../collectors/agent-discovery.js';
 import { installClaudeCodeHook, uninstallClaudeCodeHook } from '../hooks/claude-code-settings.js';
 import { flag, option } from './args.js';
 import { unknownCommandError } from './unknown-command-error.js';
 import { resolveStatusProject } from './status-project.js';
-import { doctorNextActions, doctorReadinessItems } from './doctor-readiness.js';
 import { missingTokenMessage } from './auth-token-input.js';
-import { loadDiagnosticCredentialsWithMetadata } from './diagnostic-credentials.js';
 import { requireApiCompatibilityBeforeUpload } from './upload-preflight.js';
 import { collectJsonNextActions } from './draft-next-actions.js';
 import { commandCatalogNextActions } from './guidance-actions.js';
@@ -42,7 +37,7 @@ import { formatPrivacyScanReport, privacyScanJsonOutput } from './privacy-scan-o
 import { runPrivacyScanCommand } from './scan-command.js';
 import { draftListJsonOutput, renderDraftListHumanLines } from './draft-list-output.js';
 import { buildDraftListRow } from './draft-list-rows.js';
-import { formatCollectionCursor, nextDefaultCollectionSince, formatTokenExpiry, formatWarningLines, credentialSourceLabel, credentialStoreLabel, apiBaseSourceLabel, readinessMarker, tokenExpiryWarning } from './diagnostic-formatters.js';
+import { formatWarningLines, readinessMarker } from './diagnostic-formatters.js';
 import { collectJsonPayload, renderCollectAutoUploadIgnoredWarningLines, renderCollectHumanLines } from './collect-output.js';
 import { logoutJsonPayload, renderLogoutHumanLines } from './logout-output.js';
 import { initJsonPayload, renderInitHumanLines } from './init-output.js';
@@ -50,7 +45,7 @@ import { hookJsonPayload, renderHookHumanLines, type HookInstallOutputInput, typ
 import { runLoginCommand } from './login-command.js';
 import { runRotateCommand } from './rotate-command.js';
 import { runStatusCommand } from './status-command.js';
-import { doctorJsonPayload, renderDoctorHumanLines, type DoctorCheckTuple } from './doctor-output.js';
+import { runDoctorCommand } from './doctor-command.js';
 import { renderUploadConfirmationRequiredLines, renderUploadResultLines } from './upload-output.js';
 import { renderShareLocalNextLines, shareLocalJsonPayload, shareUploadedJsonPayload } from './share-output.js';
 import { runShareCollectionCommand } from './share-collection-execution.js';
@@ -418,141 +413,12 @@ async function cmdHook(args: string[]) {
 }
 
 async function cmdDoctor(args: string[] = []) {
-  const runtimeChecks: DoctorCheckTuple[] = [
-    ['Node version', process.versions.node],
-    ['agentfeed version', AGENTFEED_CLI_VERSION]
-  ];
-  const diagnostics = await loadDiagnosticCredentialsWithMetadata({ cwd: process.cwd() });
-  const credentialResolution = diagnostics.metadata;
-  const creds = credentialResolution.credentials;
-  const apiResolution = credentialResolution.api_base_url
-    ? null
-    : await resolveApiBaseUrlWithMetadata({ cwd: process.cwd() });
-  const apiBaseUrl = credentialResolution.api_base_url ?? apiResolution?.value ?? await resolveApiBaseUrl();
-  const apiReachability = diagnostics.invalidApiBaseUrl ? null : await checkApiReachability(apiBaseUrl);
-  const apiCompatibility = diagnostics.invalidApiBaseUrl ? null : await checkApiCompatibility(apiBaseUrl);
-  const accountChecks: DoctorCheckTuple[] = [
-    ['global credentials file exists', creds ? 'yes' : 'no'],
-    ['credentials file path', credentialResolution.credentials_file_path],
-    ['credential source', credentialSourceLabel(credentialResolution.token_source)],
-    ['credential store', credentialStoreLabel(credentialResolution.credential_store)],
-    ['ingestion token exists', creds?.ingestion_token || credentialResolution.token_source === 'environment' ? 'yes' : 'no']
-  ];
-  const apiChecks: DoctorCheckTuple[] = [
-    ['API base URL configured', apiBaseUrl],
-    [
-    'API base URL source',
-    apiBaseSourceLabel(
-      credentialResolution.api_base_url_source ?? apiResolution?.source ?? 'default',
-      credentialResolution.api_base_url_source_detail ?? apiResolution?.source_detail
-    )
-    ],
-    ['API ready', apiReachability
-      ? apiReachability.ok ? `yes (${apiReachability.status})` : `no (${apiReachability.status ?? apiReachability.error ?? 'unreachable'})`
-      : 'skipped (invalid API base URL)'
-    ],
-    [
-    'API compatibility',
-    apiCompatibility
-      ? apiCompatibility.compatible
-      ? `yes (${apiCompatibility.data?.api_version ?? 'unknown'} / ${apiCompatibility.data?.contract_version ?? 'unknown'})`
-      : `no (${apiCompatibility.status ?? apiCompatibility.error ?? 'unreachable'})`
-      : 'skipped (invalid API base URL)'
-    ]
-  ];
-  const tokenWarnings: string[] = [];
-  if (creds?.ingestion_token && !diagnostics.invalidApiBaseUrl) {
-    const tokenCheck = await checkIngestionToken(creds);
-    accountChecks.push(['ingestion token valid', tokenCheck.ok ? `yes (${tokenCheck.status})` : `no (${tokenCheck.status ?? tokenCheck.error ?? 'unreachable'})`]);
-    const expiresAt = tokenCheck.data?.token?.expires_at ?? creds.token_expires_at ?? null;
-    accountChecks.push(['ingestion token expires at', expiresAt ? formatTokenExpiry(expiresAt) : 'unknown']);
-    const warning = tokenExpiryWarning(expiresAt, tokenCheck.data?.token?.expiring_soon);
-    if (warning) tokenWarnings.push(warning);
-  } else if (credentialResolution.token_source === 'environment' && diagnostics.invalidApiBaseUrl) {
-    accountChecks.push(['ingestion token valid', 'skipped (invalid API base URL)']);
-    accountChecks.push(['ingestion token expires at', 'unknown']);
-  } else {
-    accountChecks.push(['ingestion token valid', 'skipped']);
-    accountChecks.push(['ingestion token expires at', 'unknown']);
-  }
-  let collectionStateLabel = 'unavailable (project not initialized)';
-  let nextCollectionSinceLabel = 'unavailable (project not initialized)';
-  const projectResolution = await resolveStatusProject(process.cwd());
-  const projectConfigError = projectResolution.configError;
-  const projectConfigValid = Boolean(projectResolution.config);
-  if (projectConfigValid) {
-    const collectionStateResult = await readCollectionStateWithDiagnostics(process.cwd());
-    collectionStateLabel = collectionStateResult.valid
-      ? formatCollectionCursor(collectionStateResult.state.last_collected_at)
-      : 'invalid (.agentfeed/state.json unreadable)';
-    nextCollectionSinceLabel = collectionStateResult.valid
-      ? nextDefaultCollectionSince(collectionStateResult.state.last_collected_at)
-      : 'beginning (cursor ignored)';
-    tokenWarnings.push(...collectionStateResult.warnings);
-  } else if (projectConfigError) {
-    collectionStateLabel = 'unavailable (project config unreadable)';
-    nextCollectionSinceLabel = 'unavailable (project config unreadable)';
-  }
-  const git = await collectGitMetrics(process.cwd());
-  const projectChecks: DoctorCheckTuple[] = [
-    ['project config valid', projectConfigValid ? 'yes' : 'no'],
-    ...(projectConfigError ? [['project config error', projectConfigError] satisfies [string, string]] : []),
-    ['current directory is git repository', git.repository_root ? 'yes' : 'no']
-  ];
-  const collectionChecks: DoctorCheckTuple[] = [
-    ['last collection cursor', collectionStateLabel],
-    ['next default collection since', nextCollectionSinceLabel]
-  ];
-  const warnings = [
-    ...credentialResolution.warnings,
-    ...(apiResolution?.warnings ?? []),
-    ...(projectConfigError ? [projectConfigError] : []),
-    ...tokenWarnings
-  ];
-  const agentSignals = await detectAgentSignals({ cwd: process.cwd() });
-  const agentSignalLines = formatAgentSignalLines(agentSignals);
-  const agentSignalSummary = summarizeAgentSignals(agentSignals);
-  const missingToken = !creds && credentialResolution.token_source === 'missing';
-  const apiNeedsRecheck = !apiReachability?.ok || !apiCompatibility?.compatible;
-  const nextActions = doctorNextActions({
-    invalidApiBaseUrl: diagnostics.invalidApiBaseUrl,
-    projectConfigValid,
-    projectConfigError,
-    missingToken,
-    insideGitRepository: Boolean(git.repository_root),
-    tokenWarnings,
-    apiNeedsRecheck
+  await runDoctorCommand(args, {
+    cwd: process.cwd(),
+    nodeVersion: process.versions.node,
+    print,
+    printLines
   });
-  const readiness = doctorReadinessItems({
-    invalidApiBaseUrl: diagnostics.invalidApiBaseUrl,
-    projectConfigValid,
-    projectConfigError,
-    missingToken,
-    insideGitRepository: Boolean(git.repository_root),
-    tokenWarnings,
-    apiReachability,
-    apiCompatibility,
-    agentSignalLines
-  });
-  const doctorOutput = {
-    readiness,
-    runtimeChecks,
-    accountChecks,
-    apiChecks,
-    projectChecks,
-    collectionChecks,
-    warnings,
-    agentSignalSummary,
-    agentSignals: agentSignalLines,
-    nextActions
-  };
-
-  if (flag(args, '--json')) {
-    print(JSON.stringify(doctorJsonPayload(doctorOutput), null, 2));
-    return;
-  }
-
-  printLines(renderDoctorHumanLines(doctorOutput));
 }
 
 async function cmdDrafts(args: string[]) {

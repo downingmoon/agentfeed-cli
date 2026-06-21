@@ -15,6 +15,11 @@ updated: 2026-06-21
 ## 현재 결론
 
 
+> [!success] 2026-06-21 CLI doctor command split
+> `agentfeed doctor` orchestration을 `src/cli/index.ts`에서 `src/cli/doctor-command.ts`로 분리했다. Baseline/focused doctor/status tests, typecheck/build, dist CLI human/json doctor smoke를 통과했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Doctor Command Split 2026-06-21]]
+
+
 > [!success] 2026-06-21 CLI status command split
 > `agentfeed status` orchestration을 `src/cli/index.ts`에서 `src/cli/status-command.ts`로 분리했다. Baseline/focused status tests, typecheck/build, dist CLI human/json status smoke를 통과했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Status Command Split 2026-06-21]]

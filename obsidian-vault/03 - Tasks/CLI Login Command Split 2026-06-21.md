@@ -101,8 +101,8 @@ Manual dist CLI smoke with fake API:
 
 ## Follow-up
 
-> [!todo]
-> `src/cli/index.ts`는 아직 882 pure LOC의 command multiplexer다. 이번 slice는 login command만 분리했다. 다음 구조 정리는 rotate/status/doctor 같은 auth/diagnostic command cluster를 후보로 검토한다.
+> [!success]
+> 후속 rotate command split은 [[CLI Rotate Command Split 2026-06-21]]에서 처리했다. 남은 구조 정리 후보는 status/doctor 같은 diagnostic command cluster다.
 
 > [!todo]
 > LSP diagnostics는 local LSP transport가 `Transport closed`로 실패해 `tsc --noEmit`, focused/full Vitest, build, dist CLI smoke를 대체 evidence로 사용했다.

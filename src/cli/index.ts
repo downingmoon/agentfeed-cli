@@ -8,7 +8,6 @@ import { collectDraft, collectDraftWithStatus } from '../draft/create.js';
 import { findLatestDraft, listDrafts, readLatestDraft } from '../draft/read.js';
 import { formatCollectionExplain } from '../draft/explain.js';
 import { checkApiCompatibility, checkApiReachability, checkIngestionToken } from '../api/client.js';
-import { browserLogin } from '../auth/browser-login.js';
 import type { AgentFeedCredentials, LocalDraft } from '../types.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { detectAgentSignals, formatAgentSignalLines, summarizeAgentSignals } from '../collectors/agent-discovery.js';
@@ -18,7 +17,6 @@ import { unknownCommandError } from './unknown-command-error.js';
 import { resolveStatusProject } from './status-project.js';
 import { setupProgressText, statusNextActions, statusReadinessItems } from './status-readiness.js';
 import { doctorNextActions, doctorReadinessItems } from './doctor-readiness.js';
-import { rotateCredentialResult } from './auth-result.js';
 import { missingTokenMessage } from './auth-token-input.js';
 import { loadDiagnosticCredentialsWithMetadata } from './diagnostic-credentials.js';
 import { requireApiCompatibilityBeforeUpload } from './upload-preflight.js';
@@ -51,8 +49,8 @@ import { collectJsonPayload, renderCollectAutoUploadIgnoredWarningLines, renderC
 import { logoutJsonPayload, renderLogoutHumanLines } from './logout-output.js';
 import { initJsonPayload, renderInitHumanLines } from './init-output.js';
 import { hookJsonPayload, renderHookHumanLines, type HookInstallOutputInput, type HookUninstallOutputInput } from './hook-output.js';
-import { renderCredentialResultLines } from './auth-output.js';
 import { runLoginCommand } from './login-command.js';
+import { runRotateCommand } from './rotate-command.js';
 import { doctorJsonPayload, renderDoctorHumanLines, type DoctorCheckTuple } from './doctor-output.js';
 import { renderUploadConfirmationRequiredLines, renderUploadResultLines } from './upload-output.js';
 import { renderShareLocalNextLines, shareLocalJsonPayload, shareUploadedJsonPayload } from './share-output.js';
@@ -163,56 +161,11 @@ async function cmdLogin(args: string[]) {
   });
 }
 
-async function replacementTokenIdForSavedCredentials(creds: NonNullable<Awaited<ReturnType<typeof loadCredentialsWithMetadata>>['credentials']>): Promise<string | undefined> {
-  const check = await checkIngestionToken(creds);
-  const id = check.ok && typeof check.data?.token?.id === 'string' && check.data.token.id.length > 0
-    ? check.data.token.id
-    : undefined;
-  return id;
-}
-
-async function rotateViaBrowserLogin(args: string[], message: string, replaceTokenId?: string) {
-  const apiBaseUrl = option(args, '--api-base-url');
-  const noSave = flag(args, '--no-save');
-  const existing = await loadCredentialsWithMetadata({ cwd: process.cwd() });
-  const creds = await browserLogin({ apiBaseUrl, noOpen: flag(args, '--no-open'), save: !noSave, cwd: process.cwd(), storedApiBaseUrl: existing.credentials?.api_base_url, allowCiBrowser: flag(args, '--browser'), replaceTokenId: noSave ? undefined : replaceTokenId });
-  printLines(renderCredentialResultLines(rotateCredentialResult({ noSave, credentials: creds, message })));
-}
-
 async function cmdRotate(args: string[]) {
-  const forceBrowser = flag(args, '--browser');
-  const noSave = flag(args, '--no-save');
-  const credentialResolution = await loadCredentialsWithMetadata({ cwd: process.cwd() });
-  const creds = credentialResolution.credentials;
-  if (forceBrowser || noSave || !creds) {
-    const replaceTokenId = creds && !noSave ? await replacementTokenIdForSavedCredentials(creds) : undefined;
-    await rotateViaBrowserLogin(
-      args,
-      creds
-        ? replaceTokenId
-          ? 'AgentFeed browser rotation complete. Previous saved token was revoked.'
-          : 'AgentFeed browser replacement complete. Previous saved token could not be verified for revocation.'
-        : 'No saved token found. Starting browser login replacement.',
-      replaceTokenId,
-    );
-    return;
-  }
-  if (credentialResolution.token_source === 'environment') {
-    throw new Error([
-      'AGENTFEED_TOKEN is set, so AgentFeed cannot update that environment variable in-place.',
-      'Rotate or issue a new token in AgentFeed Settings, then update AGENTFEED_TOKEN in your shell or secret manager.',
-      'Alternatively run: unset AGENTFEED_TOKEN && agentfeed rotate --browser',
-      'Then verify with: agentfeed status',
-    ].join('\n'));
-  }
-  const replaceTokenId = await replacementTokenIdForSavedCredentials(creds);
-  await rotateViaBrowserLogin(
-    args,
-    replaceTokenId
-      ? 'AgentFeed token rotated after browser approval. Previous saved token was revoked.'
-      : 'Saved token could not be verified. Browser login issued a replacement token, but the previous token may need manual revocation in Settings.',
-    replaceTokenId,
-  );
+  await runRotateCommand(args, {
+    cwd: process.cwd(),
+    printLines
+  });
 }
 
 async function draftUploadPendingForStatus(path: string): Promise<boolean> {

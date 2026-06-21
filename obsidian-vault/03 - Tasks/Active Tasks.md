@@ -15,6 +15,11 @@ updated: 2026-06-21
 ## 현재 결론
 
 
+> [!success] 2026-06-21 CLI publish command split
+> `agentfeed publish` CLI surface orchestration을 `src/cli/index.ts`에서 `src/cli/publish-command.ts`로 분리했다. Publish wrapper tests, publish execution/output focused tests, typecheck/build, full suite, dist CLI publish smoke를 통과했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Publish Command Split 2026-06-21]]
+
+
 > [!success] 2026-06-21 CLI command surface split
 > CLI help/completion/commands command surface orchestration을 `src/cli/index.ts`에서 `src/cli/command-surface-command.ts`로 분리했다. Focused command-surface tests, typecheck/build, full suite, dist CLI help/completion/commands smoke를 통과했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Command Surface Split 2026-06-21]]

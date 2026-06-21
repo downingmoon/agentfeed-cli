@@ -46,8 +46,7 @@ import { runShareCollectionCommand } from './share-collection-execution.js';
 import { runShareUploadCommand } from './share-upload-execution.js';
 import { runCollectJsonUploadCommand } from './collect-upload-execution.js';
 import { sanitizeDraftForCliOutput } from './draft-output-sanitizer.js';
-import { publishJsonPayload, renderPublishUploadResultLines } from './publish-output.js';
-import { runPublishCommand } from './publish-execution.js';
+import { runPublishCliCommand } from './publish-command.js';
 import { KNOWN_COMMANDS, PUBLIC_COMMANDS } from './command-definitions.js';
 import { COMMAND_ARG_SPECS } from './command-arg-specs.js';
 import { validateCommandArgs } from './command-argument-validator.js';
@@ -329,28 +328,12 @@ async function cmdPreview(args: string[]) {
 }
 
 async function cmdPublish(args: string[]) {
-  const id = await resolveDraftId(process.cwd(), args);
-  const result = await runPublishCommand({
+  await runPublishCliCommand(args, {
     cwd: process.cwd(),
-    id,
-    flags: {
-      json: flag(args, '--json'),
-      yes: flag(args, '--yes') || flag(args, '-y'),
-      clipboard: flag(args, '--clipboard'),
-      noClipboard: flag(args, '--no-clipboard'),
-      openReview: flag(args, '--open-review'),
-      noOpenReview: flag(args, '--no-open-review')
-    }
+    print,
+    printLines,
+    resolveDraftId
   });
-  if (result.kind === 'confirmation_required') {
-    printLines(renderUploadConfirmationRequiredLines(result.draft, result.command, undefined, result.cacheReuseReason ? { cacheReuseReason: result.cacheReuseReason } : {}));
-    return;
-  }
-  if (flag(args, '--json')) {
-    print(JSON.stringify(publishJsonPayload({ draft: result.draft, upload: result.upload, handoff: result.handoff }), null, 2));
-    return;
-  }
-  printLines(renderPublishUploadResultLines({ draft: result.draft, upload: result.upload, handoff: result.handoff }));
 }
 
 async function cmdScan(args: string[]) {

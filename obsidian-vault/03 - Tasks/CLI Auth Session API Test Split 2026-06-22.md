@@ -72,4 +72,4 @@ tests/cli-auth-session-api.test.ts: 166 pure LOC; no as any/as unknown/@ts-ignor
 ## Follow-up
 
 > [!todo]
-> `tests/api-hook.test.ts` remains oversized at 1,511 pure LOC. Continue only cohesive, behavior-preserving splits with green baseline coverage. Likely next groups: browser login orchestration/no-open/polling policy, publish timeout/retry/duplicate ingestion handling, or upload response/review URL safety contracts.
+> Follow-up browser login orchestration split completed in [[CLI Browser Login Flow Test Split 2026-06-22]]. `tests/api-hook.test.ts` still remains oversized at 1,176 pure LOC. Continue only cohesive, behavior-preserving splits with green coverage. Likely next groups: `waitForCliAuthExchange()` polling policy, publish timeout/retry/duplicate ingestion handling, or upload response/review URL safety contracts.

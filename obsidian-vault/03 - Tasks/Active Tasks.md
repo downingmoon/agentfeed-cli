@@ -16,6 +16,13 @@ updated: 2026-06-22
 
 
 
+> [!success] 2026-06-22 CLI publish cache test split
+> CLI `tests/cli-share.test.ts`에서 direct `agentfeed publish` cached-upload reuse/preflight/token-status/privacy-policy 계약을 `cli-publish-cache` suite와 shared fixture helper로 분리했다. Targeted split 2 files / 30 tests, typecheck/build, full CLI suite 121 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Publish Cache Test Split 2026-06-22]]
+
+
+
+
 > [!success] 2026-06-22 CLI open review URL test split
 > CLI `tests/cli-share.test.ts`에서 `agentfeed open` review URL trust/rejection/fallback 계약을 `cli-open-review-trust`, `cli-open-review-rejection`, shared fixture helper로 분리했다. Targeted split 3 files / 44 tests, typecheck/build, full CLI suite 120 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Open Review URL Test Split 2026-06-22]]

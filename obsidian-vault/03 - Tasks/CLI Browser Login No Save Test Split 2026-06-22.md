@@ -66,5 +66,8 @@ tests/cli-browser-login-no-save-output.test.ts: 124 pure LOC.
 
 ## Follow-up
 
+> [!success]
+> Follow-up status project/readiness diagnostics completed in [[CLI Status Readiness Guidance Test Split 2026-06-22]]. `tests/cli-status-doctor.test.ts` is now 510 pure LOC after the split.
+
 > [!todo]
-> `tests/cli-status-doctor.test.ts` remains oversized at 623 pure LOC. Continue only by cohesive behavior clusters such as status project/readiness diagnostics, status cursor/config diagnostics, package/version diagnostics, or doctor JSON/provenance diagnostics. Preserve baseline coverage before each split.
+> Continue only by cohesive behavior clusters such as status cursor/config diagnostics, package/version diagnostics, doctor setup/action ordering, doctor API remediation, or doctor JSON/provenance diagnostics. Preserve baseline coverage before each split.

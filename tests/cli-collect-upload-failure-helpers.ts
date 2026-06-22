@@ -1,4 +1,16 @@
-import type { IncomingMessage, ServerResponse } from 'node:http';
+import { execFile, execFileSync } from 'node:child_process';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import type { IncomingMessage, Server, ServerResponse } from 'node:http';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { promisify } from 'node:util';
+import { afterEach, beforeAll, beforeEach } from 'vitest';
+import { initProject } from '../src/config/project-config.js';
+import { ensureCliBuilt } from './build-cli.js';
+
+const repoRoot = resolve('.');
+const cliPath = join(repoRoot, 'dist', 'cli', 'index.js');
+const execFileAsync = promisify(execFile);
 
 export type CliFailure = {
   readonly stdout?: string;
@@ -9,6 +21,60 @@ export type CliErrorOutput = {
   readonly error: { readonly message: string };
   readonly next_actions?: readonly string[];
 };
+
+export type CollectUploadFailureFixture = {
+  readonly dir: () => string;
+  readonly home: () => string;
+  readonly writeSource: (content: string) => Promise<void>;
+  readonly runCollectFailure: (args: readonly string[], env: NodeJS.ProcessEnv) => Promise<CliFailure | undefined>;
+};
+
+export function useCollectUploadFailureFixture(): CollectUploadFailureFixture {
+  let dir = '';
+  let home = '';
+
+  beforeAll(() => {
+    ensureCliBuilt(repoRoot);
+  });
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), 'agentfeed-cli-collect-upload-failure-'));
+    home = await mkdtemp(join(tmpdir(), 'agentfeed-cli-home-'));
+    execFileSync('git', ['init'], { cwd: dir });
+    execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: dir });
+    execFileSync('git', ['config', 'user.name', 'Test'], { cwd: dir });
+    await mkdir(join(dir, 'src'), { recursive: true });
+    await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = true;\n');
+    execFileSync('git', ['add', '.'], { cwd: dir });
+    execFileSync('git', ['commit', '-m', 'initial'], { cwd: dir, stdio: 'ignore' });
+    await initProject({ cwd: dir, noGitCheck: false });
+  });
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+    await rm(home, { recursive: true, force: true });
+  });
+
+  return {
+    dir: () => dir,
+    home: () => home,
+    writeSource: (content: string) => writeFile(join(dir, 'src', 'api.ts'), content),
+    runCollectFailure: (args: readonly string[], env: NodeJS.ProcessEnv) => runCollectFailure(dir, args, env)
+  };
+}
+
+async function runCollectFailure(cwd: string, args: readonly string[], env: NodeJS.ProcessEnv): Promise<CliFailure | undefined> {
+  try {
+    await execFileAsync(process.execPath, [cliPath, 'collect', ...args], {
+      cwd,
+      encoding: 'utf8',
+      env
+    });
+    return undefined;
+  } catch (error) {
+    return cliFailureFrom(error);
+  }
+}
 
 export function handleCompatibleMetadata(req: IncomingMessage, res: ServerResponse): boolean {
   if (req.method !== 'GET' || req.url !== '/v1/metadata') return false;
@@ -44,6 +110,20 @@ function handleHealthyIngestionToken(req: IncomingMessage, res: ServerResponse):
 
 export function handleUploadPreflight(req: IncomingMessage, res: ServerResponse): boolean {
   return handleCompatibleMetadata(req, res) || handleHealthyIngestionToken(req, res);
+}
+
+export async function listenOnLocalhost(server: Server): Promise<number> {
+  await new Promise<void>((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  const address = server.address();
+  if (!address || typeof address === 'string') throw new Error('test server did not bind to a TCP port');
+  return address.port;
+}
+
+export async function closeServer(server: Server): Promise<void> {
+  await new Promise<void>((resolve) => server.close(() => resolve()));
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

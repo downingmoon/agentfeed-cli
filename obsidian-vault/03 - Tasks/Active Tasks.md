@@ -15,6 +15,11 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI duplicate draft test split
+> CLI oversized `tests/duplicate-draft.test.ts`에서 duplicate draft guard basics, uploadable policy changes, note handling, shared fixture를 `tests/duplicate-draft.test.ts`, `tests/duplicate-draft-policy.test.ts`, `tests/duplicate-draft-note.test.ts`, `tests/duplicate-draft-helpers.ts`로 분리했다. Baseline 1 file / 9 tests, targeted split 3 files / 9 tests, typecheck/build, full CLI suite 200 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 split files/helper는 모두 250 pure LOC ceiling 아래다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Duplicate Draft Test Split 2026-06-22]]
+
+
 
 > [!success] 2026-06-22 CLI upload preflight test split
 > CLI oversized `tests/upload-preflight.test.ts`에서 ingestion token recovery coverage를 `tests/upload-preflight-ingestion-token.test.ts`로 분리했다. Baseline 1 file / 9 tests, targeted split 2 files / 9 tests, typecheck/build, full CLI suite 198 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 split files는 모두 250 pure LOC ceiling 아래다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.

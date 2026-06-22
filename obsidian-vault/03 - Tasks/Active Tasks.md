@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI release preflight test split
+> CLI oversized `tests/release-preflight.test.ts`에서 trusted publishing workflow guardrails와 installed package smoke/platform guardrails를 `tests/release-preflight-trusted-workflow.test.ts`, `tests/release-preflight-installed-smoke.test.ts`로 분리했다. Baseline filters 1 test + 5 tests, targeted split 3 files / 15 tests, typecheck/build, full CLI suite 195 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 원본 및 신규 suites는 모두 250 pure LOC ceiling 아래다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Release Preflight Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI drafts command test split
 > CLI oversized `tests/cli-drafts.test.ts`에서 discard command coverage와 open command coverage를 `tests/cli-drafts-discard.test.ts`, `tests/cli-drafts-open.test.ts`로 분리했다. Baseline filter 9 tests, targeted split 3 files / 17 tests, typecheck/build, full CLI suite 193 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 원본 및 신규 suites는 모두 250 pure LOC ceiling 아래다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Drafts Command Test Split 2026-06-22]]

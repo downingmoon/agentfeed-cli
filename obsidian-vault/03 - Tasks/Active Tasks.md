@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI status local state diagnostics test split
+> CLI oversized `tests/cli-status-doctor.test.ts`에서 local collection cursor, pending draft cursor warning, malformed cursor warning, malformed Claude Code settings diagnostics coverage를 `tests/cli-status-local-state-diagnostics.test.ts`로 분리했다. Baseline filter 3 tests, targeted split 2 files / 14 tests, typecheck/build, full CLI suite 160 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Status Local State Diagnostics Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI status readiness guidance test split
 > CLI oversized `tests/cli-status-doctor.test.ts`에서 status readiness/account/API guidance coverage를 `tests/cli-status-readiness-guidance.test.ts`로 분리했다. Baseline filter 5 tests, targeted split 2 files / 19 tests, typecheck/build, full CLI suite 159 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Status Readiness Guidance Test Split 2026-06-22]]

@@ -68,5 +68,8 @@ tests/cli-status-readiness-guidance.test.ts: 138 pure LOC.
 
 ## Follow-up
 
+> [!success]
+> Status cursor/config diagnostics follow-up was completed by [[CLI Status Local State Diagnostics Test Split 2026-06-22]]. `tests/cli-status-doctor.test.ts` is now 452 pure LOC.
+
 > [!todo]
-> `tests/cli-status-doctor.test.ts` remains oversized at 510 pure LOC. Continue only by cohesive behavior clusters such as status cursor/config diagnostics, package/version diagnostics, doctor setup/action ordering, doctor API remediation, or doctor JSON/provenance diagnostics. Preserve baseline coverage before each split.
+> `tests/cli-status-doctor.test.ts` remains oversized at 452 pure LOC. Continue only by cohesive behavior clusters such as package/version diagnostics, doctor setup/action ordering, doctor API remediation, or doctor JSON/provenance diagnostics. Preserve baseline coverage before each split.

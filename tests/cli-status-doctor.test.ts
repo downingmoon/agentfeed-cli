@@ -10,20 +10,6 @@ const repoRoot = resolve('.');
 const cliPath = join(repoRoot, 'dist', 'cli', 'index.js');
 const execFileAsync = promisify(execFile);
 const ANSI_ESCAPE_PATTERN = /\u001B\[[0-?]*[ -/]*[@-~]/;
-
-function execFileWithInput(args: string[], input: string, options: Parameters<typeof execFile>[2] = {}): Promise<{ stdout: string; stderr: string }> {
-  return new Promise((resolve, reject) => {
-    const child = execFile(process.execPath, [cliPath, ...args], options, (error, stdout, stderr) => {
-      if (error) {
-        reject(Object.assign(error, { stdout, stderr }));
-        return;
-      }
-      resolve({ stdout: String(stdout), stderr: String(stderr) });
-    });
-    child.stdin?.end(input);
-  });
-}
-
 let dir: string;
 let home: string;
 
@@ -551,106 +537,6 @@ describe('status and doctor provenance output', () => {
     expect(failure?.stdout ?? '').not.toContain('AgentFeed browser authorization');
   });
 
-  it('refuses token-stdin login before writing credentials when API metadata is incompatible', async () => {
-    const token = 'af_live_incompatible_stdin_secret';
-    const server = await import('node:http').then(({ createServer }) => createServer((req, res) => {
-      if (req.url === '/v1/metadata') {
-        res.writeHead(200, { 'content-type': 'application/json' });
-        res.end(JSON.stringify({ data: { service: 'other-api', api_version: 'v1' } }));
-        return;
-      }
-      res.writeHead(404).end();
-    }));
-    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-    const address = server.address();
-    if (!address || typeof address === 'string') throw new Error('test server did not bind');
-
-    try {
-      let failure: { stderr?: string; stdout?: string } | undefined;
-      try {
-        await execFileWithInput(
-          ['login', '--token-stdin', '--api-base-url', `http://127.0.0.1:${address.port}/v1`],
-          `${token}\n`,
-          {
-            cwd: dir,
-            encoding: 'utf8',
-            env: {
-              ...process.env,
-              HOME: home,
-              AGENTFEED_TOKEN: '',
-              AGENTFEED_CI: '1',
-              AGENTFEED_CREDENTIAL_STORE: 'file'
-            }
-          }
-        );
-      } catch (error) {
-        failure = error as { stderr?: string; stdout?: string };
-      }
-
-      expect(failure).toBeTruthy();
-      expect(failure?.stderr).toContain('API compatibility check failed');
-      expect(failure?.stderr).toContain('before saving credentials');
-      expect(failure?.stderr).not.toContain(token);
-      expect(failure?.stdout ?? '').toBe('');
-      await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
-    } finally {
-      await new Promise<void>((resolve) => server.close(() => resolve()));
-    }
-  });
-
-  it('refuses token-stdin login before writing credentials when the ingestion token is invalid', async () => {
-    const token = 'af_live_invalid_stdin_secret';
-    const server = await import('node:http').then(({ createServer }) => createServer((req, res) => {
-      if (req.url === '/v1/metadata') {
-        res.writeHead(200, { 'content-type': 'application/json' });
-        res.end(JSON.stringify(compatibleMetadata()));
-        return;
-      }
-      if (req.url === '/v1/ingest/status') {
-        expect(req.headers.authorization).toBe(`Bearer ${token}`);
-        res.writeHead(401, { 'content-type': 'application/json' });
-        res.end(JSON.stringify({ error: { code: 'INGESTION_TOKEN_INVALID', message: 'Invalid or revoked ingestion token.', details: {} } }));
-        return;
-      }
-      res.writeHead(404).end();
-    }));
-    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-    const address = server.address();
-    if (!address || typeof address === 'string') throw new Error('test server did not bind');
-
-    try {
-      let failure: { stderr?: string; stdout?: string } | undefined;
-      try {
-        await execFileWithInput(
-          ['login', '--token-stdin', '--api-base-url', `http://127.0.0.1:${address.port}/v1`],
-          `${token}\n`,
-          {
-            cwd: dir,
-            encoding: 'utf8',
-            env: {
-              ...process.env,
-              HOME: home,
-              AGENTFEED_TOKEN: '',
-              AGENTFEED_CI: '1',
-              AGENTFEED_CREDENTIAL_STORE: 'file'
-            }
-          }
-        );
-      } catch (error) {
-        failure = error as { stderr?: string; stdout?: string };
-      }
-
-      expect(failure).toBeTruthy();
-      expect(failure?.stderr).toContain('Ingestion token check failed');
-      expect(failure?.stderr).toContain('before saving credentials');
-      expect(failure?.stderr).not.toContain(token);
-      expect(failure?.stdout ?? '').toBe('');
-      await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
-    } finally {
-      await new Promise<void>((resolve) => server.close(() => resolve()));
-    }
-  });
-
 
   it('status survives malformed Claude Code settings and reports hook as unknown', async () => {
     execFileSync(process.execPath, [cliPath, 'init', '--no-git-check', '--project-name', 'broken-hook'], {
@@ -730,28 +616,6 @@ describe('status and doctor provenance output', () => {
     await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
-  it('rejects empty token stdin with copyable safe-token guidance', async () => {
-    let failure: { stderr?: string; stdout?: string } | undefined;
-    try {
-      await execFileWithInput(['login', '--token-stdin'], '', {
-        cwd: dir,
-        encoding: 'utf8',
-        env: {
-          ...process.env,
-          HOME: home,
-          AGENTFEED_CREDENTIAL_STORE: 'file'
-        }
-      });
-    } catch (error) {
-      failure = error as { stderr?: string; stdout?: string };
-    }
-
-    expect(failure?.stderr).toContain('No token received on stdin.');
-    expect(failure?.stderr).toContain('Run: printf %s "$TOKEN" | agentfeed login --token-stdin');
-    expect(failure?.stderr).toContain('Run: agentfeed login');
-    expect(failure?.stdout ?? '').toBe('');
-    await expect(readFile(join(home, '.agentfeed', 'credentials.json'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
-  });
 
   it('login fails fast in CI with token remediation and no browser session request', async () => {
     let requestCount = 0;

@@ -66,4 +66,4 @@ tests/cli-browser-login-polling.test.ts: 114 pure LOC; no as any/as unknown/@ts-
 ## Follow-up
 
 > [!todo]
-> `tests/api-hook.test.ts` remains oversized at 1,066 pure LOC. Continue only cohesive, behavior-preserving splits with green coverage. Likely next groups: publish timeout/retry/duplicate ingestion handling, upload response/review URL safety contracts, remote preview contract tests, or publish API error/friendly error handling.
+> Follow-up upload response/review URL safety split completed in [[CLI Upload Response Safety Test Split 2026-06-22]]. `tests/api-hook.test.ts` still remains oversized at 968 pure LOC. Continue only cohesive, behavior-preserving splits with green coverage. Likely next groups: publish timeout/retry/duplicate ingestion handling, remote preview contract tests, publish API error/friendly error handling, or ingest payload serialization/privacy contracts.

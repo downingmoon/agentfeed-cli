@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI upload response safety test split
+> CLI oversized `tests/api-hook.test.ts`에서 malformed upload success envelope, unsafe review URL, unknown status, and duplicate-ingest untrusted review URL safety contracts를 focused upload-response suite로 분리했다. Targeted split 2 files / 64 tests, typecheck/build, full CLI suite 139 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Upload Response Safety Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI browser login polling test split
 > CLI oversized `tests/api-hook.test.ts`에서 `waitForCliAuthExchange()` browser approval polling, transient retry, terminal failure, and timeout sleep-cap contracts를 focused polling suite로 분리했다. Targeted split 2 files / 68 tests, typecheck/build, full CLI suite 138 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Browser Login Polling Test Split 2026-06-22]]

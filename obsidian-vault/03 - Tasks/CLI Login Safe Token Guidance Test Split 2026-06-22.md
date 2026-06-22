@@ -67,5 +67,8 @@ tests/cli-login-safe-token-guidance.test.ts: 126 pure LOC; focused login safe-to
 
 ## Follow-up
 
+> [!success]
+> Follow-up rotate replacement/failure cases completed in [[CLI Rotate Auth Flow Test Split 2026-06-22]]. `tests/cli-status-doctor.test.ts` is now 722 pure LOC after the rotate split.
+
 > [!todo]
-> `tests/cli-status-doctor.test.ts` remains oversized at 998 pure LOC. Continue only by cohesive behavior clusters such as rotate replacement/failure cases, browser login no-save output, status project/readiness diagnostics, or doctor JSON/provenance diagnostics, and preserve baseline coverage before each split.
+> Continue only by cohesive behavior clusters such as browser login no-save output, status project/readiness diagnostics, status cursor/config diagnostics, or doctor JSON/provenance diagnostics, and preserve baseline coverage before each split.

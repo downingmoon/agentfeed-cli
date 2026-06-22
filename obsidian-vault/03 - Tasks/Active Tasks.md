@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI collect config state test split
+> CLI oversized `tests/cli-collect.test.ts`에서 malformed collection cursor warning, malformed saved draft duplicate detection warning, malformed project config JSON/shape guidance, and JSON output cursor persistence coverage를 `tests/cli-collect-config-state.test.ts`로 분리했다. Baseline filter 5 tests, targeted split 2 files / 13 tests, typecheck/build, full CLI suite 175 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 원본 suite는 아직 453 pure LOC로 oversized라 추가 분리가 필요하다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Collect Config State Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI collect command UX test split
 > CLI oversized `tests/cli-collect.test.ts`에서 human-readable explain output, collect help, dry-run alias, explicit session-file warning, contradictory dry-run/upload validation, and unsupported source guidance coverage를 `tests/cli-collect-command-ux.test.ts`로 분리했다. Baseline filter 7 tests, targeted split 2 files / 20 tests, typecheck/build, full CLI suite 174 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 원본 suite는 아직 566 pure LOC로 oversized라 추가 분리가 필요하다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Collect Command UX Test Split 2026-06-22]]

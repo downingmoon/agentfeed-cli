@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI keychain environment test split
+> CLI near-ceiling `tests/keychain-env.test.ts`에서 Windows DPAPI native storage/plaintext leakage coverage를 `tests/keychain-env-windows.test.ts`로 분리하고 shared child process/platform mocks/env fixture/scrub assertions를 `tests/keychain-env-helpers.ts`로 통합했다. Baseline 1 file / 3 tests, targeted split 2 files / 3 tests, typecheck/build, full CLI suite 214 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 split files/helper는 63/62/120 pure LOC다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Keychain Environment Test Split 2026-06-22]]
+
+
+
 
 > [!success] 2026-06-22 CLI share JSON handoff test split
 > CLI near-ceiling `tests/cli-share-json-handoff.test.ts`에서 requested review URL handoff failure JSON payload coverage를 `tests/cli-share-json-handoff-failure.test.ts`로 분리했다. Baseline 1 file / 3 tests, targeted split 2 files / 3 tests, typecheck/build, full CLI suite 213 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 split files는 144/81 pure LOC다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.

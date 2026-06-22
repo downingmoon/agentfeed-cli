@@ -48,5 +48,5 @@ visibility: (w.visibility as Worklog['visibility']) ?? 'public'
 
 ## 후속 작업
 
-- [ ] `adaptWorklogCard()`의 반환부에 남아 있는 `as Worklog & { _author: User }` assertion도 별도 pass에서 adapter return type 구조를 정리하며 제거 가능한지 점검한다.
-- [ ] `SettingsPage`, `ProjectsPage`, `ProjectDetailPage`의 select handler에 남아 있는 visibility type assertion은 oversized page split 또는 shared select parser 도입과 함께 별도 pass에서 처리한다.
+- [x] `adaptWorklogCard()`의 반환부에 남아 있던 `as Worklog & { _author: User }` assertion은 이미 제거되었고 `src/lib/worklog-card-source-assertions.ts`가 재도입을 막는다. 확인: [[Frontend Stale Contract TODO Reconciliation 2026-06-22]].
+- [x] `SettingsPage`, `ProjectsPage`, `ProjectDetailPage` visibility select handler는 `projectVisibilityFromSelect()`를 사용하고 `src/lib/project-visibility-source-assertions.ts`가 raw string assertion 재도입을 막는다. 확인: [[Frontend Stale Contract TODO Reconciliation 2026-06-22]].

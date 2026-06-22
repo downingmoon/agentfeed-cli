@@ -7,12 +7,18 @@ status: active
 tags:
   - agentfeed/todo
   - project/tasks
-updated: 2026-06-21
+updated: 2026-06-22
 ---
 
 # Active Tasks
 
 ## 현재 결론
+
+
+> [!success] 2026-06-22 Frontend stale contract TODO reconciliation
+> Frontend contract/test 문서 중 이미 처리된 `worklog-review-strict-fields.contract.test.ts` re-scan 후보, `adaptWorklogCard()` return cast, project visibility select cast TODO를 현재 source-contract evidence 기준으로 정리했다. `npm run test:contracts`, `npm run lint` 통과. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Stale Contract TODO Reconciliation 2026-06-22]]
+
 
 
 

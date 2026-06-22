@@ -53,7 +53,7 @@ aliases:
 ## Follow-up
 
 > [!todo]
-> Current next re-scan candidate: `worklog-review-strict-fields.contract.test.ts` at 5 pure LOC.
+> `worklog-review-strict-fields.contract.test.ts` was already a 5 pure LOC runner; stale candidate reconciled in [[Frontend Stale Contract TODO Reconciliation 2026-06-22]].
 
 > [!todo]
 > Keep API JSON source-boundary assertions in `api-json-boundary-assertions.ts`; keep the focused runner at `api-json-boundary.contract.test.ts` slim.

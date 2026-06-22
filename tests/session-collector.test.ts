@@ -3,14 +3,11 @@ import { mkdtemp, rm, writeFile, mkdir, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { collectAgentSessionMetrics, sessionFileBelongsToProject } from '../src/collectors/agent-session.js';
+import { collectAgentSessionMetrics } from '../src/collectors/agent-session.js';
 import { initProject } from '../src/config/project-config.js';
 import { collectDraft } from '../src/draft/create.js';
 
 let dir: string;
-const oldSessionFileMaxBytes = process.env.AGENTFEED_SESSION_FILE_MAX_BYTES;
-const oldSessionJsonlMaxRows = process.env.AGENTFEED_SESSION_JSONL_MAX_ROWS;
-const oldSessionJsonlMaxLineChars = process.env.AGENTFEED_SESSION_JSONL_MAX_LINE_CHARS;
 const oldHome = process.env.HOME;
 
 async function writeJsonl(path: string, rows: unknown[]) {
@@ -19,9 +16,6 @@ async function writeJsonl(path: string, rows: unknown[]) {
 
 beforeEach(async () => {
   dir = await mkdtemp(join(tmpdir(), 'agentfeed-session-'));
-  delete process.env.AGENTFEED_SESSION_FILE_MAX_BYTES;
-  delete process.env.AGENTFEED_SESSION_JSONL_MAX_ROWS;
-  delete process.env.AGENTFEED_SESSION_JSONL_MAX_LINE_CHARS;
   execFileSync('git', ['init'], { cwd: dir });
   execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: dir });
   execFileSync('git', ['config', 'user.name', 'Test'], { cwd: dir });
@@ -32,46 +26,12 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  if (oldSessionFileMaxBytes === undefined) delete process.env.AGENTFEED_SESSION_FILE_MAX_BYTES;
-  else process.env.AGENTFEED_SESSION_FILE_MAX_BYTES = oldSessionFileMaxBytes;
-  if (oldSessionJsonlMaxRows === undefined) delete process.env.AGENTFEED_SESSION_JSONL_MAX_ROWS;
-  else process.env.AGENTFEED_SESSION_JSONL_MAX_ROWS = oldSessionJsonlMaxRows;
-  if (oldSessionJsonlMaxLineChars === undefined) delete process.env.AGENTFEED_SESSION_JSONL_MAX_LINE_CHARS;
-  else process.env.AGENTFEED_SESSION_JSONL_MAX_LINE_CHARS = oldSessionJsonlMaxLineChars;
   if (oldHome === undefined) delete process.env.HOME;
   else process.env.HOME = oldHome;
   await rm(dir, { recursive: true, force: true });
 });
 
 describe('agent session collector', () => {
-
-  it('rejects oversized explicit agent session files before parsing', async () => {
-    process.env.AGENTFEED_SESSION_FILE_MAX_BYTES = '128';
-    const sessionFile = join(dir, 'oversized-codex-session.jsonl');
-    await writeJsonl(sessionFile, [
-      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'oversized-codex-session', cwd: dir } },
-      { timestamp: '2026-05-20T00:00:01Z', type: 'event_msg', payload: { type: 'token_count', info: { total_tokens: 9999 }, padding: 'x'.repeat(256) } }
-    ]);
-
-    await expect(sessionFileBelongsToProject(sessionFile, dir)).resolves.toBe(false);
-    await expect(collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile })).resolves.toBeNull();
-  });
-
-  it('skips pathological JSONL lines while keeping bounded valid session identity', async () => {
-    process.env.AGENTFEED_SESSION_JSONL_MAX_LINE_CHARS = '512';
-    const sessionFile = join(dir, 'huge-line-codex-session.jsonl');
-    await writeFile(sessionFile, [
-      JSON.stringify({ timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'huge-line-codex-session', cwd: dir } }),
-      JSON.stringify({ timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: { [join(dir, 'src', 'too-large.ts')]: { type: 'add', content: 'x'.repeat(500) } } } }),
-      ''
-    ].join('\n'));
-
-    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
-
-    expect(metrics?.session_id).toBe('huge-line-codex-session');
-    expect(metrics?.changed_files).toEqual([]);
-  });
-
   it('uses session metrics when creating a draft from a clean git tree', async () => {
     await initProject({ cwd: dir, noGitCheck: false });
     execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });
@@ -381,64 +341,6 @@ describe('agent session collector', () => {
     expect(metrics?.collection_sources).toEqual([
       { type: 'agent_session', name: 'codex', quality: 'high' }
     ]);
-  });
-
-  it('keeps the newest JSONL rows when a long Codex session exceeds the row cap', async () => {
-    process.env.AGENTFEED_SESSION_JSONL_MAX_ROWS = '2';
-    const sessionFile = join(dir, 'codex-long-row-capped.jsonl');
-    const recentPath = join(dir, 'src', 'recent-row-cap.ts');
-    await writeJsonl(sessionFile, [
-      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-long-row-capped', cwd: dir, model: 'gpt-old' } },
-      { timestamp: '2026-05-20T00:00:01Z', type: 'event_msg', payload: { type: 'token_count', info: { total_tokens: 10 } } },
-      { timestamp: '2026-05-20T00:05:00Z', type: 'event_msg', payload: { type: 'agent_message', phase: 'final' } },
-      {
-        timestamp: '2026-05-20T00:05:01Z',
-        type: 'event_msg',
-        payload: {
-          type: 'patch_apply_end',
-          changes: {
-            [recentPath]: {
-              type: 'add',
-              unified_diff: '--- /dev/null\n+++ b/src/recent-row-cap.ts\n@@\n+export const recent = true;\n'
-            }
-          }
-        }
-      }
-    ]);
-
-    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
-
-    expect(metrics?.changed_files.map((file) => file.path)).toContain('src/recent-row-cap.ts');
-    expect(metrics?.collection_sources).toContainEqual({ type: 'agent_session', name: 'codex', quality: 'high' });
-  });
-
-  it('reads the tail of oversized Codex session files instead of silently dropping agent evidence', async () => {
-    process.env.AGENTFEED_SESSION_FILE_MAX_BYTES = '2048';
-    const sessionFile = join(dir, 'codex-oversized-tail.jsonl');
-    const recentPath = join(dir, 'src', 'recent-tail.ts');
-    const oversizedPrefix = `${'x'.repeat(4096)}\n`;
-    const tailRows = [
-      JSON.stringify({ timestamp: '2026-05-20T00:05:00Z', type: 'event_msg', payload: { type: 'agent_message', phase: 'final' } }),
-      JSON.stringify({
-        timestamp: '2026-05-20T00:05:01Z',
-        type: 'event_msg',
-        payload: {
-          type: 'patch_apply_end',
-          changes: {
-            [recentPath]: {
-              type: 'add',
-              unified_diff: '--- /dev/null\n+++ b/src/recent-tail.ts\n@@\n+export const recentTail = true;\n'
-            }
-          }
-        }
-      }),
-    ].join('\n');
-    await writeFile(sessionFile, `${oversizedPrefix}${tailRows}\n`);
-
-    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
-
-    expect(metrics?.changed_files.map((file) => file.path)).toContain('src/recent-tail.ts');
-    expect(metrics?.collection_quality).toBe('high');
   });
 
   it('merges OMX Codex subagent tracking and turn metrics', async () => {

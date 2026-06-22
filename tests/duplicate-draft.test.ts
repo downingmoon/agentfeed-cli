@@ -1,52 +1,17 @@
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { mkdtemp, rm, writeFile, mkdir, readFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { describe, expect, it } from 'vitest';
+import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { execFileSync } from 'node:child_process';
-import { initProject } from '../src/config/project-config.js';
 import { collectDraft, collectDraftWithStatus } from '../src/draft/create.js';
 import { listDrafts } from '../src/draft/read.js';
+import { useDuplicateDraftFixture } from './duplicate-draft-helpers.js';
 
-let dir: string;
+const fixture = useDuplicateDraftFixture();
 
-async function writeJsonl(path: string, rows: unknown[]) {
-  await writeFile(path, rows.map((row) => JSON.stringify(row)).join('\n') + '\n');
-}
-
-async function updateProjectConfig(mutator: (config: any) => void) {
-  const configPath = join(dir, '.agentfeed', 'config.json');
-  const config = JSON.parse(await readFile(configPath, 'utf8'));
-  mutator(config);
-  await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`);
-}
-
-beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), 'agentfeed-duplicate-'));
-  execFileSync('git', ['init'], { cwd: dir });
-  execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: dir });
-  execFileSync('git', ['config', 'user.name', 'Test'], { cwd: dir });
-  await mkdir(join(dir, 'src'), { recursive: true });
-  await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = true;\n');
-  execFileSync('git', ['add', '.'], { cwd: dir });
-  execFileSync('git', ['commit', '-m', 'initial'], { cwd: dir, stdio: 'ignore' });
-  const { config } = await initProject({ cwd: dir, noGitCheck: false });
-  config.agents.claude_code.enabled = false;
-  config.agents.codex.enabled = false;
-  config.agents.cursor.enabled = false;
-  config.agents.gemini_cli.enabled = false;
-  await writeFile(join(dir, '.agentfeed', 'config.json'), `${JSON.stringify(config, null, 2)}\n`);
-  execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });
-  execFileSync('git', ['commit', '-m', 'agentfeed config'], { cwd: dir, stdio: 'ignore' });
-});
-
-afterEach(async () => {
-  await rm(dir, { recursive: true, force: true });
-});
-
-describe('duplicate draft guard and draft note', () => {
+describe('duplicate draft guard', () => {
   it('reuses an existing draft for the same session, git head, and collection window', async () => {
+    const dir = fixture.dir();
     const sessionFile = join(dir, 'codex-duplicate.jsonl');
-    await writeJsonl(sessionFile, [
+    await fixture.writeJsonl(sessionFile, [
       { timestamp: '2026-05-20T01:00:00Z', type: 'session_meta', payload: { id: 'dup-session', cwd: dir } },
       { timestamp: '2026-05-20T01:01:00Z', type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: {
         [join(dir, 'src', 'dup.ts')]: { type: 'add', content: 'export const dup = true;\\n' }
@@ -62,8 +27,9 @@ describe('duplicate draft guard and draft note', () => {
   });
 
   it('reports when collection reused an existing matching draft', async () => {
+    const dir = fixture.dir();
     const sessionFile = join(dir, 'codex-duplicate-status.jsonl');
-    await writeJsonl(sessionFile, [
+    await fixture.writeJsonl(sessionFile, [
       { timestamp: '2026-05-20T01:00:00Z', type: 'session_meta', payload: { id: 'dup-status-session', cwd: dir } }
     ]);
 
@@ -75,165 +41,8 @@ describe('duplicate draft guard and draft note', () => {
     expect(second.draft.id).toBe(first.draft.id);
   });
 
-  it('does not reuse a matching draft when the share note changes uploadable output', async () => {
-    const sessionFile = join(dir, 'codex-note-reuse.jsonl');
-    await writeJsonl(sessionFile, [
-      { timestamp: '2026-05-20T01:00:00Z', type: 'session_meta', payload: { id: 'dup-note-session', cwd: dir } }
-    ]);
-
-    const first = await collectDraftWithStatus({
-      cwd: dir,
-      source: 'codex',
-      sessionFile,
-      since: '2026-05-20T01:00:00Z',
-      until: '2026-05-20T02:00:00Z',
-      note: 'first public note'
-    });
-    const second = await collectDraftWithStatus({
-      cwd: dir,
-      source: 'codex',
-      sessionFile,
-      since: '2026-05-20T01:00:00Z',
-      until: '2026-05-20T02:00:00Z',
-      note: 'second public note'
-    });
-
-    expect(first.reusedExisting).toBe(false);
-    expect(second.reusedExisting).toBe(false);
-    expect(second.draft.id).not.toBe(first.draft.id);
-    expect(first.draft.worklog.user_note).toBe('first public note');
-    expect(second.draft.worklog.user_note).toBe('second public note');
-    expect(first.draft.source.collection_fingerprint).not.toBe(second.draft.source.collection_fingerprint);
-    expect(await listDrafts(dir)).toHaveLength(2);
-  });
-
-  it('does not reuse a matching draft when configured command evidence is explicitly requested', async () => {
-    const sessionFile = join(dir, 'codex-command-reuse.jsonl');
-    await writeJsonl(sessionFile, [
-      { timestamp: '2026-05-20T01:00:00Z', type: 'session_meta', payload: { id: 'dup-command-session', cwd: dir } }
-    ]);
-    const commandPath = join(dir, '.agentfeed', 'test-command.mjs');
-    await writeFile(commandPath, 'console.log("2 passed");\n');
-    const configPath = join(dir, '.agentfeed', 'config.json');
-    const { config } = await initProject({ cwd: dir, noGitCheck: false });
-    config.agents.claude_code.enabled = false;
-    config.agents.codex.enabled = false;
-    config.agents.cursor.enabled = false;
-    config.agents.gemini_cli.enabled = false;
-    config.collection.run_tests_on_collect = true;
-    config.commands.test = 'node .agentfeed/test-command.mjs';
-    config.commands.build = null;
-    await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`);
-
-    const first = await collectDraftWithStatus({
-      cwd: dir,
-      source: 'codex',
-      sessionFile,
-      since: '2026-05-20T01:00:00Z',
-      until: '2026-05-20T02:00:00Z'
-    });
-    const second = await collectDraftWithStatus({
-      cwd: dir,
-      source: 'codex',
-      sessionFile,
-      since: '2026-05-20T01:00:00Z',
-      until: '2026-05-20T02:00:00Z',
-      runConfiguredCommands: true
-    });
-    const third = await collectDraftWithStatus({
-      cwd: dir,
-      source: 'codex',
-      sessionFile,
-      since: '2026-05-20T01:00:00Z',
-      until: '2026-05-20T02:00:00Z',
-      runConfiguredCommands: true
-    });
-
-    expect(first.reusedExisting).toBe(false);
-    expect(first.draft.worklog.metrics.commands_run).toBeNull();
-    expect(second.reusedExisting).toBe(false);
-    expect(second.draft.id).not.toBe(first.draft.id);
-    expect(second.draft.worklog.metrics.commands_run).toBe(1);
-    expect(second.draft.worklog.metrics.tests_run).toBe(2);
-    expect(third.reusedExisting).toBe(false);
-    expect(third.draft.id).not.toBe(second.draft.id);
-    expect(third.draft.worklog.metrics.commands_run).toBe(1);
-    expect(await listDrafts(dir)).toHaveLength(3);
-  });
-
-  it('does not reuse a matching draft when file-stat collection policy changes uploadable metrics', async () => {
-    const sessionFile = join(dir, 'codex-file-policy-reuse.jsonl');
-    await writeJsonl(sessionFile, [
-      { timestamp: '2026-05-20T01:00:00Z', type: 'session_meta', payload: { id: 'dup-file-policy-session', cwd: dir } },
-      { timestamp: '2026-05-20T01:01:00Z', type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: {
-        [join(dir, 'src', 'policy.ts')]: { type: 'add', content: 'export const policy = true;\\n' }
-      } } }
-    ]);
-
-    const first = await collectDraftWithStatus({
-      cwd: dir,
-      source: 'codex',
-      sessionFile,
-      since: '2026-05-20T01:00:00Z',
-      until: '2026-05-20T02:00:00Z'
-    });
-    await updateProjectConfig((config) => {
-      config.collection.include_file_stats = false;
-    });
-    const second = await collectDraftWithStatus({
-      cwd: dir,
-      source: 'codex',
-      sessionFile,
-      since: '2026-05-20T01:00:00Z',
-      until: '2026-05-20T02:00:00Z'
-    });
-
-    expect(first.reusedExisting).toBe(false);
-    expect(first.draft.worklog.metrics.files_changed).toBeGreaterThan(0);
-    expect(second.reusedExisting).toBe(false);
-    expect(second.draft.id).not.toBe(first.draft.id);
-    expect(second.draft.worklog.metrics.files_changed).toBeNull();
-    expect(first.draft.source.collection_fingerprint).not.toBe(second.draft.source.collection_fingerprint);
-    expect(await listDrafts(dir)).toHaveLength(2);
-  });
-
-  it('does not reuse a matching draft when project tags change uploadable public fields', async () => {
-    const sessionFile = join(dir, 'codex-tag-policy-reuse.jsonl');
-    await writeJsonl(sessionFile, [
-      { timestamp: '2026-05-20T01:00:00Z', type: 'session_meta', payload: { id: 'dup-tag-policy-session', cwd: dir } },
-      { timestamp: '2026-05-20T01:01:00Z', type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: {
-        [join(dir, 'src', 'tags.ts')]: { type: 'add', content: 'export const tags = true;\\n' }
-      } } }
-    ]);
-
-    const first = await collectDraftWithStatus({
-      cwd: dir,
-      source: 'codex',
-      sessionFile,
-      since: '2026-05-20T01:00:00Z',
-      until: '2026-05-20T02:00:00Z'
-    });
-    await updateProjectConfig((config) => {
-      config.project.tags = ['launch-readiness'];
-    });
-    const second = await collectDraftWithStatus({
-      cwd: dir,
-      source: 'codex',
-      sessionFile,
-      since: '2026-05-20T01:00:00Z',
-      until: '2026-05-20T02:00:00Z'
-    });
-
-    expect(first.reusedExisting).toBe(false);
-    expect(first.draft.worklog.tags).not.toContain('launch-readiness');
-    expect(second.reusedExisting).toBe(false);
-    expect(second.draft.id).not.toBe(first.draft.id);
-    expect(second.draft.worklog.tags).toContain('launch-readiness');
-    expect(first.draft.source.collection_fingerprint).not.toBe(second.draft.source.collection_fingerprint);
-    expect(await listDrafts(dir)).toHaveLength(2);
-  });
-
   it('reuses git-only drafts when no agent session evidence is available', async () => {
+    const dir = fixture.dir();
     await writeFile(join(dir, 'src', 'api.ts'), 'export const ok = false;\nexport const changed = true;\n');
 
     const first = await collectDraftWithStatus({ cwd: dir, since: '2026-05-20T01:00:00Z', until: '2026-05-20T02:00:00Z' });
@@ -247,22 +56,10 @@ describe('duplicate draft guard and draft note', () => {
     expect(await listDrafts(dir)).toHaveLength(1);
   });
 
-  it('redacts secrets in share notes and stores them separately from generated summaries', async () => {
-    const sessionFile = join(dir, 'codex-note.jsonl');
-    await writeJsonl(sessionFile, [
-      { timestamp: '2026-05-20T01:00:00Z', type: 'session_meta', payload: { id: 'note-session', cwd: dir } }
-    ]);
-
-    const draft = await collectDraft({ cwd: dir, source: 'codex', sessionFile, note: 'token sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890' });
-
-    expect(draft.worklog.user_note).toBe('token [REDACTED_SECRET]');
-    expect(draft.worklog.summary).not.toContain('Note:');
-    expect(draft.privacy_scan.status).toBe('danger');
-  });
-
   it('allows duplicate collection when force is set', async () => {
+    const dir = fixture.dir();
     const sessionFile = join(dir, 'codex-force.jsonl');
-    await writeJsonl(sessionFile, [
+    await fixture.writeJsonl(sessionFile, [
       { timestamp: '2026-05-20T01:00:00Z', type: 'session_meta', payload: { id: 'force-session', cwd: dir } }
     ]);
 

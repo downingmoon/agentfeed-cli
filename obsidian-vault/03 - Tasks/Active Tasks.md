@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 Frontend targeted contract runner
+> Frontend `scripts/run-contract-tests.mjs`가 optional target arguments와 local `node_modules/.bin/tsc` fallback을 지원하도록 보강했다. 직접 `node scripts/run-contract-tests.mjs <contract-file>` 검증, unknown-target failure, full contract suite, lint를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Frontend Targeted Contract Runner 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 Frontend stale contract TODO reconciliation
 > Frontend contract/test 문서 중 이미 처리된 `worklog-review-strict-fields.contract.test.ts` re-scan 후보, `adaptWorklogCard()` return cast, project visibility select cast TODO를 현재 source-contract evidence 기준으로 정리했다. `npm run test:contracts`, `npm run lint` 통과. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Stale Contract TODO Reconciliation 2026-06-22]]

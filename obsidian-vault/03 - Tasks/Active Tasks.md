@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI browser login no-save test split
+> CLI oversized `tests/cli-status-doctor.test.ts`에서 browser-login `--no-open --no-save` UX/secret non-leak coverage를 `tests/cli-browser-login-no-save-output.test.ts`로 분리했다. Baseline filter 1 test, targeted split 2 files / 20 tests, typecheck/build, full CLI suite 158 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Browser Login No Save Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI rotate auth flow test split
 > CLI oversized `tests/cli-status-doctor.test.ts`에서 rotate CI/browser/env/metadata flow coverage를 `tests/cli-rotate-ci-env-failures.test.ts`, `tests/cli-rotate-browser-replacement.test.ts`, `tests/cli-rotate-metadata-failure.test.ts`로 분리했다. Baseline rotate filter 4 tests, targeted split 4 files / 24 tests, typecheck/build, full CLI suite 157 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Rotate Auth Flow Test Split 2026-06-22]]

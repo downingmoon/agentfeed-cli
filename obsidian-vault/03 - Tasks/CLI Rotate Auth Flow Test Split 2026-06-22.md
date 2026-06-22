@@ -74,5 +74,8 @@ tests/cli-rotate-metadata-failure.test.ts: 136 pure LOC.
 
 ## Follow-up
 
+> [!success]
+> Follow-up browser login no-save output completed in [[CLI Browser Login No Save Test Split 2026-06-22]]. `tests/cli-status-doctor.test.ts` is now 623 pure LOC after the split.
+
 > [!todo]
-> `tests/cli-status-doctor.test.ts` remains oversized at 722 pure LOC. Continue only by cohesive behavior clusters such as browser login no-save output, status project/readiness diagnostics, status cursor/config diagnostics, or doctor JSON/provenance diagnostics. Preserve baseline coverage before each split.
+> Continue only by cohesive behavior clusters such as status project/readiness diagnostics, status cursor/config diagnostics, package/version diagnostics, or doctor JSON/provenance diagnostics. Preserve baseline coverage before each split.

@@ -15,6 +15,11 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI share guidance test split
+> CLI `tests/cli-share.test.ts`에서 share/publish guidance 및 dry-run human/JSON output 계약을 `cli-share-guidance`, `cli-share-dry-run-output`, shared fixture helper로 분리했다. Baseline 54 passed, final targeted 54 passed, typecheck/build, full CLI suite 118 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Share Guidance Test Split 2026-06-22]]
+
+
 > [!success] 2026-06-22 Frontend run-ci contract split
 > Frontend `scripts/run-ci.contract.test.mjs`의 457 pure LOC direct Node contract를 core CI ordering, hosted guard, failure propagation suite와 shared helper로 분리했다. Targeted split, registry self-test, full `npm run test:contracts`, `npm run lint`, `git diff --check`, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 런타임 변경 및 배포 없음.
 > - [[Frontend Run CI Contract Split 2026-06-22]]

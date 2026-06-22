@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI login safe token guidance test split
+> CLI oversized `tests/cli-status-doctor.test.ts`에서 login `--json` browser-auth refusal, help safe-token guidance, and literal argv token rejection coverage를 `tests/cli-login-safe-token-guidance.test.ts`로 분리했다. Baseline safe-token guidance filter 3 tests, targeted split 2 files / 27 tests, typecheck/build, full CLI suite 154 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Login Safe Token Guidance Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI login CI fail fast test split
 > CLI oversized `tests/cli-status-doctor.test.ts`에서 login CI browser-session fail-fast and existing-token guidance coverage를 `tests/cli-login-ci-fail-fast.test.ts`로 분리했다. Baseline login CI filter 2 tests, targeted split 2 files / 29 tests, typecheck/build, full CLI suite 153 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Login CI Fail Fast Test Split 2026-06-22]]

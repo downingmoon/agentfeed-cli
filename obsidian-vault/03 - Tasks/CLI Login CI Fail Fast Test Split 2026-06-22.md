@@ -67,5 +67,8 @@ tests/cli-login-ci-fail-fast.test.ts: 122 pure LOC; focused login CI fail-fast s
 
 ## Follow-up
 
+> [!success]
+> login safe-token guidance coverage was split in [[CLI Login Safe Token Guidance Test Split 2026-06-22]], reducing `tests/cli-status-doctor.test.ts` from 1063 to 998 pure LOC.
+
 > [!todo]
-> `tests/cli-status-doctor.test.ts` remains oversized at 1063 pure LOC. Continue only by cohesive behavior clusters such as browser login JSON refusal, rotate replacement/failure cases, or status project/readiness diagnostics, and preserve baseline coverage before each split.
+> `tests/cli-status-doctor.test.ts` remains oversized at 998 pure LOC. Continue only by cohesive behavior clusters such as rotate replacement/failure cases, browser login no-save output, status project/readiness diagnostics, or doctor JSON/provenance diagnostics, and preserve baseline coverage before each split.

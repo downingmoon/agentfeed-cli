@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI config test split
+> CLI oversized `tests/config.test.ts`를 project config 전용 suite로 줄이고 credential storage, keychain storage, API base URL, credential resolution coverage를 `tests/config-credential-storage.test.ts`, `tests/config-keychain-storage.test.ts`, `tests/config-api-base.test.ts`, `tests/config-credential-resolution.test.ts`로 분리했다. Baseline 1 file / 37 tests, targeted split 5 files / 37 tests, typecheck/build, full CLI suite 183 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 원본 및 신규 suites는 모두 250 pure LOC ceiling 아래다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Config Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI help recovery test split
 > CLI oversized `tests/cli-help.test.ts`에서 option validation/recovery coverage와 argument validation recovery coverage를 `tests/cli-help-recovery.test.ts`, `tests/cli-help-argument-validation.test.ts`로 분리했다. Baseline filter 17 tests, split filter 17 tests, targeted split 3 files / 38 tests, typecheck/build, full CLI suite 179 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 원본 suite는 479 pure LOC로 아직 oversized라 추가 분리가 필요하다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Help Recovery Test Split 2026-06-22]]

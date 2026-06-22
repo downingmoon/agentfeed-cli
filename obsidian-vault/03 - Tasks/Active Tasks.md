@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI collect command UX residual split
+> CLI near-ceiling `tests/cli-collect-command-ux.test.ts`에서 explicit session-file missing/parse diagnostics coverage를 `tests/cli-collect-command-session-file.test.ts`로 분리하고 shared temp git/home fixture, built CLI collect runner, failure runner, JSON warning parser를 `tests/cli-collect-command-ux-helpers.ts`로 통합했다. Baseline 1 file / 7 tests, targeted split 2 files / 7 tests, typecheck/build, full CLI suite 221 files / 848 tests, git diff --check, changed-file LOC audit를 통과했고 split files/helper는 73/41/100 pure LOC다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Collect Command UX Residual Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI rotate browser replacement test split
 > CLI near-ceiling `tests/cli-rotate-browser-replacement.test.ts`에서 saved credential setup과 browser-approved token rotation API fixture를 `tests/cli-rotate-browser-replacement-helpers.ts`로 분리했다. Baseline 1 file / 1 test, targeted split 1 file / 1 test, typecheck/build, full CLI suite 220 files / 848 tests, git diff --check, changed-file LOC audit를 통과했고 split file/helper는 78/147 pure LOC다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Rotate Browser Replacement Test Split 2026-06-22]]

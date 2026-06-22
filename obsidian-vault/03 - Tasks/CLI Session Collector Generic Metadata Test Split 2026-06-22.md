@@ -69,4 +69,4 @@ tests/session-collector-generic-metadata.test.ts: 212 pure LOC.
 ## Follow-up
 
 > [!todo]
-> `tests/session-collector.test.ts` remains oversized at 280 pure LOC. One more cohesive split should bring it under the 250 pure LOC ceiling. Best remaining candidates: draft integration/evidence-path filtering, or collection window filtering. Preserve baseline coverage before each split.
+> `tests/session-collector.test.ts` draft integration/evidence-path follow-up was completed in [[CLI Session Collector Draft Integration Test Split 2026-06-22]]. The original suite is now under the 250 pure LOC ceiling; preserve baseline coverage before any future split.

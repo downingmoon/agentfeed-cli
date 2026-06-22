@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI upload preflight failure test split
+> CLI `tests/cli-share.test.ts`에서 upload preflight failure 계약을 share/publish 전용 suite와 shared helper로 분리했다. Targeted split 3 files / 25 tests, typecheck/build, full CLI suite 123 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Upload Preflight Failure Test Split 2026-06-22]]
+
+
+
 
 > [!success] 2026-06-22 CLI publish cache test split
 > CLI `tests/cli-share.test.ts`에서 direct `agentfeed publish` cached-upload reuse/preflight/token-status/privacy-policy 계약을 `cli-publish-cache` suite와 shared fixture helper로 분리했다. Targeted split 2 files / 30 tests, typecheck/build, full CLI suite 121 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.

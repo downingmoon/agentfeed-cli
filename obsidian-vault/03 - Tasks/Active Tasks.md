@@ -15,6 +15,11 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI collect JSON upload helper split
+> CLI near-ceiling `tests/cli-collect.test.ts`에서 collect JSON upload fixture/server/CLI harness를 `tests/cli-collect-json-upload-helpers.ts`로 분리했다. Baseline 1 file / 2 tests, post-split target 1 file / 2 tests, related targeted 2 files / 5 tests, typecheck/build, full CLI suite 200 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 원본 suite는 242에서 138 pure LOC로 내려갔다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Collect JSON Upload Helper Split 2026-06-22]]
+
+
 > [!success] 2026-06-22 CLI duplicate draft test split
 > CLI oversized `tests/duplicate-draft.test.ts`에서 duplicate draft guard basics, uploadable policy changes, note handling, shared fixture를 `tests/duplicate-draft.test.ts`, `tests/duplicate-draft-policy.test.ts`, `tests/duplicate-draft-note.test.ts`, `tests/duplicate-draft-helpers.ts`로 분리했다. Baseline 1 file / 9 tests, targeted split 3 files / 9 tests, typecheck/build, full CLI suite 200 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 split files/helper는 모두 250 pure LOC ceiling 아래다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Duplicate Draft Test Split 2026-06-22]]

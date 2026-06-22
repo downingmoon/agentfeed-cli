@@ -15,6 +15,13 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+
+> [!success] 2026-06-22 CLI session collector generic metadata test split
+> CLI oversized `tests/session-collector.test.ts`에서 generic/Cursor metadata fallback, window filtering, explicit cost, malformed URI, and Cursor auto-collection coverage를 `tests/session-collector-generic-metadata.test.ts`로 분리했다. Baseline filter 10 tests, targeted split 2 files / 23 tests, typecheck/build, full CLI suite 171 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Session Collector Generic Metadata Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI session collector OMC OMX metadata test split
 > CLI oversized `tests/session-collector.test.ts`에서 OMC/OMX metadata merge/isolation coverage를 `tests/session-collector-omc-omx-metadata.test.ts`로 분리했다. Baseline filter 3 tests, targeted split 2 files / 26 tests, typecheck/build, full CLI suite 170 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Session Collector OMC OMX Metadata Test Split 2026-06-22]]

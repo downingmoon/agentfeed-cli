@@ -67,4 +67,4 @@ tests/session-collector-omc-omx-metadata.test.ts: 118 pure LOC.
 ## Follow-up
 
 > [!todo]
-> `tests/session-collector.test.ts` remains oversized at 465 pure LOC. Continue only by cohesive behavior clusters such as remaining draft integration, generic metadata, or collection window filtering. Preserve baseline coverage before each split.
+> `tests/session-collector.test.ts` generic metadata follow-up was completed in [[CLI Session Collector Generic Metadata Test Split 2026-06-22]]. It remains oversized after that pass; continue only by cohesive behavior clusters such as draft integration/evidence-path filtering or collection window filtering. Preserve baseline coverage before each split.

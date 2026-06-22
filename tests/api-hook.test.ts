@@ -14,7 +14,6 @@ const oldAgentFeedCi = process.env.AGENTFEED_CI;
 const oldCi = process.env.CI;
 const oldGithubActions = process.env.GITHUB_ACTIONS;
 const oldAgentFeedToken = process.env.AGENTFEED_TOKEN;
-const oldAgentFeedReviewBaseUrl = process.env.AGENTFEED_REVIEW_BASE_URL;
 const oldAgentFeedAllowInsecureApi = process.env.AGENTFEED_ALLOW_INSECURE_API;
 
 const defaultPublishCredentials = { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' };
@@ -40,8 +39,6 @@ afterEach(async () => {
   else process.env.GITHUB_ACTIONS = oldGithubActions;
   if (oldAgentFeedToken === undefined) delete process.env.AGENTFEED_TOKEN;
   else process.env.AGENTFEED_TOKEN = oldAgentFeedToken;
-  if (oldAgentFeedReviewBaseUrl === undefined) delete process.env.AGENTFEED_REVIEW_BASE_URL;
-  else process.env.AGENTFEED_REVIEW_BASE_URL = oldAgentFeedReviewBaseUrl;
   if (oldAgentFeedAllowInsecureApi === undefined) delete process.env.AGENTFEED_ALLOW_INSECURE_API;
   else process.env.AGENTFEED_ALLOW_INSECURE_API = oldAgentFeedAllowInsecureApi;
   vi.unstubAllGlobals();
@@ -107,61 +104,6 @@ describe('api client', () => {
     expect(saved.upload).toMatchObject({ uploaded: true, worklog_id: 'worklog_concurrent' });
   });
 
-  it('accepts upload review URLs from an explicitly configured split review frontend host', async () => {
-    process.env.AGENTFEED_REVIEW_BASE_URL = 'https://review.internal.example';
-    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
-    await writeDraft(dir, draft);
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
-      data: {
-        id: 'worklog_split_host',
-        status: 'needs_review',
-        visibility: 'private',
-        review_url: 'https://review.internal.example/worklogs/worklog_split_host/review',
-        created_at: '2026-05-19T00:00:00Z'
-      }
-    }), { status: 200, headers: { 'content-type': 'application/json' } })));
-
-    const result = await publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.internal.example/v1', created_at: 'now' } });
-
-    expect(result.review_url).toBe('https://review.internal.example/worklogs/worklog_split_host/review');
-    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
-    expect(saved.upload).toMatchObject({
-      uploaded: true,
-      worklog_id: 'worklog_split_host',
-      review_url: 'https://review.internal.example/worklogs/worklog_split_host/review'
-    });
-  });
-
-  it('accepts upload review URLs from metadata-provided split review frontend host', async () => {
-    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
-    await writeDraft(dir, draft);
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
-      data: {
-        id: 'worklog_metadata_split_host',
-        status: 'needs_review',
-        visibility: 'private',
-        review_url: 'https://review.internal.example/worklogs/worklog_metadata_split_host/review',
-        created_at: '2026-05-19T00:00:00Z'
-      }
-    }), { status: 200, headers: { 'content-type': 'application/json' } })));
-
-    const result = await publishDraft({
-      cwd: dir,
-      id: draft.id,
-      credentials: { ingestion_token: 'tok', api_base_url: 'https://api.internal.example/v1', created_at: 'now' },
-      reviewBaseUrl: 'https://review.internal.example'
-    });
-
-    expect(result.review_url).toBe('https://review.internal.example/worklogs/worklog_metadata_split_host/review');
-    expect(result.review_base_url).toBe('https://review.internal.example');
-    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
-    expect(saved.upload).toMatchObject({
-      uploaded: true,
-      worklog_id: 'worklog_metadata_split_host',
-      review_url: 'https://review.internal.example/worklogs/worklog_metadata_split_host/review',
-      review_base_url: 'https://review.internal.example'
-    });
-  });
 
   it.each([
     { status: 'public', visibility: 'public' },

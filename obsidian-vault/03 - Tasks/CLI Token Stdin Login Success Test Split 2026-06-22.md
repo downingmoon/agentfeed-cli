@@ -67,5 +67,8 @@ tests/cli-login-token-stdin-success.test.ts: 182 pure LOC; focused token-stdin l
 
 ## Follow-up
 
+> [!success]
+> token-stdin failure coverage was split in [[CLI Token Stdin Failure Test Split 2026-06-22]], reducing `tests/cli-status-doctor.test.ts` from 1269 to 1142 pure LOC.
+
 > [!todo]
-> `tests/cli-status-doctor.test.ts` remains oversized at 1269 pure LOC. Continue only by cohesive behavior clusters such as token-stdin failure cases, browser login JSON refusal, CI login fail-fast, rotate replacement, or status project/readiness diagnostics, and preserve baseline coverage before each split.
+> `tests/cli-status-doctor.test.ts` remains oversized at 1142 pure LOC. Continue only by cohesive behavior clusters such as browser login JSON refusal, CI login fail-fast, rotate replacement, or status project/readiness diagnostics, and preserve baseline coverage before each split.

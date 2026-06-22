@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI publish locking test split
+> CLI `tests/cli-share.test.ts`에서 direct publish concurrent locking 계약을 `cli-publish-json-locking` suite와 shared process helper로 분리했다. Baseline 1 file / 11 tests, targeted split 2 files / 11 tests, typecheck/build, full CLI suite 129 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Publish Locking Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI publish JSON test split
 > CLI `tests/cli-share.test.ts`에서 direct publish JSON output, default no-side-effect behavior, requested review URL handoff failure JSON reporting 계약을 `cli-publish-json-*` suites와 shared helper로 분리했다. Targeted split 3 files / 14 tests, typecheck/build, full CLI suite 128 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Publish JSON Test Split 2026-06-22]]

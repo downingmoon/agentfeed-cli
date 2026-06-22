@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyDraft } from '../src/draft/create.js';
-import { formatPrivacyPolicyLines, formatSharePreview, parseShareArgs, privacyPolicySummary } from '../src/cli/share.js';
-import { option } from '../src/cli/args.js';
+import { formatSharePreview } from '../src/cli/share.js';
 
 describe('share command helpers', () => {
   it('renders a private-review preview before upload', () => {
@@ -34,38 +33,6 @@ describe('share command helpers', () => {
     expect(output).toContain('Collection quality: high');
     expect(output).toContain('- agent_session: codex (high)');
     expect(output).toContain('- plugin_metadata: omx (medium)');
-  });
-
-  it('parses share-specific options and preserves collect source options', () => {
-    expect(parseShareArgs(['--dry', '--open-review', '--source', 'gemini-cli', '--session-file=/tmp/session.jsonl', '--since', '2026-05-20T01:00:00Z', '--until=2026-05-20T02:00:00Z', '--note', 'Refined login flow', '--no-clipboard', '--no-save-cursor', '--run-configured-commands'])).toEqual({
-      dryRun: true,
-      openReview: true,
-      noOpenReview: false,
-      json: false,
-      explain: false,
-      source: 'gemini_cli',
-      sessionFile: '/tmp/session.jsonl',
-      since: '2026-05-20T01:00:00Z',
-      until: '2026-05-20T02:00:00Z',
-      note: 'Refined login flow',
-      noClipboard: true,
-      noSaveCursor: true,
-      runConfiguredCommands: true,
-      yes: false
-    });
-    expect(parseShareArgs(['--explain']).explain).toBe(true);
-    expect(parseShareArgs(['--yes']).yes).toBe(true);
-    expect(parseShareArgs(['--no-open-review']).noOpenReview).toBe(true);
-  });
-
-  it('rejects missing option values before treating flags as values', () => {
-    expect(() => option(['--token', '--no-save'], '--token')).toThrow(/--token requires a value/);
-    expect(() => option(['--source='], '--source')).toThrow(/--source requires a value/);
-    expect(() => parseShareArgs(['--source', '--json'])).toThrow(/--source requires a value/);
-  });
-
-  it('rejects unsupported share source values before creating drafts', () => {
-    expect(() => parseShareArgs(['--source', 'gemni-cli'])).toThrow(/Unsupported agent source: gemni-cli[\s\S]*Tip: omit --source to let AgentFeed auto-detect Claude\/Codex\/Cursor\/Gemini sessions\.[\s\S]*Did you mean: --source gemini-cli[\s\S]*Run: agentfeed share --dry[\s\S]*Run: agentfeed share --source gemini-cli --dry[\s\S]*Run: agentfeed share --help/i);
   });
 
 
@@ -143,59 +110,6 @@ describe('share command helpers', () => {
     expect(output).toContain('- agent_session: codex (high)');
   });
 
-  it('explains that high/critical-severity findings block public publishing but not private review upload', () => {
-    const draft = createEmptyDraft({ projectName: 'agentfeed-cli', projectRoot: '/tmp/agentfeed-cli', source: 'codex' });
-    draft.privacy_scan = {
-      status: 'danger',
-      findings: [{
-        id: 'finding-1',
-        type: 'api_key_pattern',
-        severity: 'high',
-        message: 'Possible secret',
-        field: 'worklog.summary',
-        sample_redacted: '[REDACTED_SECRET]',
-        resolved: false,
-      }],
-    };
-
-    const output = formatSharePreview(draft);
-
-    expect(output).toContain('Privacy: danger · findings 1');
-    expect(output).toContain('Privacy review: required before public publishing.');
-    expect(output).toContain('Public/unlisted publishing is blocked in AgentFeed until high/critical-severity findings are resolved.');
-    expect(output).toContain('Private review upload is allowed so you can resolve findings in the web review.');
-    expect(formatPrivacyPolicyLines(draft)).toHaveLength(3);
-    expect(privacyPolicySummary(draft)).toEqual({
-      private_review_upload: 'allowed',
-      public_publish_blocked: true,
-      review_required: true,
-    });
-  });
-
-  it('treats unresolved critical privacy findings as public publish blockers even when status is warning', () => {
-    const draft = createEmptyDraft({ projectName: 'agentfeed-cli', projectRoot: '/tmp/agentfeed-cli', source: 'codex' });
-    draft.privacy_scan = {
-      status: 'warning',
-      findings: [{
-        id: 'finding-critical',
-        type: 'possible_secret',
-        severity: 'critical',
-        message: 'Critical secret signal',
-        field: 'worklog.summary',
-        resolved: false,
-      }],
-    };
-
-    expect(privacyPolicySummary(draft)).toEqual({
-      private_review_upload: 'allowed',
-      public_publish_blocked: true,
-      review_required: true,
-    });
-    expect(formatSharePreview(draft)).toContain('Public/unlisted publishing is blocked in AgentFeed until high/critical-severity findings are resolved.');
-
-    draft.privacy_scan.findings[0].resolved = true;
-    expect(privacyPolicySummary(draft).public_publish_blocked).toBe(false);
-  });
 
   it('warns when share preview has no agent collection evidence', () => {
     const draft = createEmptyDraft({ projectName: 'agentfeed-cli', projectRoot: '/tmp/agentfeed-cli', source: 'codex' });

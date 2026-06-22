@@ -69,4 +69,4 @@ tests/cli-ingest-upload-retry-contract.test.ts: 149 pure LOC; no as any/as unkno
 ## Follow-up
 
 > [!todo]
-> `tests/api-hook.test.ts` remains oversized at 714 pure LOC. Continue only cohesive, behavior-preserving splits with green coverage. Likely next groups: upload lock tests, cached upload reuse/stale cache contracts, upload review frontend host trust tests, timeout reconciliation tests, or publish API friendly error handling.
+> Follow-up upload lock contract split completed in [[CLI Upload Lock Contract Test Split 2026-06-22]]. `tests/api-hook.test.ts` still remains oversized at 567 pure LOC. Continue only cohesive, behavior-preserving splits with green coverage. Likely next groups: cached upload reuse/stale cache contracts, upload review frontend host trust tests, timeout reconciliation tests, or publish API friendly error handling.

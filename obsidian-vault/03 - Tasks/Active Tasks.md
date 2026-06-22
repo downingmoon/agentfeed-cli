@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI API health check test split
+> CLI near-ceiling `tests/cli-api-health-checks.test.ts`에서 ingestion token status/lifecycle/error contract coverage를 `tests/cli-api-ingestion-status.test.ts`로 분리하고 shared env/global fetch cleanup을 `tests/cli-api-health-checks-helpers.ts`로 통합했다. Baseline 1 file / 26 tests, targeted split 2 files / 26 tests, typecheck/build, full CLI suite 217 files / 848 tests, git diff --check, changed-file LOC audit를 통과했고 split files/helper는 97/110/9 pure LOC다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI API Health Check Residual Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI upload confirmation test split
 > CLI near-ceiling `tests/cli-upload-confirmation.test.ts`에서 `--yes` confirmed publish upload execution coverage를 `tests/cli-upload-confirmation-yes.test.ts`로 분리하고 shared Codex session/upload counting server/listen/close helpers를 `tests/cli-upload-confirmation-helpers.ts`로 통합했다. Baseline 1 file / 4 tests, targeted split 2 files / 4 tests, typecheck/build, full CLI suite 216 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 split files/helper는 110/59/63 pure LOC다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Upload Confirmation Residual Split 2026-06-22]]

@@ -66,5 +66,5 @@ tests/cli-publish-redaction-rescan-contract.test.ts: 69 pure LOC; no as any/as u
 
 ## Follow-up
 
-> [!todo]
-> `tests/api-hook.test.ts` remains in the 200-250 warning band at 223 pure LOC. Avoid adding new cases to it; if more API publish contract coverage is needed, continue splitting by cohesive groups such as publish API friendly errors, split review frontend host trust, private-review response rejection/status contracts, or basic publish/concurrency.
+> [!success]
+> Follow-up completed by [[CLI Split Review Host Contract Test Split 2026-06-22]]: split review frontend host trust coverage was moved out, and `tests/api-hook.test.ts` is now 170 pure LOC below the 200 warning band. Continue adding future API publish contract coverage to purpose-named suites instead of growing this catch-all file again.

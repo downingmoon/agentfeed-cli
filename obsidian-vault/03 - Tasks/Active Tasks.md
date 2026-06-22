@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI split review host contract test split
+> CLI `tests/api-hook.test.ts`에 남아 있던 split review frontend host trust contract를 focused suite로 분리했다. `tests/api-hook.test.ts`를 170 pure LOC로 낮춰 200 warning band 아래로 복귀시켰다. Targeted split 2 files / 13 tests, typecheck/build, full CLI suite 148 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Split Review Host Contract Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI publish redaction rescan test split
 > CLI `tests/api-hook.test.ts`에 남아 있던 manually edited draft public field re-scan and persisted redaction contract를 focused publish-redaction suite로 분리하고 `Record<string, any>` payload assertion을 `unknown` narrowing helper로 정리했다. Targeted split 2 files / 14 tests, typecheck/build, full CLI suite 147 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Publish Redaction Rescan Test Split 2026-06-22]]

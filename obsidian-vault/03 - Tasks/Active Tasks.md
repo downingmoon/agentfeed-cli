@@ -16,6 +16,13 @@ updated: 2026-06-22
 
 
 
+> [!success] 2026-06-22 CLI share JSON upload output test split
+> CLI `tests/cli-share-json-upload-output.test.ts`에서 reused draft secret redaction coverage를 `tests/cli-share-json-upload-redaction.test.ts`로 분리했다. Baseline 1 file / 3 tests, targeted split 2 files / 3 tests, typecheck/build, full CLI suite 197 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 split files는 모두 250 pure LOC ceiling 아래다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Share JSON Upload Output Test Split 2026-06-22]]
+
+
+
+
 > [!success] 2026-06-22 CLI init hook test split
 > CLI oversized `tests/cli-init-hook.test.ts`를 init setup UX, hook setup UX, shared built-CLI harness로 `tests/cli-init-setup-ux.test.ts`, `tests/cli-hook-setup-ux.test.ts`, `tests/cli-init-hook-harness.ts`에 분리했다. Baseline 1 file / 13 tests, targeted split 2 files / 13 tests, typecheck/build, full CLI suite 196 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 신규 suites/helper는 모두 250 pure LOC ceiling 아래다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Init Hook Test Split 2026-06-22]]

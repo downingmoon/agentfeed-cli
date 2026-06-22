@@ -65,4 +65,4 @@ tests/cli-doctor-api-health.test.ts: 127 pure LOC; focused API health diagnostic
 ## Follow-up
 
 > [!todo]
-> `tests/cli-status-doctor.test.ts` remains oversized at 1473 pure LOC. Continue only by cohesive behavior clusters such as login token-stdin, rotate session replacement, logout credential cleanup, or status project/readiness diagnostics, and preserve baseline coverage before each split.
+> Follow-up partly completed by [[CLI Logout Credential Cleanup Test Split 2026-06-22]]: logout credential cleanup coverage was moved out. `tests/cli-status-doctor.test.ts` remains oversized at 1407 pure LOC; continue only by cohesive behavior clusters such as login token-stdin, rotate session replacement, or status project/readiness diagnostics, and preserve baseline coverage before each split.

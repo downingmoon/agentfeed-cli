@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI visibility source contract test split
+> CLI `tests/api-hook.test.ts`에 남아 있던 source-level visibility/private-review upload status guard를 focused visibility-source suite로 분리했다. `tests/api-hook.test.ts`를 249 pure LOC로 낮춰 250 pure LOC ceiling 아래로 복귀시켰다. Targeted split 2 files / 15 tests, typecheck/build, full CLI suite 146 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Visibility Source Contract Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI upload timeout reconciliation test split
 > CLI oversized `tests/api-hook.test.ts`에서 upload request timeout, duplicate-ingest timeout reconciliation, and untrusted duplicate review URL fail-closed contracts를 focused timeout-reconciliation suite로 분리했다. Targeted split 2 files / 18 tests, typecheck/build, full CLI suite 145 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Upload Timeout Reconciliation Test Split 2026-06-22]]

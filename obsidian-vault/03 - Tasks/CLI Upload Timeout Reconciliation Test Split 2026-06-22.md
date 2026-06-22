@@ -66,4 +66,4 @@ tests/cli-upload-timeout-reconciliation-contract.test.ts: 159 pure LOC; no as an
 ## Follow-up
 
 > [!todo]
-> `tests/api-hook.test.ts` remains oversized at 263 pure LOC. Continue only cohesive, behavior-preserving splits with green coverage. The smallest next candidates are the visibility/source contract top-level test or publish API friendly error handling; either should bring `api-hook` below the 250 pure LOC ceiling.
+> Follow-up visibility/source contract split completed in [[CLI Visibility Source Contract Test Split 2026-06-22]]. `tests/api-hook.test.ts` is now 249 pure LOC, under the hard 250 pure LOC ceiling but still in warning band. Avoid adding new cases to it; if more coverage is needed, continue splitting by cohesive groups such as publish API friendly errors, split review frontend host trust, re-scan redaction, or basic publish/concurrency.

@@ -65,4 +65,4 @@ tests/cli-visibility-source-contract.test.ts: 17 pure LOC; no as any/as unknown/
 ## Follow-up
 
 > [!todo]
-> `tests/api-hook.test.ts` is now under the hard 250 pure LOC ceiling but remains in the 200-250 warning band. Avoid adding new cases to it; if more API publish contract coverage is needed, continue splitting by cohesive groups such as publish API friendly errors, split review frontend host trust, re-scan redaction, or basic publish/concurrency.
+> Follow-up redaction re-scan contract split completed in [[CLI Publish Redaction Rescan Test Split 2026-06-22]]. `tests/api-hook.test.ts` remains in the 200-250 warning band at 223 pure LOC. Avoid adding new cases to it; if more API publish contract coverage is needed, continue splitting by cohesive groups such as publish API friendly errors, split review frontend host trust, private-review response rejection/status contracts, or basic publish/concurrency.

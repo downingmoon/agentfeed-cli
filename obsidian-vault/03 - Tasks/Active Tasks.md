@@ -15,6 +15,11 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI share helper test split
+> CLI near-ceiling `tests/share.test.ts`에서 share args parsing과 privacy policy coverage를 `tests/share-args.test.ts`, `tests/share-privacy-policy.test.ts`로 분리했다. Baseline 1 file / 14 tests, targeted split 3 files / 14 tests, typecheck/build, full CLI suite 202 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 원본 suite는 234에서 156 pure LOC로 내려갔다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Share Helper Test Split 2026-06-22]]
+
+
 > [!success] 2026-06-22 CLI publish review handoff helper split
 > CLI near-ceiling `tests/cli-publish-review-handoff.test.ts`에서 review URL handoff server/session/cache helpers를 `tests/cli-publish-review-handoff-helpers.ts`로 분리했다. Baseline 1 file / 4 tests, post-split target 1 file / 4 tests, typecheck/build, full CLI suite 200 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 원본 suite는 236에서 169 pure LOC로 내려갔다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Publish Review Handoff Helper Split 2026-06-22]]

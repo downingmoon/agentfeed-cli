@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI auth session API test split
+> CLI oversized `tests/api-hook.test.ts`에서 direct CLI auth session creation/exchange and authorize URL trust contract checks를 `cli-auth-session-api` suite로 분리했다. Baseline 1 file / 101 tests, targeted split 2 files / 101 tests, typecheck/build, full CLI suite 135 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Auth Session API Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI API health check test split
 > CLI oversized `tests/api-hook.test.ts`에서 API metadata compatibility, backend readiness reachability, ingestion token status/error contract checks를 `cli-api-health-checks` suite로 분리했다. Baseline 1 file / 127 tests, targeted split 2 files / 127 tests, typecheck/build, full CLI suite 134 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI API Health Check Test Split 2026-06-22]]

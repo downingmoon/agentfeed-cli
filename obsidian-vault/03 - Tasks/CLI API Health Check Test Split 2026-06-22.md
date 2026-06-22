@@ -69,4 +69,4 @@ tests/cli-api-health-checks.test.ts: 204 pure LOC; no as any/as unknown/@ts-igno
 ## Follow-up
 
 > [!todo]
-> `tests/api-hook.test.ts` remains oversized at 1,659 pure LOC. Continue only cohesive, behavior-preserving splits with green baseline coverage. Likely next groups: browser login session/polling/exchange policy, publish timeout/retry/duplicate ingestion handling, or upload cache/lock contracts.
+> Follow-up direct CLI auth session API split completed in [[CLI Auth Session API Test Split 2026-06-22]]. `tests/api-hook.test.ts` still remains oversized at 1,511 pure LOC. Continue only cohesive, behavior-preserving splits with green baseline coverage. Likely next groups: browser login orchestration/no-open/polling policy, publish timeout/retry/duplicate ingestion handling, or upload response/review URL safety contracts.

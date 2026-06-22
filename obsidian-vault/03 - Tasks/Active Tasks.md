@@ -15,6 +15,13 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+
+> [!success] 2026-06-22 CLI open review URL test split
+> CLI `tests/cli-share.test.ts`에서 `agentfeed open` review URL trust/rejection/fallback 계약을 `cli-open-review-trust`, `cli-open-review-rejection`, shared fixture helper로 분리했다. Targeted split 3 files / 44 tests, typecheck/build, full CLI suite 120 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Open Review URL Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI share guidance test split
 > CLI `tests/cli-share.test.ts`에서 share/publish guidance 및 dry-run human/JSON output 계약을 `cli-share-guidance`, `cli-share-dry-run-output`, shared fixture helper로 분리했다. Baseline 54 passed, final targeted 54 passed, typecheck/build, full CLI suite 118 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Share Guidance Test Split 2026-06-22]]

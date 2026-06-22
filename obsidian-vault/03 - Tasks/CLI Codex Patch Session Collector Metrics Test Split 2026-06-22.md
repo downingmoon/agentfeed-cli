@@ -68,5 +68,8 @@ tests/session-collector-codex-patch-metrics.test.ts: 141 pure LOC.
 
 ## Follow-up
 
+> [!success]
+> Command/test runner recognition follow-up was completed by [[CLI Codex Command Session Collector Metrics Test Split 2026-06-22]]. `tests/session-collector.test.ts` is now 958 pure LOC.
+
 > [!todo]
-> `tests/session-collector.test.ts` remains oversized at 1077 pure LOC. Continue only by cohesive behavior clusters such as command/test runner recognition, session ownership/discovery, Gemini metrics, OMX/generic metadata, draft integration, or collection window filtering. Preserve baseline coverage before each split.
+> `tests/session-collector.test.ts` remains oversized at 958 pure LOC. Continue only by cohesive behavior clusters such as session ownership/discovery, Gemini metrics, OMX/generic metadata, draft integration, or collection window filtering. Preserve baseline coverage before each split.

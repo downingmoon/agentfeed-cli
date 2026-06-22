@@ -15,6 +15,11 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI scan test split
+> CLI near-ceiling `tests/cli-scan.test.ts`에서 draft human output, scan JSON output, path human output, shared CLI fixture를 `tests/cli-scan.test.ts`, `tests/cli-scan-json.test.ts`, `tests/cli-scan-path.test.ts`, `tests/cli-scan-helpers.ts`로 분리했다. Baseline 1 file / 7 tests, targeted split 3 files / 7 tests, typecheck/build, full CLI suite 204 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 원본 suite는 230에서 78 pure LOC로 내려갔다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Scan Test Split 2026-06-22]]
+
+
 > [!success] 2026-06-22 CLI share helper test split
 > CLI near-ceiling `tests/share.test.ts`에서 share args parsing과 privacy policy coverage를 `tests/share-args.test.ts`, `tests/share-privacy-policy.test.ts`로 분리했다. Baseline 1 file / 14 tests, targeted split 3 files / 14 tests, typecheck/build, full CLI suite 202 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 원본 suite는 234에서 156 pure LOC로 내려갔다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Share Helper Test Split 2026-06-22]]

@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI Codex patch session collector metrics test split
+> CLI oversized `tests/session-collector.test.ts`에서 Codex patch/apply_patch evidence, model fallback, line-count metrics, failed patch exclusion coverage를 `tests/session-collector-codex-patch-metrics.test.ts`로 분리했다. Baseline filter 6 tests, targeted split 2 files / 59 tests, typecheck/build, full CLI suite 164 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Codex Patch Session Collector Metrics Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI Claude session collector metrics test split
 > CLI oversized `tests/session-collector.test.ts`에서 Claude Code token/file/test metrics, failed Bash result parsing, assistant turn/subagent counting, TaskCreate exclusion, failed edit exclusion coverage를 `tests/session-collector-claude-metrics.test.ts`로 분리했다. Baseline filter 6 tests, targeted split 2 files / 65 tests, typecheck/build, full CLI suite 163 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Claude Session Collector Metrics Test Split 2026-06-22]]

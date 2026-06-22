@@ -69,5 +69,8 @@ tests/session-collector-claude-metrics.test.ts: 126 pure LOC.
 
 ## Follow-up
 
+> [!success]
+> Codex patch/apply_patch metrics follow-up was completed by [[CLI Codex Patch Session Collector Metrics Test Split 2026-06-22]]. `tests/session-collector.test.ts` is now 1077 pure LOC.
+
 > [!todo]
-> `tests/session-collector.test.ts` remains oversized at 1193 pure LOC. Continue only by cohesive behavior clusters such as Codex patch/apply_patch metrics, command/test runner recognition, session ownership/discovery, Gemini metrics, OMX/generic metadata, or collection window filtering. Preserve baseline coverage before each split.
+> `tests/session-collector.test.ts` remains oversized at 1077 pure LOC. Continue only by cohesive behavior clusters such as command/test runner recognition, session ownership/discovery, Gemini metrics, OMX/generic metadata, draft integration, or collection window filtering. Preserve baseline coverage before each split.

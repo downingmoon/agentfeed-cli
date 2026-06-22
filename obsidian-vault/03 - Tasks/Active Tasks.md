@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI cached upload reuse test split
+> CLI near-ceiling `tests/cli-cached-upload-reuse-contract.test.ts`에서 stale payload/review URL fail-closed safety coverage를 `tests/cli-cached-upload-reuse-safety.test.ts`로 분리하고 shared temp project/home fixture, upload binding, saved draft readers를 `tests/cli-cached-upload-reuse-helpers.ts`로 통합했다. Baseline 1 file / 8 tests, targeted split 2 files / 8 tests, typecheck/build, full CLI suite 219 files / 848 tests, git diff --check, changed-file LOC audit를 통과했고 split files/helper는 128/63/60 pure LOC다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Cached Upload Reuse Residual Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI share upload execution test split
 > CLI near-ceiling `tests/share-upload-execution.test.ts`에서 JSON/human review handoff upload execution coverage를 `tests/share-upload-execution-handoff.test.ts`로 분리하고 shared credentials/metadata/upload/draft/flags fixtures를 `tests/share-upload-execution-helpers.ts`로 통합했다. Baseline 1 file / 5 tests, targeted split 2 files / 5 tests, typecheck/build, full CLI suite 218 files / 848 tests, git diff --check, changed-file LOC audit를 통과했고 split files/helper는 78/82/50 pure LOC다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Share Upload Execution Test Split 2026-06-22]]

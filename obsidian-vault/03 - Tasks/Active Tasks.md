@@ -15,6 +15,11 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 Backend rate limit store contract split
+> Backend `tests/test_rate_limit_store.py`의 378 pure LOC 과밀 contract coverage를 in-memory store, degraded fallback, database store, production settings 책임별 suite로 분리했다. Baseline 14 passed, split focused 14 passed, rate-limit suite 42 passed, ruff, git diff --check, changed-file LOC audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[Backend Rate Limit Store Contract Split 2026-06-22]]
+
+
 > [!success] 2026-06-22 Frontend targeted contract runner
 > Frontend `scripts/run-contract-tests.mjs`가 optional target arguments와 local `node_modules/.bin/tsc` fallback을 지원하도록 보강했고, registry completeness self-test로 contract source list 누락/stale drift를 차단했다. 직접 `node scripts/run-contract-tests.mjs <contract-file>` 검증, unknown-target failure, targeted self-test, full contract suite, lint를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Targeted Contract Runner 2026-06-22]]

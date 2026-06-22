@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI publish JSON test split
+> CLI `tests/cli-share.test.ts`에서 direct publish JSON output, default no-side-effect behavior, requested review URL handoff failure JSON reporting 계약을 `cli-publish-json-*` suites와 shared helper로 분리했다. Targeted split 3 files / 14 tests, typecheck/build, full CLI suite 128 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Publish JSON Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI share JSON upload test split
 > CLI `tests/cli-share.test.ts`에서 share JSON upload output, review URL handoff, upload-failure side-effect 계약을 `cli-share-json-*` suites와 shared helper로 분리했다. Targeted split 4 files / 21 tests, typecheck/build, full CLI suite 126 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Share JSON Upload Test Split 2026-06-22]]

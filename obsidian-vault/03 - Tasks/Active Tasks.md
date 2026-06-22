@@ -16,7 +16,7 @@ updated: 2026-06-22
 
 
 > [!success] 2026-06-22 Frontend targeted contract runner
-> Frontend `scripts/run-contract-tests.mjs`가 optional target arguments와 local `node_modules/.bin/tsc` fallback을 지원하도록 보강했다. 직접 `node scripts/run-contract-tests.mjs <contract-file>` 검증, unknown-target failure, full contract suite, lint를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> Frontend `scripts/run-contract-tests.mjs`가 optional target arguments와 local `node_modules/.bin/tsc` fallback을 지원하도록 보강했고, registry completeness self-test로 contract source list 누락/stale drift를 차단했다. 직접 `node scripts/run-contract-tests.mjs <contract-file>` 검증, unknown-target failure, targeted self-test, full contract suite, lint를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[Frontend Targeted Contract Runner 2026-06-22]]
 
 

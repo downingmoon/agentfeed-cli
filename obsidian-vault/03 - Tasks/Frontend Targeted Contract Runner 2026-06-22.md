@@ -20,7 +20,9 @@ aliases:
 ## Scope
 
 - 대상 repo: `agentfeed-frontend`
-- Commit: `847c308 Support targeted frontend contract tests`
+- Commits:
+  - `847c308 Support targeted frontend contract tests`
+  - `1ff59fc Guard frontend contract registry coverage`
 - 변경 파일:
   - `scripts/run-contract-tests.mjs`
   - `scripts/run-contract-tests.contract.test.mjs`
@@ -53,12 +55,13 @@ node scripts/run-contract-tests.mjs src/lib/project-visibility-source-contract.t
 - local `node_modules/.bin/tsc`를 우선 사용해 npm PATH 없이도 직접 실행 가능하게 했다.
 - 선택 컴파일 시 TypeScript emit root가 달라지는 경우를 처리하도록 compiled target lookup을 nested/flat 두 경로로 보정했다.
 - `scripts/run-contract-tests.contract.test.mjs`를 추가해 직접 실행과 unknown-target failure를 회귀 방지한다.
+- `scripts/run-contract-tests.contract.test.mjs`가 `src`/`scripts` 아래 contract filenames와 `contract-test-sources.mjs` registry를 대조해 누락/stale registry drift를 차단한다.
 
 ## Verification Evidence
 
 ```text
 node scripts/run-contract-tests.mjs src/lib/project-visibility-source-contract.test.ts: passed
-node scripts/run-contract-tests.mjs scripts/run-contract-tests.contract.test.mjs: passed
+node scripts/run-contract-tests.mjs scripts/run-contract-tests.contract.test.mjs: passed, including registry completeness check
 node scripts/run-contract-tests.mjs src/lib/not-a-contract.test.ts: failed as expected with Unknown contract test target(s)
 npm run lint: passed
 npm run test:contracts: passed
@@ -69,7 +72,7 @@ Changed-file audit:
 
 ```text
 scripts/run-contract-tests.mjs: 71 pure LOC
-scripts/run-contract-tests.contract.test.mjs: 30 pure LOC
+scripts/run-contract-tests.contract.test.mjs: 59 pure LOC
 scripts/contract-test-sources.mjs: 132 pure LOC
 no no-excuse markers or TODO/FIXME additions
 ```

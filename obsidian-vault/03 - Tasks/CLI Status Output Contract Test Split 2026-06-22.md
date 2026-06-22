@@ -68,4 +68,7 @@ tests/cli-status-output-contracts.test.ts: 149 pure LOC.
 ## Follow-up
 
 > [!success]
-> `tests/cli-status-doctor.test.ts` is now below the 250 pure LOC ceiling. Continue enterprise hardening by scanning the next oversized or contract-risk CLI/Frontend/Backend surface before editing.
+> Next oversized/contract-risk scan was completed by [[CLI Claude Session Collector Metrics Test Split 2026-06-22]]. The first `tests/session-collector.test.ts` split moved the Claude metrics cluster and left the original collector suite at 1193 pure LOC.
+
+> [!todo]
+> Continue reducing `tests/session-collector.test.ts` only by cohesive behavior clusters. Candidate clusters: Codex patch/apply_patch metrics, command/test runner recognition, session ownership/discovery, Gemini metrics, OMX/generic metadata, or collection window filtering. Preserve baseline coverage before each split.

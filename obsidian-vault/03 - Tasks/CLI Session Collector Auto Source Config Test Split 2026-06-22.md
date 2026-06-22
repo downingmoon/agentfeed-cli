@@ -68,5 +68,8 @@ tests/session-collector-auto-source-config.test.ts: 143 pure LOC.
 
 ## Follow-up
 
+> [!success] Follow-up completed
+> [[CLI Session Collector Gemini Metrics Test Split 2026-06-22]] completed the Gemini metrics cluster split. `tests/session-collector.test.ts` is now 558 pure LOC.
+
 > [!todo]
-> `tests/session-collector.test.ts` remains oversized at 623 pure LOC. Continue only by cohesive behavior clusters such as remaining draft integration, Gemini metrics, OMX/generic metadata, generic metadata, or collection window filtering. Preserve baseline coverage before each split.
+> `tests/session-collector.test.ts` remains oversized at 558 pure LOC. Continue only by cohesive behavior clusters such as remaining draft integration, OMC/OMX session metadata, generic metadata, or collection window filtering. Preserve baseline coverage before each split.

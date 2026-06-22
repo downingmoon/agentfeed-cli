@@ -67,4 +67,4 @@ tests/cli-upload-response-safety.test.ts: 123 pure LOC; no as any/as unknown/@ts
 ## Follow-up
 
 > [!todo]
-> `tests/api-hook.test.ts` remains oversized at 968 pure LOC. Continue only cohesive, behavior-preserving splits with green coverage. Likely next groups: publish timeout/retry/duplicate ingestion handling, remote preview contract tests, publish API error/friendly error handling, or ingest payload serialization/privacy contracts.
+> Follow-up remote preview contract split completed in [[CLI Remote Preview Contract Test Split 2026-06-22]]. `tests/api-hook.test.ts` still remains oversized at 914 pure LOC. Continue only cohesive, behavior-preserving splits with green coverage. Likely next groups: publish timeout/retry/duplicate ingestion handling, publish API error/friendly error handling, or ingest payload serialization/privacy contracts.

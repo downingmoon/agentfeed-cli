@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI remote preview contract test split
+> CLI oversized `tests/api-hook.test.ts`에서 `previewDraftRemote()` remote preview upload payload, backend warnings, and malformed preview envelope fail-closed contracts를 focused remote-preview suite로 분리했다. Targeted split 2 files / 53 tests, typecheck/build, full CLI suite 140 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Remote Preview Contract Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI upload response safety test split
 > CLI oversized `tests/api-hook.test.ts`에서 malformed upload success envelope, unsafe review URL, unknown status, and duplicate-ingest untrusted review URL safety contracts를 focused upload-response suite로 분리했다. Targeted split 2 files / 64 tests, typecheck/build, full CLI suite 139 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Upload Response Safety Test Split 2026-06-22]]

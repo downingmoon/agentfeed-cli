@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI collect upload failure test split
+> CLI oversized `tests/cli-collect.test.ts`에서 collect JSON upload preflight invalid token, cursor preservation on preflight failure, and cursor preservation on ingest upload failure coverage를 `tests/cli-collect-upload-failures.test.ts`로 분리하고 typed helper를 `tests/cli-collect-upload-failure-helpers.ts`로 분리했다. Baseline filter 3 tests, targeted split 2 files / 23 tests, typecheck/build, full CLI suite 173 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 원본 suite는 아직 716 pure LOC로 oversized라 추가 분리가 필요하다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Collect Upload Failure Test Split 2026-06-22]]
+
+
+
 
 > [!success] 2026-06-22 CLI session collector draft integration test split
 > CLI oversized `tests/session-collector.test.ts`에서 draft creation, git/session changed-file merge, metadata path public evidence filtering, and explicit collection window serialization coverage를 `tests/session-collector-draft-integration.test.ts`로 분리했다. Baseline filter 4 tests, targeted split 2 files / 13 tests, typecheck/build, full CLI suite 172 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 원본 suite는 195 pure LOC로 250 ceiling 아래 복귀했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.

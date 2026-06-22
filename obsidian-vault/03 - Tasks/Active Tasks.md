@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI Claude hook installer test split
+> CLI oversized `tests/api-hook.test.ts`에서 Claude Code hook installer 계약을 `cli-claude-code-hook-installer` suite로 분리했다. Baseline 1 file / 133 tests, targeted split 2 files / 133 tests, typecheck/build, full CLI suite 133 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Claude Hook Installer Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI share command residual test split
 > CLI generic `tests/cli-share.test.ts`에 남아 있던 human upload completion output과 dry-run command execution policy 계약을 purpose-named suites로 분리하고 catch-all suite를 삭제했다. Baseline 1 file / 2 tests, targeted split 2 files / 2 tests, typecheck/build, full CLI suite 132 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Share Command Residual Test Split 2026-06-22]]

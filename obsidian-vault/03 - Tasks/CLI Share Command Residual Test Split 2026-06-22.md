@@ -69,4 +69,4 @@ tests/cli-share.test.ts: removed
 ## Follow-up
 
 > [!todo]
-> No remaining `tests/cli-share.test.ts` work. Broader CLI test-suite hardening candidates remain in larger files such as `tests/api-hook.test.ts`, `tests/cli-status-doctor.test.ts`, `tests/session-collector.test.ts`, and `tests/cli-collect.test.ts`; split only when a cohesive contract group is identified and baseline coverage is green.
+> No remaining `tests/cli-share.test.ts` work. First `tests/api-hook.test.ts` extraction completed in [[CLI Claude Hook Installer Test Split 2026-06-22]], but broader CLI test-suite hardening candidates remain in `tests/api-hook.test.ts`, `tests/cli-status-doctor.test.ts`, `tests/session-collector.test.ts`, and `tests/cli-collect.test.ts`; split only when a cohesive contract group is identified and baseline coverage is green.

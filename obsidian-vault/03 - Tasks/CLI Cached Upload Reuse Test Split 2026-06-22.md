@@ -68,4 +68,4 @@ tests/cli-cached-upload-reuse-contract.test.ts: 203 pure LOC; warning band but u
 ## Follow-up
 
 > [!todo]
-> `tests/api-hook.test.ts` remains oversized at 390 pure LOC. Continue only cohesive, behavior-preserving splits with green coverage. Likely next groups: upload response/status contract remnants, re-scan redactions, timeout reconciliation tests, publish API friendly error handling, visibility contract/basic publish/concurrency tests.
+> Follow-up timeout reconciliation contract split completed in [[CLI Upload Timeout Reconciliation Test Split 2026-06-22]]. `tests/api-hook.test.ts` still remains oversized at 263 pure LOC. Continue only cohesive, behavior-preserving splits with green coverage. The smallest next candidates are the visibility/source contract top-level test or publish API friendly error handling; either should bring `api-hook` below the 250 pure LOC ceiling.

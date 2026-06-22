@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI upload timeout reconciliation test split
+> CLI oversized `tests/api-hook.test.ts`에서 upload request timeout, duplicate-ingest timeout reconciliation, and untrusted duplicate review URL fail-closed contracts를 focused timeout-reconciliation suite로 분리했다. Targeted split 2 files / 18 tests, typecheck/build, full CLI suite 145 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Upload Timeout Reconciliation Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI cached upload reuse test split
 > CLI oversized `tests/api-hook.test.ts`에서 cached upload reuse, credential binding mismatch, redacted payload hash matching, stale cache fail-closed, and cached review URL trust contracts를 focused cached-upload reuse suite로 분리했다. Targeted split 2 files / 26 tests, typecheck/build, full CLI suite 144 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Cached Upload Reuse Test Split 2026-06-22]]

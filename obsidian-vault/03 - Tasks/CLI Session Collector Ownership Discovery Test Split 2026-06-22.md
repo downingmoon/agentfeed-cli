@@ -72,5 +72,8 @@ tests/session-collector-ownership-discovery.test.ts: 162 pure LOC.
 
 ## Follow-up
 
+> [!success]
+> Session file guardrail/pathological rows split completed in [[CLI Session Collector File Guardrail Test Split 2026-06-22]] with code commit `6345dc6`. `tests/session-collector.test.ts` is now 740 pure LOC after the follow-up split.
+
 > [!todo]
-> `tests/session-collector.test.ts` remains oversized at 826 pure LOC. Continue only by cohesive behavior clusters such as remaining draft integration, enabled agent config / auto aggregation, Gemini metrics, OMX/generic metadata, collection window filtering, or session file guardrails/pathological rows. Preserve baseline coverage before each split.
+> `tests/session-collector.test.ts` remains oversized at 740 pure LOC. Continue only by cohesive behavior clusters such as remaining draft integration, enabled agent config / auto aggregation, Gemini metrics, OMX/generic metadata, or collection window filtering. Preserve baseline coverage before each split.

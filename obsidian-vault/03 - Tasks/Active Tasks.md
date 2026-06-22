@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI session collector file guardrail test split
+> CLI oversized `tests/session-collector.test.ts`에서 session file guardrail/pathological row coverage를 `tests/session-collector-file-guardrails.test.ts`로 분리했다. Baseline filter 4 tests, targeted split 2 files / 37 tests, typecheck/build, full CLI suite 167 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Session Collector File Guardrail Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI session collector ownership discovery test split
 > CLI oversized `tests/session-collector.test.ts`에서 session ownership/discovery coverage를 `tests/session-collector-ownership-discovery.test.ts`로 분리했다. Baseline filter 9 tests, targeted split 2 files / 46 tests, typecheck/build, full CLI suite 166 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Session Collector Ownership Discovery Test Split 2026-06-22]]

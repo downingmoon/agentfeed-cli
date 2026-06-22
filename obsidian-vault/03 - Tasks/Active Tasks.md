@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI git draft test split
+> CLI oversized `tests/git-draft.test.ts`에서 configured command collection coverage와 local draft runtime validation coverage를 `tests/git-draft-configured-commands.test.ts`, `tests/git-draft-validation.test.ts`로 분리했다. Baseline filter 13 tests, targeted split 3 files / 23 tests, typecheck/build, full CLI suite 191 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 원본 및 신규 suites는 모두 250 pure LOC ceiling 아래다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Git Draft Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI preview test split
 > CLI oversized `tests/cli-preview.test.ts`에서 remote preview JSON/invalid contracts, API metadata compatibility fail-fast, local preview rendering/JSON redaction/uploaded next-action coverage를 `tests/cli-preview-remote.test.ts`, `tests/cli-preview-remote-compatibility.test.ts`, `tests/cli-preview-local-rendering.test.ts`로 분리했다. Baseline filter 8 tests, split filter 8 tests, targeted split 4 files / 13 tests, typecheck/build, full CLI suite 189 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 원본 및 신규 suites는 모두 250 pure LOC ceiling 아래다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Preview Test Split 2026-06-22]]

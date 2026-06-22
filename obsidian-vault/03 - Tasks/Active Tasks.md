@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI rotate browser replacement test split
+> CLI near-ceiling `tests/cli-rotate-browser-replacement.test.ts`에서 saved credential setup과 browser-approved token rotation API fixture를 `tests/cli-rotate-browser-replacement-helpers.ts`로 분리했다. Baseline 1 file / 1 test, targeted split 1 file / 1 test, typecheck/build, full CLI suite 220 files / 848 tests, git diff --check, changed-file LOC audit를 통과했고 split file/helper는 78/147 pure LOC다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Rotate Browser Replacement Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI status doctor test split
 > CLI near-ceiling `tests/cli-status-doctor.test.ts`에서 parseable doctor JSON diagnostics coverage를 `tests/cli-status-doctor-json.test.ts`로 분리하고 shared built CLI path/temp dir fixture/ANSI pattern/async exec helper를 `tests/cli-status-doctor-helpers.ts`로 통합했다. Baseline 1 file / 4 tests, targeted split 2 files / 4 tests, typecheck/build, full CLI suite 220 files / 848 tests, git diff --check, changed-file LOC audit를 통과했고 split files/helper는 110/86/26 pure LOC다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Status Doctor Test Split 2026-06-22]]

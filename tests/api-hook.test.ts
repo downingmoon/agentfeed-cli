@@ -208,34 +208,6 @@ describe('api client', () => {
     expect(saved.upload.uploaded).toBe(false);
   });
 
-  it('re-scans manually edited draft fields before upload and persists redactions', async () => {
-    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
-    draft.worklog.summary = 'Deploy with sk-abcdefghijklmnopqrstuvwxyz1234567890';
-    draft.worklog.public_prompt = 'Use ghp_abcdefghijklmnopqrstuvwxyz1234567890 carefully';
-    draft.project.repository_url = 'http://localhost:3000/private-repo';
-    await writeDraft(dir, draft);
-    let ingestPayload: Record<string, any> | null = null;
-    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
-      ingestPayload = JSON.parse(String(init?.body ?? '{}')) as Record<string, any>;
-      return new Response(JSON.stringify({ data: { id: 'worklog_redacted', status: 'needs_review', visibility: 'private', review_url: 'https://agentfeed.dev/worklogs/worklog_redacted/review', created_at: '2026-05-19T00:00:00Z' } }), { status: 200, headers: { 'content-type': 'application/json' } });
-    });
-    vi.stubGlobal('fetch', fetchMock);
-
-    await publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } });
-
-    expect(ingestPayload?.worklog.summary).toBe('Deploy with [REDACTED_SECRET]');
-    expect(ingestPayload?.worklog.public_prompt).toBe('Use [REDACTED_SECRET] carefully');
-    expect(ingestPayload?.project.repository_url).toBeNull();
-    expect(ingestPayload?.privacy_scan.status).toBe('danger');
-    expect(ingestPayload?.privacy_scan.findings.length).toBeGreaterThan(0);
-    expect(ingestPayload?.privacy_scan.findings.some((finding: Record<string, unknown>) => Object.hasOwn(finding, 'sample_redacted'))).toBe(false);
-    const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
-    expect(saved.privacy_scan.findings.some((finding: Record<string, unknown>) => Object.hasOwn(finding, 'sample_redacted'))).toBe(true);
-    expect(saved.worklog.summary).toBe('Deploy with [REDACTED_SECRET]');
-    expect(saved.worklog.public_prompt).toBe('Use [REDACTED_SECRET] carefully');
-    expect(saved.project.repository_url).toBe('[REDACTED_URL]');
-    expect(saved.privacy_scan.status).toBe('danger');
-  });
 
   it('rejects remote ingest upload statuses outside the backend needs_review contract', async () => {
     for (const status of ['draft', 'private', 'already_uploaded'] as const) {

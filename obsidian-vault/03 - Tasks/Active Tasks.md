@@ -15,6 +15,11 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI collect config state residual test split
+> CLI near-ceiling `tests/cli-collect-config-state.test.ts`를 state/cursor behavior suite와 malformed config failure suite로 분리하고 shared temp git project/CLI runner/parser를 `tests/cli-collect-config-state-helpers.ts`로 통합했다. Baseline 1 file / 5 tests, targeted split 2 files / 5 tests, typecheck/build, full CLI suite 208 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 split files/helper는 67/34/142 pure LOC다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Collect Config State Residual Test Split 2026-06-22]]
+
+
 > [!success] 2026-06-22 CLI collect upload failure residual test split
 > CLI near-ceiling `tests/cli-collect-upload-failures.test.ts`를 preflight invalid-token refusal suite와 cursor preservation failure suite로 분리하고 shared fixture/server/CLI runner를 `tests/cli-collect-upload-failure-helpers.ts`로 통합했다. Targeted split 2 files / 3 tests, typecheck/build, full CLI suite 207 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 split files/helper는 64/89/142 pure LOC다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Collect Upload Failure Residual Test Split 2026-06-22]]

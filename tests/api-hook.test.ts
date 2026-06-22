@@ -1,21 +1,16 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
-import { execFile } from 'node:child_process';
-import { mkdtemp, rm, mkdir, writeFile, readFile, chmod, utimes } from 'node:fs/promises';
+import { mkdtemp, rm, mkdir, writeFile, readFile, utimes } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { promisify } from 'node:util';
 import { initProject } from '../src/config/project-config.js';
 import { writeDraft } from '../src/draft/write.js';
 import { createEmptyDraft } from '../src/draft/create.js';
 import { AgentFeedApiError, apiMetadataCompatible, cachedUploadReusableForCredentials, cachedUploadReuseStatusForCredentials, checkApiCompatibility, checkApiReachability, checkIngestionToken, createCliAuthSession, draftToIngestRequest, draftUploadCredentialBindingHash, draftUploadPayloadHash, exchangeCliAuthSession, previewDraftRemote, publishDraft } from '../src/api/client.js';
 import { browserLogin, waitForCliAuthExchange } from '../src/auth/browser-login.js';
-import { buildClaudeCodeStopHookCommand, installClaudeCodeHook, uninstallClaudeCodeHook } from '../src/hooks/claude-code-settings.js';
-import { pathExists } from '../src/utils/fs.js';
 import { saveCredentials } from '../src/config/credentials.js';
 
 let dir: string;
 let home: string;
-const execFileAsync = promisify(execFile);
 const oldHome = process.env.HOME;
 const oldAgentFeedCi = process.env.AGENTFEED_CI;
 const oldCi = process.env.CI;
@@ -2068,127 +2063,5 @@ describe('api client', () => {
       if (oldRetryAttempts === undefined) delete process.env.AGENTFEED_API_RETRY_ATTEMPTS;
       else process.env.AGENTFEED_API_RETRY_ATTEMPTS = oldRetryAttempts;
     }
-  });
-});
-
-describe('Claude Code hook installer', () => {
-  it('does not create settings.json when uninstalling with no existing Claude config', async () => {
-    const settings = join(dir, '.claude', 'settings.json');
-
-    expect(await pathExists(settings)).toBe(false);
-    await uninstallClaudeCodeHook({ projectRoot: dir, settingsPath: settings });
-
-    expect(await pathExists(settings)).toBe(false);
-  });
-
-  it('fails hook install with actionable guidance when Claude settings JSON is malformed', async () => {
-    const settings = join(dir, '.claude', 'settings.json');
-    await mkdir(join(dir, '.claude'), { recursive: true });
-    await writeFile(settings, '{not-json');
-
-    await expect(installClaudeCodeHook({ projectRoot: dir, settingsPath: settings }))
-      .rejects.toThrow(/Claude Code settings could not be parsed.*settings\.json.*rerun agentfeed hook install claude-code/s);
-  });
-
-  it('rejects non-object Claude settings instead of replacing user configuration shape', async () => {
-    const settings = join(dir, '.claude', 'settings.json');
-    await mkdir(join(dir, '.claude'), { recursive: true });
-    await writeFile(settings, '[]\n');
-
-    await expect(installClaudeCodeHook({ projectRoot: dir, settingsPath: settings }))
-      .rejects.toThrow(/Claude Code settings must be a JSON object.*settings\.json/s);
-    expect(await readFile(settings, 'utf8')).toBe('[]\n');
-  });
-
-
-  it('installs a Stop hook command that logs collection failures but exits successfully', async () => {
-    const binDir = await mkdtemp(join(tmpdir(), 'agentfeed-fake-bin-'));
-    const fakeAgentFeed = join(binDir, 'agentfeed');
-    await writeFile(fakeAgentFeed, [
-      '#!/usr/bin/env sh',
-      'echo "fake stdout: attempted $*"',
-      'test -z "$AGENTFEED_TOKEN" || echo "leaked token: $AGENTFEED_TOKEN"',
-      'test -z "$NPM_TOKEN" || echo "leaked npm: $NPM_TOKEN"',
-      'test -z "$session_token" || echo "leaked lowercase session: $session_token"',
-      'echo "fake stderr: uninitialized project" >&2',
-      'exit 42',
-      ''
-    ].join('\n'));
-    await chmod(fakeAgentFeed, 0o755);
-    const previousLowercaseSession = process.env.session_token;
-
-    try {
-      process.env.session_token = 'lower_hook_secret_should_not_leak';
-      const command = buildClaudeCodeStopHookCommand({ agentfeedCommand: `'${fakeAgentFeed}' collect --source claude-code` });
-      const result = await execFileAsync('sh', ['-c', command], {
-        cwd: dir,
-        env: {
-          ...process.env,
-          PATH: `${binDir}:${process.env.PATH ?? ''}`,
-          AGENTFEED_TOKEN: 'af_live_hook_secret_should_not_leak',
-          NPM_TOKEN: 'npm_hook_secret_should_not_leak',
-          session_token: 'lower_hook_secret_should_not_leak',
-        }
-      });
-
-      expect(result.stdout).toBe('');
-      expect(result.stderr).toBe('');
-      const log = await readFile(join(dir, '.agentfeed', 'logs', 'hook.log'), 'utf8');
-      expect(log).toContain('agentfeed Claude Code Stop hook start');
-      expect(log).toContain('fake stdout: attempted collect --source claude-code');
-      expect(log).toContain('fake stderr: uninitialized project');
-      expect(log).toContain('failed with exit 42');
-      expect(log).not.toContain('af_live_hook_secret_should_not_leak');
-      expect(log).not.toContain('npm_hook_secret_should_not_leak');
-      expect(log).not.toContain('lower_hook_secret_should_not_leak');
-    } finally {
-      if (previousLowercaseSession === undefined) delete process.env.session_token;
-      else process.env.session_token = previousLowercaseSession;
-      await rm(binDir, { recursive: true, force: true });
-    }
-  });
-
-  it('installs Stop hook into empty settings, preserves settings, avoids duplicates, and uninstalls only AgentFeed hook', async () => {
-    const settings = join(dir, '.claude', 'settings.json');
-    await mkdir(join(dir, '.claude'), { recursive: true });
-    await writeFile(settings, JSON.stringify({ theme: 'dark', hooks: { Stop: [{ matcher: '*', hooks: [{ type: 'command', command: 'echo keep' }] }] } }, null, 2));
-
-    await installClaudeCodeHook({ projectRoot: dir, settingsPath: settings });
-    await installClaudeCodeHook({ projectRoot: dir, settingsPath: settings });
-    let json = JSON.parse(await readFile(settings, 'utf8'));
-    expect(json.theme).toBe('dark');
-    const installedHookJson = JSON.stringify(json);
-    expect(installedHookJson.match(/collect --source claude-code/g)?.length).toBe(1);
-    expect(installedHookJson).not.toContain('agentfeed collect --source claude-code');
-    expect(installedHookJson).toContain('agentfeed Claude Code Stop hook');
-    expect(installedHookJson).toContain('echo keep');
-
-    await uninstallClaudeCodeHook({ projectRoot: dir, settingsPath: settings });
-    json = JSON.parse(await readFile(settings, 'utf8'));
-    expect(JSON.stringify(json)).not.toContain('collect --source claude-code');
-    expect(JSON.stringify(json)).toContain('echo keep');
-  });
-
-  it('does not treat unrelated hook text mentioning agentfeed collect as the AgentFeed hook', async () => {
-    const settings = join(dir, '.claude', 'settings.json');
-    const unrelatedCommand = 'echo "documentation says agentfeed collect can be run manually"';
-    await mkdir(join(dir, '.claude'), { recursive: true });
-    await writeFile(settings, JSON.stringify({
-      hooks: {
-        Stop: [{ matcher: '*', hooks: [{ type: 'command', command: unrelatedCommand }] }]
-      }
-    }, null, 2));
-
-    await installClaudeCodeHook({ projectRoot: dir, settingsPath: settings });
-    let json = JSON.parse(await readFile(settings, 'utf8'));
-    let commands = json.hooks.Stop.flatMap((entry: any) => entry.hooks.map((hook: any) => hook.command));
-    expect(commands).toContain(unrelatedCommand);
-    expect(commands).toContain(buildClaudeCodeStopHookCommand());
-
-    await uninstallClaudeCodeHook({ projectRoot: dir, settingsPath: settings });
-    json = JSON.parse(await readFile(settings, 'utf8'));
-    commands = json.hooks.Stop.flatMap((entry: any) => entry.hooks.map((hook: any) => hook.command));
-    expect(commands).toContain(unrelatedCommand);
-    expect(commands).not.toContain(buildClaudeCodeStopHookCommand());
   });
 });

@@ -69,5 +69,8 @@ tests/session-collector-gemini-metrics.test.ts: 90 pure LOC.
 
 ## Follow-up
 
+> [!success] Follow-up completed
+> [[CLI Session Collector OMC OMX Metadata Test Split 2026-06-22]] completed the OMC/OMX session metadata cluster split. `tests/session-collector.test.ts` is now 465 pure LOC.
+
 > [!todo]
-> `tests/session-collector.test.ts` remains oversized at 558 pure LOC. Continue only by cohesive behavior clusters such as remaining draft integration, OMC/OMX session metadata, generic metadata, or collection window filtering. Preserve baseline coverage before each split.
+> `tests/session-collector.test.ts` remains oversized at 465 pure LOC. Continue only by cohesive behavior clusters such as remaining draft integration, generic metadata, or collection window filtering. Preserve baseline coverage before each split.

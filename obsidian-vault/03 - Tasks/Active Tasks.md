@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI session collector OMC OMX metadata test split
+> CLI oversized `tests/session-collector.test.ts`에서 OMC/OMX metadata merge/isolation coverage를 `tests/session-collector-omc-omx-metadata.test.ts`로 분리했다. Baseline filter 3 tests, targeted split 2 files / 26 tests, typecheck/build, full CLI suite 170 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Session Collector OMC OMX Metadata Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI session collector Gemini metrics test split
 > CLI oversized `tests/session-collector.test.ts`에서 Gemini CLI tool/token/file-edit metrics coverage를 `tests/session-collector-gemini-metrics.test.ts`로 분리했다. Baseline filter 3 tests, targeted split 2 files / 29 tests, typecheck/build, full CLI suite 169 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Session Collector Gemini Metrics Test Split 2026-06-22]]

@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI status output contract test split
+> CLI oversized `tests/cli-status-doctor.test.ts`에서 status human output, ANSI suppression, JSON automation output, secret non-leak coverage를 `tests/cli-status-output-contracts.test.ts`로 분리했다. Baseline filter 4 tests, targeted split 2 files / 8 tests, typecheck/build, full CLI suite 162 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 원본 suite는 202 pure LOC로 250 ceiling 아래 복귀했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Status Output Contract Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI doctor readiness guidance test split
 > CLI oversized `tests/cli-status-doctor.test.ts`에서 doctor setup ordering, initialized-project dry-run discoverability, remote HTTP API remediation coverage를 `tests/cli-doctor-readiness-guidance.test.ts`로 분리했다. Baseline filter 3 tests, targeted split 2 files / 11 tests, typecheck/build, full CLI suite 161 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Doctor Readiness Guidance Test Split 2026-06-22]]

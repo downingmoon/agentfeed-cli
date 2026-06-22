@@ -66,5 +66,8 @@ tests/cli-doctor-readiness-guidance.test.ts: 153 pure LOC.
 
 ## Follow-up
 
+> [!success]
+> Status output/ANSI diagnostics follow-up was completed by [[CLI Status Output Contract Test Split 2026-06-22]]. `tests/cli-status-doctor.test.ts` is now 202 pure LOC and below the 250 pure LOC ceiling.
+
 > [!todo]
-> `tests/cli-status-doctor.test.ts` remains oversized at 324 pure LOC. Continue only by cohesive behavior clusters such as status output/ANSI diagnostics, package/version and provenance diagnostics, or doctor JSON/provenance diagnostics. Preserve baseline coverage before each split.
+> Continue enterprise hardening by scanning the next oversized or contract-risk CLI/Frontend/Backend surface before editing. Preserve baseline coverage before each split or contract cleanup.

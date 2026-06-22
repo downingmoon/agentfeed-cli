@@ -16,6 +16,12 @@ updated: 2026-06-22
 
 
 
+> [!success] 2026-06-22 CLI generic metadata collector test split
+> CLI near-ceiling `tests/session-collector-generic-metadata.test.ts`를 generic metadata core/cost/window coverage와 Cursor/path coverage suite로 분리하고 shared temp git fixture/AgentFeed init commit/JSONL writer를 `tests/session-collector-generic-metadata-helpers.ts`로 통합했다. Baseline 1 file / 10 tests, targeted split 2 files / 10 tests, typecheck/build, full CLI suite 212 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 split files/helper는 121/82/38 pure LOC다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Generic Metadata Collector Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI git draft configured commands test split
 > CLI near-ceiling `tests/git-draft-configured-commands.test.ts`를 core configured command collection, safety guardrails, auto inference suite로 분리하고 shared temp git fixture/config/script/package/env helpers를 `tests/git-draft-configured-commands-helpers.ts`로 통합했다. Baseline 1 file / 10 tests, targeted split 3 files / 10 tests, typecheck/build, full CLI suite 211 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 split files/helper는 52/82/66/81 pure LOC다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Git Draft Configured Commands Test Split 2026-06-22]]

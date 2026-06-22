@@ -69,5 +69,8 @@ tests/session-collector-codex-command-metrics.test.ts: 144 pure LOC.
 
 ## Follow-up
 
+> [!success]
+> Session ownership/discovery split completed in [[CLI Session Collector Ownership Discovery Test Split 2026-06-22]] with code commit `e0e1e74`. `tests/session-collector.test.ts` is now 826 pure LOC after the follow-up split.
+
 > [!todo]
-> `tests/session-collector.test.ts` remains oversized at 958 pure LOC. Continue only by cohesive behavior clusters such as session ownership/discovery, Gemini metrics, OMX/generic metadata, draft integration, or collection window filtering. Preserve baseline coverage before each split.
+> `tests/session-collector.test.ts` remains oversized at 826 pure LOC. Continue only by cohesive behavior clusters such as remaining draft integration, enabled agent config / auto aggregation, Gemini metrics, OMX/generic metadata, collection window filtering, or session file guardrails/pathological rows. Preserve baseline coverage before each split.

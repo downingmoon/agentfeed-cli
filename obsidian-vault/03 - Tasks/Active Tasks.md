@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI session collector ownership discovery test split
+> CLI oversized `tests/session-collector.test.ts`에서 session ownership/discovery coverage를 `tests/session-collector-ownership-discovery.test.ts`로 분리했다. Baseline filter 9 tests, targeted split 2 files / 46 tests, typecheck/build, full CLI suite 166 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Session Collector Ownership Discovery Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI Codex command session collector metrics test split
 > CLI oversized `tests/session-collector.test.ts`에서 Codex shell command/test-runner recognition, parallel tool expansion, non-shell tool/subagent/turn metrics coverage를 `tests/session-collector-codex-command-metrics.test.ts`로 분리했다. Baseline filter 7 tests, targeted split 2 files / 53 tests, typecheck/build, full CLI suite 165 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Codex Command Session Collector Metrics Test Split 2026-06-22]]

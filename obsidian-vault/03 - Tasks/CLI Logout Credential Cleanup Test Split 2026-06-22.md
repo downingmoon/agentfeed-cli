@@ -65,5 +65,8 @@ tests/cli-logout-credential-cleanup.test.ts: 91 pure LOC; focused logout credent
 
 ## Follow-up
 
+> [!success]
+> login token-stdin success coverage was split in [[CLI Token Stdin Login Success Test Split 2026-06-22]], reducing `tests/cli-status-doctor.test.ts` from 1407 to 1269 pure LOC.
+
 > [!todo]
-> `tests/cli-status-doctor.test.ts` remains oversized at 1407 pure LOC. Continue only by cohesive behavior clusters such as login token-stdin, rotate session replacement, or status project/readiness diagnostics, and preserve baseline coverage before each split.
+> `tests/cli-status-doctor.test.ts` remains oversized at 1269 pure LOC. Continue only by cohesive behavior clusters such as token-stdin failure cases, browser login JSON refusal, CI login fail-fast, rotate replacement, or status project/readiness diagnostics, and preserve baseline coverage before each split.

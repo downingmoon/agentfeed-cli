@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI token stdin login success test split
+> CLI oversized `tests/cli-status-doctor.test.ts`에서 token-stdin login success human/JSON output, stdin secret handling, secret non-leak, and file credential persistence coverage를 `tests/cli-login-token-stdin-success.test.ts`로 분리했다. Baseline token-stdin filter 2 tests, targeted split 2 files / 34 tests, typecheck/build, full CLI suite 151 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Token Stdin Login Success Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI logout credential cleanup test split
 > CLI oversized `tests/cli-status-doctor.test.ts`에서 logout credential cleanup JSON/human output, saved credential deletion, environment token warning, and secret non-leak coverage를 `tests/cli-logout-credential-cleanup.test.ts`로 분리했다. Baseline logout filter 2 tests, targeted split 2 files / 36 tests, typecheck/build, full CLI suite 150 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Logout Credential Cleanup Test Split 2026-06-22]]

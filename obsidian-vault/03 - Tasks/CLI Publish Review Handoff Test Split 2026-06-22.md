@@ -67,5 +67,5 @@ tests/cli-publish-review-handoff.test.ts: 236 pure LOC
 
 ## Follow-up
 
-> [!todo]
-> `tests/cli-share.test.ts` is now under the 250 pure LOC ceiling at 219 pure LOC. Remaining split candidates are human share upload completion and dry-run command coverage if future edits would expand the file again.
+> [!success]
+> Completed: the remaining human share upload completion and dry-run command coverage were split and the generic `tests/cli-share.test.ts` catch-all suite was removed in [[CLI Share Command Residual Test Split 2026-06-22]].

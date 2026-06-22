@@ -67,4 +67,4 @@ tests/cli-claude-code-hook-installer.test.ts: 141 pure LOC; no as any/as unknown
 ## Follow-up
 
 > [!todo]
-> `tests/api-hook.test.ts` remains oversized at 1,848 pure LOC. Continue only cohesive, behavior-preserving splits with green baseline coverage. Likely next groups: browser login session/polling/exchange policy, publish timeout/retry/duplicate ingestion handling, or upload cache/lock contracts.
+> Follow-up API health-check split completed in [[CLI API Health Check Test Split 2026-06-22]]. `tests/api-hook.test.ts` still remains oversized at 1,659 pure LOC. Continue only cohesive, behavior-preserving splits with green baseline coverage. Likely next groups: browser login session/polling/exchange policy, publish timeout/retry/duplicate ingestion handling, or upload cache/lock contracts.

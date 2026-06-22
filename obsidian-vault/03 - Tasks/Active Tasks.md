@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI ingest upload retry test split
+> CLI oversized `tests/api-hook.test.ts`에서 duplicate ingestion reconciliation, transient upload retry, validation non-retry, malformed ingest error response, and rate-limit retry contracts를 focused ingest-upload retry suite로 분리했다. Targeted split 2 files / 39 tests, typecheck/build, full CLI suite 142 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Ingest Upload Retry Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI ingest payload contract test split
 > CLI oversized `tests/api-hook.test.ts`에서 `draftToIngestRequest()` source identity privacy, repository URL sanitation, collected model serialization, metadata redaction, and share note mapping contracts를 focused ingest-payload suite로 분리했다. Targeted split 2 files / 46 tests, typecheck/build, full CLI suite 141 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Ingest Payload Contract Test Split 2026-06-22]]

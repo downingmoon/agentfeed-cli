@@ -106,7 +106,7 @@ Result:
 ## Follow-up
 
 > [!todo]
-> `src/cli/index.ts` remains above the 250 pure LOC target. 후속 local draft command split은 [[CLI Local Draft Command Split 2026-06-21]]에서 처리했다. 후속 share command split은 [[CLI Share Command Split 2026-06-21]]에서 처리했다. 후속 collect command split은 [[CLI Collect Command Split 2026-06-21]]에서 처리했다. Remaining dispatcher cleanup is still needed to get `src/cli/index.ts` under the 250 pure LOC target.
+> 후속 local draft/share/collect command split은 [[CLI Local Draft Command Split 2026-06-21]], [[CLI Share Command Split 2026-06-21]], [[CLI Collect Command Split 2026-06-21]]에서 처리했다. `src/cli/index.ts` 250 pure LOC follow-up은 [[CLI Init Logout Command Split 2026-06-21]]에서 처리했고, 현재 `src/cli/index.ts` is under the 250 pure LOC target.
 
 > [!todo]
 > LSP diagnostics has been failing locally with `Transport closed`; use `tsc --noEmit`, focused Vitest, build, full suite, and dist CLI smoke as replacement evidence for this slice.

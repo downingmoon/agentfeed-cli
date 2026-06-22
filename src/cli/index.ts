@@ -1,18 +1,8 @@
 #!/usr/bin/env node
-import { initProject, loadProjectConfig } from '../config/project-config.js';
-import { deleteSavedCredentials } from '../config/credentials.js';
-import { readCollectionStateWithDiagnostics } from '../config/collection-state.js';
-import { collectDraft } from '../draft/create.js';
-import { findLatestDraft, readLatestDraft } from '../draft/read.js';
-import type { AgentFeedCredentials, LocalDraft } from '../types.js';
-import { collectGitMetrics } from '../collectors/git.js';
+import { loadProjectConfig } from '../config/project-config.js';
+import { findLatestDraft } from '../draft/read.js';
 import { flag, option } from './args.js';
 import { unknownCommandError } from './unknown-command-error.js';
-import { resolveStatusProject } from './status-project.js';
-import { requireApiCompatibilityBeforeUpload } from './upload-preflight.js';
-import { collectJsonNextActions } from './draft-next-actions.js';
-import { commandCatalogNextActions } from './guidance-actions.js';
-import { renderGuidedNextCommandLines, renderNextCommandLines, renderRecommendedCommandLines } from './guided-next-command-renderer.js';
 import { jsonErrorFromMessage } from './error-output.js';
 import { leadingOptionError } from './leading-option-error.js';
 import { hasHelpFlag } from './help-flag.js';
@@ -22,10 +12,9 @@ import { localPreviewJsonPayload, remotePreviewJsonPayload, renderLocalPreviewHu
 import { runPreviewCommand } from './preview-execution.js';
 import { formatPrivacyScanReport, privacyScanJsonOutput } from './privacy-scan-output.js';
 import { runPrivacyScanCommand } from './scan-command.js';
-import { readinessMarker } from './diagnostic-formatters.js';
-import { logoutJsonPayload, renderLogoutHumanLines } from './logout-output.js';
-import { initJsonPayload, renderInitHumanLines } from './init-output.js';
+import { runInitCliCommand } from './init-command.js';
 import { runLoginCommand } from './login-command.js';
+import { runLogoutCliCommand } from './logout-command.js';
 import { runRotateCommand } from './rotate-command.js';
 import { runStatusCommand } from './status-command.js';
 import { runDoctorCommand } from './doctor-command.js';
@@ -38,7 +27,6 @@ import { COMMAND_ARG_SPECS } from './command-arg-specs.js';
 import { validateCommandArgs } from './command-argument-validator.js';
 import { printCommandHelp as printSurfaceCommandHelp, printHelp as printSurfaceHelp, printHelpTopic as printSurfaceHelpTopic, runCommandsCommand, runCompletionCommand } from './command-surface-command.js';
 import { runCollectCliCommand } from './collect-command.js';
-import { readJson } from '../utils/fs.js';
 import { AGENTFEED_CLI_VERSION } from '../version.js';
 import * as ui from './ui.js';
 
@@ -46,27 +34,8 @@ function print(text = '') { process.stdout.write(`${text}\n`); }
 function printLines(lines: readonly string[]): void { for (const line of lines) print(line); }
 function err(text = '') { process.stderr.write(`${text}\n`); }
 
-function safeTerminalText(value: string | null | undefined): string {
-  return ui.sanitizeTerminalText(value ?? '');
-}
-
-
 function jsonModeRequested(argv = process.argv.slice(2)): boolean {
   return argv.some((arg) => arg === '--json');
-}
-
-
-
-function printNextCommands(commands: string[]): void {
-  for (const line of renderNextCommandLines({ commands, command: ui.command })) print(line);
-}
-
-function printRecommendedCommands(commands: string[]): void {
-  for (const line of renderRecommendedCommandLines({ commands, command: ui.command })) print(line);
-}
-
-function printGuidedNextCommands(commands: string[]): void {
-  for (const line of renderGuidedNextCommandLines({ commands, command: ui.command })) print(line);
 }
 
 async function resolveDraftId(cwd: string, args: string[]): Promise<string> {
@@ -90,27 +59,7 @@ async function resolveDraftId(cwd: string, args: string[]): Promise<string> {
 }
 
 async function cmdInit(args: string[]) {
-  const result = await initProject({
-    cwd: process.cwd(),
-    projectName: option(args, '--project-name'),
-    noGitCheck: flag(args, '--no-git-check'),
-    force: flag(args, '--force')
-  });
-  const initOutput = {
-    alreadyInitialized: result.alreadyInitialized,
-    project: {
-      name: result.config.project.name,
-      visibility: result.config.project.visibility,
-      tags: result.config.project.tags
-    },
-    root: result.root,
-    backupPaths: result.backupPaths
-  };
-  if (flag(args, '--json')) {
-    print(JSON.stringify(initJsonPayload(initOutput), null, 2));
-    return;
-  }
-  printLines(renderInitHumanLines(initOutput));
+  await runInitCliCommand(args, { cwd: process.cwd(), print, printLines });
 }
 
 async function cmdLogin(args: string[]) {
@@ -138,13 +87,7 @@ async function cmdStatus(args: string[] = []) {
 }
 
 async function cmdLogout(args: string[]) {
-  const result = await deleteSavedCredentials();
-  const logoutOutput = { result, envTokenActive: Boolean(process.env.AGENTFEED_TOKEN) };
-  if (flag(args, '--json')) {
-    print(JSON.stringify(logoutJsonPayload(logoutOutput), null, 2));
-    return;
-  }
-  printLines(renderLogoutHumanLines(logoutOutput));
+  await runLogoutCliCommand(args, { env: process.env, print, printLines });
 }
 
 async function cmdCollect(args: string[]) {
@@ -222,7 +165,6 @@ async function cmdDiscard(args: string[]) {
 async function cmdOpen(args: string[]) {
   await runOpenCliCommand(args, { cwd: process.cwd(), print, printLines });
 }
-
 
 async function cmdCompletion(args: string[]) {
   await runCompletionCommand(args, { print });

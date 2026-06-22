@@ -16,6 +16,12 @@ updated: 2026-06-21
 
 
 
+> [!success] 2026-06-21 CLI init/logout command split
+> `agentfeed init` and `agentfeed logout` CLI surface orchestration을 `src/cli/index.ts`에서 `src/cli/init-command.ts`, `src/cli/logout-command.ts`로 분리했다. `src/cli/index.ts`를 230 pure LOC로 낮췄고 새 wrapper tests, focused CLI/output/help tests, typecheck/build, full suite, dist CLI smoke를 통과했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Init Logout Command Split 2026-06-21]]
+
+
+
 > [!success] 2026-06-21 CLI collect command split
 > `agentfeed collect` CLI surface orchestration을 `src/cli/index.ts`에서 `src/cli/collect-command.ts`로 분리했다. 새 wrapper tests, focused collect tests, typecheck/build, full suite, dist CLI collect smoke를 통과했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Collect Command Split 2026-06-21]]

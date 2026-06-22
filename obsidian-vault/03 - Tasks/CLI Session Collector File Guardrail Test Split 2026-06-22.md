@@ -68,5 +68,8 @@ tests/session-collector-file-guardrails.test.ts: 111 pure LOC.
 
 ## Follow-up
 
+> [!success]
+> Auto source selection/config split completed in [[CLI Session Collector Auto Source Config Test Split 2026-06-22]] with code commit `4ab36a7`. `tests/session-collector.test.ts` is now 623 pure LOC after the follow-up split.
+
 > [!todo]
-> `tests/session-collector.test.ts` remains oversized at 740 pure LOC. Continue only by cohesive behavior clusters such as remaining draft integration, enabled agent config / auto aggregation, Gemini metrics, OMX/generic metadata, or collection window filtering. Preserve baseline coverage before each split.
+> `tests/session-collector.test.ts` remains oversized at 623 pure LOC. Continue only by cohesive behavior clusters such as remaining draft integration, Gemini metrics, OMX/generic metadata, generic metadata, or collection window filtering. Preserve baseline coverage before each split.

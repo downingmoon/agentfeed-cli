@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI preview test split
+> CLI oversized `tests/cli-preview.test.ts`에서 remote preview JSON/invalid contracts, API metadata compatibility fail-fast, local preview rendering/JSON redaction/uploaded next-action coverage를 `tests/cli-preview-remote.test.ts`, `tests/cli-preview-remote-compatibility.test.ts`, `tests/cli-preview-local-rendering.test.ts`로 분리했다. Baseline filter 8 tests, split filter 8 tests, targeted split 4 files / 13 tests, typecheck/build, full CLI suite 189 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 원본 및 신규 suites는 모두 250 pure LOC ceiling 아래다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Preview Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI help surface test split
 > CLI oversized `tests/cli-help.test.ts`에서 command catalog, public command help surfaces, shell completion help/script coverage를 `tests/cli-commands-catalog.test.ts`, `tests/cli-help-public-surfaces.test.ts`, `tests/cli-completion-help.test.ts`로 분리했다. Baseline filter 12 tests, split filter 12 tests, targeted split 4 files / 21 tests, typecheck/build, full CLI suite 186 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 원본 및 신규 suites는 모두 250 pure LOC ceiling 아래다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Help Surface Test Split 2026-06-22]]

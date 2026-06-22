@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, beforeEach } from 'vitest';
-import { execFile, execFileSync } from 'node:child_process';
+import { execFile, execFileSync, spawn } from 'node:child_process';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { chmod, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -14,6 +14,44 @@ import { ensureCliBuilt } from './build-cli.js';
 const repoRoot = resolve('.');
 export const cliPath = join(repoRoot, 'dist', 'cli', 'index.js');
 export const execFileAsync = promisify(execFile);
+
+export type SpawnAgentFeedJsonOptions = {
+  readonly args: readonly string[];
+  readonly cwd: string;
+  readonly env: NodeJS.ProcessEnv;
+};
+
+export type AgentFeedJsonRun = {
+  readonly stdout: string;
+  readonly stderr: string;
+};
+
+export function spawnAgentFeedJson(options: SpawnAgentFeedJsonOptions): Promise<AgentFeedJsonRun> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [cliPath, ...options.args], {
+      cwd: options.cwd,
+      env: options.env,
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', chunk => { stdout += chunk; });
+    child.stderr.on('data', chunk => { stderr += chunk; });
+    child.on('error', reject);
+    child.on('close', code => {
+      if (code === 0) {
+        resolve({ stdout, stderr });
+        return;
+      }
+      reject(Object.assign(
+        new Error(`agentfeed ${options.args.join(' ')} failed with code ${code}`),
+        { code, stdout, stderr }
+      ));
+    });
+  });
+}
 
 function compatibleMetadataPayload() {
   return {

@@ -3,9 +3,11 @@ import { basename, join, resolve } from 'node:path';
 import { readFile } from 'node:fs/promises';
 import type { AgentType, ChangedFileSummary, CollectionSource, CollectionWindow } from '../types.js';
 import { parseGenericMetadata } from './agent-session-generic.js';
+import { parseGeminiSessionFile } from './agent-session-gemini.js';
 import { discoverSessionFile, readSessionJsonlRecords, sessionFileMayBelongToProject } from './agent-session-files.js';
+import { commandFailed, failedStatus, isTestCommand, toolOutputFailed, toolResultOutput } from './agent-session-tooling.js';
 import { asRecord, asString, countTextLines, countUnifiedDiff, explicitCostUsd, finalizeAgentSession, finiteNumber, inferEffectiveCollectionWindow, integer, numeric, pushSource, relativeProjectPath, safeJsonParse, statusForPatchHeader, upsertFile, type AgentSessionMetrics } from './agent-session-core.js';
-import { hasCollectionWindowBoundary, parseBoundaryMillis, parseIsoMillis, rowInAgentCollectionWindow, rowTimestampMillis } from './agent-session-window.js';
+import { hasCollectionWindowBoundary, parseBoundaryMillis, rowInAgentCollectionWindow, rowTimestampMillis } from './agent-session-window.js';
 
 export type { AgentSessionMetrics } from './agent-session-core.js';
 export { sessionFileBelongsToProject } from './agent-session-files.js';
@@ -48,55 +50,6 @@ function applyCodexPatchText(cwd: string, patch: string, files: Map<string, Chan
     else if (line.startsWith('-') && !line.startsWith('---')) removed += 1;
   }
   flush();
-}
-
-function isTestCommand(command: string): boolean {
-  const normalized = command.trim();
-  return /(^|&&|\|\||;)\s*(npm|pnpm|yarn|bun)\s+(run\s+)?(test|test:[\w:-]+)\b/i.test(normalized)
-    || /(^|&&|\|\||;)\s*(pnpm|yarn|bun)\s+(exec\s+)?(vitest|jest|pytest|mocha)\b/i.test(normalized)
-    || /(^|&&|\|\||;)\s*(pnpm|yarn|bun)\s+(exec\s+)?playwright\s+test\b/i.test(normalized)
-    || /(^|&&|\|\||;)\s*(pnpm|yarn|bun)\s+(exec\s+)?cypress\s+run\b/i.test(normalized)
-    || /(^|&&|\|\||;)\s*((npx|npm\s+exec)\s+)?(vitest|jest|pytest|mocha)\b/i.test(normalized)
-    || /(^|&&|\|\||;)\s*((npx|npm\s+exec)\s+)?playwright\s+test\b/i.test(normalized)
-    || /(^|&&|\|\||;)\s*((npx|npm\s+exec)\s+)?cypress\s+run\b/i.test(normalized)
-    || /(^|&&|\|\||;)\s*uv\s+run\b.*\b((python3?\s+-m\s+)?(pytest|unittest)|(vitest|jest|mocha)\b|playwright\s+test\b|cypress\s+run\b)/i.test(normalized)
-    || /(^|&&|\|\||;)\s*python3?\s+-m\s+(pytest|unittest)\b/i.test(normalized)
-    || /(^|&&|\|\||;)\s*make\s+[\w:-]*test[\w:-]*\b/i.test(normalized)
-    || /(^|&&|\|\||;)\s*go\s+test\b/i.test(normalized)
-    || /(^|&&|\|\||;)\s*cargo\s+test\b/i.test(normalized);
-}
-
-function commandFailed(output: string): boolean {
-  const text = output.trim();
-  if (!text) return false;
-  if (/(?:Process exited with code|exit code)\s*[:=]?\s*[1-9]\d*/i.test(text)) return true;
-  if (/^\s*(?:FAIL|FAILED)\b/im.test(text)) return true;
-  if (/\b[1-9]\d*\s+failed\b/i.test(text)) return true;
-  if (/\bfailed\s*[:=]\s*[1-9]\d*\b/i.test(text)) return true;
-  if (/\bfailures?\s*[:=]\s*[1-9]\d*\b/i.test(text)) return true;
-  return false;
-}
-
-function failedStatus(value: unknown): boolean {
-  const status = asString(value)?.toLowerCase();
-  return status === 'failed' || status === 'error' || status === 'cancelled' || status === 'canceled';
-}
-
-function toolOutputFailed(output: string): boolean {
-  const text = output.trim();
-  if (!text) return false;
-  return commandFailed(text) || /\b(failed|error|unavailable|not found|denied)\b/i.test(text);
-}
-
-function toolResultOutput(item: Record<string, unknown>): string {
-  const content = item.content;
-  if (typeof content === 'string') return content;
-  if (!Array.isArray(content)) return '';
-  return content.map((part) => {
-    if (typeof part === 'string') return part;
-    const record = asRecord(part);
-    return asString(record?.text) ?? asString(record?.content) ?? '';
-  }).filter(Boolean).join('\n');
 }
 
 async function readJsonFile(path: string): Promise<Record<string, unknown> | null> {
@@ -500,103 +453,7 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
   return finalizeAgentSession({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
 }
 
-function geminiTokenTotal(tokens: Record<string, unknown>): number {
-  const total = numeric(tokens.total);
-  if (total) return total;
-  return numeric(tokens.input) + numeric(tokens.cached) + numeric(tokens.output) + numeric(tokens.thoughts) + numeric(tokens.tool);
-}
 
-async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null, inferIdleGap = true): Promise<AgentSessionMetrics | null> {
-  const rows = await readSessionJsonlRecords(sessionFile);
-  if (!rows) return null;
-  const effective = inferEffectiveCollectionWindow(rows, window, { inferIdleGap });
-  const effectiveWindow = effective.window;
-  const files = new Map<string, ChangedFileSummary>();
-  const skills = new Set<string>();
-  const agentModes = new Set<string>();
-  let sessionId: string | null = null;
-  let model: string | null = null;
-  let tokensUsed = 0;
-  let estimatedCostUsd = 0;
-  let testsRun = 0;
-  let failedCommands = 0;
-  let failedTestCommands = 0;
-  let commandsRun = 0;
-  let toolCalls = 0;
-  let startMillis: number | null = null;
-  let endMillis: number | null = null;
-  let subagentsSpawned = 0;
-  let agentTurns = 0;
-  let matchedWindowRow = false;
-  const sinceMillis = parseBoundaryMillis(effectiveWindow?.since);
-  const untilMillis = parseBoundaryMillis(effectiveWindow?.until);
-
-  for (const row of rows) {
-    sessionId ??= asString(row.sessionId);
-    model ??= asString(row.model);
-    if (!rowInAgentCollectionWindow(row, effectiveWindow)) continue;
-    matchedWindowRow = true;
-    if (row.type === 'gemini') agentTurns += 1;
-    estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(row) ?? 0);
-    const rowStartMillis = parseIsoMillis(row.startTime) ?? rowTimestampMillis(row);
-    const rowEndMillis = parseIsoMillis(row.lastUpdated) ?? parseIsoMillis(row.timestamp) ?? rowStartMillis;
-    if (rowStartMillis != null) {
-      const effectiveStart = sinceMillis != null ? Math.max(rowStartMillis, sinceMillis) : rowStartMillis;
-      startMillis = Math.min(startMillis ?? effectiveStart, effectiveStart);
-    }
-    if (rowEndMillis != null) {
-      const effectiveEnd = untilMillis != null ? Math.min(rowEndMillis, untilMillis) : rowEndMillis;
-      endMillis = Math.max(endMillis ?? effectiveEnd, effectiveEnd);
-    }
-    const tokens = asRecord(row.tokens);
-    if (tokens) {
-      tokensUsed += geminiTokenTotal(tokens);
-      estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(tokens) ?? 0);
-    }
-    const calls = Array.isArray(row.toolCalls) ? row.toolCalls : [];
-    for (const callRaw of calls) {
-      const call = asRecord(callRaw);
-      if (!call) continue;
-      toolCalls += 1;
-      const name = asString(call.name);
-      const args = asRecord(call.args) ?? {};
-      const status = asString(call.status);
-      const failed = failedStatus(status);
-      if (name === 'activate_skill') {
-        const skill = asString(args.name) ?? asString(args.skill_name) ?? asString(args.skillName);
-        if (skill && !failed) skills.add(skill);
-      } else if (name === 'write_file') {
-        if (!failed) {
-          const rel = relativeProjectPath(cwd, asString(args.file_path) ?? '');
-          if (rel) upsertFile(files, rel, { status: 'added', added: countTextLines(asString(args.content) ?? ''), removed: 0 });
-        }
-      } else if (name === 'replace') {
-        if (!failed) {
-          const rel = relativeProjectPath(cwd, asString(args.file_path) ?? '');
-          if (rel) upsertFile(files, rel, { status: 'modified', added: countTextLines(asString(args.new_string) ?? ''), removed: countTextLines(asString(args.old_string) ?? '') });
-        }
-      } else if (name === 'run_shell_command') {
-        commandsRun += 1;
-        const command = asString(args.command) ?? '';
-        const commandDidFail = failed || commandFailed(asString(call.resultDisplay) ?? '');
-        if (commandDidFail) failedCommands += 1;
-        if (isTestCommand(command)) {
-          testsRun += 1;
-          if (commandDidFail) failedTestCommands += 1;
-        }
-      } else if (name === 'invoke_agent') {
-        if (!failed) subagentsSpawned += 1;
-      } else if (name === 'update_topic') {
-        if (!failed) agentModes.add('superpowers');
-      }
-    }
-  }
-  if (hasCollectionWindowBoundary(effectiveWindow) && !matchedWindowRow) return null;
-  const durationSeconds = startMillis && endMillis && endMillis > startMillis ? (endMillis - startMillis) / 1000 : null;
-  const collectionSources: CollectionSource[] = [{ type: 'agent_session', name: 'gemini_cli', quality: 'high' }];
-  if (skills.size || agentModes.has('superpowers')) pushSource(collectionSources, { type: 'plugin_metadata', name: 'superpowers', quality: 'medium' });
-  return finalizeAgentSession({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted: subagentsSpawned, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
-}
 
 
 export async function collectAgentSessionMetrics(options: CollectAgentSessionOptions): Promise<AgentSessionMetrics | null> {

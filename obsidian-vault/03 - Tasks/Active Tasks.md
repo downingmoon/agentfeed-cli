@@ -15,6 +15,12 @@ updated: 2026-06-23
 ## 현재 결론
 
 
+> [!success] 2026-06-23 CLI native credential keychain split
+> CLI `src/config/credentials.ts`에서 native OS keychain subprocess/platform implementation을 `src/config/credentials-keychain.ts`로 분리했다. `credentials.ts`는 603 → 425 pure LOC, 신규 keychain module은 184 pure LOC다. Targeted credential/keychain suite 11 files / 50 tests, typecheck/build, full CLI suite 226 files / 848 tests, built CLI manual smoke(auto keychain fail-closed/no file + explicit file-store login/status roundtrip), git diff --check, new-file no-any/comment grep를 통과했다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test/smoke로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Native Credential Keychain Split 2026-06-23]]
+
+
+
 > [!success] 2026-06-23 CLI test command output parser split
 > CLI `src/collectors/test-command.ts`에서 configured test command output parsing을 `src/collectors/test-command-output.ts`로 분리하고 기존 `parseTestCommandOutput` public import path는 re-export로 유지했다. `test-command.ts`는 308 → 228 pure LOC, 신규 parser module은 82 pure LOC다. Targeted configured-command suites 7 files / 26 tests, typecheck/build, full CLI suite 226 files / 848 tests, built CLI `collect --run-configured-commands --json` smoke, git diff --check, changed-file no-any grep를 통과했다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test/smoke로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Test Command Output Parser Split 2026-06-23]]

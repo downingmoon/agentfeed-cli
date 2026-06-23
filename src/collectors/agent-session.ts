@@ -1,17 +1,14 @@
 import { homedir } from 'node:os';
-import { basename, dirname, join, resolve } from 'node:path';
-import { realpathSync } from 'node:fs';
-import { open, readdir, readFile, stat } from 'node:fs/promises';
+import { basename, join, resolve } from 'node:path';
+import { readFile } from 'node:fs/promises';
 import type { AgentType, ChangedFileSummary, CollectionSource, CollectionWindow } from '../types.js';
 import { parseGenericMetadata } from './agent-session-generic.js';
+import { discoverSessionFile, readSessionJsonlRecords, sessionFileMayBelongToProject } from './agent-session-files.js';
 import { asRecord, asString, countTextLines, countUnifiedDiff, explicitCostUsd, finalizeAgentSession, finiteNumber, inferEffectiveCollectionWindow, integer, numeric, pushSource, relativeProjectPath, safeJsonParse, statusForPatchHeader, upsertFile, type AgentSessionMetrics } from './agent-session-core.js';
 import { hasCollectionWindowBoundary, parseBoundaryMillis, parseIsoMillis, rowInAgentCollectionWindow, rowTimestampMillis } from './agent-session-window.js';
 
 export type { AgentSessionMetrics } from './agent-session-core.js';
-
-const DEFAULT_SESSION_FILE_MAX_BYTES = 10 * 1024 * 1024;
-const DEFAULT_SESSION_JSONL_MAX_ROWS = 50_000;
-const DEFAULT_SESSION_JSONL_MAX_LINE_CHARS = 1_000_000;
+export { sessionFileBelongsToProject } from './agent-session-files.js';
 
 export interface CollectAgentSessionOptions {
   readonly cwd: string;
@@ -20,135 +17,6 @@ export interface CollectAgentSessionOptions {
   readonly since?: string | null;
   readonly until?: string | null;
   readonly inferIdleGap?: boolean;
-}
-
-function boundedPositiveIntegerEnv(name: string, fallback: number): number {
-  const raw = process.env[name];
-  if (!raw) return fallback;
-  const n = Number(raw);
-  return Number.isFinite(n) && n > 0 ? Math.trunc(n) : fallback;
-}
-
-function sessionFileMaxBytes(): number {
-  return boundedPositiveIntegerEnv('AGENTFEED_SESSION_FILE_MAX_BYTES', DEFAULT_SESSION_FILE_MAX_BYTES);
-}
-
-function sessionJsonlMaxRows(): number {
-  return boundedPositiveIntegerEnv('AGENTFEED_SESSION_JSONL_MAX_ROWS', DEFAULT_SESSION_JSONL_MAX_ROWS);
-}
-
-function sessionJsonlMaxLineChars(): number {
-  return boundedPositiveIntegerEnv('AGENTFEED_SESSION_JSONL_MAX_LINE_CHARS', DEFAULT_SESSION_JSONL_MAX_LINE_CHARS);
-}
-
-function parseJsonlRecords(text: string): Record<string, unknown>[] {
-  const rows: Record<string, unknown>[] = [];
-  const maxRows = sessionJsonlMaxRows();
-  const maxLineChars = sessionJsonlMaxLineChars();
-  for (const line of text.split('\n')) {
-    if (!line.trim()) continue;
-    if (line.length > maxLineChars) continue;
-    const row = asRecord(safeJsonParse(line));
-    if (row) {
-      rows.push(row);
-      if (rows.length > maxRows) rows.shift();
-    }
-  }
-  return rows;
-}
-
-async function readBoundedSessionText(sessionFile: string): Promise<string | null> {
-  try {
-    const info = await stat(sessionFile);
-    if (!info.isFile()) return null;
-    const maxBytes = sessionFileMaxBytes();
-    if (info.size > maxBytes) {
-      const handle = await open(sessionFile, 'r');
-      try {
-        const start = Math.max(0, info.size - maxBytes);
-        const buffer = Buffer.alloc(Math.min(maxBytes, info.size));
-        const { bytesRead } = await handle.read(buffer, 0, buffer.length, start);
-        let text = buffer.subarray(0, bytesRead).toString('utf8');
-        if (start > 0) {
-          const firstNewline = text.indexOf('\n');
-          text = firstNewline >= 0 ? text.slice(firstNewline + 1) : '';
-        }
-        return text;
-      } finally {
-        await handle.close();
-      }
-    }
-    return await readFile(sessionFile, 'utf8');
-  } catch {
-    return null;
-  }
-}
-
-async function readSessionJsonlRecords(sessionFile: string): Promise<Record<string, unknown>[] | null> {
-  const text = await readBoundedSessionText(sessionFile);
-  if (text == null) return null;
-  return parseJsonlRecords(text);
-}
-
-function findStructuredCwd(value: unknown): string | null {
-  const record = asRecord(value);
-  if (!record) return null;
-  const cwd = asString(record.cwd);
-  if (cwd) return cwd;
-  const payload = asRecord(record.payload);
-  if (payload) {
-    const payloadCwd = asString(payload.cwd);
-    if (payloadCwd) return payloadCwd;
-  }
-  return null;
-}
-
-function canonicalPath(path: string): string {
-  const absolute = resolve(path);
-  const suffix: string[] = [];
-  let current = absolute;
-  while (true) {
-    try {
-      const real = realpathSync.native(current);
-      return suffix.length ? join(real, ...suffix.reverse()) : real;
-    } catch {
-      const parent = dirname(current);
-      if (parent === current) return absolute;
-      suffix.push(basename(current));
-      current = parent;
-    }
-  }
-}
-
-async function structuredCwdMatchState(sessionFile: string, cwd: string): Promise<{ sawStructuredCwd: boolean; matchedProject: boolean }> {
-  const projectRoot = canonicalPath(cwd);
-  let sawStructuredCwd = false;
-  const text = await readBoundedSessionText(sessionFile);
-  if (text == null) return { sawStructuredCwd: true, matchedProject: false };
-  for (const line of text.split('\n')) {
-    if (!line.trim()) continue;
-    const structuredCwd = findStructuredCwd(safeJsonParse(line));
-    if (!structuredCwd) continue;
-    sawStructuredCwd = true;
-    const absoluteCwd = canonicalPath(structuredCwd);
-    if (absoluteCwd === projectRoot || absoluteCwd.startsWith(`${projectRoot}/`)) return { sawStructuredCwd, matchedProject: true };
-  }
-  return { sawStructuredCwd, matchedProject: false };
-}
-
-export async function sessionFileBelongsToProject(sessionFile: string, cwd: string): Promise<boolean> {
-  return (await structuredCwdMatchState(sessionFile, cwd)).matchedProject;
-}
-
-async function sessionFileMayBelongToProject(sessionFile: string, cwd: string): Promise<boolean> {
-  const state = await structuredCwdMatchState(sessionFile, cwd);
-  return !state.sawStructuredCwd || state.matchedProject;
-}
-
-async function sessionFileCanBeAutoDiscovered(sessionFile: string, cwd: string, options: { allowProjectScopedNoCwd?: boolean } = {}): Promise<boolean> {
-  const state = await structuredCwdMatchState(sessionFile, cwd);
-  if (state.matchedProject) return true;
-  return Boolean(options.allowProjectScopedNoCwd && !state.sawStructuredCwd);
 }
 
 function applyCodexPatchText(cwd: string, patch: string, files: Map<string, ChangedFileSummary>) {
@@ -730,57 +598,6 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?:
   return finalizeAgentSession({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted: subagentsSpawned, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
 }
 
-
-function claudeProjectDirName(cwd: string): string {
-  return resolve(cwd).replace(/\//g, '-');
-}
-
-async function newestJsonlUnder(dir: string, limit = 80): Promise<string[]> {
-  async function walk(current: string, depth: number): Promise<Array<{ path: string; mtime: number }>> {
-    if (depth < 0) return [];
-    let entries;
-    try { entries = await readdir(current, { withFileTypes: true }); } catch { return []; }
-    const rows: Array<{ path: string; mtime: number }> = [];
-    for (const entry of entries) {
-      const path = join(current, entry.name);
-      if (entry.isDirectory()) rows.push(...await walk(path, depth - 1));
-      else if (entry.isFile() && entry.name.endsWith('.jsonl')) {
-        try { rows.push({ path, mtime: (await stat(path)).mtimeMs }); } catch { /* ignore */ }
-      }
-    }
-    return rows;
-  }
-  return (await walk(dir, 5)).sort((a, b) => b.mtime - a.mtime).slice(0, limit).map((row) => row.path);
-}
-
-async function discoverSessionFile(cwd: string, source: AgentType): Promise<string | null> {
-  const home = homedir();
-  const candidates: Array<{ path: string; allowProjectScopedNoCwd?: boolean }> = [];
-  if (source === 'claude_code') {
-    candidates.push(...(await newestJsonlUnder(join(home, '.claude', 'projects', claudeProjectDirName(cwd)), 20)).map((path) => ({ path, allowProjectScopedNoCwd: true })));
-    candidates.push(...(await newestJsonlUnder(join(home, '.claude', 'projects'), 80)).map((path) => ({ path })));
-  } else if (source === 'codex') {
-    candidates.push(...(await newestJsonlUnder(join(home, '.codex', 'sessions'), 120)).map((path) => ({ path })));
-  } else if (source === 'gemini_cli') {
-    for (const tmpProject of await readdir(join(home, '.gemini', 'tmp'), { withFileTypes: true }).catch(() => [])) {
-      if (tmpProject.isDirectory()) candidates.push(...(await newestJsonlUnder(join(home, '.gemini', 'tmp', tmpProject.name, 'chats'), 20)).map((path) => ({ path })));
-    }
-  } else {
-    return null;
-  }
-  const seen = new Set<string>();
-  for (const candidate of candidates) {
-    if (seen.has(candidate.path)) continue;
-    seen.add(candidate.path);
-    if (source === 'gemini_cli') {
-      const projectRoot = await readFile(join(dirname(dirname(candidate.path)), '.project_root'), 'utf8').catch(() => '');
-      if (resolve(projectRoot.trim()) === resolve(cwd)) return candidate.path;
-      continue;
-    }
-    if (await sessionFileCanBeAutoDiscovered(candidate.path, cwd, { allowProjectScopedNoCwd: candidate.allowProjectScopedNoCwd }).catch(() => false)) return candidate.path;
-  }
-  return null;
-}
 
 export async function collectAgentSessionMetrics(options: CollectAgentSessionOptions): Promise<AgentSessionMetrics | null> {
   const sessionFile = options.sessionFile ? resolve(options.cwd, options.sessionFile) : await discoverSessionFile(options.cwd, options.source);

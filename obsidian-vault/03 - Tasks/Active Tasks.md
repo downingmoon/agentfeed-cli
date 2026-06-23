@@ -15,6 +15,12 @@ updated: 2026-06-23
 ## 현재 결론
 
 
+> [!success] 2026-06-23 CLI draft collection helpers split
+> CLI `src/draft/create.ts`에서 fingerprint/duplicate detection과 agent source auto-detection 책임을 `src/draft/collection-fingerprint.ts`, `src/draft/agent-source-detection.ts`로 분리했다. `create.ts`는 399 → 237 pure LOC로 250 LOC ceiling 아래로 내려갔고, 신규 modules는 105/72 pure LOC다. Targeted draft/session/fingerprint/configured-command suites 22 files / 98 tests, typecheck/build, full CLI suite 226 files / 848 tests, built CLI manual smoke(`init --json` → `collect --source other --json --force --no-save-cursor` → saved draft file check), git diff --check, new-module no-any/comment grep를 통과했다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test/smoke로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Draft Collection Helpers Split 2026-06-23]]
+
+
+
 > [!success] 2026-06-23 CLI draft session aggregation split
 > CLI `src/draft/create.ts`에서 agent session aggregation/metric merge 책임을 `src/draft/session-aggregation.ts`로 분리했다. `create.ts`는 607 → 399 pure LOC, 신규 aggregation module은 213 pure LOC다. Targeted collection/session/fingerprint/configured-command suites 22 files / 98 tests, typecheck/build, full CLI suite 226 files / 848 tests, built CLI manual smoke(`init --json` → `collect --source other --json` → saved draft file check), git diff --check, new-module no-any/comment grep를 통과했다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test/smoke로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음. Initial split commit 뒤 EOF blank line은 amend 없이 follow-up hygiene commit으로 정리했다.
 > - [[CLI Draft Session Aggregation Split 2026-06-23]]

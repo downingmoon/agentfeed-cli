@@ -15,6 +15,12 @@ updated: 2026-06-23
 ## 현재 결론
 
 
+> [!success] 2026-06-23 CLI agent session Codex parser split
+> CLI `src/collectors/agent-session.ts`에서 Codex JSONL parser, apply_patch fallback parser, OMX metadata reader를 `src/collectors/agent-session-codex.ts`, `src/collectors/agent-session-codex-patch.ts`, `src/collectors/agent-session-codex-omx.ts`로 분리했다. `agent-session.ts`는 449 → 170 pure LOC로 내려갔고, 신규 modules는 218/30/47 pure LOC다. Baseline targeted Codex/session suite 5 files / 27 tests, typecheck/build, targeted Codex/session suite 5 files / 27 tests, full CLI suite 226 files / 848 tests(`--hookTimeout=30000`), built CLI manual smoke(`init --json` → `collect --source other --json --force --no-save-cursor` → saved draft file check), git diff --check, changed-file LOC/no-any/comment grep를 통과했다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test/smoke로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Agent Session Codex Parser Split 2026-06-23]]
+
+
+
 > [!success] 2026-06-23 CLI agent session Gemini parser split
 > CLI `src/collectors/agent-session.ts`에서 Gemini JSONL session parser와 shared command/test/tool failure helper를 `src/collectors/agent-session-gemini.ts`, `src/collectors/agent-session-tooling.ts`로 분리했다. `agent-session.ts`는 586 → 449 pure LOC로 내려갔고, 신규 modules는 100/45 pure LOC다. Typecheck/build, targeted Gemini/session collector suite 4 files / 21 tests, full CLI suite 226 files / 848 tests(`--hookTimeout=30000`), built CLI manual smoke(`init --json` → `collect --source other --json --force --no-save-cursor` → saved draft file check), git diff --check, new-module no-any/comment grep를 통과했다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test/smoke로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Agent Session Gemini Parser Split 2026-06-23]]

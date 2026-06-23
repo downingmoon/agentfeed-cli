@@ -15,6 +15,12 @@ updated: 2026-06-23
 ## 현재 결론
 
 
+> [!success] 2026-06-23 CLI credential file storage split
+> CLI `src/config/credentials.ts`에서 credentials file I/O/normalization과 keychain/file store orchestration을 `src/config/credentials-file.ts`, `src/config/credentials-store.ts`로 분리했다. `credentials.ts`는 425 → 175 pure LOC로 내려갔고, 신규 modules는 144/137 pure LOC다. Targeted credential/keychain/logout/share suite 11 files / 51 tests, typecheck/build, full CLI suite 226 files / 848 tests, built CLI manual smoke(local compatible metadata/status server, auto keychain fail-closed, explicit file-store login/status, no token leak), git diff --check, new-module no-any/comment grep를 통과했다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test/smoke로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Credential File Storage Split 2026-06-23]]
+
+
+
 > [!success] 2026-06-23 CLI draft collection helpers split
 > CLI `src/draft/create.ts`에서 fingerprint/duplicate detection과 agent source auto-detection 책임을 `src/draft/collection-fingerprint.ts`, `src/draft/agent-source-detection.ts`로 분리했다. `create.ts`는 399 → 237 pure LOC로 250 LOC ceiling 아래로 내려갔고, 신규 modules는 105/72 pure LOC다. Targeted draft/session/fingerprint/configured-command suites 22 files / 98 tests, typecheck/build, full CLI suite 226 files / 848 tests, built CLI manual smoke(`init --json` → `collect --source other --json --force --no-save-cursor` → saved draft file check), git diff --check, new-module no-any/comment grep를 통과했다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test/smoke로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Draft Collection Helpers Split 2026-06-23]]

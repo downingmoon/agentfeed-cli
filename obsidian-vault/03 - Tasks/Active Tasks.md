@@ -15,6 +15,12 @@ updated: 2026-06-23
 ## 현재 결론
 
 
+> [!success] 2026-06-23 CLI agent session file discovery split
+> CLI `src/collectors/agent-session.ts`에서 bounded JSONL read, structured cwd ownership guard, Claude/Codex/Gemini session file discovery를 `src/collectors/agent-session-files.ts`로 분리했다. `agent-session.ts`는 752 → 586 pure LOC로 내려갔고, 신규 module은 177 pure LOC다. Baseline targeted discovery/session ownership tests 3 files / 18 tests, typecheck/build, targeted session discovery/guardrail suite 4 files / 22 tests, full CLI suite 226 files / 848 tests(`--hookTimeout=30000`), built CLI manual smoke(`init --json` → `collect --source other --json --force --no-save-cursor` → saved draft file check), git diff --check를 통과했다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test/smoke로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Agent Session File Discovery Split 2026-06-23]]
+
+
+
 > [!success] 2026-06-23 CLI agent session generic collector split
 > CLI `src/collectors/agent-session.ts`에서 공통 metric/path/diff/finalize helper, collection window helper, generic metadata parser를 `src/collectors/agent-session-core.ts`, `src/collectors/agent-session-window.ts`, `src/collectors/agent-session-generic.ts`로 분리했다. `agent-session.ts`는 1157 → 752 pure LOC로 내려갔고, 신규 modules는 218/65/175 pure LOC다. Targeted session collector suite 13 files / 65 tests, typecheck/build, full CLI suite 226 files / 848 tests(`--hookTimeout=30000`), built CLI manual smoke(`init --json` → `collect --source other --json --force --no-save-cursor` → saved draft file check), git diff --check, new-module no-any/ts-ignore grep를 통과했다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test/smoke로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Agent Session Generic Collector Split 2026-06-23]]

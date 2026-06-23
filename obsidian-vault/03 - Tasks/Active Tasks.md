@@ -15,6 +15,11 @@ updated: 2026-06-23
 ## 현재 결론
 
 
+> [!success] 2026-06-23 CLI test command output parser split
+> CLI `src/collectors/test-command.ts`에서 configured test command output parsing을 `src/collectors/test-command-output.ts`로 분리하고 기존 `parseTestCommandOutput` public import path는 re-export로 유지했다. `test-command.ts`는 308 → 228 pure LOC, 신규 parser module은 82 pure LOC다. Targeted configured-command suites 7 files / 26 tests, typecheck/build, full CLI suite 226 files / 848 tests, built CLI `collect --run-configured-commands --json` smoke, git diff --check, changed-file no-any grep를 통과했다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test/smoke로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Test Command Output Parser Split 2026-06-23]]
+
+
 > [!success] 2026-06-23 CLI project config validation split
 > CLI `src/config/project-config.ts`에서 config shape validation helpers와 `validateProjectConfig`를 `src/config/project-config-validation.ts`로 분리했다. `project-config.ts`는 222 → 122 pure LOC, 신규 validation module은 102 pure LOC다. Targeted config/init/hook UX suite 3 files / 17 tests, typecheck/build, full CLI suite 226 files / 848 tests, built CLI `init --no-git-check --json` + `status --json` smoke, git diff --check를 통과했다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test/smoke로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Project Config Validation Split 2026-06-23]]

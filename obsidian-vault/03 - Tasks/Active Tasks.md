@@ -15,6 +15,12 @@ updated: 2026-06-23
 ## 현재 결론
 
 
+> [!success] 2026-06-23 CLI Codex session collector window test split
+> CLI near-ceiling `tests/session-collector.test.ts`에서 Codex-specific collection window/edit/token-baseline coverage를 `tests/session-collector-codex-window.test.ts`로 분리하고 shared temp git project fixture 및 JSONL writer를 `tests/session-collector-window-helpers.ts`로 통합했다. Baseline 1 file / 9 tests, targeted split 2 files / 9 tests, typecheck/build, full CLI suite 225 files / 848 tests, git diff --check, changed-file LOC audit를 통과했고 split files/helper는 117/72/32 pure LOC다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Codex Session Collector Window Test Split 2026-06-23]]
+
+
+
 > [!success] 2026-06-23 CLI credential resolution validation test split
 > CLI near-ceiling `tests/config-credential-resolution.test.ts`에서 malformed/invalid credential file validation coverage를 `tests/config-credential-file-validation.test.ts`로 분리하고 shared HOME/env isolation 및 credential file writer fixture를 `tests/config-credential-resolution-helpers.ts`로 통합했다. Baseline 1 file / 11 tests, targeted split 2 files / 11 tests, typecheck/build, full CLI suite 224 files / 848 tests, git diff --check, changed-file LOC audit를 통과했고 split files/helper는 100/56/68 pure LOC다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Credential Resolution Validation Test Split 2026-06-23]]

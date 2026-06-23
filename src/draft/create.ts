@@ -1,12 +1,10 @@
 import { hostname } from 'node:os';
-import { isAbsolute, join, relative, resolve } from 'node:path';
-import type { AgentFeedProjectConfig, AgentType, ChangedFileSummary, CollectionWindow, LocalDraft, WorklogMetrics } from '../types.js';
+import { isAbsolute, relative, resolve } from 'node:path';
+import type { AgentType, CollectionWindow, LocalDraft, WorklogMetrics } from '../types.js';
 import { loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { collectAgentSessionMetrics } from '../collectors/agent-session.js';
 import { collectConfiguredCommandMetricsWithStatus } from '../collectors/test-command.js';
-import { detectAgentSignals } from '../collectors/agent-discovery.js';
-import { shouldIgnoreEvidencePath } from '../collectors/path-filter.js';
 import { changedAreas } from '../summary/changed-areas.js';
 import { generateOutcome, generateSummary, generateTimeline } from '../summary/rule-based.js';
 import { generateRicherSummaryFields } from '../summary/richer-summary.js';
@@ -16,7 +14,8 @@ import { randomSuffix, shortHash } from '../utils/hash.js';
 import { AGENTFEED_TOOL_VERSION } from '../version.js';
 import { writeDraft } from './write.js';
 import { pathExists } from '../utils/fs.js';
-import { listDrafts, readDraft } from './read.js';
+import { collectionFingerprint, collectionPolicyForFingerprint, findDraftByFingerprint, redactedUserNoteForFingerprint } from './collection-fingerprint.js';
+import { autoAgentSources, explicitSessionProbeSources } from './agent-source-detection.js';
 import { addOptionalCounts, agentMetricsForSession, configFilteredAgentMetrics, mergeAgentSessions, mergeChangedFiles, sessionModelsUsed, sumChangedFileLines, type AgentSessionCandidate } from './session-aggregation.js';
 
 function draftId(date = new Date()): string {
@@ -73,176 +72,6 @@ export function createEmptyDraft(input: { projectName: string; projectRoot: stri
   };
 }
 
-
-function compactDraftReadFailure(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
-  return message
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .join(' ')
-    .slice(0, 360);
-}
-
-async function findDraftByFingerprint(cwd: string, fingerprint: string): Promise<{ draft: LocalDraft | null; warnings: string[] }> {
-  const warnings: string[] = [];
-  for (const row of await listDrafts(cwd)) {
-    let draft: LocalDraft;
-    try {
-      draft = await readDraft(cwd, row.id);
-    } catch (error) {
-      warnings.push([
-        `Existing AgentFeed draft could not be read and was skipped during duplicate detection: ${row.id}.`,
-        compactDraftReadFailure(error),
-        'Inspect saved drafts with: agentfeed drafts',
-        'Remove the malformed draft or create a fresh draft with: agentfeed collect --explain'
-      ].filter(Boolean).join(' '));
-      continue;
-    }
-    if (draft.source.collection_fingerprint === fingerprint) return { draft, warnings };
-  }
-  return { draft: null, warnings };
-}
-
-function normalizedChangedFilesForFingerprint(files: ChangedFileSummary[]): Array<Pick<ChangedFileSummary, 'path' | 'status' | 'lines_added' | 'lines_removed'>> {
-  return files
-    .filter((file) => file.path && !shouldIgnoreEvidencePath(file.path))
-    .map((file) => ({
-      path: file.path,
-      status: file.status,
-      lines_added: file.lines_added ?? null,
-      lines_removed: file.lines_removed ?? null
-    }))
-    .sort((a, b) => a.path.localeCompare(b.path));
-}
-
-function redactedUserNoteForFingerprint(note?: string | null): string | null {
-  const normalized = normalizeUserNote(note);
-  if (!normalized) return null;
-  const { redacted } = scanAndRedactFields({ user_note: normalized });
-  const value = redacted.user_note;
-  return typeof value === 'string' && value ? value : null;
-}
-
-function collectionPolicyForFingerprint(config: AgentFeedProjectConfig): Record<string, unknown> {
-  return {
-    project: {
-      name: config.project.name,
-      repository_url: config.project.repository_url ?? null,
-      visibility: config.project.visibility,
-      tags: config.project.tags
-        .map((tag) => tag.trim())
-        .filter(Boolean)
-        .slice(0, 10)
-        .sort((a, b) => a.localeCompare(b))
-    },
-    collection: {
-      include_file_stats: config.collection.include_file_stats,
-      include_public_prompt: config.collection.include_public_prompt,
-      include_token_usage: config.collection.include_token_usage,
-      include_estimated_cost: config.collection.include_estimated_cost,
-      include_test_results: config.collection.include_test_results,
-      run_tests_on_collect: config.collection.run_tests_on_collect
-    }
-  };
-}
-
-function collectionFingerprint(input: {
-  source: AgentType;
-  sessionId?: string | null;
-  sessionIdentity?: string | null;
-  headCommit?: string | null;
-  window?: CollectionWindow | null;
-  changedFiles?: ChangedFileSummary[];
-  userNote?: string | null;
-  configuredCommandIntent?: boolean;
-  collectionPolicy?: Record<string, unknown>;
-}): string | null {
-  if (!input.headCommit) return null;
-  const changedFiles = normalizedChangedFilesForFingerprint(input.changedFiles ?? []);
-  const uploadAffectingInputs = {
-    user_note: input.userNote ?? null,
-    configured_command_intent: input.configuredCommandIntent === true,
-    collection_policy: input.collectionPolicy ?? null
-  };
-  const sessionIdentity = input.sessionIdentity ?? input.sessionId ?? null;
-  if (sessionIdentity) {
-    return shortHash(JSON.stringify({ source: input.source, session_identity: sessionIdentity, head_commit: input.headCommit, window: input.window ?? null, changed_files: changedFiles, upload_affecting_inputs: uploadAffectingInputs }), 16);
-  }
-  if (!changedFiles.length) return null;
-  return shortHash(JSON.stringify({ source: input.source, head_commit: input.headCommit, window: input.window ?? null, changed_files: changedFiles, upload_affecting_inputs: uploadAffectingInputs }), 16);
-}
-
-interface AutoAgentSources {
-  enabled: AgentType[];
-  attributable: AgentType[];
-  warnings: string[];
-}
-
-async function autoAgentSources(cwd: string, config: AgentFeedProjectConfig): Promise<AutoAgentSources> {
-  const sources: AgentType[] = [];
-  if (config.agents.claude_code.enabled) sources.push('claude_code');
-  if (config.agents.codex.enabled) sources.push('codex');
-  if (config.agents.cursor.enabled) sources.push('cursor');
-  if (config.agents.gemini_cli.enabled) sources.push('gemini_cli');
-  let signals: Awaited<ReturnType<typeof detectAgentSignals>>;
-  try {
-    signals = await detectAgentSignals({ cwd });
-  } catch (error) {
-    return {
-      enabled: sources,
-      attributable: [],
-      warnings: [
-        [
-          'Agent signal auto-detection failed; collection fell back to enabled project agents only.',
-          compactDraftReadFailure(error),
-          'Run: agentfeed doctor',
-          'Retry with an explicit source if needed: agentfeed collect --source <source> --explain'
-        ].filter(Boolean).join(' ')
-      ]
-    };
-  }
-  const hasProjectLocalSignal = (paths: string[]): boolean => {
-    if (!paths.length) return false;
-    const root = resolve(cwd);
-    return paths.some((path) => {
-      const rel = relative(root, resolve(path));
-      return rel && !rel.startsWith('..') && !isAbsolute(rel);
-    });
-  };
-  const signalScore = (paths: string[]): number => {
-    if (!paths.length) return 0;
-    return hasProjectLocalSignal(paths) ? 2 : 1;
-  };
-  const scores: Record<AgentType, number> = {
-    claude_code: Math.max(signalScore(signals.claude_code.paths), signalScore(signals.omc.paths)),
-    codex: Math.max(signalScore(signals.codex.paths), signalScore(signals.omx.paths)),
-    cursor: signalScore(signals.cursor.paths),
-    gemini_cli: Math.max(signalScore(signals.gemini_cli.paths), signalScore(signals.superpowers.paths)),
-    other: 0
-  };
-  const localScores: Record<AgentType, number> = {
-    claude_code: hasProjectLocalSignal([...signals.claude_code.paths, ...signals.omc.paths]) ? 2 : 0,
-    codex: hasProjectLocalSignal([...signals.codex.paths, ...signals.omx.paths]) ? 2 : 0,
-    cursor: hasProjectLocalSignal(signals.cursor.paths) ? 2 : 0,
-    gemini_cli: hasProjectLocalSignal([...signals.gemini_cli.paths, ...signals.superpowers.paths]) ? 2 : 0,
-    other: 0
-  };
-  const enabled = [...sources].sort((a, b) => scores[b] - scores[a]);
-  return {
-    enabled,
-    attributable: enabled.filter((source) => localScores[source] > 0),
-    warnings: []
-  };
-}
-
-function explicitSessionProbeSources(enabledSources: AgentType[], sessionFile: string | null): AgentType[] {
-  if (!sessionFile) return enabledSources;
-  const sources = new Set<AgentType>(enabledSources);
-  for (const source of ['claude_code', 'codex', 'gemini_cli'] as const) sources.add(source);
-  if (sessionFile.split(/[\\/]/).includes('.cursor')) sources.add('cursor');
-  return [...sources];
-}
 
 export interface CollectDraftStatus {
   draft: LocalDraft;

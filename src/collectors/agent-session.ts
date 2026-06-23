@@ -1,106 +1,25 @@
 import { homedir } from 'node:os';
-import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { realpathSync } from 'node:fs';
 import { open, readdir, readFile, stat } from 'node:fs/promises';
-import type { AgentType, ChangedFileSummary, CollectionQuality, CollectionSource, CollectionWindow, CollectionWindowReason, WorklogMetrics } from '../types.js';
-import { shouldIgnoreEvidencePath } from './path-filter.js';
+import type { AgentType, ChangedFileSummary, CollectionSource, CollectionWindow } from '../types.js';
+import { parseGenericMetadata } from './agent-session-generic.js';
+import { asRecord, asString, countTextLines, countUnifiedDiff, explicitCostUsd, finalizeAgentSession, finiteNumber, inferEffectiveCollectionWindow, integer, numeric, pushSource, relativeProjectPath, safeJsonParse, statusForPatchHeader, upsertFile, type AgentSessionMetrics } from './agent-session-core.js';
+import { hasCollectionWindowBoundary, parseBoundaryMillis, parseIsoMillis, rowInAgentCollectionWindow, rowTimestampMillis } from './agent-session-window.js';
+
+export type { AgentSessionMetrics } from './agent-session-core.js';
 
 const DEFAULT_SESSION_FILE_MAX_BYTES = 10 * 1024 * 1024;
 const DEFAULT_SESSION_JSONL_MAX_ROWS = 50_000;
 const DEFAULT_SESSION_JSONL_MAX_LINE_CHARS = 1_000_000;
 
-export interface AgentSessionMetrics extends WorklogMetrics {
-  session_id?: string | null;
-  model?: string | null;
-  changed_files: ChangedFileSummary[];
-  collection_window?: CollectionWindow | null;
-  collection_window_reason?: CollectionWindowReason | null;
-}
-
-interface CollectAgentSessionOptions {
-  cwd: string;
-  source: AgentType;
-  sessionFile?: string | null;
-  since?: string | null;
-  until?: string | null;
-  inferIdleGap?: boolean;
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
-}
-
-function asString(value: unknown): string | null {
-  return typeof value === 'string' && value.length ? value : null;
-}
-
-function numeric(value: unknown): number {
-  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
-}
-
-function integer(value: unknown): number | null {
-  const n = numeric(value);
-  return n ? Math.trunc(n) : null;
-}
-
-function finiteNumber(value: unknown): number | null {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value === 'string' && value.trim()) {
-    const n = Number(value.trim().replace(/^\$/, ''));
-    if (Number.isFinite(n)) return n;
-  }
-  return null;
-}
-
-function costNumber(value: unknown): number | null {
-  const n = finiteNumber(value);
-  return n != null && n >= 0 ? n : null;
-}
-
-function explicitCostUsd(record?: Record<string, unknown> | null): number | null {
-  if (!record) return null;
-  const keys = [
-    'estimated_cost_usd',
-    'estimatedCostUsd',
-    'estimatedCostUSD',
-    'cost_usd',
-    'costUsd',
-    'costUSD',
-    'total_cost_usd',
-    'totalCostUsd',
-    'totalCostUSD',
-    'usd_cost',
-    'usdCost',
-    'usd'
-  ];
-  for (const key of keys) {
-    const n = costNumber(record[key]);
-    if (n != null) return n;
-  }
-  for (const key of ['cost', 'billing']) {
-    const nested = asRecord(record[key]);
-    if (!nested) continue;
-    for (const nestedKey of ['usd', 'USD', 'total_usd', 'totalUsd', 'estimated_usd', 'estimatedUsd', 'amount_usd', 'amountUsd']) {
-      const n = costNumber(nested[nestedKey]);
-      if (n != null) return n;
-    }
-  }
-  return null;
-}
-
-function mergeQuality(sources: CollectionSource[]): CollectionQuality | null {
-  if (sources.some((source) => source.quality === 'high')) return 'high';
-  if (sources.some((source) => source.quality === 'medium')) return 'medium';
-  if (sources.some((source) => source.quality === 'low')) return 'low';
-  return null;
-}
-
-function pushSource(sources: CollectionSource[], source: CollectionSource) {
-  if (!sources.some((row) => row.type === source.type && row.name === source.name)) sources.push(source);
-}
-
-function safeJsonParse(text: string): unknown | null {
-  try { return JSON.parse(text); } catch { return null; }
+export interface CollectAgentSessionOptions {
+  readonly cwd: string;
+  readonly source: AgentType;
+  readonly sessionFile?: string | null;
+  readonly since?: string | null;
+  readonly until?: string | null;
+  readonly inferIdleGap?: boolean;
 }
 
 function boundedPositiveIntegerEnv(name: string, fallback: number): number {
@@ -232,63 +151,6 @@ async function sessionFileCanBeAutoDiscovered(sessionFile: string, cwd: string, 
   return Boolean(options.allowProjectScopedNoCwd && !state.sawStructuredCwd);
 }
 
-function languageFor(path: string): string | null {
-  const ext = extname(path).toLowerCase();
-  return ({ '.ts': 'TypeScript', '.tsx': 'TypeScript', '.js': 'JavaScript', '.py': 'Python', '.go': 'Go', '.rs': 'Rust', '.md': 'Markdown', '.json': 'JSON' } as Record<string, string>)[ext] ?? null;
-}
-
-function relativeProjectPath(cwd: string, filePath: string): string | null {
-  const absolute = canonicalPath(isAbsolute(filePath) ? filePath : resolve(cwd, filePath));
-  const rel = relative(canonicalPath(cwd), absolute);
-  if (!rel || rel.startsWith('..') || isAbsolute(rel)) return null;
-  return rel.split('\\').join('/');
-}
-
-function countTextLines(text: string): number {
-  if (!text) return 0;
-  const normalized = text.endsWith('\n') ? text.slice(0, -1) : text;
-  if (!normalized) return 0;
-  return normalized.split(/\r?\n/).length;
-}
-
-function countUnifiedDiff(diff: string): { added: number; removed: number } {
-  let added = 0;
-  let removed = 0;
-  for (const line of diff.split('\n')) {
-    if (line.startsWith('+++') || line.startsWith('---')) continue;
-    if (line.startsWith('+')) added += 1;
-    else if (line.startsWith('-')) removed += 1;
-  }
-  return { added, removed };
-}
-
-function statusForPatchHeader(action: string): ChangedFileSummary['status'] {
-  if (action === 'Add') return 'added';
-  if (action === 'Delete') return 'deleted';
-  return 'modified';
-}
-
-function upsertFile(
-  files: Map<string, ChangedFileSummary>,
-  path: string,
-  input: { status?: ChangedFileSummary['status']; added?: number | null; removed?: number | null }
-) {
-  if (shouldIgnoreEvidencePath(path)) return;
-  const current = files.get(path) ?? {
-    path,
-    extension: extname(path) || null,
-    language: languageFor(path),
-    status: input.status ?? 'modified',
-    publish_path: false,
-    lines_added: 0,
-    lines_removed: 0
-  };
-  current.status = input.status ?? current.status;
-  current.lines_added = (current.lines_added ?? 0) + (input.added ?? 0);
-  current.lines_removed = (current.lines_removed ?? 0) + (input.removed ?? 0);
-  files.set(path, current);
-}
-
 function applyCodexPatchText(cwd: string, patch: string, files: Map<string, ChangedFileSummary>) {
   let currentPath: string | null = null;
   let currentStatus: ChangedFileSummary['status'] = 'modified';
@@ -369,145 +231,8 @@ function toolResultOutput(item: Record<string, unknown>): string {
   }).filter(Boolean).join('\n');
 }
 
-function parseIsoMillis(value: unknown): number | null {
-  const text = asString(value);
-  if (!text) return null;
-  const millis = Date.parse(text);
-  return Number.isFinite(millis) ? millis : null;
-}
-
-function parseTimestampMillis(value: unknown): number | null {
-  const isoMillis = parseIsoMillis(value);
-  if (isoMillis != null) return isoMillis;
-  const n = finiteNumber(value);
-  if (n == null || n <= 0) return null;
-  if (n > 1_000_000_000_000) return n;
-  if (n > 1_000_000_000) return n * 1000;
-  return null;
-}
-
-function parseBoundaryMillis(value?: string | null): number | null {
-  if (!value) return null;
-  const millis = Date.parse(value);
-  if (!Number.isFinite(millis)) throw new Error(`Invalid collection window timestamp: ${value}`);
-  return millis;
-}
-
-function rowTimestampMillis(row: Record<string, unknown>): number | null {
-  return parseTimestampMillis(row.timestamp)
-    ?? parseTimestampMillis(row.created_at)
-    ?? parseTimestampMillis(row.createdAt)
-    ?? parseTimestampMillis(row.updated_at)
-    ?? parseTimestampMillis(row.updatedAt)
-    ?? parseTimestampMillis(row.lastUpdated)
-    ?? parseTimestampMillis(row.startTime)
-    ?? parseTimestampMillis(row.time)
-    ?? parseTimestampMillis(row.ts);
-}
-
-function rowInCollectionWindow(row: Record<string, unknown>, window?: CollectionWindow | null, options: { includeMissingTimestamp?: boolean } = {}): boolean {
-  const sinceMillis = parseBoundaryMillis(window?.since);
-  const untilMillis = parseBoundaryMillis(window?.until);
-  if (sinceMillis == null && untilMillis == null) return true;
-  const millis = rowTimestampMillis(row);
-  if (millis == null) return options.includeMissingTimestamp ?? true;
-  if (sinceMillis != null && millis < sinceMillis) return false;
-  if (untilMillis != null && millis > untilMillis) return false;
-  return true;
-}
-
-function hasCollectionWindowBoundary(window?: CollectionWindow | null): boolean {
-  return Boolean(window?.since || window?.until);
-}
-
-function rowInAgentCollectionWindow(row: Record<string, unknown>, window?: CollectionWindow | null): boolean {
-  return rowInCollectionWindow(row, window, { includeMissingTimestamp: !hasCollectionWindowBoundary(window) });
-}
-
-const DEFAULT_IDLE_GAP_MILLIS = 30 * 60 * 1000;
-
-function normalizedCollectionWindow(window?: CollectionWindow | null): CollectionWindow | null {
-  const since = window?.since ?? null;
-  const until = window?.until ?? null;
-  return since || until ? { since, until } : null;
-}
-
-function inferEffectiveCollectionWindow(rows: Record<string, unknown>[], window?: CollectionWindow | null, options: { inferIdleGap?: boolean } = {}): { window: CollectionWindow | null; reason: CollectionWindowReason | null } {
-  const explicitWindow = normalizedCollectionWindow(window);
-  if (explicitWindow?.since || options.inferIdleGap === false) return { window: explicitWindow, reason: null };
-
-  let lastMillis: number | null = null;
-  let sinceMillis: number | null = null;
-  for (const row of rows) {
-    const millis = rowTimestampMillis(row);
-    if (millis == null) continue;
-    if (lastMillis != null && millis - lastMillis > DEFAULT_IDLE_GAP_MILLIS) {
-      sinceMillis = millis;
-    }
-    lastMillis = millis;
-  }
-  if (sinceMillis != null) return { window: { since: new Date(sinceMillis).toISOString(), until: explicitWindow?.until ?? null }, reason: 'idle_gap' };
-  return { window: explicitWindow, reason: null };
-}
-
 async function readJsonFile(path: string): Promise<Record<string, unknown> | null> {
   return asRecord(safeJsonParse(await readFile(path, 'utf8').catch(() => '')));
-}
-
-function finalize(input: {
-  sessionId?: string | null;
-  model?: string | null;
-  files: Map<string, ChangedFileSummary>;
-  tokensUsed: number;
-  durationSeconds?: number | null;
-  testsRun: number;
-  failedCommands: number;
-  failedTestCommands?: number;
-  commandsRun?: number;
-  toolCalls?: number;
-  estimatedCostUsd?: number | null;
-  skills?: Set<string>;
-  subagentsSpawned?: number;
-  subagentsCompleted?: number;
-  agentTurns?: number;
-  agentModes?: Set<string>;
-  collectionSources?: CollectionSource[];
-  collectionWindow?: CollectionWindow | null;
-  collectionWindowReason?: CollectionWindowReason | null;
-}): AgentSessionMetrics | null {
-  const changedFiles = [...input.files.values()];
-  const linesAdded = changedFiles.reduce((sum, file) => sum + (file.lines_added ?? 0), 0);
-  const linesRemoved = changedFiles.reduce((sum, file) => sum + (file.lines_removed ?? 0), 0);
-  const skillsUsed = input.skills?.size ?? 0;
-  const agentModes = [...(input.agentModes ?? new Set<string>())].sort();
-  const collectionSources = input.collectionSources ?? [];
-  const collectionQuality = mergeQuality(collectionSources);
-  if (!input.sessionId && !input.model && !changedFiles.length && !input.tokensUsed && !input.estimatedCostUsd && !input.testsRun && !input.failedCommands && !input.toolCalls && !input.commandsRun && !skillsUsed && !input.subagentsSpawned && !input.agentTurns) return null;
-  return {
-    session_id: input.sessionId ?? null,
-    model: input.model ?? null,
-    changed_files: changedFiles,
-    tokens_used: input.tokensUsed || null,
-    estimated_cost_usd: input.estimatedCostUsd && input.estimatedCostUsd > 0 ? input.estimatedCostUsd : null,
-    duration_seconds: input.durationSeconds ? Math.round(input.durationSeconds) : null,
-    files_changed: changedFiles.length || null,
-    lines_added: linesAdded || null,
-    lines_removed: linesRemoved || null,
-    tests_run: input.testsRun || null,
-    tests_passed: input.testsRun ? Math.max(input.testsRun - (input.failedTestCommands ?? 0), 0) : null,
-    failed_commands: input.failedCommands || null,
-    commands_run: input.commandsRun || null,
-    tool_calls: input.toolCalls || null,
-    skills_used: skillsUsed || null,
-    subagents_spawned: input.subagentsSpawned || null,
-    subagents_completed: input.subagentsCompleted || null,
-    agent_turns: input.agentTurns || null,
-    agent_modes: agentModes.length ? agentModes : null,
-    collection_quality: collectionQuality,
-    collection_sources: collectionSources.length ? collectionSources : null,
-    collection_window: input.collectionWindow ?? null,
-    collection_window_reason: input.collectionWindowReason ?? null
-  };
 }
 
 async function readOmcMetadata(cwd: string, sessionId: string | null): Promise<{
@@ -687,7 +412,7 @@ async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?:
   subagentsSpawned = Math.max(subagentsSpawned, omc.subagentsSpawned ?? 0);
   subagentsCompleted = Math.max(subagentsCompleted, omc.subagentsCompleted ?? 0);
   for (const mode of omc.agentModes ?? []) agentModes.add(mode);
-  return finalize({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
+  return finalizeAgentSession({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
 }
 
 function codexTokenTotal(info: Record<string, unknown>): number {
@@ -904,7 +629,7 @@ async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: 
   subagentsCompleted = Math.max(subagentsCompleted, omx.subagentsCompleted ?? 0);
   agentTurns = Math.max(agentTurns, omx.agentTurns ?? 0);
   for (const mode of omx.agentModes ?? []) agentModes.add(mode);
-  return finalize({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
+  return finalizeAgentSession({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
 }
 
 function geminiTokenTotal(tokens: Record<string, unknown>): number {
@@ -1002,179 +727,9 @@ async function parseGeminiSessionFile(cwd: string, sessionFile: string, window?:
   const durationSeconds = startMillis && endMillis && endMillis > startMillis ? (endMillis - startMillis) / 1000 : null;
   const collectionSources: CollectionSource[] = [{ type: 'agent_session', name: 'gemini_cli', quality: 'high' }];
   if (skills.size || agentModes.has('superpowers')) pushSource(collectionSources, { type: 'plugin_metadata', name: 'superpowers', quality: 'medium' });
-  return finalize({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted: subagentsSpawned, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
+  return finalizeAgentSession({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted: subagentsSpawned, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
 }
 
-
-function firstInteger(record: Record<string, unknown>, keys: string[]): number | null {
-  for (const key of keys) {
-    const value = integer(record[key]);
-    if (value != null) return value;
-  }
-  return null;
-}
-
-function addModes(target: Set<string>, value: unknown) {
-  if (typeof value === 'string' && value) target.add(value);
-  else if (Array.isArray(value)) {
-    for (const item of value) if (typeof item === 'string' && item) target.add(item);
-  }
-}
-
-function changedFileStatus(value: unknown): ChangedFileSummary['status'] {
-  const text = asString(value)?.toLowerCase();
-  if (text === 'add' || text === 'added' || text === 'create' || text === 'created') return 'added';
-  if (text === 'delete' || text === 'deleted' || text === 'remove' || text === 'removed') return 'deleted';
-  if (text === 'rename' || text === 'renamed' || text === 'move' || text === 'moved') return 'renamed';
-  if (text === 'modify' || text === 'modified' || text === 'update' || text === 'updated' || text === 'edit' || text === 'edited') return 'modified';
-  return 'unknown';
-}
-
-function firstString(record: Record<string, unknown>, keys: string[]): string | null {
-  for (const key of keys) {
-    const value = asString(record[key]);
-    if (value) return value;
-  }
-  return null;
-}
-
-function normalizedGenericPath(rawPath: string): string {
-  if (!rawPath.startsWith('file://')) return rawPath;
-  const encodedPath = rawPath.slice('file://'.length);
-  try {
-    return decodeURIComponent(encodedPath);
-  } catch {
-    return encodedPath;
-  }
-}
-
-function applyGenericChangedFile(cwd: string, raw: unknown, files: Map<string, ChangedFileSummary>, fallbackPath?: string) {
-  if (typeof raw === 'string') {
-    const rel = relativeProjectPath(cwd, raw);
-    if (rel) upsertFile(files, rel, { status: 'modified', added: null, removed: null });
-    return;
-  }
-  const record = asRecord(raw);
-  if (!record) return;
-  const rawPath = firstString(record, ['path', 'file_path', 'filePath', 'file', 'uri']) ?? fallbackPath ?? null;
-  if (!rawPath) return;
-  const normalizedPath = normalizedGenericPath(rawPath);
-  const rel = relativeProjectPath(cwd, normalizedPath);
-  if (!rel) return;
-  const diff = asString(record.unified_diff) ?? asString(record.diff) ?? asString(record.patch);
-  const diffCounts = diff ? countUnifiedDiff(diff) : null;
-  const added = firstInteger(record, ['lines_added', 'linesAdded', 'additions', 'added']) ?? diffCounts?.added ?? null;
-  const removed = firstInteger(record, ['lines_removed', 'linesRemoved', 'deletions', 'removed']) ?? diffCounts?.removed ?? null;
-  const status = changedFileStatus(record.status ?? record.type ?? record.kind);
-  upsertFile(files, rel, { status: status === 'unknown' ? 'modified' : status, added, removed });
-}
-
-function applyGenericChangedFiles(cwd: string, raw: unknown, files: Map<string, ChangedFileSummary>) {
-  if (Array.isArray(raw)) {
-    for (const item of raw) applyGenericChangedFile(cwd, item, files);
-    return;
-  }
-  const record = asRecord(raw);
-  if (!record) return;
-  for (const [path, change] of Object.entries(record)) applyGenericChangedFile(cwd, change, files, path);
-}
-
-function applyGenericRecord(record: Record<string, unknown>, acc: {
-  sessionId: string | null;
-  model: string | null;
-  tokensUsed: number;
-  estimatedCostUsd: number;
-  commandsRun: number;
-  toolCalls: number;
-  agentTurns: number;
-  agentModes: Set<string>;
-}, cwd: string, files: Map<string, ChangedFileSummary>) {
-  acc.sessionId ??= asString(record.session_id) ?? asString(record.sessionId);
-  acc.model ??= asString(record.model);
-  acc.tokensUsed = Math.max(acc.tokensUsed, firstInteger(record, ['tokens_used', 'tokensUsed', 'total_tokens', 'totalTokens']) ?? 0);
-  acc.estimatedCostUsd = Math.max(acc.estimatedCostUsd, explicitCostUsd(record) ?? 0);
-  const tokens = asRecord(record.tokens) ?? asRecord(record.token_usage) ?? asRecord(record.tokenUsage);
-  if (tokens) {
-    acc.tokensUsed = Math.max(acc.tokensUsed, firstInteger(tokens, ['total', 'total_tokens', 'totalTokens']) ?? 0);
-    acc.estimatedCostUsd = Math.max(acc.estimatedCostUsd, explicitCostUsd(tokens) ?? 0);
-  }
-  acc.commandsRun = Math.max(acc.commandsRun, firstInteger(record, ['commands_run', 'commandsRun', 'commands', 'command_count', 'commandCount']) ?? 0);
-  acc.toolCalls = Math.max(acc.toolCalls, firstInteger(record, ['tool_calls', 'toolCalls', 'tools', 'tool_count', 'toolCount']) ?? 0);
-  acc.agentTurns = Math.max(acc.agentTurns, firstInteger(record, ['agent_turns', 'agentTurns', 'turn_count', 'turnCount', 'turns']) ?? 0);
-  addModes(acc.agentModes, record.agent_modes ?? record.agentModes ?? record.modes ?? record.mode);
-  for (const key of ['changed_files', 'changedFiles', 'files', 'edits', 'changes']) applyGenericChangedFiles(cwd, record[key], files);
-
-  for (const key of ['metrics', 'stats', 'summary']) {
-    const nested = asRecord(record[key]);
-    if (nested) applyGenericRecord(nested, acc, cwd, files);
-  }
-}
-
-async function genericRecordsFromFile(path: string): Promise<Record<string, unknown>[]> {
-  let text: string;
-  try {
-    const info = await stat(path);
-    if (info.size > 1_000_000) return [];
-    text = await readFile(path, 'utf8');
-  } catch {
-    return [];
-  }
-  const parsed = safeJsonParse(text);
-  if (Array.isArray(parsed)) return parsed.map(asRecord).filter((row): row is Record<string, unknown> => Boolean(row));
-  const record = asRecord(parsed);
-  if (record) return [record];
-  const rows: Record<string, unknown>[] = [];
-  for (const line of text.split('\n')) {
-    const lineRecord = asRecord(safeJsonParse(line));
-    if (lineRecord) rows.push(lineRecord);
-  }
-  return rows;
-}
-
-async function genericMetadataFiles(cwd: string, roots = ['.ai', '.agent', '.agents', '.aider']): Promise<string[]> {
-  const files: Array<{ path: string; mtime: number }> = [];
-  async function walk(current: string, depth: number) {
-    if (depth < 0) return;
-    let entries;
-    try { entries = await readdir(current, { withFileTypes: true }); } catch { return; }
-    for (const entry of entries) {
-      const path = join(current, entry.name);
-      if (entry.isDirectory()) await walk(path, depth - 1);
-      else if (entry.isFile() && /\.(json|jsonl|log)$/i.test(entry.name)) {
-        try { files.push({ path, mtime: (await stat(path)).mtimeMs }); } catch { /* ignore */ }
-      }
-    }
-  }
-  for (const root of roots) await walk(join(cwd, root), 3);
-  return files.sort((a, b) => b.mtime - a.mtime).slice(0, 20).map((row) => row.path);
-}
-
-async function parseGenericMetadata(cwd: string, sessionFile?: string | null, window?: CollectionWindow | null, options: { sourceName?: string; roots?: string[]; quality?: CollectionQuality } = {}): Promise<AgentSessionMetrics | null> {
-  const acc = { sessionId: null as string | null, model: null as string | null, tokensUsed: 0, estimatedCostUsd: 0, commandsRun: 0, toolCalls: 0, agentTurns: 0, agentModes: new Set<string>() };
-  const changedFiles = new Map<string, ChangedFileSummary>();
-  const metadataFiles = sessionFile ? [sessionFile] : await genericMetadataFiles(cwd, options.roots);
-  const includeMissingTimestamp = !hasCollectionWindowBoundary(window);
-  for (const file of metadataFiles) {
-    for (const record of await genericRecordsFromFile(file)) {
-      if (rowInCollectionWindow(record, window, { includeMissingTimestamp })) applyGenericRecord(record, acc, cwd, changedFiles);
-    }
-  }
-  return finalize({
-    sessionId: acc.sessionId,
-    model: acc.model,
-    files: changedFiles,
-    tokensUsed: acc.tokensUsed,
-    estimatedCostUsd: acc.estimatedCostUsd,
-    testsRun: 0,
-    failedCommands: 0,
-    commandsRun: acc.commandsRun,
-    toolCalls: acc.toolCalls,
-    agentTurns: acc.agentTurns,
-    agentModes: acc.agentModes,
-    collectionSources: metadataFiles.length ? [{ type: 'generic_metadata', name: options.sourceName ?? 'unknown_plugin', quality: options.quality ?? 'low' }] : [],
-    collectionWindow: normalizedCollectionWindow(window)
-  });
-}
 
 function claudeProjectDirName(cwd: string): string {
   return resolve(cwd).replace(/\//g, '-');

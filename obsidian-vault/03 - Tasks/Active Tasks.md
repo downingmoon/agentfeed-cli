@@ -15,6 +15,12 @@ updated: 2026-06-23
 ## 현재 결론
 
 
+> [!success] 2026-06-23 CLI draft upload lock diagnostics split
+> CLI `src/api/draft-upload-lock.ts`에서 held-lock diagnostics/message formatting을 `src/api/draft-upload-lock-diagnostics.ts`로 분리했다. `draft-upload-lock.ts`는 215 → 146 pure LOC, 신규 diagnostics module은 75 pure LOC다. Targeted lock contract 1 file / 5 tests, typecheck/build, full CLI suite 226 files / 848 tests, built publish lock smoke(`INGEST_COUNT=0`), git diff --check, changed-file no-excuse grep를 통과했다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test/smoke로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Draft Upload Lock Diagnostics Split 2026-06-23]]
+
+
+
 > [!success] 2026-06-23 CLI redacted public field primitive split
 > CLI privacy boundary parser `src/privacy/redacted-public-fields.ts`에서 primitive validators/types/enums를 `src/privacy/redacted-public-field-primitives.ts`로 분리하고 public import path는 유지했다. `redacted-public-fields.ts`는 236 → 131 pure LOC, 신규 primitive module은 128 pure LOC다. Targeted privacy/parser suites 9 files / 63 tests, typecheck/build, full CLI suite 226 files / 848 tests, built CLI scan smoke, built parser smoke, git diff --check, changed-file no-excuse grep를 통과했다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test/smoke로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Redacted Public Field Primitive Split 2026-06-23]]

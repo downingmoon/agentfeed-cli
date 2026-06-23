@@ -15,6 +15,11 @@ updated: 2026-06-23
 ## 현재 결론
 
 
+> [!success] 2026-06-23 CLI project config validation split
+> CLI `src/config/project-config.ts`에서 config shape validation helpers와 `validateProjectConfig`를 `src/config/project-config-validation.ts`로 분리했다. `project-config.ts`는 222 → 122 pure LOC, 신규 validation module은 102 pure LOC다. Targeted config/init/hook UX suite 3 files / 17 tests, typecheck/build, full CLI suite 226 files / 848 tests, built CLI `init --no-git-check --json` + `status --json` smoke, git diff --check를 통과했다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test/smoke로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Project Config Validation Split 2026-06-23]]
+
+
 > [!success] 2026-06-23 CLI draft upload lock diagnostics split
 > CLI `src/api/draft-upload-lock.ts`에서 held-lock diagnostics/message formatting을 `src/api/draft-upload-lock-diagnostics.ts`로 분리했다. `draft-upload-lock.ts`는 215 → 146 pure LOC, 신규 diagnostics module은 75 pure LOC다. Targeted lock contract 1 file / 5 tests, typecheck/build, full CLI suite 226 files / 848 tests, built publish lock smoke(`INGEST_COUNT=0`), git diff --check, changed-file no-excuse grep를 통과했다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test/smoke로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Draft Upload Lock Diagnostics Split 2026-06-23]]

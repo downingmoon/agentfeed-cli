@@ -231,4 +231,3 @@ export function mergeAgentSessions(candidates: AgentSessionCandidate[], requeste
     fingerprintIdentity: candidates.length > 1 ? aggregateSessionIdentity(candidates) : null
   };
 }
-

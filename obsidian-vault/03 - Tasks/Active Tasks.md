@@ -15,6 +15,12 @@ updated: 2026-06-23
 ## 현재 결론
 
 
+> [!success] 2026-06-23 CLI redacted public field primitive split
+> CLI privacy boundary parser `src/privacy/redacted-public-fields.ts`에서 primitive validators/types/enums를 `src/privacy/redacted-public-field-primitives.ts`로 분리하고 public import path는 유지했다. `redacted-public-fields.ts`는 236 → 131 pure LOC, 신규 primitive module은 128 pure LOC다. Targeted privacy/parser suites 9 files / 63 tests, typecheck/build, full CLI suite 226 files / 848 tests, built CLI scan smoke, built parser smoke, git diff --check, changed-file no-excuse grep를 통과했다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test/smoke로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Redacted Public Field Primitive Split 2026-06-23]]
+
+
+
 > [!success] 2026-06-23 CLI publish cache reuse test split
 > CLI near-ceiling `tests/cli-publish-cache.test.ts`에서 reusable cached upload success/privacy policy coverage를 `tests/cli-publish-cache-reuse.test.ts`로 분리했다. Baseline 1 file / 5 tests, targeted split 2 files / 5 tests, typecheck/build, full CLI suite 226 files / 848 tests, git diff --check, changed-file LOC audit를 통과했고 split files/helper는 140/63/166 pure LOC다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음. `tests/*.ts` 190+ pure LOC 후보 없음.
 > - [[CLI Publish Cache Reuse Test Split 2026-06-23]]

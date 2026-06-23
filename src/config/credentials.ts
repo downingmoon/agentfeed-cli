@@ -1,26 +1,14 @@
-import { chmod, mkdir, rm } from 'node:fs/promises';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
 import type { AgentFeedCredentials } from '../types.js';
-import { pathExists, readJson, writeTextFileAtomic } from '../utils/fs.js';
+import { pathExists } from '../utils/fs.js';
 import { DEFAULT_API_BASE_URL } from './defaults.js';
 import { normalizeApiBaseUrl, resolveApiBaseUrl, resolveApiBaseUrlWithMetadata, type ApiBaseUrlResolution } from './api-base.js';
 import { savedApiBaseWarnings, savedTokenApiBaseOverrideWarnings } from './credentials-api-base-warnings.js';
-import { createNativeKeychainStore } from './credentials-keychain.js';
-
-const INSECURE_CREDENTIAL_STORE_FALLBACK_ENV = 'AGENTFEED_ALLOW_INSECURE_CREDENTIAL_STORE';
+import { credentialsPath, readCredentialsFile, type PersistedCredentialStore, type StoredCredentialRecord } from './credentials-file.js';
+import { deleteStoredCredentials, saveCredentialRecord, tokenFromStoredCredentials, type CredentialStoreOptions } from './credentials-store.js';
+export { credentialsPath, globalAgentFeedDir, homeDir, resolveHomeDir } from './credentials-file.js';
 
 export type CredentialTokenSource = 'environment' | 'credentials_file' | 'keychain' | 'missing';
 export type CredentialStorePreference = 'auto' | 'file' | 'keychain';
-
-type PersistedCredentialStore = 'file' | 'keychain';
-
-type StoredCredentialRecord = Partial<AgentFeedCredentials> & {
-  credential_store?: PersistedCredentialStore;
-  keychain_service?: string;
-  keychain_account?: string;
-  credential_store_warning?: string;
-};
 
 export interface SecretStore {
   service: string;
@@ -48,191 +36,6 @@ export interface CredentialsDeleteResult {
   credentials_file_deleted: boolean;
   keychain_deleted: boolean | null;
   warnings: string[];
-}
-
-interface CredentialStoreOptions {
-  credentialStore?: CredentialStorePreference;
-  secretStore?: SecretStore;
-}
-
-export function resolveHomeDir(env: NodeJS.ProcessEnv = process.env, osHome = homedir()): string {
-  const home = env.AGENTFEED_HOME || env.HOME || env.USERPROFILE || osHome;
-  if (!home?.trim()) {
-    throw new Error('Unable to determine a safe AgentFeed home directory. Set AGENTFEED_HOME or HOME before saving credentials.');
-  }
-  return home;
-}
-
-export function homeDir(): string {
-  return resolveHomeDir();
-}
-
-export function globalAgentFeedDir(): string {
-  return join(homeDir(), '.agentfeed');
-}
-
-export function credentialsPath(): string {
-  return join(globalAgentFeedDir(), 'credentials.json');
-}
-
-async function ensurePrivateAgentFeedDir(): Promise<void> {
-  const dir = globalAgentFeedDir();
-  await mkdir(dir, { recursive: true, mode: 0o700 });
-  try { await chmod(dir, 0o700); } catch { /* best-effort on non-POSIX filesystems */ }
-}
-
-async function writePrivateJsonFile(value: unknown): Promise<void> {
-  await writeTextFileAtomic(credentialsPath(), `${JSON.stringify(value, null, 2)}\n`, { mode: 0o600 });
-  try { await chmod(credentialsPath(), 0o600); } catch { /* best-effort on non-POSIX filesystems */ }
-}
-
-async function writePrivateCredentialsFile(credentials: AgentFeedCredentials, warning?: string): Promise<void> {
-  await writePrivateJsonFile({
-    ...credentials,
-    credential_store: 'file' satisfies PersistedCredentialStore,
-    ...(warning ? { credential_store_warning: warning } : {})
-  });
-}
-
-async function writeKeychainMetadataFile(credentials: AgentFeedCredentials, store: SecretStore): Promise<void> {
-  const { ingestion_token: _token, ...metadata } = credentials;
-  await writePrivateJsonFile({
-    ...metadata,
-    credential_store: 'keychain' satisfies PersistedCredentialStore,
-    keychain_service: store.service,
-    keychain_account: store.account,
-  });
-}
-
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function invalidCredentialWarning(file: string, field: string, expected: string): string {
-  return `ignored invalid AgentFeed credentials field ${field} in ${file}: expected ${expected}. Run agentfeed login to refresh saved credentials.`;
-}
-
-function optionalStoredString(record: Record<string, unknown>, field: string, file: string, warnings: string[]): string | undefined {
-  const value = record[field];
-  if (value === undefined) return undefined;
-  if (typeof value === 'string') return value;
-  warnings.push(invalidCredentialWarning(file, field, 'a string'));
-  return undefined;
-}
-
-function optionalStoredStringOrNull(record: Record<string, unknown>, field: string, file: string, warnings: string[]): string | null | undefined {
-  const value = record[field];
-  if (value === undefined) return undefined;
-  if (value === null || typeof value === 'string') return value;
-  warnings.push(invalidCredentialWarning(file, field, 'a string or null'));
-  return undefined;
-}
-
-function normalizeStoredUser(value: unknown, file: string, warnings: string[]): AgentFeedCredentials['user'] | undefined {
-  if (value === undefined) return undefined;
-  if (!isRecord(value)) {
-    warnings.push(invalidCredentialWarning(file, 'user', 'an object'));
-    return undefined;
-  }
-  const id = optionalStoredString(value, 'id', file, warnings);
-  const username = optionalStoredStringOrNull(value, 'username', file, warnings);
-  const displayName = optionalStoredStringOrNull(value, 'display_name', file, warnings);
-  const avatarUrl = optionalStoredStringOrNull(value, 'avatar_url', file, warnings);
-  const user: AgentFeedCredentials['user'] = {};
-  if (id !== undefined) user.id = id;
-  if (username !== undefined) user.username = username;
-  if (displayName !== undefined) user.display_name = displayName;
-  if (avatarUrl !== undefined) user.avatar_url = avatarUrl;
-  return user;
-}
-
-function normalizeStoredCredentials(value: unknown, file: string): { credentials: StoredCredentialRecord | null; warnings: string[] } {
-  const warnings: string[] = [];
-  if (!isRecord(value)) {
-    return {
-      credentials: null,
-      warnings: [`ignored malformed AgentFeed credentials file: ${file}. root must be an object. Run agentfeed login to refresh saved credentials.`]
-    };
-  }
-
-  const credentials: StoredCredentialRecord = {};
-  const apiBaseUrl = optionalStoredString(value, 'api_base_url', file, warnings);
-  const ingestionToken = optionalStoredString(value, 'ingestion_token', file, warnings);
-  const tokenId = optionalStoredStringOrNull(value, 'token_id', file, warnings);
-  const tokenExpiresAt = optionalStoredStringOrNull(value, 'token_expires_at', file, warnings);
-  const createdAt = optionalStoredString(value, 'created_at', file, warnings);
-  const credentialStoreWarning = optionalStoredString(value, 'credential_store_warning', file, warnings);
-  const keychainService = optionalStoredString(value, 'keychain_service', file, warnings);
-  const keychainAccount = optionalStoredString(value, 'keychain_account', file, warnings);
-  const user = normalizeStoredUser(value.user, file, warnings);
-
-  if (apiBaseUrl !== undefined) credentials.api_base_url = apiBaseUrl;
-  if (ingestionToken !== undefined) credentials.ingestion_token = ingestionToken;
-  if (tokenId !== undefined) credentials.token_id = tokenId;
-  if (tokenExpiresAt !== undefined) credentials.token_expires_at = tokenExpiresAt;
-  if (createdAt !== undefined) credentials.created_at = createdAt;
-  if (user !== undefined) credentials.user = user;
-  if (credentialStoreWarning !== undefined) credentials.credential_store_warning = credentialStoreWarning;
-  if (keychainService !== undefined) credentials.keychain_service = keychainService;
-  if (keychainAccount !== undefined) credentials.keychain_account = keychainAccount;
-
-  if (value.credential_store !== undefined) {
-    if (value.credential_store === 'file' || value.credential_store === 'keychain') {
-      credentials.credential_store = value.credential_store;
-    } else {
-      warnings.push(invalidCredentialWarning(file, 'credential_store', '"file" or "keychain"'));
-    }
-  }
-
-  return { credentials, warnings };
-}
-
-async function readCredentialsFile(file: string): Promise<{ credentials: StoredCredentialRecord | null; warnings: string[] }> {
-  try {
-    return normalizeStoredCredentials(await readJson<unknown>(file), file);
-  } catch (error) {
-    const reason = error instanceof Error && error.message ? ` ${error.message}` : '';
-    return {
-      credentials: null,
-      warnings: [`ignored malformed AgentFeed credentials file: ${file}.${reason}`]
-    };
-  }
-}
-
-function parseCredentialStorePreference(value: string | undefined): CredentialStorePreference | null {
-  if (value === undefined || value === '') return null;
-  const normalized = value.toLowerCase();
-  return normalized === 'auto' || normalized === 'file' || normalized === 'keychain' ? normalized : null;
-}
-
-function credentialStorePreference(explicit?: CredentialStorePreference): CredentialStorePreference {
-  if (explicit) return explicit;
-  const envPreference = parseCredentialStorePreference(process.env.AGENTFEED_CREDENTIAL_STORE);
-  if (envPreference) return envPreference;
-  if (process.env.AGENTFEED_CREDENTIAL_STORE) {
-    throw new Error('Invalid AGENTFEED_CREDENTIAL_STORE. Use one of: auto, file, keychain.');
-  }
-  if (process.env.NODE_ENV === 'test' || process.env.VITEST) return 'file';
-  return 'auto';
-}
-
-function allowInsecureCredentialStoreFallback(): boolean {
-  return process.env[INSECURE_CREDENTIAL_STORE_FALLBACK_ENV] === '1';
-}
-
-function credentialStoreFallbackRefusal(reason: 'unavailable' | 'failed', detail = ''): Error {
-  const reasonText = reason === 'unavailable'
-    ? 'OS keychain credential storage is not available'
-    : 'OS keychain credential storage failed';
-  return new Error(
-    `${reasonText}; refusing to save the token in the local credentials file without explicit opt-in. ` +
-    `Set AGENTFEED_CREDENTIAL_STORE=file to intentionally use file storage, or set ${INSECURE_CREDENTIAL_STORE_FALLBACK_ENV}=1 to allow auto fallback for this login.${detail}`
-  );
-}
-
-function nativeKeychainStore(metadata: { keychain_service?: string; keychain_account?: string } = {}): SecretStore {
-  return createNativeKeychainStore(globalAgentFeedDir(), metadata);
 }
 
 function trustRepoApiBaseForAuthenticatedUse(): boolean {
@@ -273,80 +76,12 @@ export async function credentialsFromToken(token: string, options: { apiBaseUrl?
 
 export async function saveCredentials(token: string, options: { apiBaseUrl?: string; tokenId?: string | null; user?: AgentFeedCredentials['user']; tokenExpiresAt?: string | null; cwd?: string; trustRepoDiscoveredApiBase?: boolean } & CredentialStoreOptions = {}): Promise<AgentFeedCredentials> {
   const credentials = await credentialsFromToken(token, options);
-  await ensurePrivateAgentFeedDir();
-  const preference = credentialStorePreference(options.credentialStore);
-  let fileFallbackWarning: string | undefined;
-
-  if (preference !== 'file') {
-    const store = options.secretStore ?? nativeKeychainStore();
-    const keychainAvailable = await store.isAvailable();
-    if (keychainAvailable) {
-      try {
-        await store.write(token);
-        await writeKeychainMetadataFile(credentials, store);
-        return credentials;
-      } catch (error) {
-        if (preference === 'keychain') {
-          const detail = error instanceof Error && error.message ? ` ${error.message}` : '';
-          throw new Error(`Unable to save AgentFeed credentials to the OS keychain.${detail}`);
-        }
-        const detail = error instanceof Error && error.message ? ` ${error.message}` : '';
-        if (!allowInsecureCredentialStoreFallback()) {
-          throw credentialStoreFallbackRefusal('failed', detail);
-        }
-        fileFallbackWarning = `OS keychain credential storage failed; saved token in the private credentials file because ${INSECURE_CREDENTIAL_STORE_FALLBACK_ENV}=1.${detail}`;
-      }
-    } else if (preference === 'keychain') {
-      throw new Error('OS keychain credential storage is not available. Use AGENTFEED_CREDENTIAL_STORE=file to intentionally save the token in the local credentials file, or AGENTFEED_TOKEN for environment-managed secrets.');
-    } else {
-      if (!allowInsecureCredentialStoreFallback()) {
-        throw credentialStoreFallbackRefusal('unavailable');
-      }
-      fileFallbackWarning = `OS keychain credential storage is not available; saved token in the private credentials file because ${INSECURE_CREDENTIAL_STORE_FALLBACK_ENV}=1. Set AGENTFEED_CREDENTIAL_STORE=file to make file storage explicit without auto fallback.`;
-    }
-  }
-
-  await writePrivateCredentialsFile(credentials, fileFallbackWarning);
+  await saveCredentialRecord(token, credentials, options);
   return credentials;
 }
 
 export async function deleteSavedCredentials(options: CredentialStoreOptions = {}): Promise<CredentialsDeleteResult> {
-  const file = credentialsPath();
-  const fileExists = await pathExists(file);
-  const fileResult = fileExists ? await readCredentialsFile(file) : { credentials: null, warnings: [] };
-  const base = fileResult.credentials;
-  const warnings = [...fileResult.warnings];
-  let keychainDeleted: boolean | null = null;
-
-  if (base?.credential_store === 'keychain') {
-    const store = options.secretStore ?? nativeKeychainStore({ keychain_service: base.keychain_service, keychain_account: base.keychain_account });
-    try {
-      if (await store.isAvailable()) {
-        if (store.delete) {
-          await store.delete();
-          keychainDeleted = true;
-        } else {
-          keychainDeleted = false;
-          warnings.push('saved AgentFeed credentials use a keychain backend that does not support deletion; revoke the token in AgentFeed Settings if needed.');
-        }
-      } else {
-        keychainDeleted = false;
-        warnings.push('saved AgentFeed credentials use the OS keychain, but no supported keychain command is available on this host; revoke the token in AgentFeed Settings if needed.');
-      }
-    } catch (error) {
-      const detail = error instanceof Error && error.message ? ` ${error.message}` : '';
-      keychainDeleted = false;
-      warnings.push(`saved AgentFeed keychain credential could not be deleted.${detail} Revoke the token in AgentFeed Settings if needed.`);
-    }
-  }
-
-  await rm(file, { force: true });
-  return {
-    credentials_file_path: file,
-    credentials_file_deleted: fileExists,
-    keychain_deleted: keychainDeleted,
-    warnings,
-  };
+  return deleteStoredCredentials(options);
 }
 
 export async function loadCredentials(): Promise<AgentFeedCredentials | null> {
@@ -379,26 +114,6 @@ export async function resolveCredentials(base: AgentFeedCredentials | null): Pro
     user: base?.user,
     created_at: base?.created_at || new Date().toISOString()
   };
-}
-
-async function tokenFromStoredCredentials(base: StoredCredentialRecord | null, options: CredentialStoreOptions): Promise<{ token: string | null; source: Exclude<CredentialTokenSource, 'environment'>; warnings: string[] }> {
-  if (base?.ingestion_token) return { token: base.ingestion_token, source: 'credentials_file', warnings: [] };
-  if (base?.credential_store !== 'keychain') return { token: null, source: 'missing', warnings: [] };
-
-  const store = options.secretStore ?? nativeKeychainStore({ keychain_service: base.keychain_service, keychain_account: base.keychain_account });
-  try {
-    if (!await store.isAvailable()) {
-      return { token: null, source: 'missing', warnings: ['saved AgentFeed credentials use the OS keychain, but no supported keychain command is available on this host.'] };
-    }
-    const token = await store.read();
-    if (!token) {
-      return { token: null, source: 'missing', warnings: ['saved AgentFeed keychain metadata exists, but the token was not found in the OS keychain. Run: agentfeed login'] };
-    }
-    return { token, source: 'keychain', warnings: [] };
-  } catch (error) {
-    const detail = error instanceof Error && error.message ? ` ${error.message}` : '';
-    return { token: null, source: 'missing', warnings: [`saved AgentFeed keychain credential could not be read.${detail}`] };
-  }
 }
 
 export async function loadCredentialsWithMetadata(options: { cwd?: string } & CredentialStoreOptions = {}): Promise<CredentialsResolution> {

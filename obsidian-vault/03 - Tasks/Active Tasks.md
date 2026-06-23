@@ -15,6 +15,12 @@ updated: 2026-06-22
 ## 현재 결론
 
 
+> [!success] 2026-06-22 CLI browser login API discovery test split
+> CLI near-ceiling `tests/cli-browser-login-save-policy.test.ts`에서 repo-local `BACKEND_PORT` API discovery trust policy coverage를 `tests/cli-browser-login-api-discovery.test.ts`로 분리하고 existing browser-login shared fixture/helper를 재사용했다. Baseline 1 file / 5 tests, targeted split 2 files / 5 tests, typecheck/build, full CLI suite 223 files / 848 tests, git diff --check, changed-file LOC audit를 통과했고 split file/new file/helper는 113/62/100 pure LOC다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> - [[CLI Browser Login API Discovery Test Split 2026-06-22]]
+
+
+
 > [!success] 2026-06-22 CLI release preflight residual split
 > CLI near-ceiling `tests/release-preflight.test.ts`에서 CI workflow/README documentation policy guardrails를 `tests/release-preflight-docs.test.ts`로 분리하고 shared package metadata/pack result fixtures와 CI/README readers를 `tests/release-preflight-helpers.ts`로 통합했다. Baseline 1 file / 9 tests, targeted split 2 files / 9 tests, typecheck/build, full CLI suite 222 files / 848 tests, git diff --check, changed-file LOC audit를 통과했고 split files/helper는 95/67/49 pure LOC다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Release Preflight Residual Split 2026-06-22]]

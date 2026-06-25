@@ -14,6 +14,10 @@ updated: 2026-06-25
 
 ## 현재 결론
 
+> [!success] 2026-06-25 Frontend CLI authorize route source assertion helper split
+> Frontend `src/lib/cli-authorize-route-source-assertions.ts`를 25 pure LOC helper에서 route page capture/no-missing-session, sessionStorage recovery/cleanup helpers로 분리했다. Orchestrator는 6 pure LOC, 신규 helpers는 6/22 pure LOC다. Targeted CLI-authorize source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음. 문서 commit 후 6 commits라 threshold push/deploy 예정.
+> - [[Frontend CLI Authorize Route Source Assertion Helper Split 2026-06-25]]
+
 > [!success] 2026-06-25 Frontend profile page accessibility source assertion helper split
 > Frontend `src/lib/profile-page-a11y-source-assertions.ts`를 25 pure LOC helper에서 follow/handle feedback, landmark/tab semantics, activity/load-more accessibility helpers로 분리했다. Orchestrator는 8 pure LOC, 신규 helpers는 12/14/7 pure LOC다. Targeted public-profile source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음, 서버 배포 없음. 3 commits라 threshold 미만.
 > - [[Frontend Profile Page Accessibility Source Assertion Helper Split 2026-06-25]]

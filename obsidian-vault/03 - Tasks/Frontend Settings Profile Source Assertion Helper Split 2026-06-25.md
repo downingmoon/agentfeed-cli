@@ -70,4 +70,4 @@ Current source assertion helper re-scan top after split:
 
 - [x] Previous next candidate `settings-profile-source-assertions.ts` split 처리.
 - [ ] Next source assertion helper candidate is 31 pure LOC: `feed-hook-a11y-source-assertions.ts`.
-- [ ] Current unpushed commit counter after this task docs: 6 commits; triggers 5-commit push/deploy threshold.
+- [x] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy completed in [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post API-boundary project-dashboard/settings-profile source assertion splits threshold deploy]].

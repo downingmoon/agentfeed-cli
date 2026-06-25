@@ -15,6 +15,11 @@ updated: 2026-06-25
 ## 현재 결론
 
 
+> [!success] 2026-06-25 Frontend discovery/dashboard source assertion helper split
+> Frontend `src/lib/discovery-dashboard-source-assertions.ts`를 164 pure LOC 단일 helper에서 Explore, Dashboard, Moderation Reports, Notifications source-contract helpers로 분리했다. Orchestrator는 10 pure LOC, 신규 helpers는 30/39/32/37 pure LOC다. Targeted discovery-dashboard source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 없음.
+> - [[Frontend Discovery Dashboard Source Assertion Helper Split 2026-06-25]]
+
+
 > [!success] 2026-06-25 Frontend API boundary source assertion helper split
 > Frontend `src/lib/api-boundary-source-assertions.ts`를 175 pure LOC 단일 helper에서 pagination, closed enum/union, nested public-user, worklog evidence/action, project/dashboard/settings adapter domain helpers로 분리했다. Orchestrator는 12 pure LOC, 신규 helpers는 12/67/29/51/32 pure LOC다. Targeted API boundary source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/non-null scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 없음, 서버 배포 없음.
 > - [[Frontend API Boundary Source Assertion Helper Split 2026-06-25]]

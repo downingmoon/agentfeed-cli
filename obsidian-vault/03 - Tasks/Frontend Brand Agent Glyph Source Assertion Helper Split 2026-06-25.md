@@ -70,5 +70,6 @@ Current source assertion helper re-scan top after split:
 ## 후행 TODO
 
 - [x] Previous next candidate `brand-agent-glyph-source-assertions.ts` split 처리.
-- [ ] Next source assertion helper candidate is `auth-shell-session-source-assertions.ts` at 26 pure LOC.
+- [x] Next source assertion helper candidate `auth-shell-session-source-assertions.ts` split 처리.
+- [ ] Next source assertion helper candidates are `worklog-review-action-source-assertions.ts`, `profile-page-a11y-source-assertions.ts`, `cli-authorize-route-source-assertions.ts`, `api-boundary-rank-notification-source-assertions.ts` at 25 pure LOC.
 - [x] Current unpushed commit counter reached 6; threshold push/deploy completed from current `trading-bot` local shell. No SSH used.

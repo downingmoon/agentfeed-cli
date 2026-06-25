@@ -1012,5 +1012,6 @@ Feed-filter and brand-agent-glyph source assertion helper split docs brought the
 ### Follow-up
 
 - [x] 5-commit threshold push/deploy handled.
-- [ ] Next source assertion helper candidate: `auth-shell-session-source-assertions.ts` at 26 pure LOC.
+- [x] Next source assertion helper candidate `auth-shell-session-source-assertions.ts` split 처리.
+- [ ] Next source assertion helper candidates: `worklog-review-action-source-assertions.ts`, `profile-page-a11y-source-assertions.ts`, `cli-authorize-route-source-assertions.ts`, `api-boundary-rank-notification-source-assertions.ts` at 25 pure LOC.
 - [x] Next commit counter started after this deploy docs commit.

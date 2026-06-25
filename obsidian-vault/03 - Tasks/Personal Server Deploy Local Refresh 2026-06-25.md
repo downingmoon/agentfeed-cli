@@ -1335,5 +1335,6 @@ Shell CI and settings auth recovery source assertion helper split docs brought t
 ### Follow-up
 
 - [x] 5-commit threshold push/deploy handled.
-- [ ] Next source assertion helper candidates: `feed-sidebar-source-assertions.ts`, `cli-authorize-retry-source-assertions.ts`, `api-boundary-worklog-status-action-source-assertions.ts`, `api-boundary-project-source-assertions.ts` at 20 pure LOC.
+- [x] Next source assertion helper candidate `feed-sidebar-source-assertions.ts` handled by [[Frontend Feed Sidebar Source Assertion Helper Split 2026-06-25]].
+- [ ] Next source assertion helper candidates: `cli-authorize-retry-source-assertions.ts`, `api-boundary-worklog-status-action-source-assertions.ts`, `api-boundary-project-source-assertions.ts` at 20 pure LOC.
 - [x] Next commit counter started after this deploy docs commit.

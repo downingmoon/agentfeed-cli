@@ -833,3 +833,46 @@ CLI-authorize and API-boundary-enum source assertion helper split docs brought t
 - [x] 5-commit threshold push/deploy handled for CLI-authorize/API-boundary-enum source assertion splits.
 - [ ] Next source assertion helper re-scan candidate is `brand-assets-source-assertions.ts` at 66 pure LOC.
 - [ ] Next commit counter starts after this deploy docs commit.
+
+
+## 2026-06-25 — Post feed-hook/project-detail-mutation source assertion splits threshold deploy
+
+### 작업 항목
+
+- 5-commit threshold를 넘어 `agentfeed-frontend`, `agentfeed-cli`, `agentfeed-dev`를 push했다.
+- 현재 서버 `trading-bot`에서 직접 작업 중이므로 `ssh trading-bot`를 사용하지 않고 `/home/ubuntu/dev/agentfeed` 작업 tree를 `/home/ubuntu/agentfeed` runtime tree로 로컬 rsync했다.
+- `backend`와 `frontend` 컨테이너를 force-recreate했다. Postgres volume/container는 유지했다.
+- Runtime CLI `/home/ubuntu/agentfeed/AgentFeed-CLI`에서 `npm ci && npm run build`를 실행했다.
+
+### Push 범위
+
+- `agentfeed-frontend` `d178a46..295d845`
+- `agentfeed-cli` `f8e1997..43b3b57`
+- `agentfeed-dev` `3ed4914..de980ca`
+
+### 검증 증거
+
+- `docker compose --env-file .env ps` ✅ — backend/frontend/postgres healthy
+- `ENV_FILE=/home/ubuntu/agentfeed/agentfeed-dev/.env scripts/wait-ready.sh` ✅
+- `GET http://127.0.0.1:18080/health/ready` ✅ — DB connected, migration head `027_browser_session_version`, up to date
+- `GET http://127.0.0.1:18080/v1/metadata` ✅ — `v1 / 2026-06-03`, review base `http://161.33.171.81:13030`
+- `HEAD http://127.0.0.1:13030/` ✅ — `200 OK`
+- `HEAD http://161.33.171.81:13030/` ✅ — `200 OK`
+- `GET http://161.33.171.81:18080/health/ready` ✅ — DB connected, migration up to date
+- Hosted compatibility smoke ✅ — `HOSTED_COMPATIBILITY_SMOKE_PASSED` with `AGENTFEED_ALLOW_INSECURE_API=1` for HTTP IP dev server
+- CLI runtime build ✅ — `npm ci && npm run build`, 0 vulnerabilities
+
+### Commits
+
+- `agentfeed-frontend` `3f3f4fc` — `Split feed hook accessibility source assertions`
+- `agentfeed-frontend` `295d845` — `Split project detail mutation source assertions`
+- `agentfeed-cli` `ffa7270` — `Document feed hook accessibility source assertion split`
+- `agentfeed-cli` `43b3b57` — `Document project detail mutation source assertion split`
+- `agentfeed-dev` `41fa588` — `Log feed hook accessibility source assertion split`
+- `agentfeed-dev` `de980ca` — `Log project detail mutation source assertion split`
+
+### 후행 TODO
+
+- [x] 5-commit threshold push/deploy 처리 완료.
+- [ ] Next source assertion helper candidates are `discovery-explore-source-assertions.ts` and `brand-svg-source-assertions.ts` at 30 pure LOC.
+- [x] Next commit counter started after this deploy docs commit.

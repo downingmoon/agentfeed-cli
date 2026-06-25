@@ -1,7 +1,7 @@
 ---
-title: Frontend Project Visibility Source Assertion Runner Split 2026-06-25
+title: Frontend CLI Authorize Terminal Accessibility Source Assertion Helper Split 2026-06-25
 aliases:
-  - Project visibility source assertion runner split
+  - CLI authorize terminal accessibility source assertion helper split
 status: done
 tags:
   - agentfeed/frontend
@@ -10,33 +10,33 @@ tags:
 updated: 2026-06-25
 ---
 
-# Frontend Project Visibility Source Assertion Runner Split 2026-06-25
+# Frontend CLI Authorize Terminal Accessibility Source Assertion Helper Split 2026-06-25
 
 ## 결론
 
-`agentfeed-frontend/src/lib/project-visibility-source-assertions.ts`가 19 pure LOC growth-risk runner였다. Runtime/UI/API 동작은 바꾸지 않고 project visibility source-contract runner를 source-file set과 per-file assertion runner helper로 분리했다.
+`agentfeed-frontend/src/lib/cli-authorize-terminal-a11y-source-assertions.ts`가 19 pure LOC growth-risk helper였다. Runtime/UI/API 동작은 바꾸지 않고 CLI authorize terminal/a11y source-contract 검사를 terminal cleanup과 rendering/accessibility helpers로 분리했다.
 
 ## 변경
 
-- `project-visibility-source-assertions.ts`를 orchestration-only helper로 축소했다.
+- `cli-authorize-terminal-a11y-source-assertions.ts`를 orchestration-only helper로 축소했다.
 - 새 helper:
-  - `project-visibility-source-files.ts`
-  - `project-visibility-file-source-assertions.ts`
-- 기존 source-contract 검사 흐름만 이동했다.
+  - `cli-authorize-terminal-cleanup-source-assertions.ts`
+  - `cli-authorize-terminal-rendering-source-assertions.ts`
+- 기존 assertion 문자열과 대상 source-file contract만 이동했다.
 - 신규 기능 없음.
 - Runtime/UI/API 동작 변경 없음.
 - 서버/인프라/CI/CD 변경 없음.
 - 현재 서버 canonical name: `trading-bot`. 현재 Codex는 이 서버 위에서 실행 중이므로 배포 시 SSH hop 없이 로컬 rsync 사용.
-- 이 문서화 후 unpushed counter는 3 commits라 5-commit threshold 미만이다.
+- 이 문서화 후 unpushed counter는 6 commits라 5-commit threshold push/deploy 대상이다.
 
 ## Commit
 
-- `agentfeed-frontend` `0fedd29` — `Split project visibility source assertions`
+- `agentfeed-frontend` `747064b` — `Split CLI authorize terminal accessibility assertions`
 
 ## 검증
 
-- Pre-edit regression: `npm run test:contracts -- src/lib/project-visibility-source-contract.test.ts` 통과.
-- Post-edit targeted contract: `npm run test:contracts -- src/lib/project-visibility-source-contract.test.ts` 통과.
+- Pre-edit regression: `npm run test:contracts -- src/lib/cli-authorize-source-contract.test.ts` 통과.
+- Post-edit targeted contract: `npm run test:contracts -- src/lib/cli-authorize-source-contract.test.ts` 통과.
 - `npm run test:contracts` 통과.
 - `npm run lint` 통과. (`tsc --noEmit`)
 - `NEXT_PUBLIC_API_URL=https://api.agentfeed.dev npm run build` 통과. Next.js 18 static pages generated. 기존 multi-lockfile workspace-root warning만 발생.
@@ -49,15 +49,14 @@ updated: 2026-06-25
 ## Size audit
 
 ```text
-8 src/lib/project-visibility-source-assertions.ts
-7 src/lib/project-visibility-source-files.ts
-8 src/lib/project-visibility-file-source-assertions.ts
+ 6 src/lib/cli-authorize-terminal-a11y-source-assertions.ts
+11 src/lib/cli-authorize-terminal-cleanup-source-assertions.ts
+12 src/lib/cli-authorize-terminal-rendering-source-assertions.ts
 ```
 
 Current source assertion helper re-scan top after split:
 
 ```text
-19 src/lib/cli-authorize-terminal-a11y-source-assertions.ts
 19 src/lib/adapters-source-assertions.ts
 18 src/lib/review-public-asset-metadata-source-assertions.ts
 18 src/lib/profile-page-data-source-assertions.ts
@@ -67,11 +66,11 @@ Current source assertion helper re-scan top after split:
 17 src/lib/project-create-source-assertions.ts
 17 src/lib/profile-page-project-source-assertions.ts
 17 src/lib/profile-page-follow-source-assertions.ts
+17 src/lib/auth-shell-review-recovery-source-assertions.ts
 ```
 
 ## 후행 TODO
 
-- [x] Previous next candidate `project-visibility-source-assertions.ts` split 처리.
-- [x] Next source assertion helper candidate `cli-authorize-terminal-a11y-source-assertions.ts` handled by [[Frontend CLI Authorize Terminal Accessibility Source Assertion Helper Split 2026-06-25]].
+- [x] Previous next candidate `cli-authorize-terminal-a11y-source-assertions.ts` split 처리.
 - [ ] Next source assertion helper candidate: `adapters-source-assertions.ts` at 19 pure LOC.
-- [ ] Current unpushed commit counter after this task docs: 3 commits; below 5-commit threshold, no push/deploy.
+- [ ] Current unpushed commit counter after this task docs: 6 commits; run threshold push/deploy.

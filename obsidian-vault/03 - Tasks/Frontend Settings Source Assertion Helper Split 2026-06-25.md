@@ -71,6 +71,7 @@ Contract runner scan remains healthy: max `*contract*.test.ts` runner is 5 pure 
 
 ## 후행 TODO
 
+- [x] Source assertion helper candidate `settings-profile-source-assertions.ts` handled by [[Frontend Settings Profile Source Assertion Helper Split 2026-06-25]].
 - [x] Source assertion helper candidate `settings-shell-source-assertions.ts` handled by [[Frontend Settings Shell Source Assertion Helper Split 2026-06-25]].
 - [x] Previous next candidate `settings-source-assertions.ts` split 처리.
 - [ ] Continue source assertion helper re-scan before adding cases near 200 pure LOC. Current next candidate: `feed-source-assertions.ts` at 131 pure LOC.

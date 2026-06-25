@@ -15,6 +15,11 @@ updated: 2026-06-25
 ## 현재 결론
 
 
+> [!success] 2026-06-25 Frontend auth shell source assertion helper split
+> Frontend `src/lib/auth-shell-source-assertions.ts`를 96 pure LOC 단일 helper에서 identity/review preview, social cleanup, session recovery, sign-out failure handling, worklog review auth recovery, a11y/header/feed helpers로 분리했다. Orchestrator는 14 pure LOC, 신규 helpers는 17/21/26/16/17/21 pure LOC다. Targeted auth-shell source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음. 문서 commit 후 5-commit threshold 초과라 push/deploy 진행 대상.
+> - [[Frontend Auth Shell Source Assertion Helper Split 2026-06-25]]
+
+
 > [!success] 2026-06-25 Frontend worklog card source assertion helper split
 > Frontend `src/lib/worklog-card-source-assertions.ts`를 124 pure LOC 단일 helper에서 author/project, card list/navigation/outcome, detail data/comments, detail mutations/reporting, detail accessibility/profile/copy-prompt/metrics helpers로 분리했다. Orchestrator는 12 pure LOC, 신규 helpers는 19/37/29/21/32 pure LOC다. Targeted worklog-card source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음, 서버 배포 없음.
 > - [[Frontend Worklog Card Source Assertion Helper Split 2026-06-25]]

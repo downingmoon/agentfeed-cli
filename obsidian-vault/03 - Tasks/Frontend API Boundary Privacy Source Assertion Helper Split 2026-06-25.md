@@ -1,7 +1,7 @@
 ---
-title: Frontend Auth Shell Identity Source Assertion Helper Split 2026-06-25
+title: Frontend API Boundary Privacy Source Assertion Helper Split 2026-06-25
 aliases:
-  - Auth shell identity source assertion helper split
+  - API boundary privacy source assertion helper split
 status: done
 tags:
   - agentfeed/frontend
@@ -10,34 +10,35 @@ tags:
 updated: 2026-06-25
 ---
 
-# Frontend Auth Shell Identity Source Assertion Helper Split 2026-06-25
+# Frontend API Boundary Privacy Source Assertion Helper Split 2026-06-25
 
 ## 결론
 
-`agentfeed-frontend/src/lib/auth-shell-identity-source-assertions.ts`가 17 pure LOC growth-risk helper였다. Runtime/UI/API 동작은 바꾸지 않고 auth shell identity source-contract 검사를 worklog review author avatar, header profile href, AppContext identity gating helpers로 분리했다.
+`agentfeed-frontend/src/lib/api-boundary-privacy-source-assertions.ts`가 17 pure LOC growth-risk helper였다. Runtime/UI/API 동작은 바꾸지 않고 privacy API boundary source-contract 검사를 status, finding enum, resolution, normalizer helpers로 분리했다.
 
 ## 변경
 
-- `auth-shell-identity-source-assertions.ts`를 orchestration-only helper로 축소했다.
+- `api-boundary-privacy-source-assertions.ts`를 orchestration-only helper로 축소했다.
 - 새 helper:
-  - `auth-shell-review-identity-source-assertions.ts`
-  - `auth-shell-header-identity-source-assertions.ts`
-  - `auth-shell-app-context-identity-source-assertions.ts`
+  - `api-boundary-privacy-status-source-assertions.ts`
+  - `api-boundary-privacy-finding-enum-source-assertions.ts`
+  - `api-boundary-privacy-resolution-source-assertions.ts`
+  - `api-boundary-privacy-normalizer-source-assertions.ts`
 - 기존 assertion 문자열과 대상 source-file contract만 이동했다.
 - 신규 기능 없음.
 - Runtime/UI/API 동작 변경 없음.
 - 서버/인프라/CI/CD 변경 없음.
 - 현재 서버 canonical name: `trading-bot`. 현재 Codex는 이 서버 위에서 실행 중이므로 배포 시 SSH hop 없이 로컬 rsync 사용.
-- 이 문서화 후 unpushed counter는 3 commits라 5-commit threshold 미만이다.
+- 이 문서화 후 unpushed counter는 6 commits라 5-commit threshold push/deploy 대상이다.
 
 ## Commit
 
-- `agentfeed-frontend` `f63d6be` — `Split auth shell identity assertions`
+- `agentfeed-frontend` `cbc5383` — `Split API boundary privacy assertions`
 
 ## 검증
 
-- Pre-edit regression: `npm run test:contracts -- src/lib/auth-shell-source-contract.test.ts` 통과.
-- Post-edit targeted contract: `npm run test:contracts -- src/lib/auth-shell-source-contract.test.ts` 통과.
+- Pre-edit regression: `npm run test:contracts -- src/lib/api-boundary-source-contract.test.ts` 통과.
+- Post-edit targeted contract: `npm run test:contracts -- src/lib/api-boundary-source-contract.test.ts` 통과.
 - `npm run test:contracts` 통과.
 - `npm run lint` 통과. (`tsc --noEmit`)
 - `NEXT_PUBLIC_API_URL=https://api.agentfeed.dev npm run build` 통과. Next.js 18 static pages generated. 기존 multi-lockfile workspace-root warning만 발생.
@@ -50,16 +51,16 @@ updated: 2026-06-25
 ## Size audit
 
 ```text
-8 src/lib/auth-shell-identity-source-assertions.ts
-8 src/lib/auth-shell-review-identity-source-assertions.ts
-6 src/lib/auth-shell-header-identity-source-assertions.ts
-9 src/lib/auth-shell-app-context-identity-source-assertions.ts
+10 src/lib/api-boundary-privacy-source-assertions.ts
+7 src/lib/api-boundary-privacy-status-source-assertions.ts
+9 src/lib/api-boundary-privacy-finding-enum-source-assertions.ts
+7 src/lib/api-boundary-privacy-resolution-source-assertions.ts
+6 src/lib/api-boundary-privacy-normalizer-source-assertions.ts
 ```
 
 Current source assertion helper re-scan top after split:
 
 ```text
-17 src/lib/api-boundary-privacy-source-assertions.ts
 16 src/lib/worklog-review-privacy-source-assertions.ts
 16 src/lib/shell-route-source-assertions.ts
 16 src/lib/project-detail-data-source-assertions.ts
@@ -69,11 +70,11 @@ Current source assertion helper re-scan top after split:
 16 src/lib/landing-preview-data-source-assertions.ts
 16 src/lib/feed-hook-retry-source-assertions.ts
 16 src/lib/dashboard-recovery-source-assertions.ts
+16 src/lib/cli-authorize-approval-source-assertions.ts
 ```
 
 ## 후행 TODO
 
-- [x] Previous next candidate `auth-shell-identity-source-assertions.ts` split 처리.
-- [x] Next source assertion helper candidate `api-boundary-privacy-source-assertions.ts` handled by [[Frontend API Boundary Privacy Source Assertion Helper Split 2026-06-25]].
+- [x] Previous next candidate `api-boundary-privacy-source-assertions.ts` split 처리.
 - [ ] Next source assertion helper candidates: `worklog-review-privacy-source-assertions.ts`, `shell-route-source-assertions.ts`, `project-detail-data-source-assertions.ts` at 16 pure LOC.
-- [x] Subsequent api-boundary-privacy docs brought unpushed counter to 6 commits; threshold push/deploy pending.
+- [ ] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy pending.

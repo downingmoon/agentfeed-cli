@@ -75,4 +75,4 @@ Current source assertion helper re-scan top after split:
 
 - [x] Previous next candidate `auth-shell-review-recovery-source-assertions.ts` split 처리.
 - [ ] Next source assertion helper candidates: `auth-shell-identity-source-assertions.ts`, `api-boundary-privacy-source-assertions.ts` at 17 pure LOC.
-- [ ] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy pending.
+- [ ] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy completed from current `trading-bot` local shell.

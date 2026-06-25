@@ -70,6 +70,6 @@ Contract runner scan remains healthy: max `*contract*.test.ts` runner is 5 pure 
 ## 후행 TODO
 
 - [x] Previous next candidate `project-source-assertions.ts` split 처리.
-- [ ] Continue source assertion helper re-scan before adding cases near 200 pure LOC. Current next candidate: `search-source-assertions.ts` at 41 pure LOC.
+- [x] Continue source assertion helper re-scan candidate `search-source-assertions.ts` 처리 완료. See [[Frontend Search Source Assertion Helper Split 2026-06-25]].
 - [ ] Keep `project-source-assertions.ts` as thin orchestrator only.
-- [ ] Current unpushed commit counter after this task docs: 3 commits; below 5-commit push/deploy threshold.
+- [ ] Current next source assertion helper candidate after search split: `review-public-user-assets-source-assertions.ts` at 40 pure LOC.

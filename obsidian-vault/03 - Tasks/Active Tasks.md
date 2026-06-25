@@ -16,6 +16,12 @@ updated: 2026-06-25
 
 
 
+> [!success] 2026-06-25 personal server local deploy refresh
+> Push 후 현재 서버 내부 배포 경로로 `/home/ubuntu/dev/agentfeed` 작업 tree를 `/home/ubuntu/agentfeed` 실행 tree에 로컬 `rsync`하고 `agentfeed-server` backend/frontend 컨테이너를 force-recreate했다. `trading-bot` SSH 경로가 아니라 현재 서버 로컬 compose 경로가 정식 운영 사실임을 [[Runtime Configuration]]에 갱신했다. Compose backend/frontend/postgres healthy, frontend production build, API readiness/metadata, frontend root/feed/projects, CLI doctor API compatibility, hosted compatibility smoke가 통과했다.
+> - [[Personal Server Deploy Local Refresh 2026-06-25]]
+
+
+
 > [!success] 2026-06-25 CLI agent session Claude parser split
 > CLI `src/collectors/agent-session.ts`에서 마지막으로 남아 있던 Claude JSONL parser와 OMC metadata reader를 `src/collectors/agent-session-claude.ts`, `src/collectors/agent-session-claude-omc.ts`로 분리했다. `agent-session.ts`는 170 → 29 pure LOC로 내려갔고, 신규 modules는 116/43 pure LOC다. Baseline targeted Claude/session suite 4 files / 23 tests, typecheck/build, targeted Claude/session suite 4 files / 23 tests, full CLI suite 226 files / 848 tests(`--hookTimeout=30000`), built CLI Claude smoke(`init --json` → `collect --source claude-code --session-file ... --json --force --all --no-save-cursor --no-upload`), git diff --check, changed-file LOC/no-any/comment grep를 통과했다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test/smoke로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음. 이전 [[CLI Agent Session Codex Parser Split 2026-06-23]]의 Claude/OMC 분리 후행 과제를 처리했다.
 > - [[CLI Agent Session Claude Parser Split 2026-06-25]]

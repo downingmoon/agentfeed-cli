@@ -5,7 +5,7 @@ tags:
   - agentfeed/config
   - agentfeed/runtime
   - agentfeed/integration
-updated: 2026-06-05
+updated: 2026-06-25
 ---
 
 # Runtime Configuration
@@ -46,23 +46,46 @@ AGENTFEED_ALLOW_INSECURE_API=1 AGENTFEED_API_BASE_URL=http://161.33.171.81:18080
 AGENTFEED_ALLOW_INSECURE_API=1 AGENTFEED_API_BASE_URL=http://161.33.171.81:18080/v1 agentfeed login
 ```
 
-권장 순서:
+현재 서버 기준 배포 사실:
 
-1. `agentfeed-dev`에서 서버 preflight 실행.
+> [!important]
+> 현재 Codex 실행 환경은 배포 서버 자체다. `trading-bot` SSH alias로 다시 접속하지 않는다. 배포는 `/home/ubuntu/dev/agentfeed` 작업본을 `/home/ubuntu/agentfeed` 실행 tree로 로컬 `rsync`한 뒤 `/home/ubuntu/agentfeed/agentfeed-dev`에서 compose를 재생성한다.
 
-```bash
-make server-preflight
-make server-oauth
-make server-deploy-dry-run
+현재 실행 tree:
+
+```text
+/home/ubuntu/agentfeed/agentfeed-dev
+/home/ubuntu/agentfeed/agentfeed-backend
+/home/ubuntu/agentfeed/agentfeed-frontend
+/home/ubuntu/agentfeed/AgentFeed-CLI
 ```
 
-2. `make server-oauth`에서 GitHub OAuth Client ID/Secret을 숨김 입력으로 `.env.server`에 반영한다. secret은 출력하지 않는다.
-3. preflight가 생성한 `.env.server`를 확인한다. 현재 서버 scan 기준 충돌 회피 포트는 Frontend `13030`, Backend `18080`, Postgres host port `15432`다. server-test frontend는 `FRONTEND_RUNTIME=production`, `NEXT_PUBLIC_AGENTFEED_ALLOW_INSECURE_SERVER_TEST_API=1`을 사용한다.
-4. 실제 sync만 할 때는 `make server-deploy`를 사용한다. 이 단계는 컨테이너를 시작하지 않는다.
-5. 실제 remote compose 시작은 별도 승인 후 `make server-up`으로 실행한다.
-6. 서버에 Docker/Compose, Node, git 등 기본 runtime이 없다면 먼저 설치한다.
-7. 서버 remote layout은 `~/agentfeed/{agentfeed-dev,agentfeed-backend,agentfeed-frontend,AgentFeed-CLI}`다.
-8. 로컬 CLI와 브라우저에서 IP endpoint smoke를 실행한다.
+현재 작업 tree:
+
+```text
+/home/ubuntu/dev/agentfeed/agentfeed-dev
+/home/ubuntu/dev/agentfeed/agentfeed-backend
+/home/ubuntu/dev/agentfeed/agentfeed-frontend
+/home/ubuntu/dev/agentfeed/agentfeed-cli
+```
+
+서버 내부에서 1회 배포할 때:
+
+```bash
+rsync -az --delete --exclude .git/ --exclude node_modules/ --exclude .next/ --exclude .venv/ --exclude __pycache__/ --exclude .pytest_cache/ --exclude .mypy_cache/ --exclude .ruff_cache/ --exclude dist/ --exclude .env --exclude '.env.*' /home/ubuntu/dev/agentfeed/agentfeed-dev/ /home/ubuntu/agentfeed/agentfeed-dev/
+rsync -az --delete --exclude .git/ --exclude node_modules/ --exclude .next/ --exclude .venv/ --exclude __pycache__/ --exclude .pytest_cache/ --exclude .mypy_cache/ --exclude .ruff_cache/ --exclude dist/ --exclude .env --exclude '.env.*' /home/ubuntu/dev/agentfeed/agentfeed-backend/ /home/ubuntu/agentfeed/agentfeed-backend/
+rsync -az --delete --exclude .git/ --exclude node_modules/ --exclude .next/ --exclude .venv/ --exclude __pycache__/ --exclude .pytest_cache/ --exclude .mypy_cache/ --exclude .ruff_cache/ --exclude dist/ --exclude .env --exclude '.env.*' /home/ubuntu/dev/agentfeed/agentfeed-frontend/ /home/ubuntu/agentfeed/agentfeed-frontend/
+rsync -az --delete --exclude .git/ --exclude node_modules/ --exclude .next/ --exclude .venv/ --exclude __pycache__/ --exclude .pytest_cache/ --exclude .mypy_cache/ --exclude .ruff_cache/ --exclude dist/ --exclude .env --exclude '.env.*' /home/ubuntu/dev/agentfeed/agentfeed-cli/ /home/ubuntu/agentfeed/AgentFeed-CLI/
+cd /home/ubuntu/agentfeed/agentfeed-dev
+docker compose --env-file .env config >/dev/null
+docker compose --env-file .env up -d postgres
+docker compose --env-file .env up -d --force-recreate backend frontend
+docker compose --env-file .env ps
+```
+
+`trading-bot`은 서버 밖 다른 PC에서 접근할 때의 과거 SSH alias로만 취급한다. 이 서버 내부에서는 사용하지 않는다.
+
+로컬 CLI와 브라우저에서 IP endpoint smoke를 실행한다.
 
 > [!warning]
 > Backend/Frontend production rule은 HTTP/private/local host를 fail-closed할 수 있다. IP-only 단계에서는 production build/deploy 판정이 아니라 dev/server smoke 판정으로 기록한다. Backend는 이 용도로만 `ENVIRONMENT=server-test`를 지원한다.

@@ -27,7 +27,7 @@ updated: 2026-06-25
 - 신규 기능 없음.
 - Runtime/UI/API 동작 변경 없음.
 - 서버/인프라/CI/CD 변경 없음.
-- 이 문서화 후 전체 unpushed counter가 6 commits가 되어 threshold push/deploy 대상이다.
+- 이 문서화 후 전체 unpushed counter가 6 commits가 되어 threshold push/deploy를 실행했다. See [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post auth-shell-session/worklog-review-action source assertion splits threshold deploy]].
 
 ## Commit
 
@@ -71,4 +71,4 @@ Current source assertion helper re-scan top after split:
 
 - [x] Previous next candidate `worklog-review-action-source-assertions.ts` split 처리.
 - [ ] Next source assertion helper candidates are `profile-page-a11y-source-assertions.ts`, `cli-authorize-route-source-assertions.ts`, `api-boundary-rank-notification-source-assertions.ts` at 25 pure LOC.
-- [ ] Current unpushed commit counter reached 6; threshold push/deploy pending.
+- [x] Current unpushed commit counter reached 6; threshold push/deploy completed from current `trading-bot` local shell. No SSH used.

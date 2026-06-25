@@ -10,7 +10,7 @@ tags:
   - collector
   - agent-session
 created: 2026-06-23
-updated: 2026-06-23
+updated: 2026-06-25
 ---
 
 # CLI Agent Session Codex Parser Split 2026-06-23
@@ -76,7 +76,7 @@ updated: 2026-06-23
 > 서버/인프라/CI/CD 변경 및 배포는 하지 않았다. 활성 goal의 최신 제약인 서버 배포 금지를 유지한다.
 
 - `src/collectors/agent-session.ts`는 170 pure LOC로 collector dispatch/Claude parser file size는 안정권에 들어왔다.
-- 다음 품질 pass에서는 Claude parser와 OMC metadata reader를 source-specific module로 분리해 `agent-session.ts`를 pure dispatch module에 더 가깝게 만들 수 있다.
+- 2026-06-25 [[CLI Agent Session Claude Parser Split 2026-06-25]]에서 Claude parser와 OMC metadata reader source-specific split을 완료했다.
 - `src/collectors/agent-session-codex.ts`는 218 pure LOC로 warning band다. Codex schema handling이 늘어나면 token/tool-call helpers부터 추가 split을 우선한다.
 
 ## 관련 문서

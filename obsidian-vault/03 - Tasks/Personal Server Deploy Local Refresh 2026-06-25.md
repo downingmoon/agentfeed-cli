@@ -236,3 +236,53 @@ Settings and feed source assertion helper split docs brought the post-deploy unp
 - [x] Next source assertion helper re-scan candidate `auth-shell-source-assertions.ts` handled by [[Frontend Auth Shell Source Assertion Helper Split 2026-06-25]].
 - [ ] Next source assertion helper re-scan candidate is `cli-authorize-source-assertions.ts` at 76 pure LOC.
 - [x] Next commit counter started after this deploy docs commit.
+
+
+## 2026-06-25 — Post worklog-card/auth-shell source assertion splits threshold deploy
+
+### Trigger
+
+Worklog-card and auth-shell source assertion helper split docs brought the post-deploy unpushed counter to 6 commits. Pushed and deployed from current server local shell. No SSH to `trading-bot`.
+
+### Pushed commits
+
+- `agentfeed-frontend` `a5bb6d2` — `Split worklog card source assertions`
+- `agentfeed-frontend` `f57aaec` — `Split auth shell source assertions`
+- `agentfeed-cli` `e29c8cd` — `Document worklog card source assertion split`
+- `agentfeed-cli` `fbc0edd` — `Document auth shell source assertion split`
+- `agentfeed-dev` `c1d82b7` — `Log worklog card source assertion split`
+- `agentfeed-dev` `5cca824` — `Log auth shell source assertion split`
+
+### Push ranges
+
+- `agentfeed-frontend`: `16c6313..f57aaec`
+- `agentfeed-cli`: `a747a33..fbc0edd`
+- `agentfeed-dev`: `c4a4094..5cca824`
+
+### Deploy path
+
+- Working tree: `/home/ubuntu/dev/agentfeed`
+- Runtime tree: `/home/ubuntu/agentfeed`
+- Compose dir: `/home/ubuntu/agentfeed/agentfeed-dev`
+- Synced repos: `agentfeed-dev`, `agentfeed-backend`, `agentfeed-frontend`, `agentfeed-cli` → `AgentFeed-CLI`
+- Preserved runtime `.env` and Postgres volume/container.
+- Recreated `backend` and `frontend`.
+- Rebuilt runtime CLI with `npm ci && npm run build`.
+
+### Verification
+
+- `docker compose --env-file .env ps` → backend/frontend/postgres healthy after wait-ready.
+- `ENV_FILE=/home/ubuntu/agentfeed/agentfeed-dev/.env scripts/wait-ready.sh` → passed.
+- `GET http://127.0.0.1:18080/health/ready` → ready, DB connected, migration head `027_browser_session_version`, up to date.
+- `GET http://127.0.0.1:18080/v1/metadata` → `v1 / 2026-06-03`, review base `http://161.33.171.81:13030`.
+- `HEAD http://127.0.0.1:13030/` → `200 OK`.
+- `HEAD http://161.33.171.81:13030/` → `200 OK`.
+- `GET http://161.33.171.81:18080/health/ready` → ready, DB connected, migration up to date.
+- Hosted compatibility smoke passed with `AGENTFEED_ALLOW_INSECURE_API=1` because this dev server uses HTTP IP URLs.
+- Runtime CLI build passed: `npm ci && npm run build`, 0 vulnerabilities.
+
+### Follow-up
+
+- [x] 5-commit threshold push/deploy handled for worklog-card/auth-shell source assertion splits.
+- [ ] Next source assertion helper re-scan candidate is `cli-authorize-source-assertions.ts` at 76 pure LOC.
+- [ ] Next commit counter starts after this deploy docs commit.

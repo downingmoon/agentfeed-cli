@@ -1,7 +1,7 @@
 ---
-title: Frontend Profile Page Project Source Assertion Helper Split 2026-06-25
+title: Frontend Profile Page Follow Source Assertion Helper Split 2026-06-25
 aliases:
-  - Profile page project source assertion helper split
+  - Profile page follow source assertion helper split
 status: done
 tags:
   - agentfeed/frontend
@@ -10,29 +10,29 @@ tags:
 updated: 2026-06-25
 ---
 
-# Frontend Profile Page Project Source Assertion Helper Split 2026-06-25
+# Frontend Profile Page Follow Source Assertion Helper Split 2026-06-25
 
 ## 결론
 
-`agentfeed-frontend/src/lib/profile-page-project-source-assertions.ts`가 17 pure LOC growth-risk helper였다. Runtime/UI/API 동작은 바꾸지 않고 profile page project source-contract 검사를 navigation, owner display, list key helpers로 분리했다.
+`agentfeed-frontend/src/lib/profile-page-follow-source-assertions.ts`가 17 pure LOC growth-risk helper였다. Runtime/UI/API 동작은 바꾸지 않고 profile follow source-contract 검사를 state/visibility, error handling, feedback helpers로 분리했다.
 
 ## 변경
 
-- `profile-page-project-source-assertions.ts`를 orchestration-only helper로 축소했다.
+- `profile-page-follow-source-assertions.ts`를 orchestration-only helper로 축소했다.
 - 새 helper:
-  - `profile-page-project-navigation-source-assertions.ts`
-  - `profile-page-project-owner-source-assertions.ts`
-  - `profile-page-project-list-key-source-assertions.ts`
+  - `profile-page-follow-state-source-assertions.ts`
+  - `profile-page-follow-error-source-assertions.ts`
+  - `profile-page-follow-feedback-source-assertions.ts`
 - 기존 assertion 문자열과 대상 source-file contract만 이동했다.
 - 신규 기능 없음.
 - Runtime/UI/API 동작 변경 없음.
 - 서버/인프라/CI/CD 변경 없음.
 - 현재 서버 canonical name: `trading-bot`. 현재 Codex는 이 서버 위에서 실행 중이므로 배포 시 SSH hop 없이 로컬 rsync 사용.
-- 이 문서화 후 unpushed counter는 6 commits라 5-commit threshold push/deploy 대상이다.
+- 이 문서화 후 unpushed counter는 3 commits라 5-commit threshold 미만이다.
 
 ## Commit
 
-- `agentfeed-frontend` `7f2605f` — `Split profile page project source assertions`
+- `agentfeed-frontend` `4c5b93f` — `Split profile page follow source assertions`
 
 ## 검증
 
@@ -50,16 +50,15 @@ updated: 2026-06-25
 ## Size audit
 
 ```text
-8 src/lib/profile-page-project-source-assertions.ts
-8 src/lib/profile-page-project-navigation-source-assertions.ts
-9 src/lib/profile-page-project-owner-source-assertions.ts
-8 src/lib/profile-page-project-list-key-source-assertions.ts
+8 src/lib/profile-page-follow-source-assertions.ts
+8 src/lib/profile-page-follow-state-source-assertions.ts
+11 src/lib/profile-page-follow-error-source-assertions.ts
+6 src/lib/profile-page-follow-feedback-source-assertions.ts
 ```
 
 Current source assertion helper re-scan top after split:
 
 ```text
-17 src/lib/profile-page-follow-source-assertions.ts
 17 src/lib/auth-shell-review-recovery-source-assertions.ts
 17 src/lib/auth-shell-identity-source-assertions.ts
 17 src/lib/api-boundary-privacy-source-assertions.ts
@@ -69,11 +68,11 @@ Current source assertion helper re-scan top after split:
 16 src/lib/notifications-action-source-assertions.ts
 16 src/lib/moderation-rendering-source-assertions.ts
 16 src/lib/landing-preview-interaction-source-assertions.ts
+16 src/lib/landing-preview-data-source-assertions.ts
 ```
 
 ## 후행 TODO
 
-- [x] Previous next candidate `profile-page-project-source-assertions.ts` split 처리.
-- [x] Next source assertion helper candidate `profile-page-follow-source-assertions.ts` handled by [[Frontend Profile Page Follow Source Assertion Helper Split 2026-06-25]].
+- [x] Previous next candidate `profile-page-follow-source-assertions.ts` split 처리.
 - [ ] Next source assertion helper candidates: `auth-shell-review-recovery-source-assertions.ts`, `auth-shell-identity-source-assertions.ts`, `api-boundary-privacy-source-assertions.ts` at 17 pure LOC.
-- [ ] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy completed from current `trading-bot` local shell.
+- [ ] Docs commit leaves unpushed counter at 3 commits; below 5-commit threshold, no push/deploy.

@@ -1494,5 +1494,6 @@ Worklog card author and settings preferences source assertion helper split docs 
 ### Follow-up
 
 - [x] 5-commit threshold push/deploy handled.
-- [ ] Next source assertion helper candidates: `project-visibility-source-assertions.ts`, `cli-authorize-terminal-a11y-source-assertions.ts`, `adapters-source-assertions.ts` at 19 pure LOC.
+- [x] Next source assertion helper candidate `project-visibility-source-assertions.ts` handled by [[Frontend Project Visibility Source Assertion Runner Split 2026-06-25]].
+- [ ] Next source assertion helper candidates: `cli-authorize-terminal-a11y-source-assertions.ts`, `adapters-source-assertions.ts` at 19 pure LOC.
 - [x] Next commit counter started after this deploy docs commit.

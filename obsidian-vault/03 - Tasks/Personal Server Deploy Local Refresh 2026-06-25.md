@@ -1120,5 +1120,6 @@ Profile-page accessibility and CLI-authorize route source assertion helper split
 ### Follow-up
 
 - [x] 5-commit threshold push/deploy handled.
-- [ ] Next source assertion helper candidate: `api-boundary-rank-notification-source-assertions.ts` at 25 pure LOC.
+- [x] Next source assertion helper candidate `api-boundary-rank-notification-source-assertions.ts` split 처리.
+- [ ] Next source assertion helper candidates: `project-visibility-source-assertions.ts`, `cli-authorize-session-storage-source-assertions.ts` at 22 pure LOC.
 - [x] Next commit counter started after this deploy docs commit.

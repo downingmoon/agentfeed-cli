@@ -14,6 +14,10 @@ updated: 2026-06-25
 
 ## 현재 결론
 
+> [!success] 2026-06-25 Frontend CLI authorize session storage source assertion helper split
+> Frontend `src/lib/cli-authorize-session-storage-source-assertions.ts`를 22 pure LOC helper에서 stored session metadata/recovery, visible URL cleanup, partial incoming session fail-closed helpers로 분리했다. Orchestrator는 8 pure LOC, 신규 helpers는 14/6/10 pure LOC다. Pre-edit targeted contract, post-edit targeted contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음, 서버 배포 없음. 3 commits라 threshold 미만.
+> - [[Frontend CLI Authorize Session Storage Source Assertion Helper Split 2026-06-25]]
+
 > [!success] 2026-06-25 API-boundary/project-visibility source assertion threshold push/deploy
 > API-boundary rank/notification/project-visibility source assertion split 6커밋을 push했고, 현재 서버 `trading-bot`에서 직접 `/home/ubuntu/agentfeed` runtime tree로 sync 후 backend/frontend를 force-recreate했다. SSH 없음. Postgres 유지. Runtime CLI build 통과, compose backend/frontend/postgres healthy, `wait-ready`, local/public readiness, metadata, hosted compatibility smoke 통과. 개발서버 HTTP IP라 hosted smoke는 `AGENTFEED_ALLOW_INSECURE_API=1`로 실행했다.
 > - [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post API-boundary/project-visibility source assertion splits threshold deploy]]

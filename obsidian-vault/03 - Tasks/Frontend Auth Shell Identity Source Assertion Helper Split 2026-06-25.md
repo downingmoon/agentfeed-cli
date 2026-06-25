@@ -1,7 +1,7 @@
 ---
-title: Frontend Auth Shell Review Recovery Source Assertion Helper Split 2026-06-25
+title: Frontend Auth Shell Identity Source Assertion Helper Split 2026-06-25
 aliases:
-  - Auth shell review recovery source assertion helper split
+  - Auth shell identity source assertion helper split
 status: done
 tags:
   - agentfeed/frontend
@@ -10,29 +10,29 @@ tags:
 updated: 2026-06-25
 ---
 
-# Frontend Auth Shell Review Recovery Source Assertion Helper Split 2026-06-25
+# Frontend Auth Shell Identity Source Assertion Helper Split 2026-06-25
 
 ## 결론
 
-`agentfeed-frontend/src/lib/auth-shell-review-recovery-source-assertions.ts`가 17 pure LOC growth-risk helper였다. Runtime/UI/API 동작은 바꾸지 않고 worklog review auth recovery source-contract 검사를 bootstrap gating, recovery layout, retry controls helpers로 분리했다.
+`agentfeed-frontend/src/lib/auth-shell-identity-source-assertions.ts`가 17 pure LOC growth-risk helper였다. Runtime/UI/API 동작은 바꾸지 않고 auth shell identity source-contract 검사를 worklog review author avatar, header profile href, AppContext identity gating helpers로 분리했다.
 
 ## 변경
 
-- `auth-shell-review-recovery-source-assertions.ts`를 orchestration-only helper로 축소했다.
+- `auth-shell-identity-source-assertions.ts`를 orchestration-only helper로 축소했다.
 - 새 helper:
-  - `auth-shell-review-recovery-bootstrap-source-assertions.ts`
-  - `auth-shell-review-recovery-layout-source-assertions.ts`
-  - `auth-shell-review-recovery-retry-source-assertions.ts`
+  - `auth-shell-review-identity-source-assertions.ts`
+  - `auth-shell-header-identity-source-assertions.ts`
+  - `auth-shell-app-context-identity-source-assertions.ts`
 - 기존 assertion 문자열과 대상 source-file contract만 이동했다.
 - 신규 기능 없음.
 - Runtime/UI/API 동작 변경 없음.
 - 서버/인프라/CI/CD 변경 없음.
 - 현재 서버 canonical name: `trading-bot`. 현재 Codex는 이 서버 위에서 실행 중이므로 배포 시 SSH hop 없이 로컬 rsync 사용.
-- 이 문서화 후 unpushed counter는 6 commits라 5-commit threshold push/deploy 대상이다.
+- 이 문서화 후 unpushed counter는 3 commits라 5-commit threshold 미만이다.
 
 ## Commit
 
-- `agentfeed-frontend` `cd300d8` — `Split auth shell review recovery assertions`
+- `agentfeed-frontend` `f63d6be` — `Split auth shell identity assertions`
 
 ## 검증
 
@@ -50,16 +50,15 @@ updated: 2026-06-25
 ## Size audit
 
 ```text
-8 src/lib/auth-shell-review-recovery-source-assertions.ts
-8 src/lib/auth-shell-review-recovery-bootstrap-source-assertions.ts
-9 src/lib/auth-shell-review-recovery-layout-source-assertions.ts
-8 src/lib/auth-shell-review-recovery-retry-source-assertions.ts
+8 src/lib/auth-shell-identity-source-assertions.ts
+8 src/lib/auth-shell-review-identity-source-assertions.ts
+6 src/lib/auth-shell-header-identity-source-assertions.ts
+9 src/lib/auth-shell-app-context-identity-source-assertions.ts
 ```
 
 Current source assertion helper re-scan top after split:
 
 ```text
-17 src/lib/auth-shell-identity-source-assertions.ts
 17 src/lib/api-boundary-privacy-source-assertions.ts
 16 src/lib/worklog-review-privacy-source-assertions.ts
 16 src/lib/shell-route-source-assertions.ts
@@ -69,11 +68,11 @@ Current source assertion helper re-scan top after split:
 16 src/lib/landing-preview-interaction-source-assertions.ts
 16 src/lib/landing-preview-data-source-assertions.ts
 16 src/lib/feed-hook-retry-source-assertions.ts
+16 src/lib/dashboard-recovery-source-assertions.ts
 ```
 
 ## 후행 TODO
 
-- [x] Previous next candidate `auth-shell-review-recovery-source-assertions.ts` split 처리.
-- [x] Next source assertion helper candidate `auth-shell-identity-source-assertions.ts` handled by [[Frontend Auth Shell Identity Source Assertion Helper Split 2026-06-25]].
+- [x] Previous next candidate `auth-shell-identity-source-assertions.ts` split 처리.
 - [ ] Next source assertion helper candidate: `api-boundary-privacy-source-assertions.ts` at 17 pure LOC.
-- [ ] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy completed from current `trading-bot` local shell.
+- [ ] Docs commit leaves unpushed counter at 3 commits; below 5-commit threshold, no push/deploy.

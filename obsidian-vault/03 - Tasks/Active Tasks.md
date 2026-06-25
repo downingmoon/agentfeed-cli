@@ -15,6 +15,11 @@ updated: 2026-06-25
 ## 현재 결론
 
 
+> [!success] 2026-06-25 settings/feed source assertion threshold push/deploy
+> Settings/feed source assertion split 6커밋을 push했고, 현재 서버 로컬 경로 `/home/ubuntu/agentfeed`로 sync 후 backend/frontend를 force-recreate했다. `trading-bot` SSH 사용 없음. Postgres 유지. Runtime CLI build 통과, compose backend/frontend/postgres healthy, `wait-ready`, local/public readiness, metadata, hosted compatibility smoke 통과. Smoke는 개발서버 HTTP IP라 `AGENTFEED_ALLOW_INSECURE_API=1` 필요했고, runtime host frontend `node_modules` 권한을 `ubuntu:ubuntu`로 복구 후 `npm ci` 통과.
+> - [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post settings/feed source assertion splits threshold deploy]]
+
+
 > [!success] 2026-06-25 Frontend feed source assertion helper split
 > Frontend `src/lib/feed-source-assertions.ts`를 131 pure LOC 단일 helper에서 app shell, feed filters, sidebar/profile navigation, follow actions, feed hook/accessibility helpers로 분리했다. Orchestrator는 12 pure LOC, 신규 helpers는 13/26/20/21/31 pure LOC다. Targeted feed source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음. 문서 commit 후 5-commit threshold 초과라 push/deploy 진행 대상.
 > - [[Frontend Feed Source Assertion Helper Split 2026-06-25]]

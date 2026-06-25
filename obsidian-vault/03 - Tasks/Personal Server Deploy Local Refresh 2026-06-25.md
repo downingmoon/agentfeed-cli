@@ -178,3 +178,59 @@ HOSTED_COMPATIBILITY_SMOKE_PASSED
 
 - [x] 5-commit threshold push/deploy handled.
 - [ ] Next commit counter starts after this deploy docs commit.
+
+
+## 2026-06-25 — Post settings/feed source assertion splits threshold deploy
+
+### Trigger
+
+Settings and feed source assertion helper split docs brought the post-deploy unpushed counter to 6 commits. Pushed and deployed from current server local shell. No SSH to `trading-bot`.
+
+### Pushed commits
+
+- `agentfeed-frontend` `00f382f` — `Split settings source assertions`
+- `agentfeed-frontend` `16c6313` — `Split feed source assertions`
+- `agentfeed-cli` `38e1b52` — `Document settings source assertion split`
+- `agentfeed-cli` `16ec17b` — `Document feed source assertion split`
+- `agentfeed-dev` `2a93900` — `Log settings source assertion split`
+- `agentfeed-dev` `902a833` — `Log feed source assertion split`
+
+### Push ranges
+
+- `agentfeed-frontend`: `bc8890a..16c6313`
+- `agentfeed-cli`: `ae57d52..16ec17b`
+- `agentfeed-dev`: `4c37b83..902a833`
+
+### Deploy path
+
+- Working tree: `/home/ubuntu/dev/agentfeed`
+- Runtime tree: `/home/ubuntu/agentfeed`
+- Compose dir: `/home/ubuntu/agentfeed/agentfeed-dev`
+- Synced repos: `agentfeed-dev`, `agentfeed-backend`, `agentfeed-frontend`, `agentfeed-cli` → `AgentFeed-CLI`
+- Preserved runtime `.env` and Postgres volume/container.
+- Recreated `backend` and `frontend`.
+- Rebuilt runtime CLI with `npm ci && npm run build`.
+
+### Verification
+
+- `docker compose --env-file .env ps` → backend/frontend/postgres healthy after wait-ready.
+- `ENV_FILE=/home/ubuntu/agentfeed/agentfeed-dev/.env scripts/wait-ready.sh` → passed.
+- `GET http://127.0.0.1:18080/health/ready` → ready, DB connected, migration head `027_browser_session_version`, up to date.
+- `HEAD http://127.0.0.1:13030/` → `200 OK`.
+- `GET http://127.0.0.1:18080/v1/metadata` → `v1 / 2026-06-03`, review base `http://161.33.171.81:13030`.
+- `HEAD http://161.33.171.81:13030/` → `200 OK`.
+- `GET http://161.33.171.81:18080/health/ready` → ready, DB connected, migration up to date.
+- Hosted compatibility smoke passed with `AGENTFEED_ALLOW_INSECURE_API=1` because this dev server uses HTTP IP URLs.
+- Runtime CLI build passed: `npm ci && npm run build`, 0 vulnerabilities.
+
+### Deployment notes
+
+- First hosted smoke attempt failed only because CLI doctor rejects plain HTTP non-localhost API URLs unless `AGENTFEED_ALLOW_INSECURE_API=1` is explicitly set.
+- Second hosted smoke attempt reached API but frontend diagnostic failed because runtime host `agentfeed-frontend/node_modules` was root-owned and incomplete for host-side `npm run check:api-compatibility`.
+- Fixed host-side runtime frontend dependency state with `sudo chown -R ubuntu:ubuntu /home/ubuntu/agentfeed/agentfeed-frontend/node_modules` then `npm ci`; final hosted smoke passed.
+
+### Follow-up
+
+- [x] 5-commit threshold push/deploy handled for settings/feed source assertion splits.
+- [ ] Next source assertion helper re-scan candidate remains `worklog-card-source-assertions.ts` at 124 pure LOC.
+- [ ] Next commit counter starts after this deploy docs commit.

@@ -354,7 +354,7 @@ API-boundary visibility/integration and worklog-detail-accessibility source asse
 ### 후행 TODO
 
 - [x] 5-commit threshold push/deploy 처리 완료.
-- [ ] Next source assertion helper candidates are 32 pure LOC: `settings-shell-source-assertions.ts`, `moderation-reports-source-assertions.ts`, `api-boundary-project-dashboard-source-assertions.ts`.
+- [ ] Next source assertion helper candidates are 32 pure LOC: `moderation-reports-source-assertions.ts`, `api-boundary-project-dashboard-source-assertions.ts`.
 - [x] Next commit counter started after this deploy docs commit.
 
 ## 2026-06-25 — Post landing-preview/settings-token source assertion splits threshold deploy

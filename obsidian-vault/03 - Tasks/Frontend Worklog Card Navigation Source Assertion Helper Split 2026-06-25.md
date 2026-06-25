@@ -73,5 +73,6 @@ Current source assertion helper re-scan top after split:
 ## 후행 TODO
 
 - [x] Previous next candidate `worklog-card-navigation-source-assertions.ts` split 처리.
-- [ ] Next source assertion helper candidates are `feed-follow-action-source-assertions.ts`, `auth-shell-social-source-assertions.ts`, `auth-shell-a11y-source-assertions.ts` at 21 pure LOC.
-- [ ] Current unpushed commit counter after this task docs: 3 commits; below 5-commit push/deploy threshold.
+- [x] Next source assertion helper candidate `feed-follow-action-source-assertions.ts` split 처리.
+- [ ] Next source assertion helper candidates are `auth-shell-social-source-assertions.ts`, `auth-shell-a11y-source-assertions.ts` at 21 pure LOC.
+- [x] Current unpushed commit counter after following feed follow action docs reached 6; threshold push/deploy pending.

@@ -14,6 +14,10 @@ updated: 2026-06-25
 
 ## 현재 결론
 
+> [!success] 2026-06-25 Frontend profile page accessibility source assertion helper split
+> Frontend `src/lib/profile-page-a11y-source-assertions.ts`를 25 pure LOC helper에서 follow/handle feedback, landmark/tab semantics, activity/load-more accessibility helpers로 분리했다. Orchestrator는 8 pure LOC, 신규 helpers는 12/14/7 pure LOC다. Targeted public-profile source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음, 서버 배포 없음. 3 commits라 threshold 미만.
+> - [[Frontend Profile Page Accessibility Source Assertion Helper Split 2026-06-25]]
+
 > [!success] 2026-06-25 Auth-shell-session/worklog-review-action source assertion threshold push/deploy
 > Auth-shell-session/worklog-review-action source assertion split 6커밋을 push했고, 현재 서버 `trading-bot`에서 직접 `/home/ubuntu/agentfeed` runtime tree로 sync 후 backend/frontend를 force-recreate했다. Codex가 이미 `trading-bot` 위에서 실행 중이라 SSH 사용 없음. Postgres 유지. Runtime CLI build 통과, compose backend/frontend/postgres healthy, `wait-ready`, local/public readiness, metadata, hosted compatibility smoke 통과. 개발서버 HTTP IP라 hosted smoke는 `AGENTFEED_ALLOW_INSECURE_API=1`로 실행했다.
 > - [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post auth-shell-session/worklog-review-action source assertion splits threshold deploy]]

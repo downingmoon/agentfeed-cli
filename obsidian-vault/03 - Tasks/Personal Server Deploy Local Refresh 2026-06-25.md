@@ -1014,7 +1014,8 @@ Feed-filter and brand-agent-glyph source assertion helper split docs brought the
 - [x] 5-commit threshold push/deploy handled.
 - [x] Next source assertion helper candidate `auth-shell-session-source-assertions.ts` split 처리.
 - [x] Next source assertion helper candidate `worklog-review-action-source-assertions.ts` split 처리.
-- [ ] Next source assertion helper candidates: `profile-page-a11y-source-assertions.ts`, `cli-authorize-route-source-assertions.ts`, `api-boundary-rank-notification-source-assertions.ts` at 25 pure LOC.
+- [x] Next source assertion helper candidate `profile-page-a11y-source-assertions.ts` split 처리.
+- [ ] Next source assertion helper candidates: `cli-authorize-route-source-assertions.ts`, `api-boundary-rank-notification-source-assertions.ts` at 25 pure LOC.
 - [x] Next commit counter started after this deploy docs commit.
 
 
@@ -1066,5 +1067,6 @@ Auth-shell-session and worklog-review-action source assertion helper split docs 
 ### Follow-up
 
 - [x] 5-commit threshold push/deploy handled.
-- [ ] Next source assertion helper candidates: `profile-page-a11y-source-assertions.ts`, `cli-authorize-route-source-assertions.ts`, `api-boundary-rank-notification-source-assertions.ts` at 25 pure LOC.
+- [x] Next source assertion helper candidate `profile-page-a11y-source-assertions.ts` split 처리.
+- [ ] Next source assertion helper candidates: `cli-authorize-route-source-assertions.ts`, `api-boundary-rank-notification-source-assertions.ts` at 25 pure LOC.
 - [x] Next commit counter started after this deploy docs commit.

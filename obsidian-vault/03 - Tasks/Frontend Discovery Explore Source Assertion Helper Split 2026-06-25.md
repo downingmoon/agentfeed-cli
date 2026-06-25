@@ -71,5 +71,6 @@ Current source assertion helper re-scan top after split:
 ## 후행 TODO
 
 - [x] Previous next candidate `discovery-explore-source-assertions.ts` split 처리.
-- [ ] Next source assertion helper candidate is `brand-svg-source-assertions.ts` at 30 pure LOC.
-- [ ] Current unpushed commit counter after docs: 3 commits; below 5-commit push/deploy threshold.
+- [x] Next source assertion helper candidate `brand-svg-source-assertions.ts` handled by [[Frontend Brand SVG Source Assertion Helper Split 2026-06-25]].
+- [ ] Next source assertion helper candidates are `worklog-detail-data-source-assertions.ts` and `api-boundary-public-user-source-assertions.ts` at 29 pure LOC.
+- [x] The discovery-explore docs were below threshold; subsequent brand SVG docs reached threshold for push/deploy.

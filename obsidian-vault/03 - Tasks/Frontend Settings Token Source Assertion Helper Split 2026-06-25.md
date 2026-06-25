@@ -71,4 +71,4 @@ Contract runner scan remains healthy: max `*contract*.test.ts` runner is 5 pure 
 - [x] Same-batch candidate `landing-preview-source-assertions.ts` split 처리. See [[Frontend Landing Preview Source Assertion Helper Split 2026-06-25]].
 - [ ] Continue source assertion helper re-scan before adding cases near 200 pure LOC. Current next candidate: `api-boundary-visibility-integration-source-assertions.ts` at 33 pure LOC.
 - [ ] Keep `settings-token-source-assertions.ts` as thin orchestrator only.
-- [ ] Current unpushed commit counter after this task docs: 5 commits; triggers 5-commit push/deploy threshold.
+- [x] Current unpushed commit counter after this task docs reached 5 commits; threshold push/deploy completed in [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post landing-preview/settings-token source assertion splits threshold deploy]].

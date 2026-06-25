@@ -73,4 +73,4 @@ Contract runner scan remains healthy: max `*contract*.test.ts` runner is 5 pure 
 - [x] Same-batch candidate `worklog-card-list-source-assertions.ts` split 처리. See [[Frontend Worklog Card List Source Assertion Helper Split 2026-06-25]].
 - [ ] Continue source assertion helper re-scan before adding cases near 200 pure LOC. Current next candidate: `landing-preview-source-assertions.ts` at 37 pure LOC.
 - [ ] Keep `notifications-source-assertions.ts` as thin orchestrator only.
-- [ ] Current unpushed commit counter after this task docs: 5 commits; triggers 5-commit push/deploy threshold.
+- [x] 5-commit push/deploy threshold handled in [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post worklog-card-list/notifications source assertion splits threshold deploy]].

@@ -306,6 +306,48 @@ Worklog-card and auth-shell source assertion helper split docs brought the post-
 
 
 
+
+## 2026-06-25 — Post worklog-card-list/notifications source assertion splits threshold deploy
+
+### 작업 항목
+
+- 5-commit threshold를 넘어 `agentfeed-frontend`, `agentfeed-cli`, `agentfeed-dev`를 push했다.
+- 현재 서버에서 직접 작업 중이므로 `trading-bot` SSH를 사용하지 않고 `/home/ubuntu/dev/agentfeed` 작업 tree를 `/home/ubuntu/agentfeed` runtime tree로 로컬 rsync했다.
+- `backend`와 `frontend` 컨테이너를 force-recreate했다. Postgres volume/container는 유지했다.
+- Runtime CLI `/home/ubuntu/agentfeed/AgentFeed-CLI`에서 `npm ci && npm run build`를 실행했다.
+
+### Push 범위
+
+- `agentfeed-frontend` `bf5b97b..8cbf981`
+- `agentfeed-cli` `3ca44f7..c3ee090`
+- `agentfeed-dev` `bd970dd..6b5c0d9`
+
+### 검증 증거
+
+- `docker compose --env-file .env ps` ✅ — backend/frontend/postgres healthy
+- `ENV_FILE=/home/ubuntu/agentfeed/agentfeed-dev/.env scripts/wait-ready.sh` ✅
+- `GET http://127.0.0.1:18080/health/ready` ✅ — DB connected, migration head `027_browser_session_version`, up to date
+- `GET http://127.0.0.1:18080/v1/metadata` ✅ — `v1 / 2026-06-03`, review base `http://161.33.171.81:13030`
+- `HEAD http://127.0.0.1:13030/` ✅ — `200 OK`
+- `HEAD http://161.33.171.81:13030/` ✅ — `200 OK`
+- `GET http://161.33.171.81:18080/health/ready` ✅ — DB connected, migration up to date
+- Hosted compatibility smoke ✅ — `HOSTED_COMPATIBILITY_SMOKE_PASSED` with `AGENTFEED_ALLOW_INSECURE_API=1` for HTTP IP dev server
+- CLI runtime build ✅ — `npm ci && npm run build`, 0 vulnerabilities
+
+### Commits
+
+- `agentfeed-frontend` `418a504` — `Split worklog card list source assertions`
+- `agentfeed-frontend` `8cbf981` — `Split notifications source assertions`
+- `agentfeed-cli` `2358e0a` — `Document worklog card list source assertion split`
+- `agentfeed-cli` `c3ee090` — `Document notifications source assertion split`
+- `agentfeed-dev` `6b5c0d9` — `Log worklog card notifications source assertion split`
+
+### 후행 TODO
+
+- [x] 5-commit threshold push/deploy 처리 완료.
+- [ ] Next source assertion helper candidate is `landing-preview-source-assertions.ts` at 37 pure LOC.
+- [x] Next commit counter started after this deploy docs commit.
+
 ## 2026-06-25 — Post review-public-user-assets/dashboard source assertion splits threshold deploy
 
 ### 작업 항목

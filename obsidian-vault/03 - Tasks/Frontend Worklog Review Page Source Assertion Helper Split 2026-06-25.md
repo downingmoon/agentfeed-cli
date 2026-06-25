@@ -70,6 +70,7 @@ Contract runner scan remains healthy: max `*contract*.test.ts` runner is 5 pure 
 ## 후행 TODO
 
 - [x] Previous next candidate `worklog-review-page-source-assertions.ts` split 처리.
-- [ ] Continue source assertion helper re-scan before adding cases near 200 pure LOC. Current next candidate: `project-source-assertions.ts` at 44 pure LOC.
+- [x] Continue source assertion helper re-scan candidate `project-source-assertions.ts` 처리 완료. See [[Frontend Project Source Assertion Helper Split 2026-06-25]].
 - [ ] Keep `worklog-review-page-source-assertions.ts` as thin orchestrator only.
 - [x] 6-commit push/deploy threshold handled in [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post API-boundary-worklog/worklog-review-page source assertion splits threshold deploy]].
+- [ ] Current next source assertion helper candidate after project split: `search-source-assertions.ts` at 41 pure LOC.

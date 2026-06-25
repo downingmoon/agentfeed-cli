@@ -15,7 +15,7 @@ tags:
 관련 문서: [[Active Tasks]], [[Runtime Configuration]], [[Human Action Checklist]]
 
 > [!success] 결론
-> 개인 서버 `trading-bot`에서 AgentFeed Backend/Frontend/Postgres compose stack이 정상 기동했고, CLI → API → Frontend review → public feed 흐름이 IP-only server-test 환경에서 검증됐다. 검증 후 서버 데이터는 다시 0건으로 초기화했다.
+> 개인 서버 현재 로컬 배포 서버(과거 off-server alias: `trading-bot`)에서 AgentFeed Backend/Frontend/Postgres compose stack이 정상 기동했고, CLI → API → Frontend review → public feed 흐름이 IP-only server-test 환경에서 검증됐다. 검증 후 서버 데이터는 다시 0건으로 초기화했다.
 
 ## Endpoint
 

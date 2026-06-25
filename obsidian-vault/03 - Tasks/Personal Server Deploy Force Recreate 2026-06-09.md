@@ -82,7 +82,7 @@ NEXT_PUBLIC_API_URL=http://161.33.171.81:18080/v1 \
   npm run check:api-compatibility
 curl -fsS http://161.33.171.81:18080/v1/metadata
 curl -fsSI http://161.33.171.81:13030
-ssh trading-bot "cd ~/agentfeed/agentfeed-dev && docker compose --env-file .env ps"
+cd /home/ubuntu/agentfeed/agentfeed-dev && docker compose --env-file .env ps  # server-local path; older off-server SSH notes targeted this same server
 ```
 
 - Evidence:

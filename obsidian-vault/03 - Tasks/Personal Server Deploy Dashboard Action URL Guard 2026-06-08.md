@@ -27,14 +27,14 @@ aliases:
 ```bash
 make server-deploy
 make server-up
-ssh trading-bot 'cd ~/agentfeed/agentfeed-dev && docker compose --env-file .env up -d --force-recreate backend frontend && docker compose --env-file .env ps'
+cd /home/ubuntu/agentfeed/agentfeed-dev && docker compose --env-file .env up -d --force-recreate backend frontend && docker compose --env-file .env ps
 ```
 
 ## 배포 반영 확인
 
 ```bash
-ssh trading-bot "grep -R \"Dashboard action URL must be /worklogs/:id\" -n ~/agentfeed/agentfeed-backend/app/schemas/dashboard.py"
-ssh trading-bot "grep -R \"requireDashboardActionUrl\" -n ~/agentfeed/agentfeed-frontend/src/lib/api.ts | head"
+grep -R "Dashboard action URL must be /worklogs/:id" -n /home/ubuntu/agentfeed/agentfeed-backend/app/schemas/dashboard.py
+grep -R "requireDashboardActionUrl" -n /home/ubuntu/agentfeed/agentfeed-frontend/src/lib/api.ts | head
 ```
 
 확인 결과:

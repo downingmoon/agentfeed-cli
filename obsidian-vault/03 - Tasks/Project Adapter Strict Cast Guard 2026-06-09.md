@@ -65,7 +65,7 @@ node scripts/check-openapi-contract.mjs
 ```bash
 cd /Users/downing/PersonalProjects/agentfeed-dev
 make server-up
-ssh trading-bot "cd ~/agentfeed/agentfeed-dev && docker compose --env-file .env up -d --force-recreate frontend"
+cd /home/ubuntu/agentfeed/agentfeed-dev && docker compose --env-file .env up -d --force-recreate frontend
 ```
 
 ### 배포 후 확인

@@ -55,7 +55,7 @@ aliases:
 > 사용자가 이번 turn에서 개인서버 배포 1회를 요청했고, `agentfeed-dev`의 server deploy 경로로 배포를 완료했다.
 >
 > - `make server-up`
-> - `ssh trading-bot 'cd ~/agentfeed/agentfeed-dev && docker compose --env-file .env up -d --force-recreate frontend'`
+> - `cd /home/ubuntu/agentfeed/agentfeed-dev && docker compose --env-file .env up -d --force-recreate frontend` *(server-local path; older off-server SSH notes targeted this same server)*
 > - frontend health: `healthy`
 > - `AGENTFEED_HOSTED_FRONTEND_URL=http://161.33.171.81:13030 AGENTFEED_HOSTED_API_BASE_URL=http://161.33.171.81:18080/v1 AGENTFEED_ALLOW_INSECURE_API=1 NEXT_PUBLIC_AGENTFEED_ALLOW_INSECURE_SERVER_TEST_API=1 make smoke-hosted-compatibility` → `HOSTED_COMPATIBILITY_SMOKE_PASSED`
 > - 원격 소스 확인: `ProjectsPage.tsx`/`SearchPage.tsx`에 `ownerLabel = ... userHandleLabel(...)` 반영됨.

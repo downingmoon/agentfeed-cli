@@ -58,7 +58,7 @@ node scripts/check-openapi-contract.mjs
 ```bash
 cd /Users/downing/PersonalProjects/agentfeed-dev
 make server-up
-ssh trading-bot "cd ~/agentfeed/agentfeed-dev && docker compose --env-file .env up -d --force-recreate frontend && docker compose --env-file .env ps"
+cd /home/ubuntu/agentfeed/agentfeed-dev && docker compose --env-file .env up -d --force-recreate frontend && docker compose --env-file .env ps
 AGENTFEED_ALLOW_INSECURE_API=1 \
   AGENTFEED_HOSTED_FRONTEND_URL=http://161.33.171.81:13030 \
   AGENTFEED_HOSTED_API_BASE_URL=http://161.33.171.81:18080/v1 \

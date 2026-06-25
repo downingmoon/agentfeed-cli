@@ -2218,7 +2218,7 @@ updated: 2026-06-25
 
 상세 체크리스트는 [[Human Action Checklist]]를 기준으로 한다.
 
-- [x] 개인 서버 IP/OS/architecture 확인: SSH alias `trading-bot`, Ubuntu Linux `aarch64`.
+- [x] 개인 서버 IP/OS/architecture 확인: 현재 배포 서버 로컬 shell 기준, 과거 off-server SSH alias `trading-bot`, Ubuntu Linux `aarch64`.
 - [x] Docker Compose 기반 배포 준비 스크립트 생성.
 - [x] 서버 포트 scan 후 충돌 회피 후보 결정: Frontend `13030`, Backend `18080`, Postgres `127.0.0.1:15432`.
 - [x] 서버 포트/firewall smoke 범위 확인: Frontend `13030`, Backend `18080`, Postgres는 loopback `15432`.

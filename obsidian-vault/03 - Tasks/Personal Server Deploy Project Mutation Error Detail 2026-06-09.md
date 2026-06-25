@@ -21,7 +21,7 @@ related:
 - Server: `161.33.171.81`
 - Frontend: `http://161.33.171.81:13030`
 - API: `http://161.33.171.81:18080/v1`
-- SSH host: `trading-bot`
+- Server context: current deployment server local shell (older off-server alias: `trading-bot`)
 - Compose project: `agentfeed-server`
 
 ## 배포 명령
@@ -29,7 +29,7 @@ related:
 ```bash
 cd /Users/downing/PersonalProjects/agentfeed-dev
 make server-up
-ssh trading-bot 'cd ~/agentfeed/agentfeed-dev && docker compose --env-file .env up -d --force-recreate backend frontend && docker compose --env-file .env ps'
+cd /home/ubuntu/agentfeed/agentfeed-dev && docker compose --env-file .env up -d --force-recreate backend frontend && docker compose --env-file .env ps
 ```
 
 > [!info] Frontend rebuild note

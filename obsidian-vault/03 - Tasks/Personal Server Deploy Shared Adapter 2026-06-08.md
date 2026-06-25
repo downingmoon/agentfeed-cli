@@ -21,7 +21,7 @@ tags:
 cd /Users/downing/PersonalProjects/agentfeed-dev
 make server-deploy
 make server-up
-ssh trading-bot 'cd ~/agentfeed/agentfeed-dev && docker compose --env-file .env up -d --force-recreate frontend && docker compose --env-file .env ps'
+cd /home/ubuntu/agentfeed/agentfeed-dev && docker compose --env-file .env up -d --force-recreate frontend && docker compose --env-file .env ps
 ```
 
 ## 결과

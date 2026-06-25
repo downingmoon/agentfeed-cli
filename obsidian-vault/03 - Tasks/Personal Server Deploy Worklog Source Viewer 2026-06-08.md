@@ -30,7 +30,7 @@ tags:
 cd /Users/downing/PersonalProjects/agentfeed-dev
 ./scripts/server-deploy.sh --execute
 ./scripts/server-deploy.sh --execute --up
-ssh trading-bot "cd ~/agentfeed/agentfeed-dev && docker compose --env-file .env up -d --force-recreate frontend"
+cd /home/ubuntu/agentfeed/agentfeed-dev && docker compose --env-file .env up -d --force-recreate frontend
 ```
 
 > [!note]

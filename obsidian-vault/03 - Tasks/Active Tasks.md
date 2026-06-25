@@ -15,6 +15,11 @@ updated: 2026-06-25
 ## 현재 결론
 
 
+> [!success] 2026-06-25 Frontend feed source assertion helper split
+> Frontend `src/lib/feed-source-assertions.ts`를 131 pure LOC 단일 helper에서 app shell, feed filters, sidebar/profile navigation, follow actions, feed hook/accessibility helpers로 분리했다. Orchestrator는 12 pure LOC, 신규 helpers는 13/26/20/21/31 pure LOC다. Targeted feed source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음. 문서 commit 후 5-commit threshold 초과라 push/deploy 진행 대상.
+> - [[Frontend Feed Source Assertion Helper Split 2026-06-25]]
+
+
 > [!success] 2026-06-25 Frontend settings source assertion helper split
 > Frontend `src/lib/settings-source-assertions.ts`를 154 pure LOC 단일 helper에서 Settings shell/load, token lifecycle, profile save, preferences, auth recovery helpers로 분리했다. Orchestrator는 12 pure LOC, 신규 helpers는 32/33/31/19/20 pure LOC다. Targeted settings source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 없음, 서버 배포 없음.
 > - [[Frontend Settings Source Assertion Helper Split 2026-06-25]]

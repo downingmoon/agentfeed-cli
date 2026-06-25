@@ -65,6 +65,7 @@ Current source assertion helper re-scan top after split:
 
 ## 후행 TODO
 
+- [x] Same-batch threshold push/deploy completed in [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post API-boundary visibility/worklog-detail-accessibility source assertion splits threshold deploy]].
 - [x] Previous next candidate `api-boundary-visibility-integration-source-assertions.ts` split 처리.
 - [x] Next source assertion helper candidate `worklog-detail-accessibility-source-assertions.ts` handled by [[Frontend Worklog Detail Accessibility Source Assertion Helper Split 2026-06-25]].
 - [ ] Remaining next source assertion helper candidates are 32 pure LOC: `settings-shell-source-assertions.ts`, `moderation-reports-source-assertions.ts`, `api-boundary-project-dashboard-source-assertions.ts`.

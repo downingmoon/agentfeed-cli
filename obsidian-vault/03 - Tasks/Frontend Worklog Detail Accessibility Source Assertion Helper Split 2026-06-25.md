@@ -74,4 +74,4 @@ Current source assertion helper re-scan top after split:
 
 - [x] Previous next candidate `worklog-detail-accessibility-source-assertions.ts` split 처리.
 - [ ] Next source assertion helper candidates are 32 pure LOC: `settings-shell-source-assertions.ts`, `moderation-reports-source-assertions.ts`, `api-boundary-project-dashboard-source-assertions.ts`.
-- [ ] Current unpushed commit counter after this task docs: 6 commits; triggers 5-commit push/deploy threshold.
+- [x] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy completed in [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post API-boundary visibility/worklog-detail-accessibility source assertion splits threshold deploy]].

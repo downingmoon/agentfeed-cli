@@ -310,6 +310,53 @@ Worklog-card and auth-shell source assertion helper split docs brought the post-
 
 
 
+
+## 2026-06-25 — Post API-boundary visibility/worklog-detail-accessibility source assertion splits threshold deploy
+
+### Trigger
+
+API-boundary visibility/integration and worklog-detail-accessibility source assertion helper split docs brought the post-deploy unpushed counter to 6 commits. Pushed and deployed from the current server local shell. Current server is `trading-bot`; no SSH was used because Codex was already running on that server.
+
+### Push 범위
+
+- `agentfeed-frontend` `71ebf27..1036b6b`
+- `agentfeed-cli` `7fb6ea2..64b6764`
+- `agentfeed-dev` `337c69a..3d09788`
+
+### Deploy 범위
+
+- Synced working tree `/home/ubuntu/dev/agentfeed` into runtime tree `/home/ubuntu/agentfeed` with `rsync --delete`, preserving runtime `.env` files.
+- Recreated `backend` and `frontend` containers with Docker Compose from `/home/ubuntu/agentfeed/agentfeed-dev`.
+- Preserved existing Postgres container/volume.
+- Rebuilt runtime CLI in `/home/ubuntu/agentfeed/AgentFeed-CLI` with `npm ci && npm run build`.
+
+### 검증 증거
+
+- `docker compose --env-file .env ps` ✅ — backend/frontend/postgres healthy after frontend health settled from initial `starting`.
+- `ENV_FILE=/home/ubuntu/agentfeed/agentfeed-dev/.env scripts/wait-ready.sh` ✅ — AgentFeed dev stack ready.
+- `GET http://127.0.0.1:18080/health/ready` ✅ — DB connected, migration head `027_browser_session_version`, up to date.
+- `GET http://161.33.171.81:18080/health/ready` ✅ — DB connected, migration up to date.
+- `GET http://127.0.0.1:18080/v1/metadata` ✅ — `v1 / 2026-06-03`, review base `http://161.33.171.81:13030`.
+- `HEAD http://127.0.0.1:13030/` ✅ — `200 OK`.
+- `HEAD http://161.33.171.81:13030/` ✅ — `200 OK`.
+- Hosted compatibility smoke ✅ — `HOSTED_COMPATIBILITY_SMOKE_PASSED` with `AGENTFEED_ALLOW_INSECURE_API=1` for HTTP IP dev server.
+- CLI runtime build ✅ — `npm ci && npm run build`, 0 vulnerabilities.
+
+### Commits deployed
+
+- `agentfeed-frontend` `efece1f` — `Split API boundary visibility integration source assertions`
+- `agentfeed-frontend` `1036b6b` — `Split worklog detail accessibility source assertions`
+- `agentfeed-cli` `9fb252a` — `Document API boundary visibility integration source assertion split`
+- `agentfeed-cli` `64b6764` — `Document worklog detail accessibility source assertion split`
+- `agentfeed-dev` `12f36db` — `Log API boundary visibility integration source assertion split`
+- `agentfeed-dev` `3d09788` — `Log worklog detail accessibility source assertion split`
+
+### 후행 TODO
+
+- [x] 5-commit threshold push/deploy 처리 완료.
+- [ ] Next source assertion helper candidates are 32 pure LOC: `settings-shell-source-assertions.ts`, `moderation-reports-source-assertions.ts`, `api-boundary-project-dashboard-source-assertions.ts`.
+- [x] Next commit counter started after this deploy docs commit.
+
 ## 2026-06-25 — Post landing-preview/settings-token source assertion splits threshold deploy
 
 ### Trigger

@@ -16,6 +16,11 @@ updated: 2026-06-25
 
 
 
+> [!success] 2026-06-25 API-boundary visibility/worklog-detail-accessibility source assertion threshold push/deploy
+> API-boundary visibility/integration + worklog-detail-accessibility source assertion split 6커밋을 push했고, 현재 서버 `trading-bot`에서 직접 `/home/ubuntu/agentfeed` runtime tree로 sync 후 backend/frontend를 force-recreate했다. Codex가 이미 `trading-bot` 위에서 실행 중이라 SSH 사용 없음. Postgres 유지. Runtime CLI build 통과, compose backend/frontend/postgres healthy, `wait-ready`, local/public readiness, metadata, hosted compatibility smoke 통과. 개발서버 HTTP IP라 hosted smoke는 `AGENTFEED_ALLOW_INSECURE_API=1`로 실행했다.
+> - [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post API-boundary visibility/worklog-detail-accessibility source assertion splits threshold deploy]]
+
+
 > [!success] 2026-06-25 Frontend worklog detail accessibility source assertion helper split
 > Frontend `src/lib/worklog-detail-accessibility-source-assertions.ts`를 32 pure LOC helper에서 profile/auth guard, social/comment a11y, copy-prompt feedback, metrics accessibility helpers로 분리했다. Orchestrator는 10 pure LOC, 신규 helpers는 17/10/11/6 pure LOC다. Targeted worklog-card source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음. 문서 commit 후 6 commits라 threshold push/deploy 대상.
 > - [[Frontend Worklog Detail Accessibility Source Assertion Helper Split 2026-06-25]]

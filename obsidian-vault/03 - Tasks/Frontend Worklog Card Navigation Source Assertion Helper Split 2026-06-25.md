@@ -1,7 +1,7 @@
 ---
-title: Frontend Worklog Detail Mutation Source Assertion Helper Split 2026-06-25
+title: Frontend Worklog Card Navigation Source Assertion Helper Split 2026-06-25
 aliases:
-  - Worklog detail mutation source assertion helper split
+  - Worklog card navigation source assertion helper split
 status: done
 tags:
   - agentfeed/frontend
@@ -10,28 +10,28 @@ tags:
 updated: 2026-06-25
 ---
 
-# Frontend Worklog Detail Mutation Source Assertion Helper Split 2026-06-25
+# Frontend Worklog Card Navigation Source Assertion Helper Split 2026-06-25
 
 ## 결론
 
-`agentfeed-frontend/src/lib/worklog-detail-mutation-source-assertions.ts`가 21 pure LOC growth-risk helper였다. Runtime/UI/API 동작은 바꾸지 않고 worklog detail mutation source-contract 검사를 comment mutation failure, report action/auth/duplicate lock, report failure feedback helpers로 분리했다.
+`agentfeed-frontend/src/lib/worklog-card-navigation-source-assertions.ts`가 21 pure LOC growth-risk helper였다. Runtime/UI/API 동작은 바꾸지 않고 worklog card navigation source-contract 검사를 card component navigation, open-link CSS, shared navigation helper helpers로 분리했다.
 
 ## 변경
 
-- `worklog-detail-mutation-source-assertions.ts`를 orchestration-only helper로 축소했다.
+- `worklog-card-navigation-source-assertions.ts`를 orchestration-only helper로 축소했다.
 - 새 helper:
-  - `worklog-detail-comment-mutation-source-assertions.ts`
-  - `worklog-detail-report-action-source-assertions.ts`
-  - `worklog-detail-report-failure-source-assertions.ts`
+  - `worklog-card-component-navigation-source-assertions.ts`
+  - `worklog-card-open-link-style-source-assertions.ts`
+  - `worklog-card-navigation-helper-source-assertions.ts`
 - 기존 assertion 문자열과 대상 source-file contract만 이동했다.
 - 신규 기능 없음.
 - Runtime/UI/API 동작 변경 없음.
 - 서버/인프라/CI/CD 변경 없음.
-- 이 문서화 후 unpushed counter가 6 commits라 5-commit threshold push/deploy를 처리했다.
+- 서버 배포 없음. 이 문서화 후 unpushed counter는 3 commits라 5-commit threshold 미만.
 
 ## Commit
 
-- `agentfeed-frontend` `590f3da` — `Split worklog detail mutation source assertions`
+- `agentfeed-frontend` `37542ce` — `Split worklog card navigation source assertions`
 
 ## 검증
 
@@ -49,16 +49,15 @@ updated: 2026-06-25
 ## Size audit
 
 ```text
- 8 src/lib/worklog-detail-mutation-source-assertions.ts
-10 src/lib/worklog-detail-comment-mutation-source-assertions.ts
-11 src/lib/worklog-detail-report-action-source-assertions.ts
- 8 src/lib/worklog-detail-report-failure-source-assertions.ts
+ 8 src/lib/worklog-card-navigation-source-assertions.ts
+13 src/lib/worklog-card-component-navigation-source-assertions.ts
+ 6 src/lib/worklog-card-open-link-style-source-assertions.ts
+ 8 src/lib/worklog-card-navigation-helper-source-assertions.ts
 ```
 
 Current source assertion helper re-scan top after split:
 
 ```text
-21 src/lib/worklog-card-navigation-source-assertions.ts
 21 src/lib/feed-follow-action-source-assertions.ts
 21 src/lib/auth-shell-social-source-assertions.ts
 21 src/lib/auth-shell-a11y-source-assertions.ts
@@ -68,11 +67,11 @@ Current source assertion helper re-scan top after split:
 20 src/lib/cli-authorize-retry-source-assertions.ts
 20 src/lib/api-boundary-worklog-status-action-source-assertions.ts
 20 src/lib/api-boundary-project-source-assertions.ts
+19 src/lib/worklog-card-author-source-assertions.ts
 ```
 
 ## 후행 TODO
 
-- [x] Previous next candidate `worklog-detail-mutation-source-assertions.ts` split 처리.
-- [x] Next source assertion helper candidate `worklog-card-navigation-source-assertions.ts` split 처리.
+- [x] Previous next candidate `worklog-card-navigation-source-assertions.ts` split 처리.
 - [ ] Next source assertion helper candidates are `feed-follow-action-source-assertions.ts`, `auth-shell-social-source-assertions.ts`, `auth-shell-a11y-source-assertions.ts` at 21 pure LOC.
-- [x] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy handled.
+- [ ] Current unpushed commit counter after this task docs: 3 commits; below 5-commit push/deploy threshold.

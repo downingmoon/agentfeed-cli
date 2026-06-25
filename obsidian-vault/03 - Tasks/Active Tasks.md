@@ -16,6 +16,12 @@ updated: 2026-06-25
 
 
 
+> [!success] 2026-06-25 Frontend shell source assertion helper split
+> Frontend `src/lib/shell-source-assertions.ts`를 54 pure LOC 단일 helper에서 backend I/O boundary, static docs/info pages, app route/security, CI/deploy contract helpers로 분리했다. Orchestrator는 10 pure LOC, 신규 helpers는 12/15/16/20 pure LOC다. Targeted shell source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음, 서버 배포 없음.
+> - [[Frontend Shell Source Assertion Helper Split 2026-06-25]]
+
+
+
 > [!success] 2026-06-25 Frontend project detail source assertion helper split
 > Frontend `src/lib/project-detail-source-assertions.ts`를 63 pure LOC 단일 helper에서 route, data/worklog/owner, mutation/edit/delete, a11y/tab helpers로 분리했다. Orchestrator는 10 pure LOC, 신규 helpers는 13/16/30/15 pure LOC다. Targeted public-profile source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음, 서버 배포 없음.
 > - [[Frontend Project Detail Source Assertion Helper Split 2026-06-25]]

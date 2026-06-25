@@ -15,6 +15,11 @@ updated: 2026-06-25
 ## 현재 결론
 
 
+> [!success] 2026-06-25 Frontend project detail mutation source assertion helper split
+> Frontend `src/lib/project-detail-mutation-source-assertions.ts`를 30 pure LOC helper에서 mutation flow, mutation error, mutation UI helpers로 분리했다. Orchestrator는 8 pure LOC, 신규 helpers는 13/11/14 pure LOC다. Targeted public-profile source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음. 문서 commit 후 6 commits라 threshold push/deploy 대상.
+> - [[Frontend Project Detail Mutation Source Assertion Helper Split 2026-06-25]]
+
+
 
 > [!success] 2026-06-25 Frontend feed hook accessibility source assertion helper split
 > Frontend `src/lib/feed-hook-a11y-source-assertions.ts`를 31 pure LOC helper에서 filter ARIA, hook retry/cancellation, retry UI copy, global focus ring helpers로 분리했다. Orchestrator는 10 pure LOC, 신규 helpers는 9/16/8/8 pure LOC다. Targeted feed source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음, 서버 배포 없음. 3 commits라 threshold 미만.

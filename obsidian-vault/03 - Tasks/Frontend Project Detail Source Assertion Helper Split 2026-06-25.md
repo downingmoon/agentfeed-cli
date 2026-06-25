@@ -73,3 +73,4 @@ Contract runner scan remains healthy: max `*contract*.test.ts` runner is 5 pure 
 - [x] Continue source assertion helper re-scan candidate `shell-source-assertions.ts` 처리 완료. See [[Frontend Shell Source Assertion Helper Split 2026-06-25]].
 - [ ] Keep `project-detail-source-assertions.ts` as thin orchestrator only.
 - [ ] Current next source assertion helper candidate after shell split: `api-boundary-worklog-source-assertions.ts` at 51 pure LOC.
+- [x] Nested candidate `project-detail-mutation-source-assertions.ts` split handled by [[Frontend Project Detail Mutation Source Assertion Helper Split 2026-06-25]].

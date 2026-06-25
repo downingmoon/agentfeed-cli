@@ -49,7 +49,7 @@ AGENTFEED_ALLOW_INSECURE_API=1 AGENTFEED_API_BASE_URL=http://161.33.171.81:18080
 현재 서버 기준 배포 사실:
 
 > [!important]
-> 현재 Codex 실행 환경은 배포 서버 자체다. `trading-bot` SSH alias로 다시 접속하지 않는다. 배포는 `/home/ubuntu/dev/agentfeed` 작업본을 `/home/ubuntu/agentfeed` 실행 tree로 로컬 `rsync`한 뒤 `/home/ubuntu/agentfeed/agentfeed-dev`에서 compose를 재생성한다.
+> 정식 현재 개발/배포 서버 이름은 `trading-bot`이다. 현재 Codex 실행 환경은 이 `trading-bot` 서버 자체다. 따라서 이 환경에서 배포/점검할 때 `ssh trading-bot`를 다시 실행하지 않는다. 배포는 `/home/ubuntu/dev/agentfeed` 작업본을 `/home/ubuntu/agentfeed` 실행 tree로 로컬 `rsync`한 뒤 `/home/ubuntu/agentfeed/agentfeed-dev`에서 compose를 재생성한다.
 
 현재 실행 tree:
 
@@ -83,7 +83,7 @@ docker compose --env-file .env up -d --force-recreate backend frontend
 docker compose --env-file .env ps
 ```
 
-`trading-bot`은 서버 밖 다른 PC에서 접근할 때의 과거 SSH alias로만 취급한다. 이 서버 내부에서는 사용하지 않는다.
+`trading-bot`은 현재 서버의 canonical name이다. 서버 밖 다른 PC에서 접근할 때만 SSH alias로 사용하고, 이 서버 내부에서는 SSH hop 없이 로컬 경로로 작업한다.
 
 로컬 CLI와 브라우저에서 IP endpoint smoke를 실행한다.
 

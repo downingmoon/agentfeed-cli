@@ -71,5 +71,6 @@ Current source assertion helper re-scan top after split:
 ## 후행 TODO
 
 - [x] Previous next candidate `feed-hook-a11y-source-assertions.ts` split 처리.
-- [ ] Next source assertion helper candidates are 30 pure LOC: `project-detail-mutation-source-assertions.ts`, `discovery-explore-source-assertions.ts`, `brand-svg-source-assertions.ts`.
+- [x] Next source assertion helper candidate `project-detail-mutation-source-assertions.ts` handled by [[Frontend Project Detail Mutation Source Assertion Helper Split 2026-06-25]].
+- [ ] Next source assertion helper candidates are 30 pure LOC: `discovery-explore-source-assertions.ts`, `brand-svg-source-assertions.ts`.
 - [ ] Current unpushed commit counter after this task docs: 3 commits; below 5-commit push/deploy threshold.

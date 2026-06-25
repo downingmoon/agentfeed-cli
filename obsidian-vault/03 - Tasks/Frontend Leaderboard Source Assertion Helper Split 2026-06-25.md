@@ -77,4 +77,4 @@ Current source assertion helper re-scan top after split:
 
 - [x] Previous next candidate `leaderboard-source-assertions.ts` split 처리.
 - [ ] Next source assertion helper candidates: `worklog-detail-profile-source-assertions.ts`, `settings-token-error-source-assertions.ts`, `project-create-source-assertions.ts` at 17 pure LOC.
-- [ ] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy pending.
+- [ ] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy completed from current `trading-bot` local shell.

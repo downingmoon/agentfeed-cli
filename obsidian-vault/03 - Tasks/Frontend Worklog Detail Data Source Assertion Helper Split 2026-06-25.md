@@ -71,5 +71,6 @@ Current source assertion helper re-scan top after split:
 ## 후행 TODO
 
 - [x] Previous next candidate `worklog-detail-data-source-assertions.ts` split 처리.
-- [ ] Next source assertion helper candidate is `api-boundary-public-user-source-assertions.ts` at 29 pure LOC.
-- [ ] Current unpushed commit counter after docs: 3 commits; below 5-commit push/deploy threshold.
+- [x] Next source assertion helper candidate `api-boundary-public-user-source-assertions.ts` handled by [[Frontend API Boundary Public User Source Assertion Helper Split 2026-06-25]].
+- [ ] Next source assertion helper candidates are `feed-filter-source-assertions.ts`, `brand-agent-glyph-source-assertions.ts`, `auth-shell-session-source-assertions.ts` at 26 pure LOC.
+- [x] The worklog-detail-data docs were below threshold; subsequent API-boundary public-user docs reached threshold for push/deploy.

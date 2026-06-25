@@ -71,5 +71,6 @@ Current source assertion helper re-scan top after split:
 ## 후행 TODO
 
 - [x] Previous next candidate `brand-svg-source-assertions.ts` split 처리.
-- [ ] Next source assertion helper candidates are `worklog-detail-data-source-assertions.ts` and `api-boundary-public-user-source-assertions.ts` at 29 pure LOC.
+- [x] Next source assertion helper candidate `worklog-detail-data-source-assertions.ts` handled by [[Frontend Worklog Detail Data Source Assertion Helper Split 2026-06-25]].
+- [ ] Next source assertion helper candidate is `api-boundary-public-user-source-assertions.ts` at 29 pure LOC.
 - [x] Current unpushed commit counter reached 6; threshold push/deploy completed from current `trading-bot` local shell. No SSH used.

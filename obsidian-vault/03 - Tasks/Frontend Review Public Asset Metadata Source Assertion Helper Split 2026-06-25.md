@@ -75,4 +75,4 @@ Current source assertion helper re-scan top after split:
 
 - [x] Previous next candidate `review-public-asset-metadata-source-assertions.ts` split 처리.
 - [ ] Next source assertion helper candidates: `profile-page-data-source-assertions.ts`, `leaderboard-source-assertions.ts` at 18 pure LOC.
-- [ ] Current unpushed commit counter after this task docs: 6 commits; run threshold push/deploy.
+- [x] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy completed in [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post adapter/review-public-asset source assertion splits threshold deploy]].

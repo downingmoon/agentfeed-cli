@@ -15,6 +15,11 @@ updated: 2026-06-25
 ## 현재 결론
 
 
+> [!success] 2026-06-25 Frontend API boundary source assertion helper split
+> Frontend `src/lib/api-boundary-source-assertions.ts`를 175 pure LOC 단일 helper에서 pagination, closed enum/union, nested public-user, worklog evidence/action, project/dashboard/settings adapter domain helpers로 분리했다. Orchestrator는 12 pure LOC, 신규 helpers는 12/67/29/51/32 pure LOC다. Targeted API boundary source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/non-null scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 없음, 서버 배포 없음.
+> - [[Frontend API Boundary Source Assertion Helper Split 2026-06-25]]
+
+
 
 > [!success] 2026-06-25 personal server local deploy refresh
 > Push 후 현재 서버 내부 배포 경로로 `/home/ubuntu/dev/agentfeed` 작업 tree를 `/home/ubuntu/agentfeed` 실행 tree에 로컬 `rsync`하고 `agentfeed-server` backend/frontend 컨테이너를 force-recreate했다. `trading-bot` SSH 경로가 아니라 현재 서버 로컬 compose 경로가 정식 운영 사실임을 [[Runtime Configuration]]에 갱신했다. Compose backend/frontend/postgres healthy, frontend production build, API readiness/metadata, frontend root/feed/projects, CLI doctor API compatibility, hosted compatibility smoke가 통과했다.

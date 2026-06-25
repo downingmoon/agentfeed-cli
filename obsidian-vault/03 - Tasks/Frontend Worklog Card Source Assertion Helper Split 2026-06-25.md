@@ -74,5 +74,5 @@ Contract runner scan remains healthy: max `*contract*.test.ts` runner is 5 pure 
 - [x] Previous next candidate `worklog-card-source-assertions.ts` split 처리.
 - [x] Continue source assertion helper re-scan candidate `auth-shell-source-assertions.ts` 처리 완료. See [[Frontend Auth Shell Source Assertion Helper Split 2026-06-25]].
 - [ ] Keep `worklog-card-source-assertions.ts` as thin orchestrator only.
-- [ ] Current next source assertion helper candidate after auth-shell split: `cli-authorize-source-assertions.ts` at 76 pure LOC.
+- [x] Follow-up source assertion helper candidates through `worklog-detail-accessibility-source-assertions.ts` handled. See [[Frontend Worklog Detail Accessibility Source Assertion Helper Split 2026-06-25]].
 - [ ] Current unpushed commit counter after auth-shell task docs: 6 commits; triggers 5-commit push/deploy threshold.

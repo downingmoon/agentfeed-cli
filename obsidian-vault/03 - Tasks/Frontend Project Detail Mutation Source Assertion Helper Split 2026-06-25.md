@@ -69,5 +69,6 @@ Current source assertion helper re-scan top after split:
 ## 후행 TODO
 
 - [x] Previous next candidate `project-detail-mutation-source-assertions.ts` split 처리.
-- [ ] Next source assertion helper candidates are `discovery-explore-source-assertions.ts` and `brand-svg-source-assertions.ts` at 30 pure LOC.
+- [x] Next source assertion helper candidate `discovery-explore-source-assertions.ts` handled by [[Frontend Discovery Explore Source Assertion Helper Split 2026-06-25]].
+- [ ] Next source assertion helper candidate is `brand-svg-source-assertions.ts` at 30 pure LOC.
 - [x] Current unpushed commit counter reached 6; threshold push/deploy completed from current `trading-bot` local shell. No SSH used.

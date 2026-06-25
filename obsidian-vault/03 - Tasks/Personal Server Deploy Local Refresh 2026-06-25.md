@@ -288,3 +288,53 @@ Worklog-card and auth-shell source assertion helper split docs brought the post-
 - [x] 5-commit threshold push/deploy handled for worklog-card/auth-shell source assertion splits.
 - [ ] Next source assertion helper re-scan candidate is `cli-authorize-source-assertions.ts` at 76 pure LOC.
 - [ ] Next commit counter starts after this deploy docs commit.
+
+
+## 2026-06-25 — Post CLI-authorize/API-boundary-enum source assertion splits threshold deploy
+
+### Trigger
+
+CLI-authorize and API-boundary-enum source assertion helper split docs brought the post-deploy unpushed counter to 6 commits. Pushed and deployed from current server local shell. No SSH to `trading-bot`.
+
+### Pushed commits
+
+- `agentfeed-frontend` `d102021` — `Split CLI authorize source assertions`
+- `agentfeed-frontend` `fdfaeef` — `Split API boundary enum source assertions`
+- `agentfeed-cli` `fd81ca6` — `Document CLI authorize source assertion split`
+- `agentfeed-cli` `aad02c7` — `Document API boundary enum source assertion split`
+- `agentfeed-dev` `5b946ea` — `Log CLI authorize source assertion split`
+- `agentfeed-dev` `d2ee665` — `Log API boundary enum source assertion split`
+
+### Push ranges
+
+- `agentfeed-frontend`: `f57aaec..fdfaeef`
+- `agentfeed-cli`: `4dd9259..aad02c7`
+- `agentfeed-dev`: `a025d3f..d2ee665`
+
+### Deploy path
+
+- Working tree: `/home/ubuntu/dev/agentfeed`
+- Runtime tree: `/home/ubuntu/agentfeed`
+- Compose dir: `/home/ubuntu/agentfeed/agentfeed-dev`
+- Synced repos: `agentfeed-dev`, `agentfeed-backend`, `agentfeed-frontend`, `agentfeed-cli` → `AgentFeed-CLI`
+- Preserved runtime `.env` and Postgres volume/container.
+- Recreated `backend` and `frontend`.
+- Rebuilt runtime CLI with `npm ci && npm run build`.
+
+### Verification
+
+- `docker compose --env-file .env ps` → backend/frontend/postgres healthy after wait-ready.
+- `ENV_FILE=/home/ubuntu/agentfeed/agentfeed-dev/.env scripts/wait-ready.sh` → passed.
+- `GET http://127.0.0.1:18080/health/ready` → ready, DB connected, migration head `027_browser_session_version`, up to date.
+- `GET http://127.0.0.1:18080/v1/metadata` → `v1 / 2026-06-03`, review base `http://161.33.171.81:13030`.
+- `HEAD http://127.0.0.1:13030/` → `200 OK`.
+- `HEAD http://161.33.171.81:13030/` → `200 OK`.
+- `GET http://161.33.171.81:18080/health/ready` → ready, DB connected, migration up to date.
+- Hosted compatibility smoke passed with `AGENTFEED_ALLOW_INSECURE_API=1` because this dev server uses HTTP IP URLs.
+- Runtime CLI build passed: `npm ci && npm run build`, 0 vulnerabilities.
+
+### Follow-up
+
+- [x] 5-commit threshold push/deploy handled for CLI-authorize/API-boundary-enum source assertion splits.
+- [ ] Next source assertion helper re-scan candidate is `brand-assets-source-assertions.ts` at 66 pure LOC.
+- [ ] Next commit counter starts after this deploy docs commit.

@@ -232,5 +232,6 @@ Settings and feed source assertion helper split docs brought the post-deploy unp
 ### Follow-up
 
 - [x] 5-commit threshold push/deploy handled for settings/feed source assertion splits.
-- [ ] Next source assertion helper re-scan candidate remains `worklog-card-source-assertions.ts` at 124 pure LOC.
-- [ ] Next commit counter starts after this deploy docs commit.
+- [x] Next source assertion helper re-scan candidate `worklog-card-source-assertions.ts` handled by [[Frontend Worklog Card Source Assertion Helper Split 2026-06-25]].
+- [ ] Next source assertion helper re-scan candidate is `auth-shell-source-assertions.ts` at 96 pure LOC.
+- [x] Next commit counter started after this deploy docs commit.

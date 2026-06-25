@@ -75,4 +75,4 @@ Current source assertion helper re-scan top after split:
 - [x] Previous next candidate `cli-authorize-session-storage-source-assertions.ts` split 처리.
 - [x] Next source assertion helper candidate `worklog-detail-mutation-source-assertions.ts` split 처리.
 - [ ] Next source assertion helper candidates are `worklog-card-navigation-source-assertions.ts`, `feed-follow-action-source-assertions.ts`, `auth-shell-social-source-assertions.ts`, `auth-shell-a11y-source-assertions.ts` at 21 pure LOC.
-- [x] Current unpushed commit counter after following worklog detail mutation docs reached 6; threshold push/deploy pending.
+- [x] Current unpushed commit counter after following worklog detail mutation docs reached 6; threshold push/deploy handled.

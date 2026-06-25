@@ -27,7 +27,7 @@ updated: 2026-06-25
 - 신규 기능 없음.
 - Runtime/UI/API 동작 변경 없음.
 - 서버/인프라/CI/CD 변경 없음.
-- 이 문서화 후 unpushed counter는 6 commits라 5-commit threshold push/deploy 대상이다.
+- 이 문서화 후 unpushed counter가 6 commits라 5-commit threshold push/deploy를 처리했다.
 
 ## Commit
 
@@ -74,4 +74,4 @@ Current source assertion helper re-scan top after split:
 
 - [x] Previous next candidate `worklog-detail-mutation-source-assertions.ts` split 처리.
 - [ ] Next source assertion helper candidates are `worklog-card-navigation-source-assertions.ts`, `feed-follow-action-source-assertions.ts`, `auth-shell-social-source-assertions.ts`, `auth-shell-a11y-source-assertions.ts` at 21 pure LOC.
-- [ ] Current unpushed commit counter after this task docs: 6 commits; run threshold push/deploy.
+- [x] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy handled.

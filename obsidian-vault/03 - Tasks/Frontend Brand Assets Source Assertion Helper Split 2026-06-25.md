@@ -68,6 +68,6 @@ Contract runner scan remains healthy: max `*contract*.test.ts` runner is 5 pure 
 ## 후행 TODO
 
 - [x] Previous next candidate `brand-assets-source-assertions.ts` split 처리.
-- [ ] Continue source assertion helper re-scan before adding cases near 200 pure LOC. Current next candidate: `profile-page-source-assertions.ts` at 65 pure LOC.
+- [x] Continue source assertion helper re-scan candidate `profile-page-source-assertions.ts` 처리 완료. See [[Frontend Profile Page Source Assertion Helper Split 2026-06-25]].
 - [ ] Keep `brand-assets-source-assertions.ts` as thin orchestrator only.
-- [ ] Current unpushed commit counter after this task docs: 3 commits; below 5-commit push/deploy threshold.
+- [ ] Current next source assertion helper candidate after profile-page split: `project-detail-source-assertions.ts` at 63 pure LOC.

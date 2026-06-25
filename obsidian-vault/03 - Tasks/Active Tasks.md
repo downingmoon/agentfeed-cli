@@ -15,6 +15,12 @@ updated: 2026-06-25
 ## 현재 결론
 
 
+
+> [!success] 2026-06-25 Frontend profile page source assertion helper split
+> Frontend `src/lib/profile-page-source-assertions.ts`를 65 pure LOC 단일 helper에서 data/loading, follow action, a11y/tab/activity, project-card contract helpers로 분리했다. Orchestrator는 10 pure LOC, 신규 helpers는 18/17/25/17 pure LOC다. Targeted public-profile source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음, 서버 배포 없음.
+> - [[Frontend Profile Page Source Assertion Helper Split 2026-06-25]]
+
+
 > [!success] 2026-06-25 Frontend brand assets source assertion helper split
 > Frontend `src/lib/brand-assets-source-assertions.ts`를 66 pure LOC 단일 helper에서 icon library/inline logo, owned agent glyph, brand SVG/error-boundary mark helpers로 분리했다. Orchestrator는 8 pure LOC, 신규 helpers는 11/26/30 pure LOC다. Targeted worklog-review assets source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음, 서버 배포 없음.
 > - [[Frontend Brand Assets Source Assertion Helper Split 2026-06-25]]

@@ -237,7 +237,8 @@ Settings and feed source assertion helper split docs brought the post-deploy unp
 - [x] Next source assertion helper re-scan candidate `cli-authorize-source-assertions.ts` handled by [[Frontend CLI Authorize Source Assertion Helper Split 2026-06-25]].
 - [x] Next source assertion helper re-scan candidate `api-boundary-enum-source-assertions.ts` handled by [[Frontend API Boundary Enum Source Assertion Helper Split 2026-06-25]].
 - [x] Next source assertion helper re-scan candidate `brand-assets-source-assertions.ts` handled by [[Frontend Brand Assets Source Assertion Helper Split 2026-06-25]].
-- [ ] Next source assertion helper re-scan candidate is `profile-page-source-assertions.ts` at 65 pure LOC.
+- [x] Next source assertion helper re-scan candidate `profile-page-source-assertions.ts` handled by [[Frontend Profile Page Source Assertion Helper Split 2026-06-25]].
+- [ ] Next source assertion helper re-scan candidate is `project-detail-source-assertions.ts` at 63 pure LOC.
 - [x] Next commit counter started after this deploy docs commit.
 
 

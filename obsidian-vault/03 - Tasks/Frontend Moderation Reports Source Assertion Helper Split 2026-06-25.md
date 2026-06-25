@@ -71,5 +71,5 @@ Current source assertion helper re-scan top after split:
 ## 후행 TODO
 
 - [x] Previous next candidate `moderation-reports-source-assertions.ts` split 처리.
-- [ ] Next source assertion helper candidate is 32 pure LOC: `api-boundary-project-dashboard-source-assertions.ts`.
+- [x] Next source assertion helper candidate `api-boundary-project-dashboard-source-assertions.ts` handled by [[Frontend API Boundary Project Dashboard Source Assertion Helper Split 2026-06-25]].
 - [x] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy completed in [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post settings-shell/moderation-reports source assertion splits threshold deploy]].

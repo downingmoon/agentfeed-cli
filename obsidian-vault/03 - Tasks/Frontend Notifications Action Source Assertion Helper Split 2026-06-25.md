@@ -1,7 +1,7 @@
 ---
-title: Frontend Project Detail Data Source Assertion Helper Split 2026-06-25
+title: Frontend Notifications Action Source Assertion Helper Split 2026-06-25
 aliases:
-  - Project detail data source assertion helper split
+  - Notifications action source assertion helper split
 status: done
 tags:
   - agentfeed/frontend
@@ -10,34 +10,34 @@ tags:
 updated: 2026-06-25
 ---
 
-# Frontend Project Detail Data Source Assertion Helper Split 2026-06-25
+# Frontend Notifications Action Source Assertion Helper Split 2026-06-25
 
 ## 결론
 
-`agentfeed-frontend/src/lib/project-detail-data-source-assertions.ts`가 16 pure LOC growth-risk helper였다. Runtime/UI/API 동작은 바꾸지 않고 project detail data source-contract 검사를 data loading, worklog data, identity/stats helpers로 분리했다.
+`agentfeed-frontend/src/lib/notifications-action-source-assertions.ts`가 16 pure LOC growth-risk helper였다. Runtime/UI/API 동작은 바꾸지 않고 notification action source-contract 검사를 pending state, failure copy, failure detail helpers로 분리했다.
 
 ## 변경
 
-- `project-detail-data-source-assertions.ts`를 orchestration-only helper로 축소했다.
+- `notifications-action-source-assertions.ts`를 orchestration-only helper로 축소했다.
 - 새 helper:
-  - `project-detail-data-loading-source-assertions.ts`
-  - `project-detail-worklog-data-source-assertions.ts`
-  - `project-detail-identity-stats-source-assertions.ts`
+  - `notifications-pending-source-assertions.ts`
+  - `notifications-failure-copy-source-assertions.ts`
+  - `notifications-failure-detail-source-assertions.ts`
 - 기존 assertion 문자열과 대상 source-file contract만 이동했다.
 - 신규 기능 없음.
 - Runtime/UI/API 동작 변경 없음.
 - 서버/인프라/CI/CD 변경 없음.
 - 현재 서버 canonical name: `trading-bot`. 현재 Codex는 이 서버 위에서 실행 중이므로 배포 시 SSH hop 없이 로컬 rsync 사용.
-- 이 문서화 후 unpushed counter는 3 commits라 5-commit threshold 미만이다. Push/deploy 없음.
+- 이 문서화 후 unpushed counter는 6 commits라 5-commit threshold push/deploy 대상이다.
 
 ## Commit
 
-- `agentfeed-frontend` `be7da0e` — `Split project detail data assertions`
+- `agentfeed-frontend` `28bfde6` — `Split notifications action assertions`
 
 ## 검증
 
-- Pre-edit regression: `npm run test:contracts -- src/lib/project-source-contract.test.ts src/lib/public-profile-source-contract.test.ts` 통과.
-- Post-edit targeted contract: `npm run test:contracts -- src/lib/public-profile-source-contract.test.ts` 통과.
+- Pre-edit regression: `npm run test:contracts -- src/lib/discovery-dashboard-source-contract.test.ts` 통과.
+- Post-edit targeted contract: `npm run test:contracts -- src/lib/discovery-dashboard-source-contract.test.ts` 통과.
 - `npm run test:contracts` 통과.
 - `npm run lint` 통과. (`tsc --noEmit`)
 - `npx tsc --noEmit` 통과.
@@ -51,16 +51,15 @@ updated: 2026-06-25
 ## Size audit
 
 ```text
-8 src/lib/project-detail-data-source-assertions.ts
-8 src/lib/project-detail-data-loading-source-assertions.ts
-7 src/lib/project-detail-worklog-data-source-assertions.ts
-9 src/lib/project-detail-identity-stats-source-assertions.ts
+8 src/lib/notifications-action-source-assertions.ts
+7 src/lib/notifications-pending-source-assertions.ts
+8 src/lib/notifications-failure-copy-source-assertions.ts
+9 src/lib/notifications-failure-detail-source-assertions.ts
 ```
 
 Current source assertion helper re-scan top after split:
 
 ```text
-16 src/lib/notifications-action-source-assertions.ts
 16 src/lib/moderation-rendering-source-assertions.ts
 16 src/lib/landing-preview-interaction-source-assertions.ts
 16 src/lib/landing-preview-data-source-assertions.ts
@@ -70,11 +69,11 @@ Current source assertion helper re-scan top after split:
 16 src/lib/auth-shell-signout-source-assertions.ts
 15 src/lib/shell-static-page-source-assertions.ts
 15 src/lib/settings-load-save-source-assertions.ts
+15 src/lib/search-ui-source-assertions.ts
 ```
 
 ## 후행 TODO
 
-- [x] Previous next candidate `project-detail-data-source-assertions.ts` split 처리.
-- [x] Next source assertion helper candidate `notifications-action-source-assertions.ts` handled by [[Frontend Notifications Action Source Assertion Helper Split 2026-06-25]].
+- [x] Previous next candidate `notifications-action-source-assertions.ts` split 처리.
 - [ ] Next source assertion helper candidates: `moderation-rendering-source-assertions.ts`, `landing-preview-interaction-source-assertions.ts`, `landing-preview-data-source-assertions.ts` at 16 pure LOC.
-- [x] Subsequent notifications-action docs brought unpushed counter to 6 commits; threshold push/deploy pending.
+- [ ] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy pending.

@@ -241,7 +241,8 @@ Settings and feed source assertion helper split docs brought the post-deploy unp
 - [x] Next source assertion helper re-scan candidate `project-detail-source-assertions.ts` handled by [[Frontend Project Detail Source Assertion Helper Split 2026-06-25]].
 - [x] Next source assertion helper re-scan candidate `shell-source-assertions.ts` handled by [[Frontend Shell Source Assertion Helper Split 2026-06-25]].
 - [x] Next source assertion helper re-scan candidate `api-boundary-worklog-source-assertions.ts` handled by [[Frontend API Boundary Worklog Source Assertion Helper Split 2026-06-25]].
-- [ ] Next source assertion helper re-scan candidate is `worklog-review-page-source-assertions.ts` at 50 pure LOC.
+- [x] Next source assertion helper re-scan candidate `worklog-review-page-source-assertions.ts` handled by [[Frontend Worklog Review Page Source Assertion Helper Split 2026-06-25]].
+- [ ] Next source assertion helper re-scan candidate is `project-source-assertions.ts` at 44 pure LOC.
 - [x] Next commit counter started after this deploy docs commit.
 
 
@@ -337,7 +338,8 @@ Worklog-card and auth-shell source assertion helper split docs brought the post-
 
 - [x] 5-commit threshold push/deploy 처리 완료.
 - [x] Next source assertion helper re-scan candidate `api-boundary-worklog-source-assertions.ts` handled by [[Frontend API Boundary Worklog Source Assertion Helper Split 2026-06-25]].
-- [ ] Next source assertion helper re-scan candidate is `worklog-review-page-source-assertions.ts` at 50 pure LOC.
+- [x] Next source assertion helper re-scan candidate `worklog-review-page-source-assertions.ts` handled by [[Frontend Worklog Review Page Source Assertion Helper Split 2026-06-25]].
+- [ ] Next source assertion helper re-scan candidate is `project-source-assertions.ts` at 44 pure LOC.
 - [x] Next commit counter started after this deploy docs commit.
 
 ## 2026-06-25 — Post brand/profile source assertion splits threshold deploy
@@ -382,7 +384,8 @@ Worklog-card and auth-shell source assertion helper split docs brought the post-
 - [x] Next source assertion helper re-scan candidate `project-detail-source-assertions.ts` handled by [[Frontend Project Detail Source Assertion Helper Split 2026-06-25]].
 - [x] Next source assertion helper re-scan candidate `shell-source-assertions.ts` handled by [[Frontend Shell Source Assertion Helper Split 2026-06-25]].
 - [x] Next source assertion helper re-scan candidate `api-boundary-worklog-source-assertions.ts` handled by [[Frontend API Boundary Worklog Source Assertion Helper Split 2026-06-25]].
-- [ ] Next source assertion helper re-scan candidate is `worklog-review-page-source-assertions.ts` at 50 pure LOC.
+- [x] Next source assertion helper re-scan candidate `worklog-review-page-source-assertions.ts` handled by [[Frontend Worklog Review Page Source Assertion Helper Split 2026-06-25]].
+- [ ] Next source assertion helper re-scan candidate is `project-source-assertions.ts` at 44 pure LOC.
 - [x] Next commit counter started after this deploy docs commit.
 
 ## 2026-06-25 — Post CLI-authorize/API-boundary-enum source assertion splits threshold deploy

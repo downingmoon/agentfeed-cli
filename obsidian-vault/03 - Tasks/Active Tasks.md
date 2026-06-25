@@ -16,6 +16,12 @@ updated: 2026-06-25
 
 
 
+> [!success] 2026-06-25 Frontend worklog review page source assertion helper split
+> Frontend `src/lib/worklog-review-page-source-assertions.ts`를 50 pure LOC 단일 helper에서 guard, richer preview, privacy/public-fields, action/a11y/API helpers로 분리했다. Orchestrator는 10 pure LOC, 신규 helpers는 10/10/16/25 pure LOC다. Targeted worklog-review assets source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음, 서버 배포 없음.
+> - [[Frontend Worklog Review Page Source Assertion Helper Split 2026-06-25]]
+
+
+
 > [!success] 2026-06-25 Frontend API boundary worklog source assertion helper split
 > Frontend `src/lib/api-boundary-worklog-source-assertions.ts`를 51 pure LOC 단일 helper에서 status/action, metrics/review, social/evidence, detail/collection helpers로 분리했다. Orchestrator는 10 pure LOC, 신규 helpers는 20/10/12/15 pure LOC다. Targeted API boundary source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음, 서버 배포 없음.
 > - [[Frontend API Boundary Worklog Source Assertion Helper Split 2026-06-25]]

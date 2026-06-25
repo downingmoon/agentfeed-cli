@@ -1441,5 +1441,6 @@ API-boundary worklog status/action and project source assertion helper split doc
 ### Follow-up
 
 - [x] 5-commit threshold push/deploy handled.
-- [ ] Next source assertion helper candidates: `worklog-card-author-source-assertions.ts`, `settings-preferences-source-assertions.ts`, `project-visibility-source-assertions.ts`, `cli-authorize-terminal-a11y-source-assertions.ts`, `adapters-source-assertions.ts` at 19 pure LOC.
+- [x] Next source assertion helper candidate `worklog-card-author-source-assertions.ts` handled by [[Frontend Worklog Card Author Source Assertion Helper Split 2026-06-25]].
+- [ ] Next source assertion helper candidates: `settings-preferences-source-assertions.ts`, `project-visibility-source-assertions.ts`, `cli-authorize-terminal-a11y-source-assertions.ts`, `adapters-source-assertions.ts` at 19 pure LOC.
 - [x] Next commit counter started after this deploy docs commit.

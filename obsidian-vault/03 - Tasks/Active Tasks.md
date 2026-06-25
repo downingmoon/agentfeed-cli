@@ -15,6 +15,11 @@ updated: 2026-06-25
 ## 현재 결론
 
 
+> [!success] 2026-06-25 source assertion splits threshold push/deploy
+> 5-commit threshold를 넘어 `agentfeed-frontend`, `agentfeed-cli`, `agentfeed-dev`를 push했고, 현재 서버 로컬 경로로 runtime tree를 sync한 뒤 backend/frontend를 force-recreate했다. Postgres는 유지했다. backend/frontend/postgres healthy, `wait-ready`, local/public readiness, public metadata, hosted compatibility smoke가 통과했다. CLI doctor의 token/project attention은 temp cwd에 credential/project config가 없어서 예상된 상태다.
+> - [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post source assertion splits threshold deploy]]
+
+
 > [!success] 2026-06-25 Frontend discovery/dashboard source assertion helper split
 > Frontend `src/lib/discovery-dashboard-source-assertions.ts`를 164 pure LOC 단일 helper에서 Explore, Dashboard, Moderation Reports, Notifications source-contract helpers로 분리했다. Orchestrator는 10 pure LOC, 신규 helpers는 30/39/32/37 pure LOC다. Targeted discovery-dashboard source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 없음.
 > - [[Frontend Discovery Dashboard Source Assertion Helper Split 2026-06-25]]

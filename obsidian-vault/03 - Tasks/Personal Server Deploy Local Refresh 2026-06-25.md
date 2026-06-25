@@ -135,3 +135,46 @@ HOSTED_COMPATIBILITY_SMOKE_PASSED
 - [[Runtime Configuration]]
 - [[Personal Server Deploy One-off Refresh 2026-06-19]]
 - [[Active Tasks]]
+
+
+## 2026-06-25 — Post source assertion splits threshold deploy
+
+### Trigger
+
+5-commit threshold crossed after API boundary and discovery/dashboard source assertion helper splits. Pushed and deployed from current server local shell. No SSH to `trading-bot`.
+
+### Pushed commits
+
+- `agentfeed-frontend` `3b1f4c9` — `Split API boundary source assertions`
+- `agentfeed-frontend` `bc8890a` — `Split discovery dashboard source assertions`
+- `agentfeed-cli` `d38922f` — `Document API boundary source assertion split`
+- `agentfeed-cli` `2032046` — `Document discovery dashboard source assertion split`
+- `agentfeed-dev` `89e12bc` — `Log API boundary source assertion split`
+- `agentfeed-dev` `2f1878a` — `Log discovery dashboard source assertion split`
+- `agentfeed-dev` `dc86ee1` — `Fix discovery dashboard docs commit hash`
+
+### Deploy path
+
+- Working tree: `/home/ubuntu/dev/agentfeed`
+- Runtime tree: `/home/ubuntu/agentfeed`
+- Compose dir: `/home/ubuntu/agentfeed/agentfeed-dev`
+- Synced repos: `agentfeed-dev`, `agentfeed-backend`, `agentfeed-frontend`, `agentfeed-cli` → `AgentFeed-CLI`
+- Preserved runtime `.env` files.
+- Recreated `backend` and `frontend`; kept Postgres volume/container.
+- Rebuilt runtime CLI with `npm ci && npm run build`.
+
+### Verification
+
+- `docker compose --env-file .env ps` → backend/frontend/postgres healthy.
+- `ENV_FILE=/home/ubuntu/agentfeed/agentfeed-dev/.env scripts/wait-ready.sh` → passed.
+- `GET http://127.0.0.1:18080/health/ready` → ready, DB connected, migration head `027_browser_session_version`, up to date.
+- `HEAD http://127.0.0.1:13030/` → `200 OK`.
+- `GET http://161.33.171.81:18080/v1/metadata` → `v1 / 2026-06-03`, review base `http://161.33.171.81:13030`.
+- `HEAD http://161.33.171.81:13030/` → `200 OK`.
+- Hosted compatibility smoke passed after setting `AGENTFEED_CLI_DIR=/home/ubuntu/dev/agentfeed/agentfeed-cli`. Initial attempt failed only because default script path expected `/home/ubuntu/dev/agentfeed/AgentFeed-CLI`.
+- CLI doctor inside hosted smoke reached API and confirmed compatibility; account/project attention expected in temp cwd with no token/config.
+
+### Follow-up
+
+- [x] 5-commit threshold push/deploy handled.
+- [ ] Next commit counter starts after this deploy docs commit.

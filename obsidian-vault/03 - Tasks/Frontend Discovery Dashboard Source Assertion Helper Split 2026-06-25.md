@@ -68,6 +68,7 @@ Contract runner scan remains healthy: max `*contract*.test.ts` runner is 5 pure 
 
 ## 후행 TODO
 
+- [x] Source assertion helper candidate `moderation-reports-source-assertions.ts` handled by [[Frontend Moderation Reports Source Assertion Helper Split 2026-06-25]].
 - [x] Previous next candidate `discovery-dashboard-source-assertions.ts` split 처리.
 - [ ] Continue source assertion helper re-scan before adding cases near 200 pure LOC. Current next candidate: `settings-source-assertions.ts` at 154 pure LOC.
 - [ ] Keep `discovery-dashboard-source-assertions.ts` as thin orchestrator only.

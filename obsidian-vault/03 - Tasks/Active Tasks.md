@@ -16,6 +16,11 @@ updated: 2026-06-25
 
 
 
+> [!success] 2026-06-25 Frontend moderation reports source assertion helper split
+> Frontend `src/lib/moderation-reports-source-assertions.ts`를 32 pure LOC helper에서 route/auth recovery, list/filter, status action, rendering/a11y helpers로 분리했다. Orchestrator는 10 pure LOC, 신규 helpers는 12/8/8/16 pure LOC다. Targeted discovery-dashboard source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음. 문서 commit 후 6 commits라 threshold push/deploy 대상.
+> - [[Frontend Moderation Reports Source Assertion Helper Split 2026-06-25]]
+
+
 > [!success] 2026-06-25 Frontend settings shell source assertion helper split
 > Frontend `src/lib/settings-shell-source-assertions.ts`를 32 pure LOC helper에서 shell layout, load/save isolation, identity display, integration guide helpers로 분리했다. Orchestrator는 10 pure LOC, 신규 helpers는 9/15/10/10 pure LOC다. Targeted settings source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음, 서버 배포 없음. 3 commits라 threshold 미만.
 > - [[Frontend Settings Shell Source Assertion Helper Split 2026-06-25]]

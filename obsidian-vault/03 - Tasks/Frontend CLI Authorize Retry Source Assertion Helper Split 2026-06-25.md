@@ -74,5 +74,6 @@ Current source assertion helper re-scan top after split:
 ## 후행 TODO
 
 - [x] Previous next candidate `cli-authorize-retry-source-assertions.ts` split 처리.
-- [ ] Next source assertion helper candidates: `api-boundary-worklog-status-action-source-assertions.ts`, `api-boundary-project-source-assertions.ts` at 20 pure LOC.
+- [x] Next source assertion helper candidate `api-boundary-worklog-status-action-source-assertions.ts` handled by [[Frontend API Boundary Worklog Status Action Source Assertion Helper Split 2026-06-25]].
+- [ ] Next source assertion helper candidate: `api-boundary-project-source-assertions.ts` at 20 pure LOC.
 - [x] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy completed in [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post feed-sidebar/CLI-authorize-retry source assertion splits threshold deploy]].

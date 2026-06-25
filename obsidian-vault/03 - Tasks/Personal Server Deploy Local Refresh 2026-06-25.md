@@ -1388,5 +1388,6 @@ Feed sidebar and CLI authorize retry source assertion helper split docs brought 
 ### Follow-up
 
 - [x] 5-commit threshold push/deploy handled.
-- [ ] Next source assertion helper candidates: `api-boundary-worklog-status-action-source-assertions.ts`, `api-boundary-project-source-assertions.ts` at 20 pure LOC.
+- [x] Next source assertion helper candidate `api-boundary-worklog-status-action-source-assertions.ts` handled by [[Frontend API Boundary Worklog Status Action Source Assertion Helper Split 2026-06-25]].
+- [ ] Next source assertion helper candidate: `api-boundary-project-source-assertions.ts` at 20 pure LOC.
 - [x] Next commit counter started after this deploy docs commit.

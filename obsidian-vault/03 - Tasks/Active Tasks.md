@@ -16,6 +16,12 @@ updated: 2026-06-25
 
 
 
+> [!success] 2026-06-25 Frontend dashboard source assertion helper split
+> Frontend `src/lib/dashboard-source-assertions.ts`를 39 pure LOC 단일 helper에서 shell/avatar, data isolation, saved worklog, recovery/loading helpers로 분리했다. Orchestrator는 10 pure LOC, 신규 helpers는 11/12/12/16 pure LOC다. Targeted discovery-dashboard source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음, 서버 배포 없음.
+> - [[Frontend Dashboard Source Assertion Helper Split 2026-06-25]]
+
+
+
 > [!success] 2026-06-25 Frontend review public user assets source assertion helper split
 > Frontend `src/lib/review-public-user-assets-source-assertions.ts`를 40 pure LOC 단일 helper에서 asset metadata, public user contract/display, avatar component helpers로 분리했다. Orchestrator는 8 pure LOC, 신규 helpers는 18/15/13 pure LOC다. Targeted worklog-review assets source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음, 서버 배포 없음.
 > - [[Frontend Review Public User Assets Source Assertion Helper Split 2026-06-25]]

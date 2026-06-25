@@ -71,6 +71,8 @@ Contract runner scan remains healthy: max `*contract*.test.ts` runner is 5 pure 
 
 - [x] Previous next candidate `notifications-source-assertions.ts` split 처리.
 - [x] Same-batch candidate `worklog-card-list-source-assertions.ts` split 처리. See [[Frontend Worklog Card List Source Assertion Helper Split 2026-06-25]].
-- [ ] Continue source assertion helper re-scan before adding cases near 200 pure LOC. Current next candidate: `landing-preview-source-assertions.ts` at 37 pure LOC.
+- [x] Continue source assertion helper re-scan candidate `landing-preview-source-assertions.ts` 처리 완료. See [[Frontend Landing Preview Source Assertion Helper Split 2026-06-25]].
+- [x] Next candidate `settings-token-source-assertions.ts` 처리 완료. See [[Frontend Settings Token Source Assertion Helper Split 2026-06-25]].
 - [ ] Keep `notifications-source-assertions.ts` as thin orchestrator only.
 - [x] 5-commit push/deploy threshold handled in [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post worklog-card-list/notifications source assertion splits threshold deploy]].
+- [ ] Current next source assertion helper candidate after landing/settings-token split: `api-boundary-visibility-integration-source-assertions.ts` at 33 pure LOC.

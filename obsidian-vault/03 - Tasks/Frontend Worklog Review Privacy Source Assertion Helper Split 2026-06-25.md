@@ -74,4 +74,4 @@ Current source assertion helper re-scan top after split:
 - [x] Previous next candidate `worklog-review-privacy-source-assertions.ts` split 처리.
 - [x] Next source assertion helper candidate `shell-route-source-assertions.ts` handled by [[Frontend Shell Route Source Assertion Helper Split 2026-06-25]].
 - [ ] Next source assertion helper candidates: `project-detail-data-source-assertions.ts`, `notifications-action-source-assertions.ts`, `moderation-rendering-source-assertions.ts` at 16 pure LOC.
-- [x] Subsequent shell-route docs brought unpushed counter to 6 commits; threshold push/deploy pending.
+- [x] Subsequent shell-route docs brought unpushed counter to 6 commits; threshold push/deploy completed. See [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post worklog-review-privacy/shell-route source assertion splits threshold deploy]].

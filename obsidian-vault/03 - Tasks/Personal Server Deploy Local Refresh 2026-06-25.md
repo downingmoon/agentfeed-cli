@@ -1862,3 +1862,56 @@ Auth shell identity and API boundary privacy source assertion helper split docs 
 - [x] 5-commit threshold push/deploy handled.
 - [ ] Next source assertion helper candidates: `worklog-review-privacy-source-assertions.ts`, `shell-route-source-assertions.ts`, `project-detail-data-source-assertions.ts` at 16 pure LOC.
 - [x] Next commit counter started after this deploy docs commit.
+
+## 2026-06-25 — Post worklog-review-privacy/shell-route source assertion splits threshold deploy
+
+### Trigger
+
+Worklog review privacy and shell route source assertion helper split docs brought unpushed counter to 6 commits. Pushed and deployed from current server local shell. No SSH to `trading-bot`.
+
+### Pushed commits
+
+- `agentfeed-frontend` `5433d63` — `Split worklog review privacy assertions`
+- `agentfeed-frontend` `42c2ad6` — `Split shell route assertions`
+- `agentfeed-cli` `b690b90` — `Document worklog review privacy split`
+- `agentfeed-cli` `c8e3a66` — `Document shell route source assertion split`
+- `agentfeed-dev` `d82c024` — `Log worklog review privacy split`
+- `agentfeed-dev` `b59e59b` — `Log shell route source assertion split`
+
+### Push ranges
+
+- `agentfeed-frontend`: `cbc5383..42c2ad6`
+- `agentfeed-cli`: `8af22b6..c8e3a66`
+- `agentfeed-dev`: `238ad60..b59e59b`
+
+### Deploy path
+
+- Current server canonical name: `trading-bot`.
+- Codex ran on `trading-bot` itself; no SSH hop used.
+- Working tree: `/home/ubuntu/dev/agentfeed`
+- Runtime tree: `/home/ubuntu/agentfeed`
+- Compose dir: `/home/ubuntu/agentfeed/agentfeed-dev`
+- Synced repos: `agentfeed-dev`, `agentfeed-backend`, `agentfeed-frontend`, `agentfeed-cli` → `AgentFeed-CLI`
+- Preserved runtime `.env` and Postgres volume/container.
+- Recreated `backend` and `frontend`.
+- Rebuilt runtime CLI with `npm ci && npm run build`.
+
+### Verification
+
+- `docker compose --env-file .env ps` → backend/frontend/postgres healthy.
+- Runtime CLI `npm ci` → 78 packages installed, 0 vulnerabilities.
+- Runtime CLI `npm run build` → `tsc` and `ensure-bin-executable` passed.
+- `ENV_FILE=/home/ubuntu/agentfeed/agentfeed-dev/.env scripts/wait-ready.sh` → passed.
+- `GET http://127.0.0.1:18080/health/ready` → ready, DB connected, migration head `027_browser_session_version`, up to date.
+- `GET http://127.0.0.1:18080/v1/metadata` → `v1 / 2026-06-03`, review base `http://161.33.171.81:13030`.
+- `HEAD http://127.0.0.1:13030/` → `200 OK`.
+- `HEAD http://161.33.171.81:13030/` → `200 OK`.
+- `GET http://161.33.171.81:18080/health/ready` → ready, DB connected, migration up to date.
+- Hosted compatibility smoke passed with `AGENTFEED_ALLOW_INSECURE_API=1`.
+- CLI doctor inside hosted smoke reached API and confirmed compatibility; account/project/git attention expected in temp cwd with no token/project config.
+
+### Follow-up
+
+- [x] 5-commit threshold push/deploy handled.
+- [ ] Next source assertion helper candidates: `project-detail-data-source-assertions.ts`, `notifications-action-source-assertions.ts`, `moderation-rendering-source-assertions.ts` at 16 pure LOC.
+- [ ] Next commit counter starts after this deploy docs commit.

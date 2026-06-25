@@ -75,4 +75,4 @@ Current source assertion helper re-scan top after split:
 
 - [x] Previous next candidate `shell-route-source-assertions.ts` split 처리.
 - [ ] Next source assertion helper candidates: `project-detail-data-source-assertions.ts`, `notifications-action-source-assertions.ts`, `moderation-rendering-source-assertions.ts` at 16 pure LOC.
-- [ ] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy pending.
+- [x] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy completed. See [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post worklog-review-privacy/shell-route source assertion splits threshold deploy]].

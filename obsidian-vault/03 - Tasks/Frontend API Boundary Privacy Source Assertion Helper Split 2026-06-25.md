@@ -76,5 +76,6 @@ Current source assertion helper re-scan top after split:
 ## 후행 TODO
 
 - [x] Previous next candidate `api-boundary-privacy-source-assertions.ts` split 처리.
-- [ ] Next source assertion helper candidates: `worklog-review-privacy-source-assertions.ts`, `shell-route-source-assertions.ts`, `project-detail-data-source-assertions.ts` at 16 pure LOC.
+- [x] Next source assertion helper candidate `worklog-review-privacy-source-assertions.ts` handled by [[Frontend Worklog Review Privacy Source Assertion Helper Split 2026-06-25]].
+- [ ] Next source assertion helper candidates: `shell-route-source-assertions.ts`, `project-detail-data-source-assertions.ts` at 16 pure LOC.
 - [ ] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy completed from current `trading-bot` local shell.

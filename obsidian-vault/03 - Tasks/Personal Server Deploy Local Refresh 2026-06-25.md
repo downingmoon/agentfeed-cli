@@ -1282,5 +1282,6 @@ Auth-shell social and accessibility source assertion helper split docs brought t
 ### Follow-up
 
 - [x] 5-commit threshold push/deploy handled.
-- [ ] Next source assertion helper candidates: `shell-ci-source-assertions.ts`, `settings-auth-recovery-source-assertions.ts`, `feed-sidebar-source-assertions.ts`, `cli-authorize-retry-source-assertions.ts`, `api-boundary-worklog-status-action-source-assertions.ts`, `api-boundary-project-source-assertions.ts` at 20 pure LOC.
+- [x] Next source assertion helper candidate `shell-ci-source-assertions.ts` handled by [[Frontend Shell CI Source Assertion Helper Split 2026-06-25]].
+- [ ] Next source assertion helper candidates: `settings-auth-recovery-source-assertions.ts`, `feed-sidebar-source-assertions.ts`, `cli-authorize-retry-source-assertions.ts`, `api-boundary-worklog-status-action-source-assertions.ts`, `api-boundary-project-source-assertions.ts` at 20 pure LOC.
 - [x] Next commit counter started after this deploy docs commit.

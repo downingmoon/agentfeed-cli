@@ -292,6 +292,49 @@ Worklog-card and auth-shell source assertion helper split docs brought the post-
 - [ ] Next commit counter starts after this deploy docs commit.
 
 
+
+## 2026-06-25 — Post brand/profile source assertion splits threshold deploy
+
+### 작업 항목
+
+- 5-commit threshold를 넘어 `agentfeed-frontend`, `agentfeed-cli`, `agentfeed-dev`를 push했다.
+- 현재 서버에서 직접 작업 중이므로 `trading-bot` SSH를 사용하지 않고 `/home/ubuntu/dev/agentfeed` 작업 tree를 `/home/ubuntu/agentfeed` runtime tree로 로컬 rsync했다.
+- `backend`와 `frontend` 컨테이너를 force-recreate했다. Postgres volume/container는 유지했다.
+- Runtime CLI `/home/ubuntu/agentfeed/AgentFeed-CLI`에서 `npm ci && npm run build`를 실행했다.
+
+### Push 범위
+
+- `agentfeed-frontend` `fdfaeef..6caba53`
+- `agentfeed-cli` `1a50754..4f00e3d`
+- `agentfeed-dev` `08c6951..17765fe`
+
+### 검증 증거
+
+- `docker compose --env-file .env ps` ✅ — backend/frontend/postgres healthy
+- `ENV_FILE=/home/ubuntu/agentfeed/agentfeed-dev/.env scripts/wait-ready.sh` ✅
+- `GET http://127.0.0.1:18080/health/ready` ✅ — DB connected, migration head `027_browser_session_version`, up to date
+- `GET http://127.0.0.1:18080/v1/metadata` ✅ — `v1 / 2026-06-03`, review base `http://161.33.171.81:13030`
+- `HEAD http://127.0.0.1:13030/` ✅ — `200 OK`
+- `HEAD http://161.33.171.81:13030/` ✅ — `200 OK`
+- `GET http://161.33.171.81:18080/health/ready` ✅ — DB connected, migration up to date
+- Hosted compatibility smoke ✅ — `HOSTED_COMPATIBILITY_SMOKE_PASSED` with `AGENTFEED_ALLOW_INSECURE_API=1` for HTTP IP dev server
+- CLI runtime build ✅ — `npm ci && npm run build`, 0 vulnerabilities
+
+### Commits
+
+- `agentfeed-frontend` `55f5935` — `Split brand asset source assertions`
+- `agentfeed-frontend` `6caba53` — `Split profile page source assertions`
+- `agentfeed-cli` `1884c2f` — `Document brand asset source assertion split`
+- `agentfeed-cli` `4f00e3d` — `Document profile page source assertion split`
+- `agentfeed-dev` `85731b8` — `Log brand asset source assertion split`
+- `agentfeed-dev` `17765fe` — `Log profile page source assertion split`
+
+### 후행 TODO
+
+- [x] 5-commit threshold push/deploy 처리 완료.
+- [ ] Next source assertion helper re-scan candidate is `project-detail-source-assertions.ts` at 63 pure LOC.
+- [x] Next commit counter started after this deploy docs commit.
+
 ## 2026-06-25 — Post CLI-authorize/API-boundary-enum source assertion splits threshold deploy
 
 ### Trigger

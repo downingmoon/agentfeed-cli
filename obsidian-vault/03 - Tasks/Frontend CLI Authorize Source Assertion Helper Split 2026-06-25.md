@@ -72,6 +72,7 @@ Contract runner scan remains healthy: max `*contract*.test.ts` runner is 5 pure 
 ## 후행 TODO
 
 - [x] Previous next candidate `cli-authorize-source-assertions.ts` split 처리.
-- [ ] Continue source assertion helper re-scan before adding cases near 200 pure LOC. Current next candidate: `api-boundary-enum-source-assertions.ts` at 67 pure LOC.
+- [x] Continue source assertion helper re-scan candidate `api-boundary-enum-source-assertions.ts` 처리 완료. See [[Frontend API Boundary Enum Source Assertion Helper Split 2026-06-25]].
 - [ ] Keep `cli-authorize-source-assertions.ts` as thin orchestrator only.
-- [ ] Current unpushed commit counter after this task docs: 3 commits; below 5-commit push/deploy threshold.
+- [ ] Current next source assertion helper candidate after API boundary enum split: `brand-assets-source-assertions.ts` at 66 pure LOC.
+- [ ] Current unpushed commit counter after API boundary enum task docs: 6 commits; triggers 5-commit push/deploy threshold.

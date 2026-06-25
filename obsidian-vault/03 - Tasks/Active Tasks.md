@@ -15,6 +15,11 @@ updated: 2026-06-25
 ## 현재 결론
 
 
+> [!success] 2026-06-25 Frontend API boundary enum source assertion helper split
+> Frontend `src/lib/api-boundary-enum-source-assertions.ts`를 67 pure LOC 단일 helper에서 enum primitive/visibility/integration, leaderboard/notification/username, privacy scan helpers로 분리했다. Orchestrator는 8 pure LOC, 신규 helpers는 33/25/17 pure LOC다. Targeted API boundary source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음. 문서 commit 후 5-commit threshold 초과라 push/deploy 진행 대상.
+> - [[Frontend API Boundary Enum Source Assertion Helper Split 2026-06-25]]
+
+
 > [!success] 2026-06-25 Frontend CLI authorize source assertion helper split
 > Frontend `src/lib/cli-authorize-source-assertions.ts`를 76 pure LOC 단일 helper에서 route/sessionStorage, auth.me/browser marker, approval/account UI, polling/transient retry, terminal cleanup/accessibility helpers로 분리했다. Orchestrator는 12 pure LOC, 신규 helpers는 25/10/16/20/19 pure LOC다. Targeted CLI authorize source contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음, 서버 배포 없음.
 > - [[Frontend CLI Authorize Source Assertion Helper Split 2026-06-25]]

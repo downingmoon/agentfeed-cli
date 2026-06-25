@@ -27,7 +27,7 @@ updated: 2026-06-25
 - 기존 assertion 문자열과 대상 source-file contract만 이동했다.
 - 신규 기능 없음.
 - 서버/인프라/CI/CD 변경 없음.
-- 이 문서화 후 전체 unpushed counter가 6 commits가 되어 threshold push/deploy 대상이다.
+- 이 문서화 후 전체 unpushed counter가 6 commits가 되어 threshold push/deploy를 실행했다. See [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post worklog-detail-data/API-boundary-public-user source assertion splits threshold deploy]].
 
 ## Commit
 
@@ -72,4 +72,4 @@ Current source assertion helper re-scan top after split:
 
 - [x] Previous next candidate `api-boundary-public-user-source-assertions.ts` split 처리.
 - [ ] Next source assertion helper candidates are `feed-filter-source-assertions.ts`, `brand-agent-glyph-source-assertions.ts`, `auth-shell-session-source-assertions.ts` at 26 pure LOC.
-- [ ] Current unpushed commit counter after docs: 6 commits; run threshold push/deploy from current `trading-bot` local shell. No SSH to `trading-bot`.
+- [x] Current unpushed commit counter reached 6; threshold push/deploy completed from current `trading-bot` local shell. No SSH used.

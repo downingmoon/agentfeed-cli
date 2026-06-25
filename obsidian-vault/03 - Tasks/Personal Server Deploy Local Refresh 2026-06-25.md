@@ -919,3 +919,46 @@ CLI-authorize and API-boundary-enum source assertion helper split docs brought t
 - [x] 5-commit threshold push/deploy 처리 완료.
 - [ ] Next source assertion helper candidates are `worklog-detail-data-source-assertions.ts` and `api-boundary-public-user-source-assertions.ts` at 29 pure LOC.
 - [x] Next commit counter started after this deploy docs commit.
+
+
+## 2026-06-25 — Post worklog-detail-data/API-boundary-public-user source assertion splits threshold deploy
+
+### 작업 항목
+
+- 5-commit threshold를 넘어 `agentfeed-frontend`, `agentfeed-cli`, `agentfeed-dev`를 push했다.
+- 현재 서버 `trading-bot`에서 직접 작업 중이므로 `ssh trading-bot`를 사용하지 않고 `/home/ubuntu/dev/agentfeed` 작업 tree를 `/home/ubuntu/agentfeed` runtime tree로 로컬 rsync했다.
+- `backend`와 `frontend` 컨테이너를 force-recreate했다. Postgres volume/container는 유지했다.
+- Runtime CLI `/home/ubuntu/agentfeed/AgentFeed-CLI`에서 `npm ci && npm run build`를 실행했다.
+
+### Push 범위
+
+- `agentfeed-frontend` `5ffab69..54b0c2f`
+- `agentfeed-cli` `cd2bea5..39f7f37`
+- `agentfeed-dev` `7470aa0..ef33090`
+
+### 검증 증거
+
+- `docker compose --env-file .env ps` ✅ — backend/frontend/postgres healthy
+- `ENV_FILE=/home/ubuntu/agentfeed/agentfeed-dev/.env scripts/wait-ready.sh` ✅
+- `GET http://127.0.0.1:18080/health/ready` ✅ — DB connected, migration head `027_browser_session_version`, up to date
+- `GET http://127.0.0.1:18080/v1/metadata` ✅ — `v1 / 2026-06-03`, review base `http://161.33.171.81:13030`
+- `HEAD http://127.0.0.1:13030/` ✅ — `200 OK`
+- `HEAD http://161.33.171.81:13030/` ✅ — `200 OK`
+- `GET http://161.33.171.81:18080/health/ready` ✅ — DB connected, migration up to date
+- Hosted compatibility smoke ✅ — `HOSTED_COMPATIBILITY_SMOKE_PASSED` with `AGENTFEED_ALLOW_INSECURE_API=1` for HTTP IP dev server
+- CLI runtime build ✅ — `npm ci && npm run build`, 0 vulnerabilities
+
+### Commits
+
+- `agentfeed-frontend` `5f901cd` — `Split worklog detail data source assertions`
+- `agentfeed-frontend` `54b0c2f` — `Split API boundary public user source assertions`
+- `agentfeed-cli` `0cbf04b` — `Document worklog detail data source assertion split`
+- `agentfeed-cli` `39f7f37` — `Document API boundary public user source assertion split`
+- `agentfeed-dev` `2a3da4f` — `Log worklog detail data source assertion split`
+- `agentfeed-dev` `ef33090` — `Log API boundary public user source assertion split`
+
+### 후행 TODO
+
+- [x] 5-commit threshold push/deploy 처리 완료.
+- [ ] Next source assertion helper candidates are `feed-filter-source-assertions.ts`, `brand-agent-glyph-source-assertions.ts`, `auth-shell-session-source-assertions.ts` at 26 pure LOC.
+- [x] Next commit counter started after this deploy docs commit.

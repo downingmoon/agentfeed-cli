@@ -1913,5 +1913,6 @@ Worklog review privacy and shell route source assertion helper split docs brough
 ### Follow-up
 
 - [x] 5-commit threshold push/deploy handled.
-- [ ] Next source assertion helper candidates: `project-detail-data-source-assertions.ts`, `notifications-action-source-assertions.ts`, `moderation-rendering-source-assertions.ts` at 16 pure LOC.
-- [ ] Next commit counter starts after this deploy docs commit.
+- [x] Next source assertion helper candidate `project-detail-data-source-assertions.ts` handled by [[Frontend Project Detail Data Source Assertion Helper Split 2026-06-25]].
+- [ ] Next source assertion helper candidates: `notifications-action-source-assertions.ts`, `moderation-rendering-source-assertions.ts`, `landing-preview-interaction-source-assertions.ts` at 16 pure LOC.
+- [x] Next commit counter started after this deploy docs commit; current project-detail data docs leave the counter at 3 commits, below push/deploy threshold.

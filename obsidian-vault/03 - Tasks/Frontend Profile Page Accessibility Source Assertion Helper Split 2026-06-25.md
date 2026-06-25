@@ -72,4 +72,4 @@ Current source assertion helper re-scan top after split:
 - [x] Previous next candidate `profile-page-a11y-source-assertions.ts` split 처리.
 - [x] Next source assertion helper candidate `cli-authorize-route-source-assertions.ts` split 처리.
 - [ ] Next source assertion helper candidate is `api-boundary-rank-notification-source-assertions.ts` at 25 pure LOC.
-- [x] Current unpushed commit counter after following CLI authorize docs reached 6; threshold push/deploy pending.
+- [x] Current unpushed commit counter after following CLI authorize docs reached 6; threshold push/deploy handled.

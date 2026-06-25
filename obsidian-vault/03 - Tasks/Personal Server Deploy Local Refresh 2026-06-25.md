@@ -1070,3 +1070,55 @@ Auth-shell-session and worklog-review-action source assertion helper split docs 
 - [x] Next source assertion helper candidate `profile-page-a11y-source-assertions.ts` split 처리.
 - [ ] Next source assertion helper candidates: `cli-authorize-route-source-assertions.ts`, `api-boundary-rank-notification-source-assertions.ts` at 25 pure LOC.
 - [x] Next commit counter started after this deploy docs commit.
+
+
+## 2026-06-25 — Post profile-page/CLI-authorize source assertion splits threshold deploy
+
+### Trigger
+
+Profile-page accessibility and CLI-authorize route source assertion helper split docs brought the post-deploy unpushed counter to 6 commits. Pushed and deployed from current server local shell. No SSH to `trading-bot` because Codex is already running on `trading-bot`.
+
+### Pushed commits
+
+- `agentfeed-frontend` `04fd49d` — `Split profile page accessibility source assertions`
+- `agentfeed-frontend` `bfba5f0` — `Split CLI authorize route source assertions`
+- `agentfeed-cli` `6f2d810` — `Document profile page accessibility source assertion split`
+- `agentfeed-cli` `5c3b964` — `Document CLI authorize route source assertion split`
+- `agentfeed-dev` `4606762` — `Log profile page accessibility source assertion split`
+- `agentfeed-dev` `09752b2` — `Log CLI authorize route source assertion split`
+
+### Push ranges
+
+- `agentfeed-frontend`: `200bba8..bfba5f0`
+- `agentfeed-cli`: `884c2fc..5c3b964`
+- `agentfeed-dev`: `bfcc92e..09752b2`
+
+### Deploy path
+
+- Working tree: `/home/ubuntu/dev/agentfeed`
+- Runtime tree: `/home/ubuntu/agentfeed`
+- Compose dir: `/home/ubuntu/agentfeed/agentfeed-dev`
+- Synced repos: `agentfeed-dev`, `agentfeed-backend`, `agentfeed-frontend`, `agentfeed-cli` → `AgentFeed-CLI`
+- Preserved runtime `.env` files and Postgres volume/container.
+- Recreated `backend` and `frontend` with Docker Compose.
+- Rebuilt runtime CLI with `npm ci && npm run build`.
+
+### Verification
+
+- `docker compose --env-file .env ps` → backend/frontend/postgres healthy.
+- `ENV_FILE=/home/ubuntu/agentfeed/agentfeed-dev/.env scripts/wait-ready.sh` → passed.
+- Runtime CLI `npm ci && npm run build` → passed, 0 vulnerabilities.
+- `GET http://127.0.0.1:18080/health/ready` → ready, DB connected, migration head `027_browser_session_version`, up to date.
+- `GET http://127.0.0.1:18080/v1/metadata` → `v1 / 2026-06-03`, review base `http://161.33.171.81:13030`.
+- `HEAD http://127.0.0.1:13030/` → `200 OK`.
+- `HEAD http://161.33.171.81:13030/` → `200 OK`.
+- `GET http://161.33.171.81:18080/health/ready` → ready, DB connected, migration up to date.
+- Hosted compatibility smoke passed with `AGENTFEED_ALLOW_INSECURE_API=1` for HTTP IP dev server.
+- Hosted CLI doctor reached API and confirmed compatibility; temp cwd account/project/git warnings were expected.
+- Frontend API diagnostic passed: `FRONTEND_API_PROBES_PASSED metadata feed auth-me me-settings me-notifications me-integrations integration-setup-guide projects check-username search tags explore`.
+
+### Follow-up
+
+- [x] 5-commit threshold push/deploy handled.
+- [ ] Next source assertion helper candidate: `api-boundary-rank-notification-source-assertions.ts` at 25 pure LOC.
+- [x] Next commit counter started after this deploy docs commit.

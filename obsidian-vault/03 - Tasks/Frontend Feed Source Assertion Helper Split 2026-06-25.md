@@ -74,5 +74,5 @@ Contract runner scan remains healthy: max `*contract*.test.ts` runner is 5 pure 
 - [x] Previous next candidate `feed-source-assertions.ts` split 처리.
 - [x] Continue source assertion helper re-scan candidate `worklog-card-source-assertions.ts` 처리 완료. See [[Frontend Worklog Card Source Assertion Helper Split 2026-06-25]].
 - [ ] Keep `feed-source-assertions.ts` as thin orchestrator only.
-- [ ] Current next source assertion helper candidate after worklog-card split: `auth-shell-source-assertions.ts` at 96 pure LOC.
+- [x] Follow-up source assertion helper candidates through `feed-hook-a11y-source-assertions.ts` handled. See [[Frontend Feed Hook Accessibility Source Assertion Helper Split 2026-06-25]].
 - [x] 6-commit push/deploy threshold handled in [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post settings/feed source assertion splits threshold deploy]].

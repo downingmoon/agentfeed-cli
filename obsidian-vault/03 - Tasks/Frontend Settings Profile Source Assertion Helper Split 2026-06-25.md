@@ -69,5 +69,5 @@ Current source assertion helper re-scan top after split:
 ## 후행 TODO
 
 - [x] Previous next candidate `settings-profile-source-assertions.ts` split 처리.
-- [ ] Next source assertion helper candidate is 31 pure LOC: `feed-hook-a11y-source-assertions.ts`.
+- [x] Next source assertion helper candidate `feed-hook-a11y-source-assertions.ts` handled by [[Frontend Feed Hook Accessibility Source Assertion Helper Split 2026-06-25]].
 - [x] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy completed in [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post API-boundary project-dashboard/settings-profile source assertion splits threshold deploy]].

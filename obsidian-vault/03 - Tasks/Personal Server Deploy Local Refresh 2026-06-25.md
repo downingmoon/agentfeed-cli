@@ -1547,5 +1547,6 @@ Project visibility and CLI authorize terminal accessibility source assertion hel
 ### Follow-up
 
 - [x] 5-commit threshold push/deploy handled.
-- [ ] Next source assertion helper candidate: `adapters-source-assertions.ts` at 19 pure LOC.
+- [x] Next source assertion helper candidate `adapters-source-assertions.ts` handled by [[Frontend Adapter Source Assertion Helper Split 2026-06-25]].
+- [ ] Next source assertion helper candidates: `review-public-asset-metadata-source-assertions.ts`, `profile-page-data-source-assertions.ts`, `leaderboard-source-assertions.ts` at 18 pure LOC.
 - [x] Next commit counter started after this deploy docs commit.

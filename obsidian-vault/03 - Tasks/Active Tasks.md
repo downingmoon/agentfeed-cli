@@ -14,6 +14,10 @@ updated: 2026-06-26
 
 ## 현재 결론
 
+> [!success] 2026-06-26 Backend worklog review privacy_scan source 500 fix
+> 인증된 review URL에서 backend `ResponseValidationError`가 발생했다. 원인은 persisted `privacy_scan_json.source = "client"`가 strict `PrivacyScanResult(extra="forbid")` 응답에 그대로 들어간 것. Review response builder에서 `privacy_scan`/findings를 response-safe fields로 sanitize했고, regression test 추가, full backend tests 442 passed, ruff/compileall 통과. `trading-bot`에 backend-only rsync + force-recreate 배포 완료. Authenticated API QA와 Playwright browser QA에서 해당 review URL API 200, `privacy_scan safe`, internal server error 미노출 확인.
+> - [[Backend Worklog Review Privacy Scan Source 500 Fix 2026-06-26]]
+
 > [!success] 2026-06-26 Landing-preview-data/feed-hook-retry source assertion threshold push/deploy
 > Landing preview data/feed hook retry source assertion split 6커밋을 push했고, 현재 서버 `trading-bot`에서 직접 `/home/ubuntu/agentfeed` runtime tree로 sync 후 backend/frontend를 force-recreate했다. SSH 없음. Postgres 유지. Runtime CLI `npm ci && npm run build` 통과, compose backend/frontend/postgres healthy, `wait-ready`, local/public readiness, metadata, hosted compatibility smoke 통과. 개발서버 HTTP IP라 hosted smoke는 `AGENTFEED_ALLOW_INSECURE_API=1`로 실행했다.
 > - [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-26 — Post landing-preview-data/feed-hook-retry source assertion splits threshold deploy]]

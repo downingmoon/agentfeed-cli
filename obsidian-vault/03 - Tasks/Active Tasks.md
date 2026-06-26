@@ -14,6 +14,10 @@ updated: 2026-06-25
 
 ## 현재 결론
 
+> [!success] 2026-06-26 Frontend landing preview interaction source assertion helper split
+> Frontend `src/lib/landing-preview-interaction-source-assertions.ts`를 16 pure LOC helper에서 fallback, social action, share action helpers로 분리했다. Orchestrator는 8 pure LOC, 신규 helpers는 5/12/7 pure LOC다. Pre-edit targeted contract, post-edit targeted contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음. 문서 commit 후 6 commits라 threshold push/deploy 예정.
+> - [[Frontend Landing Preview Interaction Source Assertion Helper Split 2026-06-26]]
+
 > [!success] 2026-06-26 Frontend moderation rendering source assertion helper split
 > Frontend `src/lib/moderation-rendering-source-assertions.ts`를 16 pure LOC helper에서 accessibility, loading/empty state, report field helpers로 분리했다. Orchestrator는 8 pure LOC, 신규 helpers는 7/7/10 pure LOC다. Pre-edit targeted contract, post-edit targeted contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음, 서버 배포 없음. 3 commits라 threshold 미만.
 > - [[Frontend Moderation Rendering Source Assertion Helper Split 2026-06-26]]

@@ -1969,5 +1969,6 @@ Project detail data and notifications action source assertion helper split docs 
 
 - [x] 5-commit threshold push/deploy handled.
 - [x] Next source assertion helper candidate `moderation-rendering-source-assertions.ts` handled by [[Frontend Moderation Rendering Source Assertion Helper Split 2026-06-26]].
-- [ ] Next source assertion helper candidates: `landing-preview-interaction-source-assertions.ts`, `landing-preview-data-source-assertions.ts`, `feed-hook-retry-source-assertions.ts` at 16 pure LOC.
-- [x] Next commit counter started after this deploy docs commit; current moderation rendering docs leave the counter at 3 commits, below push/deploy threshold.
+- [x] Next source assertion helper candidate `landing-preview-interaction-source-assertions.ts` handled by [[Frontend Landing Preview Interaction Source Assertion Helper Split 2026-06-26]].
+- [ ] Next source assertion helper candidates: `landing-preview-data-source-assertions.ts`, `feed-hook-retry-source-assertions.ts`, `dashboard-recovery-source-assertions.ts` at 16 pure LOC.
+- [x] Next commit counter started after this deploy docs commit; landing-preview interaction docs bring counter to 6 commits, threshold push/deploy pending.

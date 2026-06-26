@@ -3,7 +3,7 @@ export const WORKFLOW_COMMAND_HELP_TEXT: Readonly<Record<string, string>> = {
 
 Collect local agent work into a private review draft.
 By default, collect saves locally and does not upload.
-Omit --source to auto-detect Claude/Codex/Cursor/Gemini/Antigravity sessions and plugins.
+Omit --source to auto-detect Claude/Codex/Cursor/Gemini/Antigravity logs.
 
 When to use:
   Use for advanced collection control before previewing or publishing.
@@ -38,7 +38,7 @@ Examples:
 
 Collect, preview, and optionally upload a private review draft.
 Use this as the daily one-command workflow.
-Omit --source to auto-detect Claude/Codex/Cursor/Gemini/Antigravity sessions and plugins.
+Omit --source to auto-detect Claude/Codex/Cursor/Gemini/Antigravity logs.
 
 When to use:
   Use after an AI coding session to make a reviewable worklog.

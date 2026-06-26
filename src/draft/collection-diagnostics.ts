@@ -14,7 +14,7 @@ export function formatCollectionGuidanceLines(metrics: WorklogMetrics): string[]
   const lines = [
     'Collection guidance:',
     '- Agent evidence is incomplete; tokens, tool calls, commands, models, and per-agent attribution may be missing.',
-    '- Run `agentfeed doctor` to verify Claude/Codex/Cursor/Gemini/Antigravity session and plugin detection.',
+    '- Run `agentfeed doctor` to verify Claude/Codex/Cursor/Gemini/Antigravity log detection.',
     '- Retry with `agentfeed collect --explain --session-file <path>` if your agent log is stored outside the default locations.'
   ];
   if (sources.length === 0) {

@@ -77,4 +77,4 @@ Current source assertion helper re-scan top after split:
 - [x] Previous next candidate `project-detail-data-source-assertions.ts` split 처리.
 - [x] Next source assertion helper candidate `notifications-action-source-assertions.ts` handled by [[Frontend Notifications Action Source Assertion Helper Split 2026-06-25]].
 - [ ] Next source assertion helper candidates: `moderation-rendering-source-assertions.ts`, `landing-preview-interaction-source-assertions.ts`, `landing-preview-data-source-assertions.ts` at 16 pure LOC.
-- [x] Subsequent notifications-action docs brought unpushed counter to 6 commits; threshold push/deploy pending.
+- [x] Subsequent notifications-action docs brought unpushed counter to 6 commits; threshold push/deploy completed. See [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post project-detail-data/notifications-action source assertion splits threshold deploy]].

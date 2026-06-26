@@ -1917,3 +1917,56 @@ Worklog review privacy and shell route source assertion helper split docs brough
 - [x] Next source assertion helper candidate `notifications-action-source-assertions.ts` handled by [[Frontend Notifications Action Source Assertion Helper Split 2026-06-25]].
 - [ ] Next source assertion helper candidates: `moderation-rendering-source-assertions.ts`, `landing-preview-interaction-source-assertions.ts`, `landing-preview-data-source-assertions.ts` at 16 pure LOC.
 - [x] Next commit counter started after this deploy docs commit; notifications-action docs bring counter to 6 commits, threshold push/deploy pending.
+
+## 2026-06-25 — Post project-detail-data/notifications-action source assertion splits threshold deploy
+
+### Trigger
+
+Project detail data and notifications action source assertion helper split docs brought unpushed counter to 6 commits. Pushed and deployed from current server local shell. No SSH to `trading-bot`.
+
+### Pushed commits
+
+- `agentfeed-frontend` `be7da0e` — `Split project detail data assertions`
+- `agentfeed-frontend` `28bfde6` — `Split notifications action assertions`
+- `agentfeed-cli` `e2817b1` — `Document project detail data split`
+- `agentfeed-cli` `4d489cc` — `Document notifications action split`
+- `agentfeed-dev` `c0ba042` — `Log project detail data split`
+- `agentfeed-dev` `5bd5f44` — `Log notifications action split`
+
+### Push ranges
+
+- `agentfeed-frontend`: `42c2ad6..28bfde6`
+- `agentfeed-cli`: `05be792..4d489cc`
+- `agentfeed-dev`: `a686cfb..5bd5f44`
+
+### Deploy path
+
+- Current server canonical name: `trading-bot`.
+- Codex ran on `trading-bot` itself; no SSH hop used.
+- Working tree: `/home/ubuntu/dev/agentfeed`
+- Runtime tree: `/home/ubuntu/agentfeed`
+- Compose dir: `/home/ubuntu/agentfeed/agentfeed-dev`
+- Synced repos: `agentfeed-dev`, `agentfeed-backend`, `agentfeed-frontend`, `agentfeed-cli` → `AgentFeed-CLI`
+- Preserved runtime `.env` and Postgres volume/container.
+- Recreated `backend` and `frontend`.
+- Rebuilt runtime CLI with `npm ci && npm run build`.
+
+### Verification
+
+- `docker compose --env-file .env ps` → backend/frontend/postgres healthy.
+- Runtime CLI `npm ci` → 78 packages installed, 0 vulnerabilities.
+- Runtime CLI `npm run build` → `tsc` and `ensure-bin-executable` passed.
+- `ENV_FILE=/home/ubuntu/agentfeed/agentfeed-dev/.env scripts/wait-ready.sh` → passed.
+- `GET http://127.0.0.1:18080/health/ready` → ready, DB connected, migration head `027_browser_session_version`, up to date.
+- `GET http://127.0.0.1:18080/v1/metadata` → `v1 / 2026-06-03`, review base `http://161.33.171.81:13030`.
+- `HEAD http://127.0.0.1:13030/` → `200 OK`.
+- `HEAD http://161.33.171.81:13030/` → `200 OK`.
+- `GET http://161.33.171.81:18080/health/ready` → ready, DB connected, migration up to date.
+- Hosted compatibility smoke passed with `AGENTFEED_ALLOW_INSECURE_API=1`.
+- CLI doctor inside hosted smoke reached API and confirmed compatibility; account/project/git attention expected in temp cwd with no token/project config.
+
+### Follow-up
+
+- [x] 5-commit threshold push/deploy handled.
+- [ ] Next source assertion helper candidates: `moderation-rendering-source-assertions.ts`, `landing-preview-interaction-source-assertions.ts`, `landing-preview-data-source-assertions.ts` at 16 pure LOC.
+- [ ] Next commit counter starts after this deploy docs commit.

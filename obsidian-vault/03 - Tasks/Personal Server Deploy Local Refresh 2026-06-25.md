@@ -1970,7 +1970,8 @@ Project detail data and notifications action source assertion helper split docs 
 - [x] 5-commit threshold push/deploy handled.
 - [x] Next source assertion helper candidate `moderation-rendering-source-assertions.ts` handled by [[Frontend Moderation Rendering Source Assertion Helper Split 2026-06-26]].
 - [x] Next source assertion helper candidate `landing-preview-interaction-source-assertions.ts` handled by [[Frontend Landing Preview Interaction Source Assertion Helper Split 2026-06-26]].
-- [ ] Next source assertion helper candidates: `landing-preview-data-source-assertions.ts`, `feed-hook-retry-source-assertions.ts`, `dashboard-recovery-source-assertions.ts` at 16 pure LOC.
+- [x] Next source assertion helper candidate `landing-preview-data-source-assertions.ts` handled by [[Frontend Landing Preview Data Source Assertion Helper Split 2026-06-26]].
+- [ ] Next source assertion helper candidates: `feed-hook-retry-source-assertions.ts`, `dashboard-recovery-source-assertions.ts`, `cli-authorize-approval-source-assertions.ts` at 16 pure LOC.
 - [x] Next commit counter started after this deploy docs commit; landing-preview interaction docs bring counter to 6 commits, threshold push/deploy pending.
 
 ## 2026-06-26 — Post moderation-rendering/landing-preview-interaction source assertion splits threshold deploy
@@ -2023,5 +2024,6 @@ Moderation rendering and landing preview interaction source assertion helper spl
 ### Follow-up
 
 - [x] 5-commit threshold push/deploy handled.
-- [ ] Next source assertion helper candidates: `landing-preview-data-source-assertions.ts`, `feed-hook-retry-source-assertions.ts`, `dashboard-recovery-source-assertions.ts` at 16 pure LOC.
+- [x] Next source assertion helper candidate `landing-preview-data-source-assertions.ts` handled by [[Frontend Landing Preview Data Source Assertion Helper Split 2026-06-26]].
+- [ ] Next source assertion helper candidates: `feed-hook-retry-source-assertions.ts`, `dashboard-recovery-source-assertions.ts`, `cli-authorize-approval-source-assertions.ts` at 16 pure LOC.
 - [ ] Next commit counter starts after this deploy docs commit.

@@ -7,12 +7,20 @@ status: active
 tags:
   - agentfeed/todo
   - project/tasks
-updated: 2026-06-25
+updated: 2026-06-26
 ---
 
 # Active Tasks
 
 ## 현재 결론
+
+> [!success] 2026-06-26 Frontend landing preview data source assertion helper split
+> Frontend `src/lib/landing-preview-data-source-assertions.ts`를 16 pure LOC helper에서 static data, API data helpers로 분리했다. Orchestrator는 6 pure LOC, 신규 helpers는 10/9 pure LOC다. Pre-edit targeted contract, post-edit targeted contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음. 문서/log commit 후 3 commits라 threshold 미만, push/deploy 없음.
+> - [[Frontend Landing Preview Data Source Assertion Helper Split 2026-06-26]]
+
+> [!info] 2026-06-26 AgentFeed RC local E2E setup prompt/checklist
+> 다른 PC/macOS에서 최신 CLI를 설치/링크하고 현재 개발서버 `trading-bot`에 붙여 login → collect → publish → review URL까지 검수하는 프롬프트와 체크리스트를 문서화했다. 개발서버 HTTP IP라 `AGENTFEED_ALLOW_INSECURE_API=1` 필요 가능. Env var `AGENTFEED_TOKEN`이 비어도 CLI가 OS keychain/config fallback에 저장하면 정상일 수 있음을 명시했다.
+> - [[AgentFeed RC Local E2E Setup Prompt 2026-06-26]]
 
 > [!success] 2026-06-26 Moderation-rendering/landing-preview-interaction source assertion threshold push/deploy
 > Moderation rendering/landing preview interaction source assertion split 6커밋을 push했고, 현재 서버 `trading-bot`에서 직접 `/home/ubuntu/agentfeed` runtime tree로 sync 후 backend/frontend를 force-recreate했다. SSH 없음. Postgres 유지. Runtime CLI `npm ci && npm run build` 통과, compose backend/frontend/postgres healthy, `wait-ready`, local/public readiness, metadata, hosted compatibility smoke 통과. 개발서버 HTTP IP라 hosted smoke는 `AGENTFEED_ALLOW_INSECURE_API=1`로 실행했다.

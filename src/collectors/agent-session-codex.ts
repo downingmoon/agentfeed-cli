@@ -2,6 +2,7 @@ import type { ChangedFileSummary, CollectionSource, CollectionWindow } from '../
 import { readSessionJsonlRecords } from './agent-session-files.js';
 import { readOmxMetadata } from './agent-session-codex-omx.js';
 import { applyCodexPatchText } from './agent-session-codex-patch.js';
+import { applyCodexShellFileEvidence } from './agent-session-codex-shell-files.js';
 import { commandFailed, failedStatus, isTestCommand, toolOutputFailed } from './agent-session-tooling.js';
 import { asRecord, asString, countTextLines, countUnifiedDiff, explicitCostUsd, finalizeAgentSession, inferEffectiveCollectionWindow, numeric, pushSource, relativeProjectPath, safeJsonParse, upsertFile, type AgentSessionMetrics } from './agent-session-core.js';
 import { hasCollectionWindowBoundary, parseBoundaryMillis, rowInAgentCollectionWindow, rowTimestampMillis } from './agent-session-window.js';
@@ -36,13 +37,23 @@ function codexNestedToolParameters(toolUse: Record<string, unknown>): Record<str
   return argsText ? asRecord(safeJsonParse(argsText)) ?? {} : {};
 }
 
+type CodexCommandInvocation = {
+  readonly command: string;
+  readonly workdir: string | null;
+};
+
+type CodexCommandRecord = {
+  readonly invocations: CodexCommandInvocation[];
+  readonly test: boolean;
+};
+
 export async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null, inferIdleGap = true): Promise<AgentSessionMetrics | null> {
   const rows = await readSessionJsonlRecords(sessionFile);
   if (!rows) return null;
   const effective = inferEffectiveCollectionWindow(rows, window, { inferIdleGap });
   const effectiveWindow = effective.window;
   const files = new Map<string, ChangedFileSummary>();
-  const commands = new Map<string, { command: string; test: boolean }>();
+  const commands = new Map<string, CodexCommandRecord>();
   let tokensUsed = 0;
   let durationSeconds: number | null = null;
   let estimatedCostUsd = 0;
@@ -64,7 +75,7 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
   const failedToolOutputCallIds = new Set<string>();
   const patchTextFallbacks: { callId: string | null; patchText: string; failed: boolean }[] = [];
   const sinceMillis = parseBoundaryMillis(effectiveWindow?.since);
-  const registerCommand = (callId: string | null, command: string) => {
+  const registerCommand = (callId: string | null, command: string, workdir: string | null) => {
     if (!command) return;
     commandsRun += 1;
     const test = isTestCommand(command);
@@ -72,7 +83,7 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
     if (!callId) return;
     const existing = commands.get(callId);
     commands.set(callId, {
-      command: existing?.command ? `${existing.command}\n${command}` : command,
+      invocations: [...(existing?.invocations ?? []), { command, workdir }],
       test: Boolean(existing?.test || test)
     });
   };
@@ -134,7 +145,7 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
           if (nestedName === 'spawn_agent') {
             trackSubagentCall(callId);
           } else if (nestedName === 'exec_command') {
-            registerCommand(callId, asString(parameters.cmd) ?? asString(parameters.command) ?? '');
+            registerCommand(callId, asString(parameters.cmd) ?? asString(parameters.command) ?? '', asString(parameters.workdir));
           }
         }
         continue;
@@ -145,7 +156,7 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
       }
       if (name === 'exec_command') {
         const args = codexCallArguments(payload);
-        registerCommand(callId, asString(args?.cmd) ?? asString(args?.command) ?? '');
+        registerCommand(callId, asString(args?.cmd) ?? asString(args?.command) ?? '', asString(args?.workdir));
       }
     }
     if (payload.type === 'custom_tool_call') toolCalls += 1;
@@ -162,9 +173,15 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
         }
       }
       const command = callId ? commands.get(callId) : null;
-      if (command && commandFailed(asString(payload.output) ?? '')) {
+      const output = asString(payload.output) ?? '';
+      if (command && commandFailed(output)) {
         failedCommands += 1;
         if (command.test) failedTestCommands += 1;
+      }
+      if (command && !failedStatus(payload.status) && !commandFailed(output)) {
+        for (const invocation of command.invocations) {
+          applyCodexShellFileEvidence(cwd, { command: invocation.command, workdir: invocation.workdir, output }, files);
+        }
       }
     }
     if (payload.type === 'custom_tool_call' && payload.name === 'apply_patch' && !failedStatus(payload.status)) {

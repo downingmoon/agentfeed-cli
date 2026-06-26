@@ -167,4 +167,45 @@ describe('Codex session collector command metrics', () => {
     expect(metrics?.subagents_spawned).toBeNull();
   });
 
+  it('captures files created by successful Codex shell heredoc commands', async () => {
+    const sessionFile = join(dir, 'codex-shell-created-files.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-shell-created-files', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: [
+        'mkdir -p scripts/preview',
+        "cat > scripts/preview/index-page.mjs <<'EOF'",
+        'export const page = true;',
+        'EOF',
+        "cat > scripts/preview/index.css <<'EOF'",
+        '.hero { color: red; }',
+        'EOF'
+      ].join('\n'), workdir: dir }), call_id: 'shell-create' } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'shell-create', output: 'Process exited with code 0\n' } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.changed_files.map((file) => file.path).sort()).toEqual(['scripts/preview/index-page.mjs', 'scripts/preview/index.css']);
+    expect(metrics?.files_changed).toBe(2);
+    expect(metrics?.lines_added).toBe(2);
+  });
+
+  it('captures changed paths from Codex git status shell output', async () => {
+    const sessionFile = join(dir, 'codex-git-status-output.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-git-status-output', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'git status --short', workdir: dir }), call_id: 'git-status' } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'git-status', output: 'Process exited with code 0\n?? scripts/preview/branches.mjs\n M src/api.ts\n' } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.changed_files.map((file) => [file.path, file.status]).sort()).toEqual([
+      ['scripts/preview/branches.mjs', 'added'],
+      ['src/api.ts', 'modified']
+    ]);
+    expect(metrics?.lines_added).toBeNull();
+    expect(metrics?.lines_removed).toBeNull();
+  });
+
 });

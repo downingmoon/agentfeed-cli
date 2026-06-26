@@ -132,7 +132,7 @@ function mergeEvidence(files: Map<string, ChangedFileSummary>, evidence: FileEvi
   });
 }
 
-export function applyCodexShellFileEvidence(
+export function applyShellFileEvidence(
   projectRoot: string,
   input: {
     readonly command: string;
@@ -151,3 +151,5 @@ export function applyCodexShellFileEvidence(
     for (const evidence of parseGitNumstatOutput(projectRoot, workdir, output)) mergeEvidence(files, evidence);
   }
 }
+
+export const applyCodexShellFileEvidence = applyShellFileEvidence;

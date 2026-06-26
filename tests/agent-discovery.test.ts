@@ -54,7 +54,7 @@ describe('agent discovery', () => {
     expect(lines).toContain('    agentfeed collect --source codex --session-file <path> --explain');
     expect(lines).toContain('  Plugin role: enriches Codex evidence with tokens, subagents, turns, and modes.');
     expect(lines).toContain('  Detected paths:');
-    expect(lines.some((line) => line.includes('Run Gemini CLI in this project.'))).toBe(true);
+    expect(lines.some((line) => line.includes('Run Gemini or Antigravity CLI in this project.'))).toBe(true);
     expect(lines.some((line) => line.includes('Try: agentfeed collect --source gemini-cli --explain'))).toBe(true);
     expect(lines.filter((line) => line.length > 80)).toEqual([]);
   });
@@ -98,4 +98,15 @@ describe('agent discovery', () => {
     expect(config.agents.cursor.enabled).toBe(true);
     expect(config.agents.gemini_cli.enabled).toBe(true);
   });
+
+  it('detects Antigravity CLI as Gemini-compatible agent signal', async () => {
+    await mkdir(join(home, '.gemini', 'antigravity-cli', 'brain'), { recursive: true });
+
+    const signals = await detectAgentSignals({ cwd: dir, home });
+
+    expect(signals.gemini_cli.detected).toBe(true);
+    expect(signals.gemini_cli.label).toBe('Gemini/Antigravity CLI');
+    expect(signals.gemini_cli.guidance).toBe('Gemini/Antigravity CLI signals found.');
+  });
+
 });

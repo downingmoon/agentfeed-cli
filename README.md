@@ -5,7 +5,7 @@ AgentFeed CLI turns local AI-agent work into reviewable, public-safe worklog dra
 What it collects locally:
 
 - Git change metrics and changed areas
-- Claude Code, Codex CLI, Gemini CLI, Cursor, OMC, OMX, and Superpowers aggregate session signals
+- Claude Code, Codex CLI, Gemini/Antigravity CLI, Cursor, OMC, OMX, and Superpowers aggregate session signals
 - Safe metrics such as models, tokens, tool calls, commands, tests, subagents, skills, and collection quality
 
 What it does **not** upload:
@@ -135,7 +135,7 @@ agentfeed doctor
 agentfeed commands
 agentfeed help share
 agentfeed collect --source codex --explain
-agentfeed collect --source gemini-cli --explain
+agentfeed collect --source gemini-cli --explain   # also accepts antigravity-cli / agy aliases
 agentfeed collect --source claude-code --session-file "$CLAUDE_SESSION_FILE" --explain
 agentfeed hook install claude-code
 ```
@@ -297,14 +297,14 @@ agentfeed share --all             # same for one-command sharing
 
 
 
-`collect` combines Git metrics with local agent session metadata when available. Claude Code JSONL transcripts, Codex JSONL rollouts, Gemini CLI chat logs, and OMC/OMX/Superpowers metadata are parsed locally for safe aggregate data such as edited file paths, line counts, token usage, test commands, failed commands, tool calls, skills used, subagent counts, collection quality, model, and session id; raw transcript content is not stored in the draft. Unknown local agent/plugin metadata is collected as low-confidence aggregate signals when no known agent session is found, and `--explain` shows the non-path source summary used for the draft.
+`collect` combines Git metrics with local agent session metadata when available. Claude Code JSONL transcripts, Codex JSONL rollouts, Gemini CLI chat logs, Antigravity transcript logs, and OMC/OMX/Superpowers metadata are parsed locally for safe aggregate data such as edited file paths, line counts, token usage, test commands, failed commands, tool calls, skills used, subagent counts, collection quality, model, and session id; raw transcript content is not stored in the draft. Unknown local agent/plugin metadata is collected as low-confidence aggregate signals when no known agent session is found, and `--explain` shows the non-path source summary used for the draft.
 
 Repo-local test/build commands are never executed by default, even when `.agentfeed/config.json` enables `collection.run_tests_on_collect`. Use `agentfeed collect --run-configured-commands` or `agentfeed share --run-configured-commands` only in repositories whose config and scripts you trust. Shell-interpreter wrappers such as `sh -c`, `bash -lc`, `zsh -c`, `cmd.exe /c`, or PowerShell are refused even with this flag; configure a direct test/build command such as `npm test`, `npm run build`, `pytest`, `go test ./...`, or `make test` instead. Configured commands also run with sensitive environment variables scrubbed (`AGENTFEED_TOKEN`, npm auth tokens, cloud credentials, and common `*_TOKEN`/`*_SECRET` names); use `AGENTFEED_CONFIGURED_COMMAND_ENV_ALLOWLIST=NAME1,NAME2` only when you intentionally need to pass a specific variable.
 
 
 ## Diagnostics and duplicate safety
 
-`agentfeed doctor` reports API reachability, ingestion token validity, and local Claude Code, Codex CLI, Gemini CLI, OMC, OMX, and Superpowers signals so setup problems are easier to diagnose.
+`agentfeed doctor` reports API reachability, ingestion token validity, and local Claude Code, Codex CLI, Gemini/Antigravity CLI, OMC, OMX, and Superpowers signals so setup problems are easier to diagnose.
 
 Draft collection also records a stable fingerprint from `session_id + git head + collection_window`; repeated runs reuse the existing local draft unless `--force` or `--all` is used. If that draft was already uploaded, `share` / `publish` reuse the saved review URL instead of uploading a duplicate worklog.
 

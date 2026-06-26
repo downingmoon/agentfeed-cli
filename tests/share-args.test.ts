@@ -25,6 +25,11 @@ describe('share command argument parsing', () => {
     expect(parseShareArgs(['--no-open-review']).noOpenReview).toBe(true);
   });
 
+  it('accepts Antigravity CLI aliases as Gemini-compatible source values', () => {
+    expect(parseShareArgs(['--source', 'antigravity-cli']).source).toBe('gemini_cli');
+    expect(parseShareArgs(['--source', 'agy']).source).toBe('gemini_cli');
+  });
+
   it('rejects missing option values before treating flags as values', () => {
     expect(() => option(['--token', '--no-save'], '--token')).toThrow(/--token requires a value/);
     expect(() => option(['--source='], '--source')).toThrow(/--source requires a value/);
@@ -32,6 +37,6 @@ describe('share command argument parsing', () => {
   });
 
   it('rejects unsupported share source values before creating drafts', () => {
-    expect(() => parseShareArgs(['--source', 'gemni-cli'])).toThrow(/Unsupported agent source: gemni-cli[\s\S]*Tip: omit --source to let AgentFeed auto-detect Claude\/Codex\/Cursor\/Gemini sessions\.[\s\S]*Did you mean: --source gemini-cli[\s\S]*Run: agentfeed share --dry[\s\S]*Run: agentfeed share --source gemini-cli --dry[\s\S]*Run: agentfeed share --help/i);
+    expect(() => parseShareArgs(['--source', 'gemni-cli'])).toThrow(/Unsupported agent source: gemni-cli[\s\S]*Tip: omit --source to let AgentFeed auto-detect Claude\/Codex\/Cursor\/Gemini\/Antigravity sessions\.[\s\S]*Did you mean: --source gemini-cli[\s\S]*Run: agentfeed share --dry[\s\S]*Run: agentfeed share --source gemini-cli --dry[\s\S]*Run: agentfeed share --help/i);
   });
 });

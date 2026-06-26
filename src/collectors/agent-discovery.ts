@@ -59,7 +59,7 @@ export async function detectAgentSignals(options: { cwd: string; home?: string }
   const claude = await existing([join(home, '.claude', 'projects'), join(cwd, '.claude', 'settings.json')]);
   const codex = await existing([join(home, '.codex', 'sessions'), join(cwd, '.codex'), join(cwd, '.omx')]);
   const cursor = await existing([join(cwd, '.cursor'), join(home, '.cursor'), join(home, 'Library', 'Application Support', 'Cursor', 'User', 'workspaceStorage')]);
-  const gemini = await existing([join(home, '.gemini', 'tmp'), join(cwd, '.gemini')]);
+  const gemini = await existing([join(home, '.gemini', 'tmp'), join(home, '.gemini', 'antigravity-cli'), join(cwd, '.gemini')]);
   const omc = await existing([join(cwd, '.omc'), join(home, '.claude', '.session-stats.json')]);
   const omx = await existing([join(cwd, '.omx')]);
   const superpowers = await existing([join(cwd, '.gemini', 'superpowers'), join(home, '.gemini', 'extensions', 'superpowers'), join(home, '.gemini', 'tmp')]);
@@ -67,7 +67,7 @@ export async function detectAgentSignals(options: { cwd: string; home?: string }
     claude_code: signal('Claude Code', claude, claude.length ? 'Claude Code session signals found.' : 'Run Claude Code in this project or install the AgentFeed hook.'),
     codex: signal('Codex CLI', codex, codex.length ? 'Codex/OMX signals found.' : 'Run Codex CLI in this project.'),
     cursor: signal('Cursor', cursor, cursor.length ? 'Cursor workspace signals found.' : 'Run Cursor in this project.'),
-    gemini_cli: signal('Gemini CLI', gemini, gemini.length ? 'Gemini CLI signals found.' : 'Run Gemini CLI in this project.'),
+    gemini_cli: signal('Gemini/Antigravity CLI', gemini, gemini.length ? 'Gemini/Antigravity CLI signals found.' : 'Run Gemini or Antigravity CLI in this project.'),
     omc: signal('OMC', omc, omc.length ? 'OMC plugin metadata found.' : 'No OMC plugin metadata found.'),
     omx: signal('OMX', omx, omx.length ? 'OMX plugin metadata found.' : 'No OMX plugin metadata found.'),
     superpowers: signal('Superpowers', superpowers, superpowers.length ? 'Superpowers/Gemini extension signals found.' : 'No Superpowers signals found.')
@@ -153,7 +153,7 @@ function agentSignalGuidanceLines(key: AgentSignalKey): string[] {
       ];
     case 'gemini_cli':
       return [
-        '  Quality: high with Gemini CLI rows; medium with Superpowers metadata.',
+        '  Quality: high with Gemini/Antigravity rows; medium with Superpowers metadata.',
         '  Try: agentfeed collect --source gemini-cli --explain',
         '  If discovery misses logs:',
         '    agentfeed collect --source gemini-cli --session-file <path> --explain'

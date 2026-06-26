@@ -100,4 +100,81 @@ describe('agent session Gemini metrics', () => {
     expect(metrics?.lines_removed).toBeNull();
     expect(metrics?.tests_passed).toBe(1);
   });
+
+  it('captures files created by successful Gemini shell heredoc commands', async () => {
+    const sessionFile = join(dir, 'gemini-shell-created-files.jsonl');
+    await writeJsonl(sessionFile, [
+      { sessionId: 'gemini-shell-created-files', startTime: '2026-05-20T00:00:00Z', lastUpdated: '2026-05-20T00:01:00Z', kind: 'main' },
+      { id: 'g1', timestamp: '2026-05-20T00:00:10Z', type: 'gemini', model: 'gemini-3-flash-preview', toolCalls: [
+        { id: 'tool-1', name: 'run_shell_command', status: 'success', args: { command: "cat > scripts/preview/index-page.mjs <<'EOF'\nexport const page = true;\nEOF" }, resultDisplay: 'Process exited with code 0\n' }
+      ] }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile });
+
+    expect(metrics?.changed_files.map((file) => file.path)).toEqual(['scripts/preview/index-page.mjs']);
+    expect(metrics?.files_changed).toBe(1);
+    expect(metrics?.lines_added).toBe(1);
+  });
+
+  it('captures changed paths from successful Gemini git status output', async () => {
+    const sessionFile = join(dir, 'gemini-git-status-output.jsonl');
+    await writeJsonl(sessionFile, [
+      { sessionId: 'gemini-git-status-output', startTime: '2026-05-20T00:00:00Z', lastUpdated: '2026-05-20T00:01:00Z', kind: 'main' },
+      { id: 'g1', timestamp: '2026-05-20T00:00:10Z', type: 'gemini', model: 'gemini-3-flash-preview', toolCalls: [
+        { id: 'tool-1', name: 'run_shell_command', status: 'success', args: { command: 'git status --short' }, resultDisplay: 'Process exited with code 0\n?? scripts/preview/branches.mjs\n M src/api.ts\n' }
+      ] }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile });
+
+    expect(metrics?.changed_files.map((file) => [file.path, file.status]).sort()).toEqual([
+      ['scripts/preview/branches.mjs', 'added'],
+      ['src/api.ts', 'modified']
+    ]);
+    expect(metrics?.lines_added).toBeNull();
+  });
+
+  it('does not count failed Gemini shell file evidence', async () => {
+    const sessionFile = join(dir, 'gemini-failed-shell-files.jsonl');
+    await writeJsonl(sessionFile, [
+      { sessionId: 'gemini-failed-shell-files', startTime: '2026-05-20T00:00:00Z', lastUpdated: '2026-05-20T00:01:00Z', kind: 'main' },
+      { id: 'g1', timestamp: '2026-05-20T00:00:10Z', type: 'gemini', model: 'gemini-3-flash-preview', toolCalls: [
+        { id: 'tool-1', name: 'run_shell_command', status: 'error', args: { command: "cat > src/failed.ts <<'EOF'\nexport const failed = true;\nEOF" }, resultDisplay: 'Process exited with code 1\nPermission denied' }
+      ] }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile });
+
+    expect(metrics?.changed_files).toEqual([]);
+    expect(metrics?.files_changed).toBeNull();
+    expect(metrics?.failed_commands).toBe(1);
+  });
+
+  it('parses Antigravity CLI transcripts as Gemini-compatible session evidence', async () => {
+    const sessionFile = join(dir, 'antigravity-transcript.jsonl');
+    await writeJsonl(sessionFile, [
+      { step_index: 0, source: 'USER_EXPLICIT', type: 'USER_INPUT', status: 'DONE', created_at: '2026-06-25T03:56:15Z', content: `<USER_REQUEST>Update ${join(dir, 'src', 'api.ts')}</USER_REQUEST>` },
+      { step_index: 1, source: 'MODEL', type: 'PLANNER_RESPONSE', status: 'DONE', created_at: '2026-06-25T03:56:20Z', tool_calls: [
+        { name: 'run_command', args: { CommandLine: '"git status --short"', Cwd: JSON.stringify(dir) } }
+      ] },
+      { step_index: 2, source: 'MODEL', type: 'RUN_COMMAND', status: 'DONE', created_at: '2026-06-25T03:56:21Z', content: 'Created At: 2026-06-25T03:56:21Z\nCompleted At: 2026-06-25T03:56:22Z\nThe command completed successfully.\nOutput:\n?? src/agy-created.ts\n M src/api.ts\n' },
+      { step_index: 3, source: 'MODEL', type: 'CODE_ACTION', status: 'DONE', created_at: '2026-06-25T03:56:23Z', content: `Created file file://${join(dir, 'src', 'agy-created.ts')} with requested content.` }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile });
+
+    expect(metrics?.session_id).toBe('antigravity-transcript');
+    expect(metrics?.commands_run).toBe(1);
+    expect(metrics?.tool_calls).toBe(2);
+    expect(metrics?.changed_files.map((file) => [file.path, file.status]).sort()).toEqual([
+      ['src/agy-created.ts', 'added'],
+      ['src/api.ts', 'modified']
+    ]);
+    expect(metrics?.collection_sources).toEqual([
+      { type: 'agent_session', name: 'gemini_cli', quality: 'high' },
+      { type: 'agent_session', name: 'antigravity_cli', quality: 'high' }
+    ]);
+  });
+
 });

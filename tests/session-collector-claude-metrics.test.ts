@@ -145,4 +145,66 @@ describe('Claude session collector metrics', () => {
     expect(metrics?.changed_files.map((file) => file.path)).not.toContain('src/failed-create.ts');
     expect(metrics?.files_changed).toBe(1);
   });
+
+  it('captures files created by successful Claude Bash heredoc commands', async () => {
+    const sessionFile = join(dir, 'claude-shell-created-files.jsonl');
+    await writeJsonl(sessionFile, [
+      { type: 'assistant', cwd: dir, sessionId: 'claude-shell-created-files', timestamp: '2026-05-20T00:00:00Z', message: { model: 'claude-sonnet', content: [
+        { type: 'tool_use', id: 'bash-create', name: 'Bash', input: { command: [
+          'mkdir -p scripts/preview',
+          "cat > scripts/preview/index-page.mjs <<'EOF'",
+          'export const page = true;',
+          'EOF'
+        ].join('\n') } }
+      ] } },
+      { type: 'user', cwd: dir, sessionId: 'claude-shell-created-files', timestamp: '2026-05-20T00:00:02Z', message: { role: 'user', content: [
+        { type: 'tool_result', tool_use_id: 'bash-create', content: 'Process exited with code 0\n' }
+      ] } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'claude_code', sessionFile });
+
+    expect(metrics?.changed_files.map((file) => file.path)).toEqual(['scripts/preview/index-page.mjs']);
+    expect(metrics?.files_changed).toBe(1);
+    expect(metrics?.lines_added).toBe(1);
+  });
+
+  it('captures changed paths from successful Claude Bash git status output', async () => {
+    const sessionFile = join(dir, 'claude-git-status-output.jsonl');
+    await writeJsonl(sessionFile, [
+      { type: 'assistant', cwd: dir, sessionId: 'claude-git-status-output', timestamp: '2026-05-20T00:00:00Z', message: { model: 'claude-sonnet', content: [
+        { type: 'tool_use', id: 'bash-status', name: 'Bash', input: { command: 'git status --short' } }
+      ] } },
+      { type: 'user', cwd: dir, sessionId: 'claude-git-status-output', timestamp: '2026-05-20T00:00:02Z', message: { role: 'user', content: [
+        { type: 'tool_result', tool_use_id: 'bash-status', content: 'Process exited with code 0\n?? scripts/preview/branches.mjs\n M src/api.ts\n' }
+      ] } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'claude_code', sessionFile });
+
+    expect(metrics?.changed_files.map((file) => [file.path, file.status]).sort()).toEqual([
+      ['scripts/preview/branches.mjs', 'added'],
+      ['src/api.ts', 'modified']
+    ]);
+    expect(metrics?.lines_added).toBeNull();
+  });
+
+  it('does not count failed Claude Bash shell file evidence', async () => {
+    const sessionFile = join(dir, 'claude-failed-shell-files.jsonl');
+    await writeJsonl(sessionFile, [
+      { type: 'assistant', cwd: dir, sessionId: 'claude-failed-shell-files', timestamp: '2026-05-20T00:00:00Z', message: { model: 'claude-sonnet', content: [
+        { type: 'tool_use', id: 'bash-failed', name: 'Bash', input: { command: "cat > src/failed.ts <<'EOF'\nexport const failed = true;\nEOF" } }
+      ] } },
+      { type: 'user', cwd: dir, sessionId: 'claude-failed-shell-files', timestamp: '2026-05-20T00:00:02Z', message: { role: 'user', content: [
+        { type: 'tool_result', tool_use_id: 'bash-failed', content: 'Process exited with code 1\nPermission denied', is_error: true }
+      ] } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'claude_code', sessionFile });
+
+    expect(metrics?.changed_files).toEqual([]);
+    expect(metrics?.files_changed).toBeNull();
+    expect(metrics?.failed_commands).toBe(1);
+  });
+
 });

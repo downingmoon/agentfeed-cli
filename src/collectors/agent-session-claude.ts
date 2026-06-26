@@ -3,6 +3,7 @@ import { asRecord, asString, countTextLines, explicitCostUsd, finalizeAgentSessi
 import { readSessionJsonlRecords } from './agent-session-files.js';
 import { readOmcMetadata } from './agent-session-claude-omc.js';
 import { commandFailed, isTestCommand, toolResultOutput } from './agent-session-tooling.js';
+import { applyShellFileEvidence } from './agent-session-shell-files.js';
 import { hasCollectionWindowBoundary, rowInAgentCollectionWindow } from './agent-session-window.js';
 
 export async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null, inferIdleGap = true): Promise<AgentSessionMetrics | null> {
@@ -11,7 +12,7 @@ export async function parseClaudeSessionFile(cwd: string, sessionFile: string, w
   const effective = inferEffectiveCollectionWindow(rows, window, { inferIdleGap });
   const effectiveWindow = effective.window;
   const files = new Map<string, ChangedFileSummary>();
-  const commands = new Map<string, { command: string; test: boolean }>();
+  const commands = new Map<string, { command: string; test: boolean; workdir: string | null }>();
   const pendingFileEdits = new Map<string, { path: string; status: ChangedFileSummary['status']; added: number; removed: number; failed: boolean }>();
   let tokensUsed = 0;
   let durationSeconds: number | null = null;
@@ -55,9 +56,14 @@ export async function parseClaudeSessionFile(cwd: string, sessionFile: string, w
           pendingFileEdit.failed = true;
         }
         const command = toolUseId ? commands.get(toolUseId) : null;
-        if (command && (item.is_error === true || commandFailed(toolResultOutput(item)))) {
+        const output = toolResultOutput(item);
+        const commandDidFail = item.is_error === true || commandFailed(output);
+        if (command && commandDidFail) {
           failedCommands += 1;
           if (command.test) failedTestCommands += 1;
+        }
+        if (command && !commandDidFail) {
+          applyShellFileEvidence(cwd, { command: command.command, workdir: command.workdir, output }, files);
         }
         continue;
       }
@@ -93,7 +99,7 @@ export async function parseClaudeSessionFile(cwd: string, sessionFile: string, w
         const test = isTestCommand(command);
         if (test) testsRun += 1;
         const toolUseId = asString(item.id);
-        if (toolUseId && command) commands.set(toolUseId, { command, test });
+        if (toolUseId && command) commands.set(toolUseId, { command, test, workdir: asString(input.workdir) });
       }
       if (name === 'Skill') {
         const skill = asString(input.skill);

@@ -9,6 +9,9 @@ const SOURCE_ALIASES: Record<string, AgentType> = {
   cursor: 'cursor',
   gemini: 'gemini_cli',
   gemini_cli: 'gemini_cli',
+  antigravity: 'gemini_cli',
+  antigravity_cli: 'gemini_cli',
+  agy: 'gemini_cli',
   other: 'other'
 };
 
@@ -56,7 +59,7 @@ function unsupportedSourceMessage(value: string, command?: SourceCommand): strin
   const lines = [
     `Unsupported agent source: ${value}`,
     `Supported sources: ${SUPPORTED_SOURCES.join(', ')}`,
-    'Tip: omit --source to let AgentFeed auto-detect Claude/Codex/Cursor/Gemini sessions.'
+    'Tip: omit --source to let AgentFeed auto-detect Claude/Codex/Cursor/Gemini/Antigravity sessions.'
   ];
   if (suggestion) lines.push(`Did you mean: --source ${suggestion}`);
   if (command === 'share') {

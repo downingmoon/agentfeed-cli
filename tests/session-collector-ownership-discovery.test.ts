@@ -122,6 +122,23 @@ describe('agent session ownership and discovery', () => {
     expect(metrics?.changed_files.map((file) => file.path)).toEqual(['src/gemini-project-root.ts']);
   });
 
+  it('auto-discovers Antigravity transcripts that mention the project path', async () => {
+    const home = join(dir, 'home');
+    process.env.HOME = home;
+    const transcript = join(home, '.gemini', 'antigravity-cli', 'brain', 'agy-conversation-1', '.system_generated', 'logs', 'transcript.jsonl');
+    await mkdir(join(transcript, '..'), { recursive: true });
+    await writeJsonl(transcript, [
+      { step_index: 0, source: 'USER_EXPLICIT', type: 'USER_INPUT', status: 'DONE', created_at: '2026-06-25T03:56:15Z', content: `Update file://${join(dir, 'src', 'api.ts')}` },
+      { step_index: 1, source: 'MODEL', type: 'CODE_ACTION', status: 'DONE', created_at: '2026-06-25T03:56:23Z', content: `Created file file://${join(dir, 'src', 'agy-auto.ts')} with requested content.` }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli' });
+
+    expect(metrics?.session_id).toBe('agy-conversation-1');
+    expect(metrics?.collection_sources).toContainEqual({ type: 'agent_session', name: 'antigravity_cli', quality: 'high' });
+    expect(metrics?.changed_files.map((file) => file.path)).toEqual(['src/agy-auto.ts']);
+  });
+
   it('resolves relative session files from the invocation cwd when collecting from a subdirectory', async () => {
     await initProject({ cwd: dir, noGitCheck: false });
     execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });

@@ -2,7 +2,7 @@ import type { ChangedFileSummary, CollectionSource, CollectionWindow } from '../
 import { readSessionJsonlRecords } from './agent-session-files.js';
 import { readOmxMetadata } from './agent-session-codex-omx.js';
 import { applyCodexPatchText } from './agent-session-codex-patch.js';
-import { applyCodexShellFileEvidence } from './agent-session-codex-shell-files.js';
+import { applyShellFileEvidence } from './agent-session-shell-files.js';
 import { commandFailed, failedStatus, isTestCommand, toolOutputFailed } from './agent-session-tooling.js';
 import { asRecord, asString, countTextLines, countUnifiedDiff, explicitCostUsd, finalizeAgentSession, inferEffectiveCollectionWindow, numeric, pushSource, relativeProjectPath, safeJsonParse, upsertFile, type AgentSessionMetrics } from './agent-session-core.js';
 import { hasCollectionWindowBoundary, parseBoundaryMillis, rowInAgentCollectionWindow, rowTimestampMillis } from './agent-session-window.js';
@@ -180,7 +180,7 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
       }
       if (command && !failedStatus(payload.status) && !commandFailed(output)) {
         for (const invocation of command.invocations) {
-          applyCodexShellFileEvidence(cwd, { command: invocation.command, workdir: invocation.workdir, output }, files);
+          applyShellFileEvidence(cwd, { command: invocation.command, workdir: invocation.workdir, output }, files);
         }
       }
     }

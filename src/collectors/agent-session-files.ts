@@ -77,6 +77,17 @@ export async function readSessionJsonlRecords(sessionFile: string): Promise<Reco
   return parseJsonlRecords(text);
 }
 
+function jsonLineMentionsProject(line: string, projectRoot: string): boolean {
+  return line.includes(projectRoot) || line.includes(`file://${projectRoot}`);
+}
+
+async function sessionFileMentionsProjectPath(sessionFile: string, cwd: string): Promise<boolean> {
+  const projectRoot = canonicalPath(cwd);
+  const text = await readBoundedSessionText(sessionFile);
+  if (text == null) return false;
+  return text.split('\n').some((line) => jsonLineMentionsProject(line, projectRoot));
+}
+
 function findStructuredCwd(value: unknown): string | null {
   const record = asRecord(value);
   if (!record) return null;
@@ -132,9 +143,10 @@ export async function sessionFileMayBelongToProject(sessionFile: string, cwd: st
   return !state.sawStructuredCwd || state.matchedProject;
 }
 
-async function sessionFileCanBeAutoDiscovered(sessionFile: string, cwd: string, options: { readonly allowProjectScopedNoCwd?: boolean } = {}): Promise<boolean> {
+async function sessionFileCanBeAutoDiscovered(sessionFile: string, cwd: string, options: { readonly allowProjectScopedNoCwd?: boolean; readonly allowContentPathMatch?: boolean } = {}): Promise<boolean> {
   const state = await structuredCwdMatchState(sessionFile, cwd);
   if (state.matchedProject) return true;
+  if (options.allowContentPathMatch && !state.sawStructuredCwd && await sessionFileMentionsProjectPath(sessionFile, cwd)) return true;
   return Boolean(options.allowProjectScopedNoCwd && !state.sawStructuredCwd);
 }
 
@@ -176,6 +188,9 @@ export async function discoverSessionFile(cwd: string, source: AgentType): Promi
     for (const tmpProject of await readdir(join(home, '.gemini', 'tmp'), { withFileTypes: true }).catch(() => [])) {
       if (tmpProject.isDirectory()) candidates.push(...(await newestJsonlUnder(join(home, '.gemini', 'tmp', tmpProject.name, 'chats'), 20)).map((path) => ({ path })));
     }
+    for (const brainProject of await readdir(join(home, '.gemini', 'antigravity-cli', 'brain'), { withFileTypes: true }).catch(() => [])) {
+      if (brainProject.isDirectory()) candidates.push({ path: join(home, '.gemini', 'antigravity-cli', 'brain', brainProject.name, '.system_generated', 'logs', 'transcript.jsonl') });
+    }
   } else {
     return null;
   }
@@ -185,7 +200,8 @@ export async function discoverSessionFile(cwd: string, source: AgentType): Promi
     seen.add(candidate.path);
     if (source === 'gemini_cli') {
       const projectRoot = await readFile(join(dirname(dirname(candidate.path)), '.project_root'), 'utf8').catch(() => '');
-      if (resolve(projectRoot.trim()) === resolve(cwd)) return candidate.path;
+      if (projectRoot && resolve(projectRoot.trim()) === resolve(cwd)) return candidate.path;
+      if (await sessionFileCanBeAutoDiscovered(candidate.path, cwd, { allowProjectScopedNoCwd: candidate.allowProjectScopedNoCwd, allowContentPathMatch: true }).catch(() => false)) return candidate.path;
       continue;
     }
     if (await sessionFileCanBeAutoDiscovered(candidate.path, cwd, { allowProjectScopedNoCwd: candidate.allowProjectScopedNoCwd }).catch(() => false)) return candidate.path;

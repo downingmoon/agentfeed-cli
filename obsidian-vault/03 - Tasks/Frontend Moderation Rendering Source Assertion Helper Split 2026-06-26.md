@@ -1,38 +1,38 @@
 ---
-title: Frontend Notifications Action Source Assertion Helper Split 2026-06-25
+title: Frontend Moderation Rendering Source Assertion Helper Split 2026-06-26
 aliases:
-  - Notifications action source assertion helper split
+  - Moderation rendering source assertion helper split
 status: done
 tags:
   - agentfeed/frontend
   - agentfeed/contracts
   - project/tasks
-updated: 2026-06-25
+updated: 2026-06-26
 ---
 
-# Frontend Notifications Action Source Assertion Helper Split 2026-06-25
+# Frontend Moderation Rendering Source Assertion Helper Split 2026-06-26
 
 ## 결론
 
-`agentfeed-frontend/src/lib/notifications-action-source-assertions.ts`가 16 pure LOC growth-risk helper였다. Runtime/UI/API 동작은 바꾸지 않고 notification action source-contract 검사를 pending state, failure copy, failure detail helpers로 분리했다.
+`agentfeed-frontend/src/lib/moderation-rendering-source-assertions.ts`가 16 pure LOC growth-risk helper였다. Runtime/UI/API 동작은 바꾸지 않고 moderation rendering source-contract 검사를 accessibility, loading/empty state, report field helpers로 분리했다.
 
 ## 변경
 
-- `notifications-action-source-assertions.ts`를 orchestration-only helper로 축소했다.
+- `moderation-rendering-source-assertions.ts`를 orchestration-only helper로 축소했다.
 - 새 helper:
-  - `notifications-pending-source-assertions.ts`
-  - `notifications-failure-copy-source-assertions.ts`
-  - `notifications-failure-detail-source-assertions.ts`
+  - `moderation-accessibility-source-assertions.ts`
+  - `moderation-loading-state-source-assertions.ts`
+  - `moderation-report-field-source-assertions.ts`
 - 기존 assertion 문자열과 대상 source-file contract만 이동했다.
 - 신규 기능 없음.
 - Runtime/UI/API 동작 변경 없음.
 - 서버/인프라/CI/CD 변경 없음.
 - 현재 서버 canonical name: `trading-bot`. 현재 Codex는 이 서버 위에서 실행 중이므로 배포 시 SSH hop 없이 로컬 rsync 사용.
-- 이 문서화 후 unpushed counter는 6 commits라 5-commit threshold push/deploy 대상이다.
+- 이 문서화 후 unpushed counter는 3 commits라 5-commit threshold 미만이다. Push/deploy 없음.
 
 ## Commit
 
-- `agentfeed-frontend` `28bfde6` — `Split notifications action assertions`
+- `agentfeed-frontend` `e6f14ac` — `Split moderation rendering assertions`
 
 ## 검증
 
@@ -51,16 +51,15 @@ updated: 2026-06-25
 ## Size audit
 
 ```text
-8 src/lib/notifications-action-source-assertions.ts
-7 src/lib/notifications-pending-source-assertions.ts
-8 src/lib/notifications-failure-copy-source-assertions.ts
-9 src/lib/notifications-failure-detail-source-assertions.ts
+8 src/lib/moderation-rendering-source-assertions.ts
+7 src/lib/moderation-accessibility-source-assertions.ts
+7 src/lib/moderation-loading-state-source-assertions.ts
+10 src/lib/moderation-report-field-source-assertions.ts
 ```
 
 Current source assertion helper re-scan top after split:
 
 ```text
-16 src/lib/moderation-rendering-source-assertions.ts
 16 src/lib/landing-preview-interaction-source-assertions.ts
 16 src/lib/landing-preview-data-source-assertions.ts
 16 src/lib/feed-hook-retry-source-assertions.ts
@@ -70,11 +69,11 @@ Current source assertion helper re-scan top after split:
 15 src/lib/shell-static-page-source-assertions.ts
 15 src/lib/settings-load-save-source-assertions.ts
 15 src/lib/search-ui-source-assertions.ts
+15 src/lib/search-query-lifecycle-source-assertions.ts
 ```
 
 ## 후행 TODO
 
-- [x] Previous next candidate `notifications-action-source-assertions.ts` split 처리.
-- [x] Next source assertion helper candidate `moderation-rendering-source-assertions.ts` handled by [[Frontend Moderation Rendering Source Assertion Helper Split 2026-06-26]].
+- [x] Previous next candidate `moderation-rendering-source-assertions.ts` split 처리.
 - [ ] Next source assertion helper candidates: `landing-preview-interaction-source-assertions.ts`, `landing-preview-data-source-assertions.ts`, `feed-hook-retry-source-assertions.ts` at 16 pure LOC.
-- [x] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy completed. See [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-25 — Post project-detail-data/notifications-action source assertion splits threshold deploy]].
+- [ ] Current unpushed commit counter after this task docs will be 3 commits; below 5-commit threshold, no push/deploy.

@@ -14,6 +14,10 @@ updated: 2026-06-26
 
 ## 현재 결론
 
+> [!success] 2026-06-26 Frontend project one-segment slug route guard
+> Human QA sweep에서 `/projects/carrot-platform-v2-web`가 owner-scoped slug를 one-segment project id route로 보내 backend UUID validation `422`를 만들고 `프로젝트 API 오류`를 표시했다. Frontend route에서 one-segment `/projects/:id`는 UUID만 허용하고 slug는 `notFound()`로 차단하게 수정했다. Targeted/full contracts, `npm run lint`, production build 통과. `trading-bot`에 frontend-only rsync + force-recreate 배포 완료. Targeted Playwright QA에서 해당 URL은 의도된 404이며 `/v1/projects/carrot-platform-v2-web` 호출과 API 오류 문구가 없음을 확인했고, surface sweep `SUMMARY pass=16 fail=0` 통과.
+> - [[Frontend Project One Segment Slug Route Guard 2026-06-26]]
+
 > [!success] 2026-06-26 Frontend leaderboard current streak stats parser fix
 > Leaderboard API 자체는 `200 OK`였지만 frontend가 normalized `user.stats.current_streak_days`를 malformed로 거부해 `Leaderboard API를 불러오지 못했습니다`를 표시했다. `leaderboard-adapter.ts`에서 `current_streak_days`를 허용/보존하고 regression fixture를 추가했다. Targeted/full contracts, `npm run lint`, production build 통과. `trading-bot`에 frontend-only rsync + force-recreate 배포 완료. Playwright browser QA에서 `/leaderboard`가 `downingmoon` ranking을 표시하고 API 실패 문구가 사라진 것 확인.
 > - [[Frontend Leaderboard Current Streak Stats Parser Fix 2026-06-26]]

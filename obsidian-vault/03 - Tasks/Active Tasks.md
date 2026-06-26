@@ -14,6 +14,10 @@ updated: 2026-06-26
 
 ## 현재 결론
 
+> [!success] 2026-06-26 Landing-preview-data/feed-hook-retry source assertion threshold push/deploy
+> Landing preview data/feed hook retry source assertion split 6커밋을 push했고, 현재 서버 `trading-bot`에서 직접 `/home/ubuntu/agentfeed` runtime tree로 sync 후 backend/frontend를 force-recreate했다. SSH 없음. Postgres 유지. Runtime CLI `npm ci && npm run build` 통과, compose backend/frontend/postgres healthy, `wait-ready`, local/public readiness, metadata, hosted compatibility smoke 통과. 개발서버 HTTP IP라 hosted smoke는 `AGENTFEED_ALLOW_INSECURE_API=1`로 실행했다.
+> - [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-26 — Post landing-preview-data/feed-hook-retry source assertion splits threshold deploy]]
+
 > [!success] 2026-06-26 Frontend feed hook retry source assertion helper split
 > Frontend `src/lib/feed-hook-retry-source-assertions.ts`를 16 pure LOC helper에서 retry trigger, abort handling, request routing helpers로 분리했다. Orchestrator와 신규 helpers는 모두 8 pure LOC다. Pre-edit targeted contract, post-edit targeted contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음. 문서 commit 후 6 commits라 threshold push/deploy 대상.
 > - [[Frontend Feed Hook Retry Source Assertion Helper Split 2026-06-26]]

@@ -78,4 +78,4 @@ Current source assertion helper re-scan top after split:
 
 - [x] Previous next candidate `feed-hook-retry-source-assertions.ts` split 처리.
 - [ ] Next source assertion helper candidates: `dashboard-recovery-source-assertions.ts`, `cli-authorize-approval-source-assertions.ts`, `auth-shell-signout-source-assertions.ts` at 16 pure LOC.
-- [x] Current unpushed counter after docs/log reached 6 commits; threshold push/deploy pending.
+- [x] Current unpushed counter after docs/log reached 6 commits; threshold push/deploy completed. See [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-26 — Post landing-preview-data/feed-hook-retry source assertion splits threshold deploy]].

@@ -2027,3 +2027,44 @@ Moderation rendering and landing preview interaction source assertion helper spl
 - [x] Next source assertion helper candidate `landing-preview-data-source-assertions.ts` handled by [[Frontend Landing Preview Data Source Assertion Helper Split 2026-06-26]].
 - [ ] Next source assertion helper candidates: `feed-hook-retry-source-assertions.ts`, `dashboard-recovery-source-assertions.ts`, `cli-authorize-approval-source-assertions.ts` at 16 pure LOC.
 - [ ] Next commit counter starts after this deploy docs commit.
+
+## 2026-06-26 — Post landing-preview-data/feed-hook-retry source assertion splits threshold deploy
+
+### Summary
+
+Landing preview data and feed hook retry source assertion helper split docs/logs brought unpushed counter to 6 commits, so threshold push/deploy was completed from the current deployment server `trading-bot`.
+
+### Push ranges
+
+- `agentfeed-frontend` `e713570..050cf70`
+- `agentfeed-cli` `29b651b..4281b3d`
+- `agentfeed-dev` `5e794e8..7781c65`
+
+### Deploy
+
+- No SSH used. Codex is already running on `trading-bot`.
+- Synced `/home/ubuntu/dev/agentfeed` working tree to `/home/ubuntu/agentfeed` runtime tree with runtime `.env` files preserved.
+- Runtime compose dir: `/home/ubuntu/agentfeed/agentfeed-dev`.
+- `docker compose --env-file .env config` passed.
+- `postgres` kept running; `backend` and `frontend` force-recreated.
+- Runtime CLI refreshed at `/home/ubuntu/agentfeed/AgentFeed-CLI`.
+
+### Verification
+
+- Compose `backend`, `frontend`, `postgres` healthy.
+- Runtime CLI `npm ci` passed.
+- Runtime CLI `npm run build` passed.
+- `scripts/wait-ready.sh` passed.
+- Local backend readiness `http://127.0.0.1:18080/health/ready` passed.
+- Local metadata `http://127.0.0.1:18080/v1/metadata` returned `v1`, contract `2026-06-03`, review base `http://161.33.171.81:13030`.
+- Local frontend `http://127.0.0.1:13030/` returned `HTTP/1.1 200 OK`.
+- Public frontend `http://161.33.171.81:13030/` returned `HTTP/1.1 200 OK`.
+- Public backend readiness `http://161.33.171.81:18080/health/ready` passed.
+- Hosted compatibility smoke passed with `AGENTFEED_ALLOW_INSECURE_API=1`.
+- Frontend API diagnostic compatibility passed.
+
+### Follow-up
+
+- [x] 5-commit threshold push/deploy handled.
+- [ ] Next source assertion helper candidates: `dashboard-recovery-source-assertions.ts`, `cli-authorize-approval-source-assertions.ts`, `auth-shell-signout-source-assertions.ts` at 16 pure LOC.
+- [ ] Next commit counter starts after this deploy docs commit.

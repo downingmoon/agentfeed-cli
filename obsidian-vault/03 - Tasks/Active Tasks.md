@@ -14,6 +14,10 @@ updated: 2026-06-26
 
 ## 현재 결론
 
+> [!success] 2026-06-26 Frontend leaderboard current streak stats parser fix
+> Leaderboard API 자체는 `200 OK`였지만 frontend가 normalized `user.stats.current_streak_days`를 malformed로 거부해 `Leaderboard API를 불러오지 못했습니다`를 표시했다. `leaderboard-adapter.ts`에서 `current_streak_days`를 허용/보존하고 regression fixture를 추가했다. Targeted/full contracts, `npm run lint`, production build 통과. `trading-bot`에 frontend-only rsync + force-recreate 배포 완료. Playwright browser QA에서 `/leaderboard`가 `downingmoon` ranking을 표시하고 API 실패 문구가 사라진 것 확인.
+> - [[Frontend Leaderboard Current Streak Stats Parser Fix 2026-06-26]]
+
 > [!success] 2026-06-26 Backend worklog review privacy_scan source 500 fix
 > 인증된 review URL에서 backend `ResponseValidationError`가 발생했다. 원인은 persisted `privacy_scan_json.source = "client"`가 strict `PrivacyScanResult(extra="forbid")` 응답에 그대로 들어간 것. Review response builder에서 `privacy_scan`/findings를 response-safe fields로 sanitize했고, regression test 추가, full backend tests 442 passed, ruff/compileall 통과. `trading-bot`에 backend-only rsync + force-recreate 배포 완료. Authenticated API QA와 Playwright browser QA에서 해당 review URL API 200, `privacy_scan safe`, internal server error 미노출 확인.
 > - [[Backend Worklog Review Privacy Scan Source 500 Fix 2026-06-26]]

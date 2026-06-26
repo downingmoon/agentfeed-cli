@@ -76,4 +76,4 @@ Current source assertion helper re-scan top after split:
 
 - [x] Previous next candidate `landing-preview-interaction-source-assertions.ts` split 처리.
 - [ ] Next source assertion helper candidates: `landing-preview-data-source-assertions.ts`, `feed-hook-retry-source-assertions.ts`, `dashboard-recovery-source-assertions.ts` at 16 pure LOC.
-- [ ] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy pending.
+- [x] Current unpushed commit counter after this task docs reached 6 commits; threshold push/deploy completed. See [[Personal Server Deploy Local Refresh 2026-06-25#2026-06-26 — Post moderation-rendering/landing-preview-interaction source assertion splits threshold deploy]].

@@ -14,6 +14,10 @@ updated: 2026-06-26
 
 ## 현재 결론
 
+> [!success] 2026-06-26 Frontend feed hook retry source assertion helper split
+> Frontend `src/lib/feed-hook-retry-source-assertions.ts`를 16 pure LOC helper에서 retry trigger, abort handling, request routing helpers로 분리했다. Orchestrator와 신규 helpers는 모두 8 pure LOC다. Pre-edit targeted contract, post-edit targeted contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음. 문서 commit 후 6 commits라 threshold push/deploy 대상.
+> - [[Frontend Feed Hook Retry Source Assertion Helper Split 2026-06-26]]
+
 > [!success] 2026-06-26 Frontend landing preview data source assertion helper split
 > Frontend `src/lib/landing-preview-data-source-assertions.ts`를 16 pure LOC helper에서 static data, API data helpers로 분리했다. Orchestrator는 6 pure LOC, 신규 helpers는 10/9 pure LOC다. Pre-edit targeted contract, post-edit targeted contract, full contract suite, `tsc --noEmit`, production build, changed-file no-excuse/LOC scans, `git diff --check` 통과. LSP는 기존처럼 `Transport closed`라 typecheck/build/test로 대체했다. 신규 기능 없음, runtime/UI 변경 없음. 문서/log commit 후 3 commits라 threshold 미만, push/deploy 없음.
 > - [[Frontend Landing Preview Data Source Assertion Helper Split 2026-06-26]]

@@ -29,4 +29,5 @@ tags:
 
 - [x] Full CLI gate: `npm run build && npm run typecheck && npm test -- --run` ✅ — 227 test files / 864 tests passed. Initial test-before-build ordering hit `ensureCliBuilt` 10s hook timeout; build-first verification passed.
 - [x] Manual CLI JSON smoke: synthetic Claude Bash session with both Python bound `Path` and `open` writes collected `files_changed=2`, `lines_added=4`, `session_id=claude-python-bound-smoke`. Evidence: `/tmp/agentfeed-python-bound-collect-SvDhlC.json`.
+- [x] Runtime deploy smoke on `trading-bot`: `/home/ubuntu/agentfeed/agentfeed-cli/dist/cli/index.js` collected `files_changed=2`, `lines_added=4`, `session_id=runtime-claude-python-bound-smoke`. Evidence: `/tmp/agentfeed-runtime-python-bound-collect-jBSDJP.json`.
 - [ ] `src/collectors/agent-session-shell-files.ts` is now 222 pure LOC warning band; next collector edit should split shell script evidence into a dedicated module before adding more patterns.

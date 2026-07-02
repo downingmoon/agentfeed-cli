@@ -15,7 +15,7 @@ updated: 2026-07-02
 ## 현재 결론
 
 > [!success] 2026-07-02 CLI Python bound shell write evidence
-> CLI shell evidence collector가 `target = Path('...'); target.write_text(...)` 및 `with open('...', 'w') as handle; handle.write(...)` 같은 실제 agent Python heredoc 패턴의 파일/라인 수를 놓치던 gap을 regression으로 잠갔다. Direct `Path(...).write_text(...)`/Node `writeFileSync(...)` 수집은 유지하고, bound write evidence는 path별 added lines를 합산한다. Targeted collector test/typecheck, build-first full CLI gate, manual JSON smoke 모두 통과했다. Smoke evidence: `/tmp/agentfeed-python-bound-collect-SvDhlC.json`, `files_changed=2`, `lines_added=4`, `session_id=claude-python-bound-smoke`.
+> CLI shell evidence collector가 `target = Path('...'); target.write_text(...)` 및 `with open('...', 'w') as handle; handle.write(...)` 같은 실제 agent Python heredoc 패턴의 파일/라인 수를 놓치던 gap을 regression으로 잠갔다. Direct `Path(...).write_text(...)`/Node `writeFileSync(...)` 수집은 유지하고, bound write evidence는 path별 added lines를 합산한다. Targeted collector test/typecheck, build-first full CLI gate, manual JSON smoke 모두 통과했다. Smoke evidence: `/tmp/agentfeed-python-bound-collect-SvDhlC.json`, runtime smoke `/tmp/agentfeed-runtime-python-bound-collect-jBSDJP.json`, both `files_changed=2`, `lines_added=4`. Pushed and synced to current server `trading-bot`.
 > - [[CLI Python Bound Shell Write Evidence 2026-07-02]]
 
 > [!success] 2026-06-26 Frontend project one-segment slug route guard

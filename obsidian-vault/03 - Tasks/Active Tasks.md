@@ -13,6 +13,10 @@ updated: 2026-07-02
 # Active Tasks
 
 
+> [!success] 2026-07-02 Staging domain HSTS/runtime context refresh
+> Public staging domains remain Frontend `https://agentfeed.downingmoon.dev`, API `https://agentfeed.api.downingmoon.dev/v1`. Runtime `.env` context comments refreshed, Caddy API HSTS added, frontend duplicate HSTS avoided. Caddy validate/reload passed; HTTPS redirect, frontend CSP/HSTS, API ready/HSTS, metadata review base, CORS, OAuth callback/cookie, CLI doctor API compatibility all verified. OAuth App setting confirmation and external-PC interactive login/publish remain user-side follow-up.
+
+
 > [!success] 2026-07-02 CLI shell evidence collector split
 > CLI shell evidence collector가 222 pure LOC warning band에 들어가 다음 수집 패턴 추가 전 유지보수 위험이 있었다. Public entrypoint `applyShellFileEvidence`는 유지하고 shared evidence type, shell path normalization, git output parsing, script write parsing으로 분리했다. Targeted/full CLI tests, build/typecheck, manual collect/help/bad-input smoke 통과. 신규 기능 없음.
 > - [[CLI Shell Evidence Collector Split 2026-07-02]]

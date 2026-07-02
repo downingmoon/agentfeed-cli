@@ -4,12 +4,21 @@ import { countTextLines, relativeProjectPath } from './agent-session-core.js';
 
 const SHELL_REDIRECT_TARGET = /(?:^|\s)(?:\d?>|>>|>)\s*(['"]?)([^'"\s;&|<>]+)\1/g;
 const SHELL_TEE_TARGET = /(?:^|\s)tee\s+(?:-[a-zA-Z]+\s+)*(['"]?)([^'"\s;&|<>]+)\1/g;
+const PYTHON_WRITE_TARGET = /\b(?:Path|open)\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*(['"])(?<content>[\s\S]*?)\3/g;
+const NODE_WRITE_TARGET = /\b(?:[A-Za-z_$][\w$]*\.)?writeFileSync\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(['"`])(?<content>[\s\S]*?)\3/g;
 
 type FileEvidence = {
   readonly path: string;
   readonly status: ChangedFileSummary['status'];
   readonly added?: number | null;
   readonly removed?: number | null;
+};
+
+type ScriptWriteEvidenceInput = {
+  readonly projectRoot: string;
+  readonly workdir: string | null;
+  readonly pattern: RegExp;
+  readonly command: string;
 };
 
 function changedFile(path: string, status: ChangedFileSummary['status'], added?: number | null, removed?: number | null): ChangedFileSummary {
@@ -87,6 +96,28 @@ function heredocTarget(line: string): { readonly path: string; readonly delimite
   return tee ? { path: tee, delimiter } : null;
 }
 
+function unescapeScriptText(value: string): string {
+  return value
+    .replace(/\\r\\n/g, '\n')
+    .replace(/\\n/g, '\n')
+    .replace(/\\r/g, '\n');
+}
+
+function scriptWriteEvidence(input: ScriptWriteEvidenceInput): FileEvidence[] {
+  const files: FileEvidence[] = [];
+  input.pattern.lastIndex = 0;
+  for (const match of input.command.matchAll(input.pattern)) {
+    const path = projectRelativePath(input.projectRoot, input.workdir, match.groups?.path ?? '');
+    if (!path) continue;
+    files.push({
+      path,
+      status: 'modified',
+      added: countTextLines(unescapeScriptText(match.groups?.content ?? ''))
+    });
+  }
+  return files;
+}
+
 function parseShellWriteCommands(projectRoot: string, workdir: string | null, command: string): FileEvidence[] {
   const files: FileEvidence[] = [];
   const lines = command.split(/\r?\n/);
@@ -115,6 +146,8 @@ function parseShellWriteCommands(projectRoot: string, workdir: string | null, co
       if (path) files.push({ path, status: 'modified' });
     }
   }
+  files.push(...scriptWriteEvidence({ projectRoot, workdir, pattern: PYTHON_WRITE_TARGET, command }));
+  files.push(...scriptWriteEvidence({ projectRoot, workdir, pattern: NODE_WRITE_TARGET, command }));
   return files;
 }
 

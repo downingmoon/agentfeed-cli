@@ -12,6 +12,11 @@ updated: 2026-07-02
 
 # Active Tasks
 
+
+> [!success] 2026-07-02 CLI shell evidence collector split
+> CLI shell evidence collector가 222 pure LOC warning band에 들어가 다음 수집 패턴 추가 전 유지보수 위험이 있었다. Public entrypoint `applyShellFileEvidence`는 유지하고 shared evidence type, shell path normalization, git output parsing, script write parsing으로 분리했다. Targeted/full CLI tests, build/typecheck, manual collect/help/bad-input smoke 통과. 신규 기능 없음.
+> - [[CLI Shell Evidence Collector Split 2026-07-02]]
+
 ## 현재 결론
 
 > [!success] 2026-07-02 CLI Python bound shell write evidence

@@ -73,6 +73,52 @@ describe('shell script file evidence', () => {
     }
   });
 
+
+  it('captures Python triple-quoted pathlib write_text targets with line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-triple-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'from pathlib import Path',
+          'Path(\'src/generated-triple.ts\').write_text("""export const first = true;\\nexport const second = true;\\n""")',
+          'PY'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()]).toMatchObject([
+        { path: 'src/generated-triple.ts', status: 'modified', lines_added: 2 }
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('captures Python triple-quoted bound write targets with line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-bound-triple-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'from pathlib import Path',
+          "target = Path('src/generated-bound-triple.ts')",
+          'target.write_text("""export const first = true;\\nexport const second = true;\\n""")',
+          'PY'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()]).toMatchObject([
+        { path: 'src/generated-bound-triple.ts', status: 'modified', lines_added: 2 }
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it('captures Node writeFileSync targets with line counts', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-node-'));
     try {

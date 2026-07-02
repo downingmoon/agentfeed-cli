@@ -4,6 +4,7 @@ import { projectRelativeShellPath } from './agent-session-shell-paths.js';
 
 const SHELL_REDIRECT_TARGET = /(?:^|\s)(?:\d?>|>>|>)\s*(['"]?)([^'"\s;&|<>]+)\1/g;
 const SHELL_TEE_TARGET = /(?:^|\s)tee\s+(?:-[a-zA-Z]+\s+)*(['"]?)([^'"\s;&|<>]+)\1/g;
+const PYTHON_TRIPLE_WRITE_TARGET = /\b(?:Path|open)\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*('''|""")(?<content>[\s\S]*?)\3/g;
 const PYTHON_WRITE_TARGET = /\b(?:Path|open)\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*(['"])(?<content>[\s\S]*?)\3/g;
 const PYTHON_PATH_BINDING_TARGET = /\b(?<name>[A-Za-z_]\w*)\s*=\s*Path\(\s*(['"])(?<path>[^'"]+)\2\s*\)/g;
 const PYTHON_OPEN_BINDING_TARGET = /\bwith\s+open\(\s*(['"])(?<path>[^'"]+)\1\s*,\s*(['"])(?<mode>[^'"]*)\3[\s\S]*?\)\s+as\s+(?<name>[A-Za-z_]\w*)\s*:/g;
@@ -90,6 +91,16 @@ function boundScriptWriteEvidence(input: BoundScriptWriteEvidenceInput): FileEvi
   for (const target of input.targets) {
     const path = projectRelativeShellPath(input.projectRoot, input.workdir, target.path);
     if (!path) continue;
+    const triplePattern = new RegExp(`\\b${escapeRegExp(target.name)}\\.write(?:_text)?\\(\\s*('''|""")(?<content>[\\s\\S]*?)\\1`, 'g');
+    for (const match of input.command.matchAll(triplePattern)) {
+      const added = countTextLines(unescapeScriptText(match.groups?.content ?? ''));
+      const current = files.get(path);
+      files.set(path, {
+        path,
+        status: 'modified',
+        added: (current?.added ?? 0) + added
+      });
+    }
     const pattern = new RegExp(`\\b${escapeRegExp(target.name)}\\.write(?:_text)?\\(\\s*(['"\`])(?<content>[\\s\\S]*?)\\1`, 'g');
     for (const match of input.command.matchAll(pattern)) {
       const added = countTextLines(unescapeScriptText(match.groups?.content ?? ''));
@@ -132,6 +143,7 @@ export function parseShellWriteCommands(projectRoot: string, workdir: string | n
       if (path) files.push({ path, status: 'modified' });
     }
   }
+  files.push(...scriptWriteEvidence({ projectRoot, workdir, pattern: PYTHON_TRIPLE_WRITE_TARGET, command }));
   files.push(...scriptWriteEvidence({ projectRoot, workdir, pattern: PYTHON_WRITE_TARGET, command }));
   files.push(...boundScriptWriteEvidence({ projectRoot, workdir, command, targets: pythonBoundTargets(command) }));
   files.push(...scriptWriteEvidence({ projectRoot, workdir, pattern: NODE_WRITE_TARGET, command }));

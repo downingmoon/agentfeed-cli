@@ -13,6 +13,11 @@ updated: 2026-07-02
 # Active Tasks
 
 
+> [!success] 2026-07-02 CLI Python triple-quoted shell write evidence
+> CLI shell evidence collector가 Python heredoc 안의 direct/bound triple-quoted writes(`Path(...).write_text("""...""")`, `target.write_text("""...""")`)에서 `lines_added=0`으로 떨어지던 gap을 regression으로 잠갔다. Targeted/full CLI tests, build/typecheck, static scans, manual `agentfeed collect` smoke 통과. Smoke evidence: `/tmp/agentfeed-triple-collect.json`, `files_changed=2`, `lines_added=4`.
+> - [[CLI Python Triple Quote Shell Write Evidence 2026-07-02]]
+
+
 > [!success] 2026-07-02 Staging domain HSTS/runtime context refresh
 > Public staging domains remain Frontend `https://agentfeed.downingmoon.dev`, API `https://agentfeed.api.downingmoon.dev/v1`. Runtime `.env` context comments refreshed, Caddy API HSTS added, frontend duplicate HSTS avoided. Caddy validate/reload passed; HTTPS redirect, frontend CSP/HSTS, API ready/HSTS, metadata review base, CORS, OAuth callback/cookie, CLI doctor API compatibility all verified. OAuth App setting confirmation and external-PC interactive login/publish remain user-side follow-up.
 

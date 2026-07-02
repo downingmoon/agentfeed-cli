@@ -50,11 +50,11 @@ describe('CLI publish redaction re-scan contract', () => {
     let ingestPayload: unknown = null;
     const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
       ingestPayload = JSON.parse(String(init?.body ?? '{}'));
-      return new Response(JSON.stringify({ data: { id: 'worklog_redacted', status: 'needs_review', visibility: 'private', review_url: 'https://agentfeed.dev/worklogs/worklog_redacted/review', created_at: '2026-05-19T00:00:00Z' } }), { status: 200, headers: { 'content-type': 'application/json' } });
+      return new Response(JSON.stringify({ data: { id: 'worklog_redacted', status: 'needs_review', visibility: 'private', review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_redacted/review', created_at: '2026-05-19T00:00:00Z' } }), { status: 200, headers: { 'content-type': 'application/json' } });
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    await publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } });
+    await publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'now' } });
 
     const ingestWorklog = recordField(ingestPayload, 'worklog');
     const ingestProject = recordField(ingestPayload, 'project');

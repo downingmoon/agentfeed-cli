@@ -24,11 +24,11 @@ describe('CLI remote preview contract', () => {
     }), { status: 200, headers: { 'content-type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchMock);
 
-    const result = await previewDraftRemote(draft, { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' });
+    const result = await previewDraftRemote(draft, { ingestion_token: 'tok', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'now' });
 
     expect(result.warnings).toEqual(['check privacy']);
     expect(result.preview).toEqual({ title: 'Draft title', summary: 'Draft summary', user_note: null, model: 'gpt-5.5', metrics_row: '0 files' });
-    expect(fetchMock).toHaveBeenCalledWith('https://api.agentfeed.dev/v1/ingest/worklogs/preview', expect.objectContaining({ method: 'POST' }));
+    expect(fetchMock).toHaveBeenCalledWith('https://agentfeed.api.downingmoon.dev/v1/ingest/worklogs/preview', expect.objectContaining({ method: 'POST' }));
   });
 
   it.each([
@@ -67,7 +67,7 @@ describe('CLI remote preview contract', () => {
     const fetchMock = vi.fn(async () => response());
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(previewDraftRemote(draft, { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' }))
+    await expect(previewDraftRemote(draft, { ingestion_token: 'tok', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'now' }))
       .rejects.toMatchObject({
         status: 502,
         code: 'API_RESPONSE_INVALID',

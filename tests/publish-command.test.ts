@@ -8,8 +8,8 @@ const upload: PublishDraftResult = {
   id: 'worklog_publish_command',
   status: 'needs_review',
   visibility: 'private',
-  review_url: 'https://agentfeed.dev/worklogs/worklog_publish_command/review',
-  review_base_url: 'https://agentfeed.dev',
+  review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_publish_command/review',
+  review_base_url: 'https://agentfeed.downingmoon.dev',
   created_at: '2026-06-21T00:00:00.000Z'
 };
 

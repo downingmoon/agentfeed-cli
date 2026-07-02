@@ -5,7 +5,7 @@ import { createEmptyDraft } from '../src/draft/create.js';
 import type { AgentFeedCredentials, LocalDraft, ReviewUrlHandoff } from '../src/types.js';
 
 const credentials: AgentFeedCredentials = {
-  api_base_url: 'https://api.agentfeed.dev/v1',
+  api_base_url: 'https://agentfeed.api.downingmoon.dev/v1',
   ingestion_token: 'af_live_collect_upload_execution',
   created_at: '2026-06-21T00:00:00.000Z'
 };
@@ -15,7 +15,7 @@ const metadata: ApiMetadata = {
   api_version: 'v1',
   backend_version: 'test',
   contract_version: '2026-06-21',
-  review_base_url: 'https://agentfeed.dev',
+  review_base_url: 'https://agentfeed.downingmoon.dev',
   supported_clients: {
     cli: { min_version: '0.2.0', contract_version: '2026-06-21' },
     frontend: { min_version: '0.2.0', contract_version: '2026-06-21' }
@@ -26,8 +26,8 @@ const upload: PublishDraftResult = {
   id: 'worklog_collect_upload_execution',
   status: 'needs_review',
   visibility: 'private',
-  review_url: 'https://agentfeed.dev/worklogs/worklog_collect_upload_execution/review',
-  review_base_url: 'https://agentfeed.dev',
+  review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_collect_upload_execution/review',
+  review_base_url: 'https://agentfeed.downingmoon.dev',
   created_at: '2026-06-21T01:00:00.000Z'
 };
 
@@ -81,7 +81,7 @@ describe('collect JSON upload execution', () => {
     // Then: upload uses the contract retry command and refreshes output from persisted draft state.
     expect(result).toBe(savedDraft);
     expect(preflightCalls).toEqual([[credentials, { retryCommand: 'agentfeed collect --json --upload' }]]);
-    expect(publishReviewBaseUrls).toEqual(['https://agentfeed.dev']);
+    expect(publishReviewBaseUrls).toEqual(['https://agentfeed.downingmoon.dev']);
     expect(sanitizedDraftIds).toEqual(['draft_collect_upload_execution']);
     expect(result.upload.handoff).toBeUndefined();
   });
@@ -117,6 +117,6 @@ describe('collect JSON upload execution', () => {
 
     // Then: the saved draft carries the same handoff policy the CLI previously performed inline.
     expect(result.upload.handoff).toEqual(noHandoff);
-    expect(handoffCalls).toEqual([{ copy: false, open: true, apiBaseUrl: 'https://api.agentfeed.dev/v1', reviewBaseUrl: 'https://agentfeed.dev' }]);
+    expect(handoffCalls).toEqual([{ copy: false, open: true, apiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1', reviewBaseUrl: 'https://agentfeed.downingmoon.dev' }]);
   });
 });

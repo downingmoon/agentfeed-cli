@@ -8,7 +8,7 @@ import type { CredentialsResolution } from '../src/config/credentials.js';
 function savedCredentialsResolution(): CredentialsResolution {
   return {
     credentials: {
-      api_base_url: 'https://api.agentfeed.dev/v1',
+      api_base_url: 'https://agentfeed.api.downingmoon.dev/v1',
       ingestion_token: 'af_live_saved',
       created_at: '2026-06-12T00:00:00.000Z'
     },
@@ -16,7 +16,7 @@ function savedCredentialsResolution(): CredentialsResolution {
     credentials_file_path: '/tmp/agentfeed/credentials.json',
     credentials_file_exists: true,
     credential_store: 'file',
-    api_base_url: 'https://api.agentfeed.dev/v1',
+    api_base_url: 'https://agentfeed.api.downingmoon.dev/v1',
     api_base_url_source: 'credentials',
     api_base_url_source_detail: 'credentials.json',
     warnings: []

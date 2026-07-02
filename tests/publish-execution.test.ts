@@ -7,7 +7,7 @@ import { runPublishCommand } from '../src/cli/publish-execution.js';
 import type { UploadPreflightOptions } from '../src/cli/upload-guidance.js';
 
 const credentials: AgentFeedCredentials = {
-  api_base_url: 'https://api.agentfeed.dev/v1',
+  api_base_url: 'https://agentfeed.api.downingmoon.dev/v1',
   ingestion_token: 'af_live_publish_execution',
   created_at: '2026-06-12T00:00:00.000Z'
 };
@@ -17,7 +17,7 @@ const metadata: ApiMetadata = {
   api_version: 'v1',
   backend_version: 'test',
   contract_version: '2026-06-12',
-  review_base_url: 'https://agentfeed.dev',
+  review_base_url: 'https://agentfeed.downingmoon.dev',
   supported_clients: {
     cli: { min_version: '0.2.0', contract_version: '2026-06-12' },
     frontend: { min_version: '0.2.0', contract_version: '2026-06-12' }
@@ -28,8 +28,8 @@ const upload: PublishDraftResult = {
   id: 'worklog_publish_execution',
   status: 'needs_review',
   visibility: 'private',
-  review_url: 'https://agentfeed.dev/worklogs/worklog_publish_execution/review',
-  review_base_url: 'https://agentfeed.dev',
+  review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_publish_execution/review',
+  review_base_url: 'https://agentfeed.downingmoon.dev',
   created_at: '2026-06-12T01:00:00.000Z'
 };
 
@@ -136,9 +136,9 @@ describe('publish execution', () => {
     // Then: the helper owns upload execution and preserves JSON handoff policy.
     expect(result).toEqual({ kind: 'published', draft: savedDraft, upload, handoff: noHandoff });
     expect(readDraftIds).toEqual(['draft_publish_json_execution', 'draft_publish_json_execution']);
-    expect(publishReviewBaseUrls).toEqual(['https://agentfeed.dev']);
+    expect(publishReviewBaseUrls).toEqual(['https://agentfeed.downingmoon.dev']);
     expect(openPolicyCalls).toEqual([{ openFlag: false, respectConfig: false, noOpen: false }]);
-    expect(handoffCalls).toEqual([{ copy: true, open: false, apiBaseUrl: 'https://api.agentfeed.dev/v1', reviewBaseUrl: 'https://agentfeed.dev' }]);
+    expect(handoffCalls).toEqual([{ copy: true, open: false, apiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1', reviewBaseUrl: 'https://agentfeed.downingmoon.dev' }]);
   });
 
   it('throws login guidance before preflight when credentials are missing', async () => {
@@ -203,7 +203,7 @@ describe('publish execution', () => {
       credentialContext: {
         tokenSourceLabel: 'OS keychain',
         credentialStoreLabel: 'OS keychain',
-        apiBaseUrl: 'https://api.agentfeed.dev/v1',
+        apiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1',
         apiBaseSourceLabel: 'saved credentials file',
         credentialsFilePath: '/Users/test/.agentfeed/credentials.json'
       }

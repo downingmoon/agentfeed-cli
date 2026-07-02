@@ -12,7 +12,7 @@ function draftWithId(id: string): LocalDraft {
 }
 
 const credentials: AgentFeedCredentials = {
-  api_base_url: 'https://api.agentfeed.dev/v1',
+  api_base_url: 'https://agentfeed.api.downingmoon.dev/v1',
   ingestion_token: 'af_test_share_command',
   created_at: '2026-06-21T00:00:00.000Z'
 };
@@ -21,8 +21,8 @@ const upload: PublishDraftResult = {
   id: 'worklog_share_command',
   status: 'needs_review',
   visibility: 'private',
-  review_url: 'https://agentfeed.dev/worklogs/worklog_share_command/review',
-  review_base_url: 'https://agentfeed.dev',
+  review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_share_command/review',
+  review_base_url: 'https://agentfeed.downingmoon.dev',
   created_at: '2026-06-21T00:00:00.000Z'
 };
 

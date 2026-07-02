@@ -26,7 +26,7 @@ function markUploaded(draft: ReturnType<typeof createEmptyDraft>, worklogId: str
   draft.upload = {
     uploaded: true,
     worklog_id: worklogId,
-    review_url: `https://agentfeed.dev/worklogs/${worklogId}/review`,
+    review_url: `https://agentfeed.downingmoon.dev/worklogs/${worklogId}/review`,
     uploaded_at: '2026-06-12T00:00:00.000Z'
   };
 }
@@ -41,7 +41,7 @@ describe('open draft resolver', () => {
     const resolved = await resolveOpenDraft({ cwd: dir, id: draft.id, latest: false });
 
     expect(resolved.id).toBe(draft.id);
-    expect(resolved.upload.review_url).toBe('https://agentfeed.dev/worklogs/worklog_open_selected/review');
+    expect(resolved.upload.review_url).toBe('https://agentfeed.downingmoon.dev/worklogs/worklog_open_selected/review');
   });
 
   it('rejects a pending draft selected by id with publish guidance', async () => {

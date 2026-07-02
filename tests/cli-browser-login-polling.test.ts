@@ -14,10 +14,10 @@ describe('CLI browser login polling', () => {
     });
 
     const result = await waitForCliAuthExchange({
-      apiBaseUrl: 'https://api.agentfeed.dev/v1',
+      apiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1',
       session: {
         session_id: 'session-1',
-        authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-1',
+        authorize_url: 'https://agentfeed.downingmoon.dev/cli/authorize?session_id=session-1',
         user_code: '123-456',
         expires_at: '2026-05-20T00:05:00Z',
         poll_interval_seconds: 1
@@ -41,10 +41,10 @@ describe('CLI browser login polling', () => {
     });
 
     const result = await waitForCliAuthExchange({
-      apiBaseUrl: 'https://api.agentfeed.dev/v1',
+      apiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1',
       session: {
         session_id: 'session-transient',
-        authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-transient',
+        authorize_url: 'https://agentfeed.downingmoon.dev/cli/authorize?session_id=session-transient',
         user_code: '123-456',
         expires_at: '2026-05-20T00:05:00Z',
         poll_interval_seconds: 1
@@ -64,10 +64,10 @@ describe('CLI browser login polling', () => {
     });
 
     await expect(waitForCliAuthExchange({
-      apiBaseUrl: 'https://api.agentfeed.dev/v1',
+      apiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1',
       session: {
         session_id: 'session-terminal',
-        authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-terminal',
+        authorize_url: 'https://agentfeed.downingmoon.dev/cli/authorize?session_id=session-terminal',
         user_code: '123-456',
         expires_at: '2026-05-20T00:05:00Z',
         poll_interval_seconds: 1
@@ -99,10 +99,10 @@ describe('CLI browser login polling', () => {
 
     try {
       await expect(waitForCliAuthExchange({
-        apiBaseUrl: 'https://api.agentfeed.dev/v1',
+        apiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1',
         session: {
           session_id: 'session-timeout',
-          authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-timeout',
+          authorize_url: 'https://agentfeed.downingmoon.dev/cli/authorize?session_id=session-timeout',
           user_code: '123-456',
           expires_at: '2026-05-20T00:05:00Z',
           poll_interval_seconds: 60

@@ -161,7 +161,7 @@ describe('drafts CLI command', () => {
     draft.upload = {
       uploaded: true,
       worklog_id: 'worklog_json_list',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_json_list/review'
+      review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_json_list/review'
     };
     await writeDraft(dir, draft);
 
@@ -175,7 +175,7 @@ describe('drafts CLI command', () => {
       id: draft.id,
       status: 'uploaded',
       title: 'JSON draft list',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_json_list/review'
+      review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_json_list/review'
     });
     expect(output.next_actions).toEqual([
       `agentfeed preview --id ${draft.id}`,

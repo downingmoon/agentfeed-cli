@@ -12,7 +12,7 @@ let home: string;
 const oldHome = process.env.HOME;
 const oldAgentFeedDraftUploadLockTimeoutMs = process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_TIMEOUT_MS;
 const oldAgentFeedDraftUploadLockHeartbeatMs = process.env.AGENTFEED_DRAFT_UPLOAD_LOCK_HEARTBEAT_MS;
-const defaultPublishCredentials = { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' };
+const defaultPublishCredentials = { ingestion_token: 'tok', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'now' };
 
 beforeEach(async () => {
   dir = await mkdtemp(join(tmpdir(), 'agentfeed-upload-lock-'));
@@ -71,7 +71,7 @@ describe('CLI upload lock contract', () => {
         id: 'worklog_live_lock_race',
         status: 'needs_review',
         visibility: 'private',
-        review_url: 'https://agentfeed.dev/worklogs/worklog_live_lock_race/review',
+        review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_live_lock_race/review',
         created_at: '2026-05-19T00:00:00Z'
       }
     }), { status: 200, headers: { 'content-type': 'application/json' } }));
@@ -112,7 +112,7 @@ describe('CLI upload lock contract', () => {
           id: 'worklog_lock_hash',
           status: 'needs_review',
           visibility: 'private',
-          review_url: 'https://agentfeed.dev/worklogs/worklog_lock_hash/review',
+          review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_lock_hash/review',
           created_at: '2026-05-19T00:00:00Z'
         }
       }), { status: 200, headers: { 'content-type': 'application/json' } });
@@ -138,7 +138,7 @@ describe('CLI upload lock contract', () => {
           id: 'worklog_heartbeat_failed',
           status: 'needs_review',
           visibility: 'private',
-          review_url: 'https://agentfeed.dev/worklogs/worklog_heartbeat_failed/review',
+          review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_heartbeat_failed/review',
           created_at: '2026-05-19T00:00:00Z'
         }
       }), { status: 200, headers: { 'content-type': 'application/json' } });
@@ -174,7 +174,7 @@ describe('CLI upload lock contract', () => {
         id: 'worklog_pid_reuse',
         status: 'needs_review',
         visibility: 'private',
-        review_url: 'https://agentfeed.dev/worklogs/worklog_pid_reuse/review',
+        review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_pid_reuse/review',
         created_at: '2026-05-19T00:00:00Z'
       }
     }), { status: 200, headers: { 'content-type': 'application/json' } }));

@@ -55,7 +55,7 @@ describe('status output contracts', () => {
         ...process.env,
         HOME: home,
         AGENTFEED_TOKEN: '',
-        AGENTFEED_API_BASE_URL: 'https://api.agentfeed.dev/v1',
+        AGENTFEED_API_BASE_URL: 'https://agentfeed.api.downingmoon.dev/v1',
         FORCE_COLOR: undefined
       }
     });
@@ -71,7 +71,7 @@ describe('status output contracts', () => {
     expect(stdout).toContain('Project');
     expect(stdout).toContain('Collection');
     expect(stdout).toContain('User/token source: missing');
-    expect(stdout).toContain('API base URL: https://api.agentfeed.dev/v1');
+    expect(stdout).toContain('API base URL: https://agentfeed.api.downingmoon.dev/v1');
     expect(stdout).toContain('Project initialized: yes');
     expect(stdout).toContain('Project name: status-polish');
     expect(stdout).toContain('Git repository:');
@@ -88,7 +88,7 @@ describe('status output contracts', () => {
         ...process.env,
         HOME: home,
         AGENTFEED_TOKEN: '',
-        AGENTFEED_API_BASE_URL: 'https://api.agentfeed.dev/v1',
+        AGENTFEED_API_BASE_URL: 'https://agentfeed.api.downingmoon.dev/v1',
         NO_COLOR: '1',
         FORCE_COLOR: undefined
       }
@@ -105,7 +105,7 @@ describe('status output contracts', () => {
         ...process.env,
         HOME: home,
         AGENTFEED_TOKEN: '',
-        AGENTFEED_API_BASE_URL: 'https://api.agentfeed.dev/v1',
+        AGENTFEED_API_BASE_URL: 'https://agentfeed.api.downingmoon.dev/v1',
         NO_COLOR: '',
         FORCE_COLOR: undefined
       }

@@ -52,7 +52,7 @@ afterEach(async () => {
 describe('credential file storage config', () => {
   it('env vars override configured credentials', async () => {
     process.env.AGENTFEED_API_BASE_URL = 'http://localhost:8000/v1';
-    const creds = await resolveCredentials({ ingestion_token: 'stored', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' });
+    const creds = await resolveCredentials({ ingestion_token: 'stored', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'now' });
     expect(creds.api_base_url).toBe('http://localhost:8000/v1');
   });
 

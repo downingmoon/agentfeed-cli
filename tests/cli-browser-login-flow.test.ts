@@ -50,10 +50,10 @@ describe('CLI browser login no-open flow', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const creds = await browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1', noOpen: true, waitMs: 50, allowCiBrowser: true });
+    const creds = await browserLogin({ apiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1', noOpen: true, waitMs: 50, allowCiBrowser: true });
 
     expect(creds).toMatchObject({
-      api_base_url: 'https://api.agentfeed.dev/v1',
+      api_base_url: 'https://agentfeed.api.downingmoon.dev/v1',
       ingestion_token: 'af_live_no_open',
       token_id: 'token-no-open',
       token_expires_at: '2026-06-15T00:00:00Z',
@@ -64,11 +64,11 @@ describe('CLI browser login no-open flow', () => {
         avatar_url: 'https://avatars.githubusercontent.com/u/4242?v=4'
       }
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.agentfeed.dev/v1/metadata', expect.objectContaining({ method: 'GET' }));
-    expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://api.agentfeed.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
-    expect(fetchMock).toHaveBeenNthCalledWith(3, 'https://api.agentfeed.dev/v1/auth/cli/sessions/session-no-open/exchange', expect.objectContaining({ method: 'POST' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://agentfeed.api.downingmoon.dev/v1/metadata', expect.objectContaining({ method: 'GET' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://agentfeed.api.downingmoon.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(3, 'https://agentfeed.api.downingmoon.dev/v1/auth/cli/sessions/session-no-open/exchange', expect.objectContaining({ method: 'POST' }));
     await expect(readFile(fixture.credentialsPath(), 'utf8').then(JSON.parse)).resolves.toMatchObject({
-      api_base_url: 'https://api.agentfeed.dev/v1',
+      api_base_url: 'https://agentfeed.api.downingmoon.dev/v1',
       ingestion_token: 'af_live_no_open',
       token_id: 'token-no-open',
       token_expires_at: '2026-06-15T00:00:00Z',

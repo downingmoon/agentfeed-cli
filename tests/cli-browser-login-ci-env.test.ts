@@ -13,7 +13,7 @@ describe('CLI browser login CI environment guard', () => {
     vi.stubGlobal('fetch', fetchMock);
     const startedAt = Date.now();
 
-    await expect(browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1', noOpen: true }))
+    await expect(browserLogin({ apiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1', noOpen: true }))
       .rejects.toThrow(/AGENTFEED_TOKEN|agentfeed login --token|--browser/);
 
     expect(Date.now() - startedAt).toBeLessThan(1000);
@@ -28,7 +28,7 @@ describe('CLI browser login CI environment guard', () => {
     vi.stubGlobal('fetch', fetchMock);
     const startedAt = Date.now();
 
-    await expect(browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1', noOpen: true }))
+    await expect(browserLogin({ apiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1', noOpen: true }))
       .rejects.toThrow(/Browser login is disabled in CI|AGENTFEED_TOKEN|--browser/);
 
     expect(Date.now() - startedAt).toBeLessThan(1000);

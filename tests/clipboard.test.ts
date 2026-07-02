@@ -27,12 +27,12 @@ describe('clipboard', () => {
     const child = fakeChild();
     spawnMock.mockReturnValue(child);
 
-    const copied = copyToClipboard('https://agentfeed.dev/review/1');
+    const copied = copyToClipboard('https://agentfeed.downingmoon.dev/review/1');
     child.emit('close', 0);
 
     await expect(copied).resolves.toBe(true);
     expect(spawnMock).toHaveBeenCalledWith('pbcopy', [], expect.objectContaining({ stdio: ['pipe', 'ignore', 'ignore'] }));
-    expect(child.stdin.end).toHaveBeenCalledWith('https://agentfeed.dev/review/1');
+    expect(child.stdin.end).toHaveBeenCalledWith('https://agentfeed.downingmoon.dev/review/1');
   });
 
 
@@ -45,7 +45,7 @@ describe('clipboard', () => {
       const child = fakeChild();
       spawnMock.mockReturnValue(child);
 
-      const copied = copyToClipboard('https://agentfeed.dev/review/1');
+      const copied = copyToClipboard('https://agentfeed.downingmoon.dev/review/1');
       const options = spawnMock.mock.calls[0][2] as { env?: NodeJS.ProcessEnv };
       expect(options.env?.AGENTFEED_TOKEN).toBeUndefined();
       expect(options.env?.NPM_TOKEN).toBeUndefined();
@@ -64,7 +64,7 @@ describe('clipboard', () => {
     const child = fakeChild();
     spawnMock.mockReturnValue(child);
 
-    const copied = copyToClipboard('https://agentfeed.dev/review/1');
+    const copied = copyToClipboard('https://agentfeed.downingmoon.dev/review/1');
     child.emit('error', new Error('missing'));
 
     await expect(copied).resolves.toBe(false);
@@ -74,11 +74,11 @@ describe('clipboard', () => {
     const child = fakeChild();
     spawnMock.mockReturnValue(child);
 
-    const copied = copyToClipboard('https://agentfeed.dev/review/1');
+    const copied = copyToClipboard('https://agentfeed.downingmoon.dev/review/1');
     child.stdin.emit('error', Object.assign(new Error('write EPIPE'), { code: 'EPIPE' }));
 
     await expect(copied).resolves.toBe(false);
-    expect(child.stdin.end).toHaveBeenCalledWith('https://agentfeed.dev/review/1');
+    expect(child.stdin.end).toHaveBeenCalledWith('https://agentfeed.downingmoon.dev/review/1');
   });
 
   it('falls back across common Linux clipboard commands', async () => {
@@ -90,7 +90,7 @@ describe('clipboard', () => {
       .mockReturnValueOnce(xclip)
       .mockReturnValueOnce(wlCopy);
 
-    const copied = copyToClipboard('https://agentfeed.dev/review/1');
+    const copied = copyToClipboard('https://agentfeed.downingmoon.dev/review/1');
     xclip.emit('error', new Error('missing xclip'));
     await new Promise((resolve) => setImmediate(resolve));
     wlCopy.emit('close', 0);
@@ -98,8 +98,8 @@ describe('clipboard', () => {
     await expect(copied).resolves.toBe(true);
     expect(spawnMock).toHaveBeenNthCalledWith(1, 'xclip', ['-selection', 'clipboard'], expect.objectContaining({ stdio: ['pipe', 'ignore', 'ignore'] }));
     expect(spawnMock).toHaveBeenNthCalledWith(2, 'wl-copy', [], expect.objectContaining({ stdio: ['pipe', 'ignore', 'ignore'] }));
-    expect(xclip.stdin.end).toHaveBeenCalledWith('https://agentfeed.dev/review/1');
-    expect(wlCopy.stdin.end).toHaveBeenCalledWith('https://agentfeed.dev/review/1');
+    expect(xclip.stdin.end).toHaveBeenCalledWith('https://agentfeed.downingmoon.dev/review/1');
+    expect(wlCopy.stdin.end).toHaveBeenCalledWith('https://agentfeed.downingmoon.dev/review/1');
   });
 
   it('falls back when a Linux clipboard command closes stdin before reading', async () => {
@@ -111,7 +111,7 @@ describe('clipboard', () => {
       .mockReturnValueOnce(xclip)
       .mockReturnValueOnce(wlCopy);
 
-    const copied = copyToClipboard('https://agentfeed.dev/review/1');
+    const copied = copyToClipboard('https://agentfeed.downingmoon.dev/review/1');
     xclip.stdin.emit('error', Object.assign(new Error('write EPIPE'), { code: 'EPIPE' }));
     await new Promise((resolve) => setImmediate(resolve));
     wlCopy.emit('close', 0);

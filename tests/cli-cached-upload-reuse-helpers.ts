@@ -13,7 +13,7 @@ const oldHome = process.env.HOME;
 
 export const defaultPublishCredentials = {
   ingestion_token: 'tok',
-  api_base_url: 'https://api.agentfeed.dev/v1',
+  api_base_url: 'https://agentfeed.api.downingmoon.dev/v1',
   created_at: 'now'
 };
 

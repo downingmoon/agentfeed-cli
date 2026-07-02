@@ -10,7 +10,7 @@ import { publishDraft } from '../src/api/client.js';
 let dir: string;
 let home: string;
 const oldHome = process.env.HOME;
-const defaultPublishCredentials = { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' };
+const defaultPublishCredentials = { ingestion_token: 'tok', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'now' };
 
 beforeEach(async () => {
   dir = await mkdtemp(join(tmpdir(), 'agentfeed-ingest-upload-retry-'));
@@ -36,7 +36,7 @@ describe('CLI ingest upload retry and duplicate handling', () => {
         message: 'Duplicate ingestion session.',
         details: {
           worklog_id: 'worklog_existing',
-          review_url: 'https://agentfeed.dev/worklogs/worklog_existing/review',
+          review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_existing/review',
           created_at: '2026-05-19T00:00:00Z'
         }
       }
@@ -48,14 +48,14 @@ describe('CLI ingest upload retry and duplicate handling', () => {
       id: 'worklog_existing',
       status: 'already_uploaded',
       visibility: 'private',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_existing/review',
+      review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_existing/review',
       reused_existing: true
     });
     const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
     expect(saved.upload).toMatchObject({
       uploaded: true,
       worklog_id: 'worklog_existing',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_existing/review',
+      review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_existing/review',
       uploaded_at: '2026-05-19T00:00:00Z'
     });
   });
@@ -68,7 +68,7 @@ describe('CLI ingest upload retry and duplicate handling', () => {
         code: 'DUPLICATE_INGESTION_SESSION',
         message: 'Duplicate ingestion session.',
         details: {
-          review_url: 'https://agentfeed.dev/worklogs/worklog_review_route/review',
+          review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_review_route/review',
           created_at: '2026-05-19T00:00:00Z'
         }
       }
@@ -79,14 +79,14 @@ describe('CLI ingest upload retry and duplicate handling', () => {
     expect(result).toMatchObject({
       id: 'worklog_review_route',
       status: 'already_uploaded',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_review_route/review',
+      review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_review_route/review',
       reused_existing: true
     });
     const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
     expect(saved.upload).toMatchObject({
       uploaded: true,
       worklog_id: 'worklog_review_route',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_review_route/review'
+      review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_review_route/review'
     });
   });
 
@@ -97,7 +97,7 @@ describe('CLI ingest upload retry and duplicate handling', () => {
     process.env.AGENTFEED_API_RETRY_BASE_DELAY_MS = '0';
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ error: { code: 'SERVICE_UNAVAILABLE', message: 'try again', details: {} } }), { status: 503, headers: { 'content-type': 'application/json' } }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { id: 'worklog_retry', status: 'needs_review', visibility: 'private', review_url: 'https://agentfeed.dev/worklogs/worklog_retry/review', created_at: '2026-05-19T00:00:00Z' } }), { status: 200, headers: { 'content-type': 'application/json' } }));
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { id: 'worklog_retry', status: 'needs_review', visibility: 'private', review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_retry/review', created_at: '2026-05-19T00:00:00Z' } }), { status: 200, headers: { 'content-type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchMock);
 
     try {
@@ -152,7 +152,7 @@ describe('CLI ingest upload retry and duplicate handling', () => {
     process.env.AGENTFEED_API_RETRY_BASE_DELAY_MS = '0';
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ error: { code: 'RATE_LIMITED', message: 'try later', details: { retry_after_seconds: 0 } } }), { status: 429, headers: { 'content-type': 'application/json' } }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { id: 'worklog_rate_limit_retry', status: 'needs_review', visibility: 'private', review_url: 'https://agentfeed.dev/worklogs/worklog_rate_limit_retry/review', created_at: '2026-05-19T00:00:00Z' } }), { status: 200, headers: { 'content-type': 'application/json' } }));
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { id: 'worklog_rate_limit_retry', status: 'needs_review', visibility: 'private', review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_rate_limit_retry/review', created_at: '2026-05-19T00:00:00Z' } }), { status: 200, headers: { 'content-type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchMock);
 
     try {

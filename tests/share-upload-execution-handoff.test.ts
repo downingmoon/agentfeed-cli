@@ -52,11 +52,11 @@ describe('share upload execution handoff', () => {
 
     // Then: JSON upload preserves publish, saved-draft, cursor, and handoff contracts.
     expect(result).toEqual({ kind: 'uploaded', draft: savedDraft, upload, handoff: noHandoff });
-    expect(publishReviewBaseUrls).toEqual(['https://agentfeed.dev']);
+    expect(publishReviewBaseUrls).toEqual(['https://agentfeed.downingmoon.dev']);
     expect(sanitizedDraftIds).toEqual(['draft_share_upload_json_execution']);
     expect(cursorMarks).toEqual([{ window: savedDraft.source.collection_window, createdAt: '2026-06-12T01:30:00.000Z' }]);
     expect(openPolicyCalls).toEqual([{ openFlag: false, respectConfig: false, noOpen: false }]);
-    expect(handoffCalls).toEqual([{ copy: true, open: false, apiBaseUrl: 'https://api.agentfeed.dev/v1', reviewBaseUrl: 'https://agentfeed.dev' }]);
+    expect(handoffCalls).toEqual([{ copy: true, open: false, apiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1', reviewBaseUrl: 'https://agentfeed.downingmoon.dev' }]);
   });
 
   it('publishes human share uploads with default clipboard handoff and project-aware open policy', async () => {

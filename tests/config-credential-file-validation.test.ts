@@ -45,7 +45,7 @@ describe('credential file validation', () => {
 
     expect(resolved.credentials).toBeNull();
     expect(resolved.token_source).toBe('missing');
-    expect(resolved.api_base_url).toBe('https://api.agentfeed.dev/v1');
+    expect(resolved.api_base_url).toBe('https://agentfeed.api.downingmoon.dev/v1');
     expect(resolved.warnings.join('\n')).toContain('ignored invalid AgentFeed credentials field ingestion_token');
     expect(resolved.warnings.join('\n')).toContain('ignored invalid AgentFeed credentials field api_base_url');
     expect(resolved.warnings.join('\n')).toContain(fixture.credentialsPath());
@@ -63,7 +63,7 @@ describe('credential file validation', () => {
 
     expect(resolved.credentials?.ingestion_token).toBe('af_live_env_shape_guard');
     expect(resolved.token_source).toBe('environment');
-    expect(resolved.credentials?.api_base_url).toBe('https://api.agentfeed.dev/v1');
+    expect(resolved.credentials?.api_base_url).toBe('https://agentfeed.api.downingmoon.dev/v1');
     expect(resolved.warnings.join('\n')).toContain('ignored invalid AgentFeed credentials field api_base_url');
   });
 });

@@ -4,7 +4,7 @@ import { createEmptyDraft, type CollectDraftOptions } from '../src/draft/create.
 import type { AgentFeedCredentials, AgentType, CollectionWindow, LocalDraft } from '../src/types.js';
 
 const credentials: AgentFeedCredentials = {
-  api_base_url: 'https://api.agentfeed.dev/v1',
+  api_base_url: 'https://agentfeed.api.downingmoon.dev/v1',
   ingestion_token: 'af_live_share_collection_execution',
   created_at: '2026-06-12T00:00:00.000Z'
 };

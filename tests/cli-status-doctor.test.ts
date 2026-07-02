@@ -24,7 +24,7 @@ describe('status and doctor provenance output', () => {
         ...process.env,
         HOME: home,
         AGENTFEED_TOKEN: '',
-        AGENTFEED_API_BASE_URL: 'https://api.agentfeed.dev/v1',
+        AGENTFEED_API_BASE_URL: 'https://agentfeed.api.downingmoon.dev/v1',
         FORCE_COLOR: undefined
       }
     });
@@ -37,7 +37,7 @@ describe('status and doctor provenance output', () => {
         ...process.env,
         HOME: home,
         AGENTFEED_TOKEN: '',
-        AGENTFEED_API_BASE_URL: 'https://api.agentfeed.dev/v1',
+        AGENTFEED_API_BASE_URL: 'https://agentfeed.api.downingmoon.dev/v1',
         FORCE_COLOR: undefined
       }
     });

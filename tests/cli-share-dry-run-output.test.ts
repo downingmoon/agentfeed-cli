@@ -61,7 +61,7 @@ describe('share CLI dry-run and JSON output', () => {
   it('does not ask users to login again in share dry-run guidance when credentials exist', async () => {
     await mkdir(join(fixture.home(), '.agentfeed'), { recursive: true });
     await writeFile(join(fixture.home(), '.agentfeed', 'credentials.json'), JSON.stringify({
-      api_base_url: 'https://api.agentfeed.dev/v1',
+      api_base_url: 'https://agentfeed.api.downingmoon.dev/v1',
       ingestion_token: 'af_live_share_dry_guidance',
       created_at: '2026-06-06T00:00:00.000Z'
     }));

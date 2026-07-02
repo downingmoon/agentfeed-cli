@@ -360,7 +360,7 @@ interface AgentFeedCredentials {
 Default API base URL:
 
 ```text
-https://api.agentfeed.dev/v1
+https://agentfeed.api.downingmoon.dev/v1
 ```
 
 Local development override:
@@ -779,7 +779,7 @@ printf '%s' "$AGENTFEED_TOKEN" | agentfeed login --token-stdin
 ```text
 AgentFeed credentials saved.
 
-API: https://api.agentfeed.dev/v1
+API: https://agentfeed.api.downingmoon.dev/v1
 Next:
   agentfeed status
 ```
@@ -938,7 +938,7 @@ Worklog uploaded.
 
 Status: needs_review
 Review URL:
-https://agentfeed.dev/worklogs/worklog_123/review
+https://agentfeed.downingmoon.dev/worklogs/worklog_123/review
 ```
 
 ---
@@ -2254,7 +2254,7 @@ Worklog uploaded.
 
 Status: needs_review
 Review URL:
-https://agentfeed.dev/worklogs/worklog_123/review
+https://agentfeed.downingmoon.dev/worklogs/worklog_123/review
 ```
 
 The user reviews and publishes on the AgentFeed website.

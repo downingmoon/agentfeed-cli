@@ -86,7 +86,7 @@ describe('draft open CLI command', () => {
     uploaded.upload = {
       uploaded: true,
       worklog_id: 'worklog_uploaded_open',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_uploaded_open/review',
+      review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_uploaded_open/review',
       uploaded_at: '2026-06-06T00:00:00.000Z'
     };
     await writeDraft(dir, uploaded);
@@ -101,7 +101,7 @@ describe('draft open CLI command', () => {
     expect(stdout).toContain('AgentFeed review URL');
     expect(stdout).toContain('Browser open failed. Open this URL manually:');
     expect(stdout).toContain('Draft: draft_uploaded_open');
-    expect(stdout).toContain('https://agentfeed.dev/worklogs/worklog_uploaded_open/review');
+    expect(stdout).toContain('https://agentfeed.downingmoon.dev/worklogs/worklog_uploaded_open/review');
     expect(stdout).not.toContain('Draft: draft_pending_newer');
   });
 
@@ -111,7 +111,7 @@ describe('draft open CLI command', () => {
     draft.upload = {
       uploaded: true,
       worklog_id: 'worklog_open_invalid_env',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_open_invalid_env/review',
+      review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_open_invalid_env/review',
       uploaded_at: '2026-06-06T00:00:00.000Z'
     };
     await writeDraft(dir, draft);
@@ -124,7 +124,7 @@ describe('draft open CLI command', () => {
     expect(stderr).toBe('');
     expect(stdout).toContain('AgentFeed review URL');
     expect(stdout).toContain('Draft: draft_open_invalid_env');
-    expect(stdout).toContain('https://agentfeed.dev/worklogs/worklog_open_invalid_env/review');
+    expect(stdout).toContain('https://agentfeed.downingmoon.dev/worklogs/worklog_open_invalid_env/review');
     expect(stdout).toContain('Warnings');
     expect(stdout).toContain('ignored invalid AgentFeed API URL while opening a saved review URL');
     expect(stdout).toContain('http is allowed only for localhost');
@@ -136,7 +136,7 @@ describe('draft open CLI command', () => {
     draft.upload = {
       uploaded: true,
       worklog_id: 'worklog_open_json',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_open_json/review',
+      review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_open_json/review',
       uploaded_at: '2026-06-06T00:00:00.000Z'
     };
     await writeDraft(dir, draft);
@@ -147,7 +147,7 @@ describe('draft open CLI command', () => {
     expect(stderr).toBe('');
     expect(output).toMatchObject({
       draft_id: draft.id,
-      review_url: 'https://agentfeed.dev/worklogs/worklog_open_json/review',
+      review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_open_json/review',
       opened: false,
       next_actions: [`agentfeed preview --id ${draft.id}`, 'agentfeed status']
     });

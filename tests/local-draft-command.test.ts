@@ -8,8 +8,8 @@ function draftWithReview(id: string): LocalDraft {
   draft.id = id;
   draft.worklog.title = 'Local draft command wrapper contract';
   draft.upload.uploaded = true;
-  draft.upload.review_url = `https://agentfeed.dev/worklogs/${id}/review`;
-  draft.upload.review_base_url = 'https://agentfeed.dev';
+  draft.upload.review_url = `https://agentfeed.downingmoon.dev/worklogs/${id}/review`;
+  draft.upload.review_base_url = 'https://agentfeed.downingmoon.dev';
   return draft;
 }
 

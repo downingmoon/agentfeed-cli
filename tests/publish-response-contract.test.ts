@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { AgentFeedApiError } from '../src/api/errors.js';
 import { parsePublishDraftResult, parseRemotePreviewResult } from '../src/api/publish-response.js';
 
-const apiBaseUrl = 'https://api.agentfeed.dev/v1';
+const apiBaseUrl = 'https://agentfeed.api.downingmoon.dev/v1';
 const validUploadResponse: Record<string, unknown> = {
   id: 'worklog_contract',
   status: 'needs_review',
   visibility: 'private',
-  review_url: 'https://agentfeed.dev/worklogs/worklog_contract/review',
+  review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_contract/review',
   created_at: '2026-06-11T00:00:00Z',
   reused_existing: false,
 };

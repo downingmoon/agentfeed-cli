@@ -36,7 +36,7 @@ type UploadedDraftOptions = CachedUploadOptions & {
 export function cachedUploadBindingForPublishCache(options: CachedUploadOptions = {}) {
   const credentials = {
     ingestion_token: options.token ?? 'af_live_test_token',
-    api_base_url: options.apiBaseUrl ?? 'https://api.agentfeed.dev/v1',
+    api_base_url: options.apiBaseUrl ?? 'https://agentfeed.api.downingmoon.dev/v1',
     created_at: 'now',
   };
   return {

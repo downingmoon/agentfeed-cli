@@ -87,7 +87,7 @@ describe('openBrowser', () => {
     try {
       const child = mockChild();
 
-      const opened = openBrowser('https://agentfeed.dev/worklogs/worklog_secret/review');
+      const opened = openBrowser('https://agentfeed.downingmoon.dev/worklogs/worklog_secret/review');
 
       const options = spawnMock.mock.calls[0][2] as { env?: NodeJS.ProcessEnv };
       expect(options.env?.AGENTFEED_TOKEN).toBeUndefined();
@@ -106,7 +106,7 @@ describe('openBrowser', () => {
   it('uses a native Windows opener without routing URLs through cmd.exe', async () => {
     osMock.platform.mockReturnValue('win32');
     const child = mockChild();
-    const url = 'https://agentfeed.dev/worklogs/worklog_windows/review?next=a&cmd=calc|whoami';
+    const url = 'https://agentfeed.downingmoon.dev/worklogs/worklog_windows/review?next=a&cmd=calc|whoami';
 
     const opened = openBrowser(url);
 
@@ -119,7 +119,7 @@ describe('openBrowser', () => {
   });
 
   it('rejects browser URLs with terminal or shell control characters before spawning helpers', async () => {
-    await expect(openBrowser('https://agentfeed.dev/worklogs/worklog_bad/review\u001b[31m')).resolves.toBe(false);
+    await expect(openBrowser('https://agentfeed.downingmoon.dev/worklogs/worklog_bad/review\u001b[31m')).resolves.toBe(false);
     expect(spawnMock).not.toHaveBeenCalled();
   });
 
@@ -127,7 +127,7 @@ describe('openBrowser', () => {
     osMock.platform.mockReturnValue('linux');
     osMock.release.mockReturnValue('5.15.90.1-microsoft-standard-WSL2');
     const child = mockChild();
-    const url = 'https://agentfeed.dev/worklogs/worklog_wsl/review';
+    const url = 'https://agentfeed.downingmoon.dev/worklogs/worklog_wsl/review';
 
     const opened = openBrowser(url);
 

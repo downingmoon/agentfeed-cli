@@ -25,7 +25,7 @@ describe('agentfeed open review URL rejection and fallback', () => {
   it('prints a structured manual review URL fallback when the browser cannot be opened', async () => {
     const draft = await fixture.writeUploadedDraft({
       worklogId: 'worklog_manual_open',
-      reviewUrl: 'https://agentfeed.dev/worklogs/worklog_manual_open/review',
+      reviewUrl: 'https://agentfeed.downingmoon.dev/worklogs/worklog_manual_open/review',
     });
 
     const open = await fixture.runOpen(draft.id, {
@@ -38,7 +38,7 @@ describe('agentfeed open review URL rejection and fallback', () => {
     expect(open.stdout).toContain('Summary');
     expect(open.stdout).toContain(`Draft: ${draft.id}`);
     expect(open.stdout).toContain('Review URL:');
-    expect(open.stdout).toContain('https://agentfeed.dev/worklogs/worklog_manual_open/review');
+    expect(open.stdout).toContain('https://agentfeed.downingmoon.dev/worklogs/worklog_manual_open/review');
     expect(open.stdout).toContain('Next');
     expect(open.stdout).toContain(`agentfeed preview --id ${draft.id}`);
     expect(open.stdout).toContain('agentfeed status');

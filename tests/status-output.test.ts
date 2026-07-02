@@ -16,7 +16,7 @@ const baseStatusInput = {
   credentialsFileExists: false,
   credentialsFilePath: '/tmp/home/.agentfeed/credentials.json',
   tokenExpiresAt: null,
-  apiBaseUrl: 'https://api.agentfeed.dev/v1',
+  apiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1',
   apiBaseUrlSource: 'default',
   apiBaseUrlSourceDetail: undefined,
   invalidApiBaseUrl: false,
@@ -48,7 +48,7 @@ describe('status output helpers', () => {
       token_expires_at: null
     });
     expect(payload.api).toMatchObject({
-      base_url: 'https://api.agentfeed.dev/v1',
+      base_url: 'https://agentfeed.api.downingmoon.dev/v1',
       source: 'default',
       source_label: 'default',
       invalid: false
@@ -84,7 +84,7 @@ describe('status output helpers', () => {
     expect(text).toContain('User/token: missing');
     expect(text).toContain('User/token source: missing');
     expect(text).toContain('Credential store: missing');
-    expect(text).toContain('API base URL: https://api.agentfeed.dev/v1');
+    expect(text).toContain('API base URL: https://agentfeed.api.downingmoon.dev/v1');
     expect(text).toContain('Project initialized: yes');
     expect(text).toContain('Project name: agentfeed-cli');
     expect(text).toContain('Claude Code hook: installed');

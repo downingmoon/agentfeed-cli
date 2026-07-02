@@ -14,7 +14,7 @@ describe('CLI cached upload reuse safety', () => {
     draft.upload = {
       uploaded: true,
       worklog_id: 'worklog_existing',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_existing/review',
+      review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_existing/review',
       uploaded_at: '2026-05-19T00:00:00Z',
       payload_hash: uploadedPayloadHash
     };
@@ -23,12 +23,12 @@ describe('CLI cached upload reuse safety', () => {
     const fetchMock = vi.fn(async () => { throw new Error('must not upload a stale cached draft'); });
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
+    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'now' } }))
       .rejects.toMatchObject({
         code: 'DRAFT_UPLOAD_STALE',
         details: {
           worklog_id: 'worklog_existing',
-          review_url: 'https://agentfeed.dev/worklogs/worklog_existing/review'
+          review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_existing/review'
         }
       });
 
@@ -45,8 +45,8 @@ describe('CLI cached upload reuse safety', () => {
 
   it.each([
     'https://evil.example/worklogs/worklog_existing/review',
-    'https://agentfeed.dev/worklogs/worklog_existing/review?token=leak',
-    'https://agentfeed.dev/worklogs/worklog_existing/review#secret'
+    'https://agentfeed.downingmoon.dev/worklogs/worklog_existing/review?token=leak',
+    'https://agentfeed.downingmoon.dev/worklogs/worklog_existing/review#secret'
   ])('rejects cached uploaded draft review URLs before reuse: %s', async (reviewUrl) => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
     draft.upload = {
@@ -59,7 +59,7 @@ describe('CLI cached upload reuse safety', () => {
     const fetchMock = vi.fn(async () => { throw new Error('must not upload'); });
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
+    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'now' } }))
       .rejects.toMatchObject({ code: 'DRAFT_UPLOAD_METADATA_INVALID' });
 
     expect(fetchMock).not.toHaveBeenCalled();

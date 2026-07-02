@@ -16,7 +16,7 @@ describe('CLI API health checks', () => {
         api_version: 'v1',
         backend_version: '0.1.0',
         contract_version: '2026-06-03',
-        review_base_url: 'https://agentfeed.dev',
+        review_base_url: 'https://agentfeed.downingmoon.dev',
         supported_clients: {
           cli: { min_version: '0.2.0', contract_version: '2026-06-03' },
           frontend: { min_version: '0.1.0', contract_version: '2026-06-03' }

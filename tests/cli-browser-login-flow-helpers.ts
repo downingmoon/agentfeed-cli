@@ -67,7 +67,7 @@ export function apiMetadataResponse(): Response {
       api_version: 'v1',
       backend_version: '0.1.0',
       contract_version: '2026-06-03',
-      review_base_url: 'https://agentfeed.dev',
+      review_base_url: 'https://agentfeed.downingmoon.dev',
       supported_clients: {
         cli: { min_version: '0.2.0', contract_version: '2026-06-03' },
         frontend: { min_version: '0.1.0', contract_version: '2026-06-03' }
@@ -80,7 +80,7 @@ export function cliAuthSessionResponse(sessionId: string): Response {
   return new Response(JSON.stringify({
     data: {
       session_id: sessionId,
-      authorize_url: `https://agentfeed.dev/cli/authorize?session_id=${sessionId}`,
+      authorize_url: `https://agentfeed.downingmoon.dev/cli/authorize?session_id=${sessionId}`,
       user_code: '123-456',
       expires_at: '2026-05-20T00:05:00Z',
       poll_interval_seconds: 1

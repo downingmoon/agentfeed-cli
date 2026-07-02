@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import { parseCliAuthSession } from '../src/api/cli-auth-response.js';
 
-const API_BASE_URL = 'https://api.agentfeed.dev/v1';
+const API_BASE_URL = 'https://agentfeed.api.downingmoon.dev/v1';
 const validSessionResponse = {
   session_id: 'session-1',
-  authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-1&status_token=status-token-for-session-1',
+  authorize_url: 'https://agentfeed.downingmoon.dev/cli/authorize?session_id=session-1&status_token=status-token-for-session-1',
   user_code: '123-456',
   expires_at: '2026-05-20T00:05:00Z',
   poll_interval_seconds: 2,

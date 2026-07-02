@@ -14,7 +14,7 @@ function draftWithId(id: string) {
 const projectConfig = defaultProjectConfig({ name: 'proj', slug: 'proj' });
 
 const credentials: AgentFeedCredentials = {
-  api_base_url: 'https://api.agentfeed.dev/v1',
+  api_base_url: 'https://agentfeed.api.downingmoon.dev/v1',
   ingestion_token: 'af_test_collect_command',
   created_at: '2026-06-21T00:00:00.000Z'
 };

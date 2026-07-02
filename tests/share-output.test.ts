@@ -13,7 +13,7 @@ const uploadResult: PublishDraftResult = {
   id: 'worklog_share_output',
   status: 'needs_review',
   visibility: 'private',
-  review_url: 'https://agentfeed.dev/worklogs/worklog_share_output/review',
+  review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_share_output/review',
   created_at: '2026-06-12T05:00:00.000Z'
 };
 

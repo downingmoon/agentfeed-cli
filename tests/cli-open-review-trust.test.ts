@@ -8,7 +8,7 @@ describe('agentfeed open review URL trust policy', () => {
   it('opens a trusted AgentFeed review URL from a saved uploaded draft', async () => {
     const draft = await fixture.writeUploadedDraft({
       worklogId: 'worklog_trusted_open',
-      reviewUrl: 'https://agentfeed.dev/worklogs/worklog_trusted_open/review',
+      reviewUrl: 'https://agentfeed.downingmoon.dev/worklogs/worklog_trusted_open/review',
     });
     const { binDir, browserLog } = await fixture.createBrowserHarness();
 
@@ -24,7 +24,7 @@ describe('agentfeed open review URL trust policy', () => {
     expect(open.stdout).toContain('Review URL:');
     expect(open.stdout).toContain('Next');
     expect(open.stdout).toContain(`agentfeed preview --id ${draft.id}`);
-    await expect(readFile(browserLog, 'utf8')).resolves.toBe('https://agentfeed.dev/worklogs/worklog_trusted_open/review\n');
+    await expect(readFile(browserLog, 'utf8')).resolves.toBe('https://agentfeed.downingmoon.dev/worklogs/worklog_trusted_open/review\n');
   });
 
   it('trusts local review URLs for agentfeed open when a local API base is configured', async () => {

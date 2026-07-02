@@ -36,11 +36,14 @@ function allowsInsecureReviewOrigin(url: URL): boolean {
 }
 
 function isAgentFeedHostname(hostname: string): boolean {
-  return hostname === 'agentfeed.dev' || hostname.endsWith('.agentfeed.dev');
+  return hostname === 'agentfeed.dev'
+    || hostname.endsWith('.agentfeed.dev')
+    || hostname === 'agentfeed.downingmoon.dev'
+    || hostname === 'agentfeed.api.downingmoon.dev';
 }
 
 function isAgentFeedReviewHostname(hostname: string): boolean {
-  return isAgentFeedHostname(hostname) && !hostname.startsWith('api.');
+  return isAgentFeedHostname(hostname) && !hostname.startsWith('api.') && !hostname.includes('.api.');
 }
 
 function isExpectedReviewPath(pathname: string): boolean {

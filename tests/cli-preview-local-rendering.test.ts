@@ -122,7 +122,7 @@ describe('local preview CLI rendering', () => {
     draft.upload = {
       uploaded: true,
       worklog_id: 'worklog_uploaded_preview',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_uploaded_preview/review'
+      review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_uploaded_preview/review'
     };
     await writeDraft(dir, draft);
 
@@ -138,7 +138,7 @@ describe('local preview CLI rendering', () => {
     });
 
     expect(stdout).toContain('Upload: uploaded');
-    expect(stdout).toContain('Review URL:\n  https://agentfeed.dev/worklogs/worklog_uploaded_preview/review');
+    expect(stdout).toContain('Review URL:\n  https://agentfeed.downingmoon.dev/worklogs/worklog_uploaded_preview/review');
     expect(stdout).toContain(`agentfeed open --id ${draft.id}`);
     expect(stdout).toContain(`agentfeed scan --id ${draft.id}`);
   });
@@ -179,7 +179,7 @@ describe('local preview CLI rendering', () => {
     draft.upload = {
       uploaded: true,
       worklog_id: 'worklog_uploaded_preview_json',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_uploaded_preview_json/review'
+      review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_uploaded_preview_json/review'
     };
     await writeDraft(dir, draft);
 

@@ -18,7 +18,7 @@ describe('CLI browser login save policy', () => {
             api_version: 'v1',
             backend_version: '0.1.0',
             contract_version: '2026-06-03',
-            review_base_url: 'https://agentfeed.dev',
+            review_base_url: 'https://agentfeed.downingmoon.dev',
             supported_clients: {
               cli: { min_version: '0.2.0', contract_version: '2026-06-03' },
               frontend: { min_version: '0.1.0', contract_version: '2026-06-03' }
@@ -30,7 +30,7 @@ describe('CLI browser login save policy', () => {
         return new Response(JSON.stringify({
           data: {
             session_id: 'session-invalid-token',
-            authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-invalid-token',
+            authorize_url: 'https://agentfeed.downingmoon.dev/cli/authorize?session_id=session-invalid-token',
             user_code: '123-456',
             expires_at: '2026-05-20T00:05:00Z',
             poll_interval_seconds: 1
@@ -54,10 +54,10 @@ describe('CLI browser login save policy', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1', noOpen: true, waitMs: 50, allowCiBrowser: true }))
+    await expect(browserLogin({ apiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1', noOpen: true, waitMs: 50, allowCiBrowser: true }))
       .rejects.toThrow(/Ingestion token check failed.*before saving credentials/);
 
-    expect(fetchMock).toHaveBeenCalledWith('https://api.agentfeed.dev/v1/ingest/status', expect.objectContaining({
+    expect(fetchMock).toHaveBeenCalledWith('https://agentfeed.api.downingmoon.dev/v1/ingest/status', expect.objectContaining({
       method: 'GET',
       headers: { authorization: 'Bearer af_live_invalid_after_exchange' }
     }));
@@ -73,11 +73,11 @@ describe('CLI browser login save policy', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1', noOpen: true, waitMs: 50, allowCiBrowser: true }))
+    await expect(browserLogin({ apiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1', noOpen: true, waitMs: 50, allowCiBrowser: true }))
       .rejects.toThrow(/API compatibility check failed.*before saving credentials/);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledWith('https://api.agentfeed.dev/v1/metadata', expect.objectContaining({ method: 'GET' }));
+    expect(fetchMock).toHaveBeenCalledWith('https://agentfeed.api.downingmoon.dev/v1/metadata', expect.objectContaining({ method: 'GET' }));
     await expect(readFile(fixture.credentialsPath(), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
@@ -87,7 +87,7 @@ describe('CLI browser login save policy', () => {
         return new Response(JSON.stringify({
           data: {
             session_id: 'session-ephemeral',
-            authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-ephemeral',
+            authorize_url: 'https://agentfeed.downingmoon.dev/cli/authorize?session_id=session-ephemeral',
             user_code: '123-456',
             expires_at: '2026-05-20T00:05:00Z',
             poll_interval_seconds: 1
@@ -112,10 +112,10 @@ describe('CLI browser login save policy', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const creds = await browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1/', noOpen: true, waitMs: 50, save: false, allowCiBrowser: true });
+    const creds = await browserLogin({ apiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1/', noOpen: true, waitMs: 50, save: false, allowCiBrowser: true });
 
     expect(creds).toMatchObject({
-      api_base_url: 'https://api.agentfeed.dev/v1',
+      api_base_url: 'https://agentfeed.api.downingmoon.dev/v1',
       ingestion_token: 'af_live_ephemeral',
       token_id: 'token-ephemeral',
       token_expires_at: '2026-06-15T00:00:00Z',

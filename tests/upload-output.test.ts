@@ -8,7 +8,7 @@ const uploadResult: PublishDraftResult = {
   id: 'worklog_upload',
   status: 'needs_review',
   visibility: 'private',
-  review_url: 'https://agentfeed.dev/worklogs/worklog_upload/review',
+  review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_upload/review',
   created_at: '2026-06-12T03:00:00.000Z'
 };
 
@@ -38,7 +38,7 @@ describe('upload output helpers', () => {
     expect(lines.join('\n')).toContain('Draft: draft_upload');
     expect(lines.join('\n')).toContain('Status: needs_review');
     expect(lines.join('\n')).toContain('Review URL:');
-    expect(lines.join('\n')).toContain('https://agentfeed.dev/worklogs/worklog_upload/review');
+    expect(lines.join('\n')).toContain('https://agentfeed.downingmoon.dev/worklogs/worklog_upload/review');
     expect(lines.join('\n')).toContain('Recommended order:');
     expect(lines.join('\n')).toContain('1. agentfeed open --id draft_upload');
     expect(lines.join('\n')).toContain('2. agentfeed preview --id draft_upload');

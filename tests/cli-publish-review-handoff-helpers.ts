@@ -29,7 +29,7 @@ export function parseDraftId(text: string): string {
 export function cachedUploadBindingForEnv(options: CachedUploadBindingOptions = {}) {
   const credentials = {
     ingestion_token: options.token ?? 'af_live_test_token',
-    api_base_url: options.apiBaseUrl ?? 'https://api.agentfeed.dev/v1',
+    api_base_url: options.apiBaseUrl ?? 'https://agentfeed.api.downingmoon.dev/v1',
     created_at: 'now'
   };
   return {

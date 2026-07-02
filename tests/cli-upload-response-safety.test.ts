@@ -38,7 +38,7 @@ describe('CLI upload response safety', () => {
       }
     }), { status: 200, headers: { 'content-type': 'application/json' } })));
 
-    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
+    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'now' } }))
       .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
 
     const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));
@@ -62,7 +62,7 @@ describe('CLI upload response safety', () => {
     const fetchMock = vi.fn(async () => response());
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
+    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'now' } }))
       .rejects.toMatchObject({
         status: 502,
         code: 'API_RESPONSE_INVALID',
@@ -75,12 +75,12 @@ describe('CLI upload response safety', () => {
   });
 
   it.each([
-    'https://agentfeed.dev/review/worklog_bad_url',
-    'https://agentfeed.dev/worklogs/worklog_other/review',
-    'https://agentfeed.dev/worklogs/worklog_bad/review?token=leak',
-    'https://agentfeed.dev/worklogs/worklog_bad/review#secret',
-    'https://agentfeed.dev/worklogs/worklog_bad',
-    'https://api.agentfeed.dev/worklogs/worklog_bad/review'
+    'https://agentfeed.downingmoon.dev/review/worklog_bad_url',
+    'https://agentfeed.downingmoon.dev/worklogs/worklog_other/review',
+    'https://agentfeed.downingmoon.dev/worklogs/worklog_bad/review?token=leak',
+    'https://agentfeed.downingmoon.dev/worklogs/worklog_bad/review#secret',
+    'https://agentfeed.downingmoon.dev/worklogs/worklog_bad',
+    'https://agentfeed.api.downingmoon.dev/worklogs/worklog_bad/review'
   ])('rejects upload success responses with unsafe review URL %s', async (reviewUrl) => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
     await writeDraft(dir, draft);
@@ -94,7 +94,7 @@ describe('CLI upload response safety', () => {
       }
     }), { status: 200, headers: { 'content-type': 'application/json' } })));
 
-    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
+    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'now' } }))
       .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
   });
 
@@ -106,12 +106,12 @@ describe('CLI upload response safety', () => {
         id: 'worklog_bad_status',
         status: 'surprise_public',
         visibility: 'private',
-        review_url: 'https://agentfeed.dev/worklogs/worklog_bad_status/review',
+        review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_bad_status/review',
         created_at: '2026-05-19T00:00:00Z'
       }
     }), { status: 200, headers: { 'content-type': 'application/json' } })));
 
-    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
+    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'now' } }))
       .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
   });
 
@@ -130,7 +130,7 @@ describe('CLI upload response safety', () => {
       }
     }), { status: 409, headers: { 'content-type': 'application/json' } })));
 
-    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
+    await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'now' } }))
       .rejects.toMatchObject({ code: 'DUPLICATE_INGESTION_SESSION' });
 
     const saved = JSON.parse(await readFile(join(dir, '.agentfeed', 'drafts', `${draft.id}.json`), 'utf8'));

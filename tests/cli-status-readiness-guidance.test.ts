@@ -104,7 +104,7 @@ describe('status readiness guidance', () => {
         ...process.env,
         HOME: home,
         AGENTFEED_TOKEN: '',
-        AGENTFEED_API_BASE_URL: 'https://api.agentfeed.dev/v1',
+        AGENTFEED_API_BASE_URL: 'https://agentfeed.api.downingmoon.dev/v1',
         FORCE_COLOR: undefined
       }
     });
@@ -130,7 +130,7 @@ describe('status readiness guidance', () => {
     });
 
     expect(stdout).toContain('User/token source: missing');
-    expect(stdout).toContain('API base URL: https://api.agentfeed.dev/v1');
+    expect(stdout).toContain('API base URL: https://agentfeed.api.downingmoon.dev/v1');
     expect(stdout).toContain('API base URL source: default');
     expect(stdout).toContain('Warning: ignored non-local AGENTFEED_API_BASE_URL from .env (evil.example)');
   });

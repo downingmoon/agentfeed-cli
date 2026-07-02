@@ -71,7 +71,7 @@ describe('CLI upload timeout reconciliation contract', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     try {
-      const pending = publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } });
+      const pending = publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'now' } });
       await expect(pending).rejects.toMatchObject({
         code: 'API_REQUEST_TIMEOUT',
         message: expect.stringContaining('reconcile any server-side duplicate')
@@ -101,7 +101,7 @@ describe('CLI upload timeout reconciliation contract', () => {
           message: 'Duplicate ingestion session.',
           details: {
             worklog_id: 'worklog_timeout_existing',
-            review_url: 'https://agentfeed.dev/worklogs/worklog_timeout_existing/review',
+            review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_timeout_existing/review',
             created_at: '2026-05-19T00:00:00Z'
           }
         }
@@ -110,13 +110,13 @@ describe('CLI upload timeout reconciliation contract', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     try {
-      const result = await publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } });
+      const result = await publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'now' } });
 
       expect(result).toMatchObject({
         id: 'worklog_timeout_existing',
         status: 'already_uploaded',
         reused_existing: true,
-        review_url: 'https://agentfeed.dev/worklogs/worklog_timeout_existing/review',
+        review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_timeout_existing/review',
         created_at: '2026-05-19T00:00:00Z'
       });
     } finally {
@@ -132,7 +132,7 @@ describe('CLI upload timeout reconciliation contract', () => {
     expect(saved.upload).toMatchObject({
       uploaded: true,
       worklog_id: 'worklog_timeout_existing',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_timeout_existing/review',
+      review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_timeout_existing/review',
       uploaded_at: '2026-05-19T00:00:00Z'
     });
   });
@@ -162,7 +162,7 @@ describe('CLI upload timeout reconciliation contract', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     try {
-      await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }))
+      await expect(publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'now' } }))
         .rejects.toMatchObject({ code: 'DUPLICATE_INGESTION_SESSION' });
     } finally {
       restoreRetryEnv();

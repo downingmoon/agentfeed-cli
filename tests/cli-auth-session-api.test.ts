@@ -29,7 +29,7 @@ describe('CLI auth session API client', () => {
         return new Response(JSON.stringify({
           data: {
             session_id: 'session-1',
-            authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-1&status_token=status-token-for-session-1',
+            authorize_url: 'https://agentfeed.downingmoon.dev/cli/authorize?session_id=session-1&status_token=status-token-for-session-1',
             user_code: '123-456',
             expires_at: '2026-05-20T00:05:00Z',
             poll_interval_seconds: 2
@@ -54,8 +54,8 @@ describe('CLI auth session API client', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const session = await createCliAuthSession('https://api.agentfeed.dev/v1', { verifier: 'verifier-1', deviceName: 'devbox', replaceTokenId: 'token-old' });
-    const exchange = await exchangeCliAuthSession('https://api.agentfeed.dev/v1', session.session_id, 'verifier-1');
+    const session = await createCliAuthSession('https://agentfeed.api.downingmoon.dev/v1', { verifier: 'verifier-1', deviceName: 'devbox', replaceTokenId: 'token-old' });
+    const exchange = await exchangeCliAuthSession('https://agentfeed.api.downingmoon.dev/v1', session.session_id, 'verifier-1');
 
     expect(session.authorize_url).toContain('/cli/authorize');
     expect(session.authorize_url).toContain('status_token=status-token-for-session-1');
@@ -66,8 +66,8 @@ describe('CLI auth session API client', () => {
     expect(exchange.rotated_from).toBe('token-old');
     expect(exchange.rotated_at).toBe('2026-05-30T00:01:00Z');
     expect(exchange.user?.avatar_url).toBe('https://avatars.githubusercontent.com/u/4242?v=4');
-    expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.agentfeed.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
-    expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://api.agentfeed.dev/v1/auth/cli/sessions/session-1/exchange', expect.objectContaining({ method: 'POST' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://agentfeed.api.downingmoon.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://agentfeed.api.downingmoon.dev/v1/auth/cli/sessions/session-1/exchange', expect.objectContaining({ method: 'POST' }));
   });
 
   it.each([
@@ -84,7 +84,7 @@ describe('CLI auth session API client', () => {
   ])('rejects malformed CLI auth success envelopes clearly: $label', async ({ response, message }) => {
     vi.stubGlobal('fetch', vi.fn(async () => response()));
 
-    await expect(createCliAuthSession('https://api.agentfeed.dev/v1', { verifier: 'verifier-1', deviceName: 'devbox' }))
+    await expect(createCliAuthSession('https://agentfeed.api.downingmoon.dev/v1', { verifier: 'verifier-1', deviceName: 'devbox' }))
       .rejects.toMatchObject({
         status: 502,
         code: 'API_RESPONSE_INVALID',
@@ -96,14 +96,14 @@ describe('CLI auth session API client', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
       data: {
         session_id: 'session-extra-query',
-        authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-extra-query&status_token=status-token-for-session-extra&next=https%3A%2F%2Fevil.example',
+        authorize_url: 'https://agentfeed.downingmoon.dev/cli/authorize?session_id=session-extra-query&status_token=status-token-for-session-extra&next=https%3A%2F%2Fevil.example',
         user_code: '123-456',
         expires_at: '2026-05-20T00:05:00Z',
         poll_interval_seconds: 2
       }
     }), { status: 200, headers: { 'content-type': 'application/json' } })));
 
-    await expect(createCliAuthSession('https://api.agentfeed.dev/v1', { verifier: 'verifier-1', deviceName: 'devbox' }))
+    await expect(createCliAuthSession('https://agentfeed.api.downingmoon.dev/v1', { verifier: 'verifier-1', deviceName: 'devbox' }))
       .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
   });
 
@@ -118,7 +118,7 @@ describe('CLI auth session API client', () => {
       }
     }), { status: 200, headers: { 'content-type': 'application/json' } })));
 
-    await expect(createCliAuthSession('https://api.agentfeed.dev/v1', { verifier: 'verifier-1', deviceName: 'devbox' }))
+    await expect(createCliAuthSession('https://agentfeed.api.downingmoon.dev/v1', { verifier: 'verifier-1', deviceName: 'devbox' }))
       .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
   });
 
@@ -126,13 +126,13 @@ describe('CLI auth session API client', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
       data: {
         session_id: 'session-without-code',
-        authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-without-code',
+        authorize_url: 'https://agentfeed.downingmoon.dev/cli/authorize?session_id=session-without-code',
         expires_at: '2026-05-20T00:05:00Z',
         poll_interval_seconds: 2
       }
     }), { status: 200, headers: { 'content-type': 'application/json' } })));
 
-    await expect(createCliAuthSession('https://api.agentfeed.dev/v1', { verifier: 'verifier-1', deviceName: 'devbox' }))
+    await expect(createCliAuthSession('https://agentfeed.api.downingmoon.dev/v1', { verifier: 'verifier-1', deviceName: 'devbox' }))
       .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
   });
 

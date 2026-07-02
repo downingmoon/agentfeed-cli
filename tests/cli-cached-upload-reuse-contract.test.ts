@@ -13,7 +13,7 @@ describe('CLI cached upload reuse contract', () => {
     draft.upload = {
       uploaded: true,
       worklog_id: 'worklog_existing',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_existing/review',
+      review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_existing/review',
       uploaded_at: '2026-05-19T00:00:00Z',
       payload_hash: draftUploadPayloadHash(draft),
       ...uploadBinding()
@@ -26,7 +26,7 @@ describe('CLI cached upload reuse contract', () => {
 
     expect(result).toMatchObject({
       id: 'worklog_existing',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_existing/review',
+      review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_existing/review',
       reused_existing: true
     });
     expect(fetchMock).not.toHaveBeenCalled();
@@ -38,14 +38,14 @@ describe('CLI cached upload reuse contract', () => {
   });
 
   it('does not reuse an uploaded draft cache from a different credential binding', async () => {
-    const oldCredentials = { ingestion_token: 'old-token', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'old', token_id: 'token-old', user: { id: 'user-old' } };
-    const newCredentials = { ingestion_token: 'new-token', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'new', token_id: 'token-new', user: { id: 'user-new' } };
+    const oldCredentials = { ingestion_token: 'old-token', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'old', token_id: 'token-old', user: { id: 'user-old' } };
+    const newCredentials = { ingestion_token: 'new-token', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'new', token_id: 'token-new', user: { id: 'user-new' } };
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
     draft.worklog.summary = 'Already uploaded under another credential binding';
     draft.upload = {
       uploaded: true,
       worklog_id: 'worklog_old_account',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_old_account/review',
+      review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_old_account/review',
       uploaded_at: '2026-05-19T00:00:00Z',
       payload_hash: draftUploadPayloadHash(draft),
       ...uploadBinding(oldCredentials)
@@ -56,7 +56,7 @@ describe('CLI cached upload reuse contract', () => {
         id: 'worklog_new_account',
         status: 'needs_review',
         visibility: 'private',
-        review_url: 'https://agentfeed.dev/worklogs/worklog_new_account/review',
+        review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_new_account/review',
         created_at: '2026-05-20T00:00:00Z'
       }
     }), { status: 200, headers: { 'content-type': 'application/json' } }));
@@ -67,7 +67,7 @@ describe('CLI cached upload reuse contract', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(result).toMatchObject({
       id: 'worklog_new_account',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_new_account/review',
+      review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_new_account/review',
       reused_existing: undefined
     });
     expect(await readSavedDraft(draft.id)).toMatchObject({
@@ -82,13 +82,13 @@ describe('CLI cached upload reuse contract', () => {
   });
 
   it('reports cached upload reusable only when redacted payload and credential binding both match', () => {
-    const credentials = { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' };
+    const credentials = { ingestion_token: 'tok', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'now' };
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
     draft.worklog.summary = 'Reusable cache contains sk-abcdefghijklmnopqrstuvwxyz1234567890';
     draft.upload = {
       uploaded: true,
       worklog_id: 'worklog_reusable',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_reusable/review',
+      review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_reusable/review',
       uploaded_at: '2026-05-19T00:00:00Z',
       payload_hash: draftUploadPayloadHash(draft),
       ...uploadBinding(credentials)
@@ -117,10 +117,10 @@ describe('CLI cached upload reuse contract', () => {
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: dir, source: 'claude_code' });
     draft.worklog.summary = 'First upload contains sk-abcdefghijklmnopqrstuvwxyz1234567890';
     await writeDraft(dir, draft);
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ data: { id: 'worklog_redacted_reuse', status: 'needs_review', visibility: 'private', review_url: 'https://agentfeed.dev/worklogs/worklog_redacted_reuse/review', created_at: '2026-05-19T00:00:00Z' } }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ data: { id: 'worklog_redacted_reuse', status: 'needs_review', visibility: 'private', review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_redacted_reuse/review', created_at: '2026-05-19T00:00:00Z' } }), { status: 200, headers: { 'content-type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchMock);
 
-    const first = await publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } });
+    const first = await publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'now' } });
     expect(first.id).toBe('worklog_redacted_reuse');
     const afterFirst = await readSavedDraft(draft.id);
     expect(afterFirst).toMatchObject({
@@ -129,11 +129,11 @@ describe('CLI cached upload reuse contract', () => {
     });
 
     fetchMock.mockClear();
-    const second = await publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } });
+    const second = await publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'now' } });
 
     expect(second).toMatchObject({
       id: 'worklog_redacted_reuse',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_redacted_reuse/review',
+      review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_redacted_reuse/review',
       reused_existing: true
     });
     expect(fetchMock).not.toHaveBeenCalled();

@@ -65,7 +65,7 @@ describe('preview command payload', () => {
     draft.upload = {
       uploaded: true,
       worklog_id: 'worklog_uploaded',
-      review_url: 'https://agentfeed.dev/worklogs/worklog_uploaded/review'
+      review_url: 'https://agentfeed.downingmoon.dev/worklogs/worklog_uploaded/review'
     };
 
     // When: the CLI builds human-readable local preview output.
@@ -91,7 +91,7 @@ describe('preview command payload', () => {
       'Privacy: safe · findings 0',
       'Upload: uploaded',
       'Review URL:',
-      '  https://agentfeed.dev/worklogs/worklog_uploaded/review',
+      '  https://agentfeed.downingmoon.dev/worklogs/worklog_uploaded/review',
       '',
       'Next',
       'Recommended order:',

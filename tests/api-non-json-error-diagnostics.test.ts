@@ -47,7 +47,7 @@ describe('API non-JSON error diagnostics', () => {
     ));
     vi.stubGlobal('fetch', fetchMock);
 
-    const error = await captureError(() => createCliAuthSession('https://api.agentfeed.dev/v1', { verifier: 'verifier-1' }));
+    const error = await captureError(() => createCliAuthSession('https://agentfeed.api.downingmoon.dev/v1', { verifier: 'verifier-1' }));
 
     expect(error).toMatchObject({ status: 502, code: 'API_RESPONSE_INVALID' });
     expect(error).toBeInstanceOf(Error);
@@ -67,7 +67,7 @@ describe('API non-JSON error diagnostics', () => {
     ));
     vi.stubGlobal('fetch', fetchMock);
 
-    const error = await captureError(() => publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://api.agentfeed.dev/v1', created_at: 'now' } }));
+    const error = await captureError(() => publishDraft({ cwd: dir, id: draft.id, credentials: { ingestion_token: 'tok', api_base_url: 'https://agentfeed.api.downingmoon.dev/v1', created_at: 'now' } }));
 
     expect(error).toMatchObject({ status: 502, code: 'API_RESPONSE_INVALID' });
     expect(error).toBeInstanceOf(Error);

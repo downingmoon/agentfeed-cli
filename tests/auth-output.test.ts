@@ -5,7 +5,7 @@ import type { CredentialResultView } from '../src/cli/auth-result.js';
 const savedResult: CredentialResultView = {
   heading: 'AgentFeed credentials saved',
   message: 'AgentFeed credentials saved.',
-  apiBaseUrl: 'https://api.agentfeed.dev/v1',
+  apiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1',
   tokenExpiresAt: '2026-06-15T00:00:00.000Z',
   saved: true,
   warnings: ['keychain credential storage is not available; saved in private file storage.'],
@@ -38,7 +38,7 @@ describe('auth output helpers', () => {
     expect(text).toContain('AgentFeed credentials saved.');
     expect(text).toContain('Summary');
     expect(text).toContain('Credentials: saved');
-    expect(text).toContain('API: https://api.agentfeed.dev/v1');
+    expect(text).toContain('API: https://agentfeed.api.downingmoon.dev/v1');
     expect(text).toContain('Token expires at: 2026-06-15T00:00:00.000Z');
     expect(text).toContain('Warnings');
     expect(text).toContain('Warning: keychain credential storage is not available; saved in private file storage.');

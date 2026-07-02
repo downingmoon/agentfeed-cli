@@ -17,7 +17,7 @@ describe('CLI browser login API discovery', () => {
         return new Response(JSON.stringify({
           data: {
             session_id: 'session-default-api',
-            authorize_url: 'https://agentfeed.dev/cli/authorize?session_id=session-default-api',
+            authorize_url: 'https://agentfeed.downingmoon.dev/cli/authorize?session_id=session-default-api',
             user_code: '123-456',
             expires_at: '2026-05-20T00:05:00Z',
             poll_interval_seconds: 1
@@ -34,8 +34,8 @@ describe('CLI browser login API discovery', () => {
 
     const creds = await browserLogin({ cwd: fixture.dir(), noOpen: true, waitMs: 50, save: false, allowCiBrowser: true });
 
-    expect(creds.api_base_url).toBe('https://api.agentfeed.dev/v1');
-    expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.agentfeed.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
+    expect(creds.api_base_url).toBe('https://agentfeed.api.downingmoon.dev/v1');
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://agentfeed.api.downingmoon.dev/v1/auth/cli/sessions', expect.objectContaining({ method: 'POST' }));
   });
 
   it('accepts repo-local API discovery when AGENTFEED_TRUST_REPO_API_BASE=1', async () => {

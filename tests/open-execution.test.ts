@@ -13,7 +13,7 @@ function uploadedDraft(overrides: {
   draft.upload = {
     uploaded: true,
     worklog_id: 'worklog_open_execution',
-    review_url: overrides.reviewUrl ?? 'https://agentfeed.dev/worklogs/worklog_open_execution/review',
+    review_url: overrides.reviewUrl ?? 'https://agentfeed.downingmoon.dev/worklogs/worklog_open_execution/review',
     uploaded_at: '2026-06-12T00:00:00.000Z',
     api_base_url: overrides.apiBaseUrl ?? null,
     review_base_url: overrides.reviewBaseUrl ?? null
@@ -28,7 +28,7 @@ async function defaultCredentialResolution() {
     credentials_file_path: '/tmp/agentfeed-open-execution/credentials.json',
     credentials_file_exists: false,
     credential_store: 'missing',
-    api_base_url: 'https://api.agentfeed.dev/v1',
+    api_base_url: 'https://agentfeed.api.downingmoon.dev/v1',
     api_base_url_source: 'default',
     warnings: []
   } as const;
@@ -50,10 +50,10 @@ describe('open review execution', () => {
       }
     });
 
-    expect(openedUrls).toEqual(['https://agentfeed.dev/worklogs/worklog_open_execution/review']);
+    expect(openedUrls).toEqual(['https://agentfeed.downingmoon.dev/worklogs/worklog_open_execution/review']);
     expect(result).toEqual({
       draftId: 'draft_open_execution',
-      reviewUrl: 'https://agentfeed.dev/worklogs/worklog_open_execution/review',
+      reviewUrl: 'https://agentfeed.downingmoon.dev/worklogs/worklog_open_execution/review',
       opened: true,
       warnings: [],
       jsonWarnings: []

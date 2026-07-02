@@ -20,8 +20,8 @@ describe('review URL handoff helpers', () => {
     const handoff = await handoffReviewUrl('https://evil.example/worklogs/worklog_bad/review', {
       copy: true,
       open: true,
-      apiBaseUrl: 'https://api.agentfeed.dev/v1',
-      reviewBaseUrl: 'https://agentfeed.dev',
+      apiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1',
+      reviewBaseUrl: 'https://agentfeed.downingmoon.dev',
       copyToClipboard: async () => {
         calls.push('copy');
         return true;
@@ -45,11 +45,11 @@ describe('review URL handoff helpers', () => {
     const calls: string[] = [];
 
     // When: clipboard succeeds and browser opening fails.
-    const handoff = await handoffReviewUrl('https://agentfeed.dev/worklogs/worklog_ok/review', {
+    const handoff = await handoffReviewUrl('https://agentfeed.downingmoon.dev/worklogs/worklog_ok/review', {
       copy: true,
       open: true,
-      apiBaseUrl: 'https://api.agentfeed.dev/v1',
-      reviewBaseUrl: 'https://agentfeed.dev',
+      apiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1',
+      reviewBaseUrl: 'https://agentfeed.downingmoon.dev',
       copyToClipboard: async (reviewUrl) => {
         calls.push(`copy:${reviewUrl}`);
         return true;
@@ -62,8 +62,8 @@ describe('review URL handoff helpers', () => {
 
     // Then: both requested channels are represented in the handoff payload.
     expect(calls).toEqual([
-      'copy:https://agentfeed.dev/worklogs/worklog_ok/review',
-      'open:https://agentfeed.dev/worklogs/worklog_ok/review'
+      'copy:https://agentfeed.downingmoon.dev/worklogs/worklog_ok/review',
+      'open:https://agentfeed.downingmoon.dev/worklogs/worklog_ok/review'
     ]);
     expect(handoff.clipboard).toEqual({ requested: true, ok: true });
     expect(handoff.browser).toEqual({

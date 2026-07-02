@@ -14,7 +14,7 @@ describe('credential resolution config', () => {
     const resolved = await loadCredentialsWithMetadata({ cwd: fixture.dir() });
 
     expect(resolved.credentials?.ingestion_token).toBe('af_live_env_secret');
-    expect(resolved.credentials?.api_base_url).toBe('https://api.agentfeed.dev/v1');
+    expect(resolved.credentials?.api_base_url).toBe('https://agentfeed.api.downingmoon.dev/v1');
     expect(resolved.api_base_url_source).toBe('default');
     expect(resolved.warnings.join('\n')).toContain('AGENTFEED_TRUST_REPO_API_BASE=1');
     expect(resolved.warnings.join('\n')).toContain(`${join(fixture.dir(), '.env')}:BACKEND_PORT`);
@@ -38,7 +38,7 @@ describe('credential resolution config', () => {
 
     expect(resolved.credentials?.ingestion_token).toBe('af_live_env_secret');
     expect(resolved.token_source).toBe('environment');
-    expect(resolved.credentials?.api_base_url).toBe('https://api.agentfeed.dev/v1');
+    expect(resolved.credentials?.api_base_url).toBe('https://agentfeed.api.downingmoon.dev/v1');
     expect(resolved.api_base_url_source).toBe('default');
     expect(resolved.warnings.join('\n')).toContain('ignored saved AgentFeed API base while using AGENTFEED_TOKEN');
 
@@ -93,7 +93,7 @@ describe('credential resolution config', () => {
     });
 
     expect(resolved.ingestion_token).toBe('af_live_env_secret');
-    expect(resolved.api_base_url).toBe('https://api.agentfeed.dev/v1');
+    expect(resolved.api_base_url).toBe('https://agentfeed.api.downingmoon.dev/v1');
   });
 
   it('resolveCredentials reports missing tokens with copyable login commands', async () => {

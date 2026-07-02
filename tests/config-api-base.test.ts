@@ -69,17 +69,17 @@ describe('API base URL config', () => {
   it('keeps a stored API base URL ahead of untrusted repo-local .env discovery', async () => {
     await writeFile(join(dir, '.env'), 'AGENTFEED_API_BASE_URL=https://evil.example/v1\n');
 
-    await expect(resolveApiBaseUrl({ cwd: dir, storedApiBaseUrl: 'https://api.agentfeed.dev/v1' }))
-      .resolves.toBe('https://api.agentfeed.dev/v1');
+    await expect(resolveApiBaseUrl({ cwd: dir, storedApiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1' }))
+      .resolves.toBe('https://agentfeed.api.downingmoon.dev/v1');
   });
 
   it('ignores non-local API base URLs discovered from repo-local .env files', async () => {
     await writeFile(join(dir, '.env'), 'AGENTFEED_API_BASE_URL=https://evil.example/v1\n');
 
-    await expect(resolveApiBaseUrl({ cwd: dir })).resolves.toBe('https://api.agentfeed.dev/v1');
+    await expect(resolveApiBaseUrl({ cwd: dir })).resolves.toBe('https://agentfeed.api.downingmoon.dev/v1');
     const resolved = await resolveApiBaseUrlWithMetadata({ cwd: dir });
     expect(resolved).toMatchObject({
-      value: 'https://api.agentfeed.dev/v1',
+      value: 'https://agentfeed.api.downingmoon.dev/v1',
       source: 'default'
     });
     expect(resolved.warnings.join('\n')).toContain('ignored non-local AGENTFEED_API_BASE_URL');
@@ -97,7 +97,7 @@ describe('API base URL config', () => {
 
     const invalid = await mkdtemp(join(tmpdir(), 'agentfeed-bad-port-'));
     await writeFile(join(invalid, '.env'), 'BACKEND_PORT=8001/path\n');
-    await expect(resolveApiBaseUrl({ cwd: invalid })).resolves.toBe('https://api.agentfeed.dev/v1');
+    await expect(resolveApiBaseUrl({ cwd: invalid })).resolves.toBe('https://agentfeed.api.downingmoon.dev/v1');
     await rm(invalid, { recursive: true, force: true });
   });
 
@@ -105,12 +105,12 @@ describe('API base URL config', () => {
     await expect(resolveApiBaseUrl({ explicitApiBaseUrl: 'http//:bad' })).rejects.toThrow(/Invalid AgentFeed API base URL/i);
     await expect(resolveApiBaseUrl({ explicitApiBaseUrl: 'ftp://api.agentfeed.dev/v1' })).rejects.toThrow(/http or https/i);
     await expect(resolveApiBaseUrl({ explicitApiBaseUrl: 'http://evil.example/v1' })).rejects.toThrow(/http is allowed only for localhost/i);
-    await expect(resolveApiBaseUrl({ explicitApiBaseUrl: 'https://api.agentfeed.dev/v1?debug=true' })).rejects.toThrow(/query or hash/i);
+    await expect(resolveApiBaseUrl({ explicitApiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1?debug=true' })).rejects.toThrow(/query or hash/i);
   });
 
   it('normalizes valid API base URLs from env and files', async () => {
-    process.env.AGENTFEED_API_BASE_URL = 'https://api.agentfeed.dev/v1/';
-    await expect(resolveApiBaseUrl({ cwd: dir })).resolves.toBe('https://api.agentfeed.dev/v1');
+    process.env.AGENTFEED_API_BASE_URL = 'https://agentfeed.api.downingmoon.dev/v1/';
+    await expect(resolveApiBaseUrl({ cwd: dir })).resolves.toBe('https://agentfeed.api.downingmoon.dev/v1');
 
     delete process.env.AGENTFEED_API_BASE_URL;
     await writeFile(join(dir, '.env'), 'AGENTFEED_API_BASE_URL=\"http://localhost:8001/v1/\"\n');

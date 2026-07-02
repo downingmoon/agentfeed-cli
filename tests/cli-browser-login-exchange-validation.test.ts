@@ -28,7 +28,7 @@ const malformedExchangeCases = [
 describe('CLI browser login exchange validation', () => {
   it.each(malformedExchangeCases)('rejects malformed browser exchange responses before credentials can be saved: $label', async ({ data }) => {
     await saveCredentials('af_live_existing', {
-      apiBaseUrl: 'https://api.agentfeed.dev/v1',
+      apiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1',
       user: { id: 'user-existing', username: 'existing' },
       tokenExpiresAt: '2026-06-01T00:00:00Z'
     });
@@ -40,7 +40,7 @@ describe('CLI browser login exchange validation', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(browserLogin({ apiBaseUrl: 'https://api.agentfeed.dev/v1', noOpen: true, waitMs: 50, allowCiBrowser: true }))
+    await expect(browserLogin({ apiBaseUrl: 'https://agentfeed.api.downingmoon.dev/v1', noOpen: true, waitMs: 50, allowCiBrowser: true }))
       .rejects.toMatchObject({ code: 'API_RESPONSE_INVALID' });
 
     expect(fetchMock).toHaveBeenCalledTimes(3);

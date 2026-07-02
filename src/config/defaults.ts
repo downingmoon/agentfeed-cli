@@ -1,6 +1,6 @@
 import type { AgentFeedProjectConfig } from '../types.js';
 
-export const DEFAULT_API_BASE_URL = 'https://api.agentfeed.dev/v1';
+export const DEFAULT_API_BASE_URL = 'https://agentfeed.api.downingmoon.dev/v1';
 
 export function defaultProjectConfig(input: { name: string; slug: string; repositoryUrl?: string | null }): AgentFeedProjectConfig {
   return {

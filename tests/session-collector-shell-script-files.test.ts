@@ -28,6 +28,51 @@ describe('shell script file evidence', () => {
     }
   });
 
+  it('captures Python pathlib variable write_text targets with line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-variable-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'from pathlib import Path',
+          "target = Path('src/generated-variable.ts')",
+          "target.write_text('export const first = true;\\nexport const second = true;\\n')",
+          'PY'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()]).toMatchObject([
+        { path: 'src/generated-variable.ts', status: 'modified', lines_added: 2 }
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('captures Python open handle write targets with line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-open-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          "with open('src/generated-open.ts', 'w', encoding='utf-8') as handle:",
+          "    handle.write('export const first = true;\\nexport const second = true;\\n')",
+          'PY'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()]).toMatchObject([
+        { path: 'src/generated-open.ts', status: 'modified', lines_added: 2 }
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it('captures Node writeFileSync targets with line counts', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-node-'));
     try {

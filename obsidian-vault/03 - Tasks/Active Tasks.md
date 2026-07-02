@@ -7,12 +7,16 @@ status: active
 tags:
   - agentfeed/todo
   - project/tasks
-updated: 2026-06-26
+updated: 2026-07-02
 ---
 
 # Active Tasks
 
 ## 현재 결론
+
+> [!success] 2026-07-02 CLI Python bound shell write evidence
+> CLI shell evidence collector가 `target = Path('...'); target.write_text(...)` 및 `with open('...', 'w') as handle; handle.write(...)` 같은 실제 agent Python heredoc 패턴의 파일/라인 수를 놓치던 gap을 regression으로 잠갔다. Direct `Path(...).write_text(...)`/Node `writeFileSync(...)` 수집은 유지하고, bound write evidence는 path별 added lines를 합산한다. Targeted collector test/typecheck, build-first full CLI gate, manual JSON smoke 모두 통과했다. Smoke evidence: `/tmp/agentfeed-python-bound-collect-SvDhlC.json`, `files_changed=2`, `lines_added=4`, `session_id=claude-python-bound-smoke`.
+> - [[CLI Python Bound Shell Write Evidence 2026-07-02]]
 
 > [!success] 2026-06-26 Frontend project one-segment slug route guard
 > Human QA sweep에서 `/projects/carrot-platform-v2-web`가 owner-scoped slug를 one-segment project id route로 보내 backend UUID validation `422`를 만들고 `프로젝트 API 오류`를 표시했다. Frontend route에서 one-segment `/projects/:id`는 UUID만 허용하고 slug는 `notFound()`로 차단하게 수정했다. Targeted/full contracts, `npm run lint`, production build 통과. `trading-bot`에 frontend-only rsync + force-recreate 배포 완료. Targeted Playwright QA에서 해당 URL은 의도된 404이며 `/v1/projects/carrot-platform-v2-web` 호출과 API 오류 문구가 없음을 확인했고, surface sweep `SUMMARY pass=16 fail=0` 통과.

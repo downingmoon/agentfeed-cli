@@ -25,6 +25,21 @@ function runtimePathBindings(command: string): RuntimePathBinding[] {
   return paths;
 }
 
+function joinedRuntimePath(basePath: string, rawSegments: string): string | null {
+  const segments: string[] = [];
+  const pattern = /\s*,\s*(['"`])(?<segment>[^'"`]*?)\1/g;
+  let cursor = 0;
+  for (const match of rawSegments.matchAll(pattern)) {
+    if (match.index !== cursor) return null;
+    const segment = match.groups?.segment;
+    if (!segment || segment.includes('${')) return null;
+    segments.push(segment);
+    cursor = match.index + match[0].length;
+  }
+  if (!segments.length || rawSegments.slice(cursor).trim()) return null;
+  return [basePath, ...segments].join('/').replace(/\/+/g, '/');
+}
+
 function runtimePathVariableWriteEvidence(context: ScriptWriteEvidenceContext, command: string, contentBindings: ReadonlyMap<string, string>): FileEvidence[] {
   const files = new Map<string, FileEvidence>();
   for (const target of runtimePathBindings(command)) {
@@ -42,6 +57,28 @@ function runtimePathVariableWriteEvidence(context: ScriptWriteEvidenceContext, c
     }
     const changedPattern = new RegExp(`${JS_RUNTIME_WRITE_CALL}\\s*${escapeRegExp(target.name)}\\s*,`, 'g');
     if (changedPattern.test(command)) mergeChangedEvidence(files, path);
+
+    const joinedTarget = `${JS_RUNTIME_WRITE_CALL}\\s*(?:[A-Za-z_$][\\w$]*\\.)?(?:join|resolve)\\(\\s*${escapeRegExp(target.name)}(?<segments>[^)]*)\\)`;
+    const joinedTextPattern = new RegExp(`${joinedTarget}\\s*,\\s*(?<contentQuote>['"\`])(?<content>[\\s\\S]*?)\\k<contentQuote>`, 'g');
+    for (const match of command.matchAll(joinedTextPattern)) {
+      const joinedPath = joinedRuntimePath(target.path, match.groups?.segments ?? '');
+      const relativePath = joinedPath ? projectRelativeShellPath(context.projectRoot, context.workdir, joinedPath) : null;
+      if (relativePath) mergeAddedEvidence(files, relativePath, countTextLines(unescapeScriptText(match.groups?.content ?? '')));
+    }
+    const joinedVariablePattern = new RegExp(`${joinedTarget}\\s*,\\s*(?<contentName>[A-Za-z_$][\\w$]*)\\s*(?:,[^\\n)]*)?\\)`, 'g');
+    for (const match of command.matchAll(joinedVariablePattern)) {
+      const joinedPath = joinedRuntimePath(target.path, match.groups?.segments ?? '');
+      const relativePath = joinedPath ? projectRelativeShellPath(context.projectRoot, context.workdir, joinedPath) : null;
+      const contentName = match.groups?.contentName;
+      const content = contentName ? contentBindings.get(contentName) : undefined;
+      if (relativePath && content !== undefined) mergeAddedEvidence(files, relativePath, countTextLines(unescapeScriptText(content)));
+    }
+    const joinedChangedPattern = new RegExp(`${joinedTarget}\\s*,`, 'g');
+    for (const match of command.matchAll(joinedChangedPattern)) {
+      const joinedPath = joinedRuntimePath(target.path, match.groups?.segments ?? '');
+      const relativePath = joinedPath ? projectRelativeShellPath(context.projectRoot, context.workdir, joinedPath) : null;
+      if (relativePath) mergeChangedEvidence(files, relativePath);
+    }
   }
   return [...files.values()];
 }

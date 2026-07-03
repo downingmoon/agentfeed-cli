@@ -87,4 +87,29 @@ describe('shell script JavaScript runtime write evidence', () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it('captures Bun and Deno writes through deterministic path joins', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-js-runtime-joined-path-writes-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "bun run <<'JS'",
+          "const outDir = 'dist';",
+          'const content = `export const first = true;\\nexport const second = true;\\n`;',
+          "await Bun.write(path.join(outDir, 'bun-data.ts'), content);",
+          "await Deno.writeFile(path.join(outDir, 'deno-bytes.bin'), new TextEncoder().encode('abc'));",
+          'JS'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added]).sort()).toEqual([
+        ['dist/bun-data.ts', 2],
+        ['dist/deno-bytes.bin', null]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });

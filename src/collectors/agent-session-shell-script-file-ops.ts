@@ -84,6 +84,32 @@ function installEvidence(projectRoot: string, workdir: string | null, words: rea
   return installed ? [installed] : [];
 }
 
+function linkEvidence(projectRoot: string, workdir: string | null, words: readonly string[]): FileEvidence[] {
+  const paths: string[] = [];
+  let optionsEnded = false;
+  let skipNext = false;
+  for (const word of words.slice(1)) {
+    if (skipNext) {
+      skipNext = false;
+      continue;
+    }
+    if (!optionsEnded && word === '--') {
+      optionsEnded = true;
+      continue;
+    }
+    if (!optionsEnded && (word === '-t' || word.startsWith('--target-directory'))) return [];
+    if (!optionsEnded && (word === '-S' || word === '--suffix')) {
+      skipNext = true;
+      continue;
+    }
+    if (!optionsEnded && word.startsWith('-')) continue;
+    paths.push(word);
+  }
+  if (paths.length !== 2) return [];
+  const linked = evidence(projectRoot, workdir, paths[1], 'modified');
+  return linked ? [linked] : [];
+}
+
 function modifiedEvidenceForPaths(projectRoot: string, workdir: string | null, paths: readonly string[]): FileEvidence[] {
   const files: FileEvidence[] = [];
   for (const rawPath of paths) {
@@ -184,6 +210,7 @@ export function shellFileOperationEvidence(projectRoot: string, workdir: string 
   if (command === 'touch') return touchEvidence(projectRoot, workdir, words);
   if (command === 'cp') return copyEvidence(projectRoot, workdir, words);
   if (command === 'install') return installEvidence(projectRoot, workdir, words);
+  if (command === 'ln') return linkEvidence(projectRoot, workdir, words);
   if (command === 'chmod' || command === 'chown' || command === 'chgrp') return metadataEvidence(projectRoot, workdir, words);
   if (command === 'mv') return moveEvidence(projectRoot, workdir, words, 1);
   if (command === 'git' && words[1] === 'mv') return moveEvidence(projectRoot, workdir, words, 2);

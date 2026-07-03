@@ -59,6 +59,33 @@ describe('shell script file operation evidence', () => {
     }
   });
 
+  it('captures deterministic ln file targets without claiming source changes', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-file-ln-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          'ln src/api.ts src/api-hardlink.ts',
+          'ln -s ../target.ts src/link.ts',
+          'ln -sf src/api.ts src/api-link.ts',
+          'ln --symbolic --force src/config.ts src/config-link.ts',
+          'ln -s src/a.ts src/b.ts links/',
+          'ln -t links src/a.ts src/b.ts'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.status, file.lines_added]).sort()).toEqual([
+        ['src/api-hardlink.ts', 'modified', null],
+        ['src/api-link.ts', 'modified', null],
+        ['src/config-link.ts', 'modified', null],
+        ['src/link.ts', 'modified', null]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it('captures deterministic install file targets without claiming source changes', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-file-install-'));
     try {

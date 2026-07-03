@@ -2,40 +2,11 @@ import type { ChangedFileSummary, CollectionSource, CollectionWindow } from '../
 import { readSessionJsonlRecords } from './agent-session-files.js';
 import { readOmxMetadata } from './agent-session-codex-omx.js';
 import { applyCodexPatchText } from './agent-session-codex-patch.js';
+import { codexCallArguments, codexNestedToolName, codexNestedToolParameters, codexTokenTotal } from './agent-session-codex-tools.js';
 import { applyShellFileEvidence } from './agent-session-shell-files.js';
 import { commandFailed, failedStatus, isTestCommand, toolOutputFailed } from './agent-session-tooling.js';
-import { asRecord, asString, countTextLines, countUnifiedDiff, explicitCostUsd, finalizeAgentSession, inferEffectiveCollectionWindow, numeric, pushSource, relativeProjectPath, safeJsonParse, upsertFile, type AgentSessionMetrics } from './agent-session-core.js';
+import { asRecord, asString, countTextLines, countUnifiedDiff, explicitCostUsd, finalizeAgentSession, inferEffectiveCollectionWindow, pushSource, relativeProjectPath, upsertFile, type AgentSessionMetrics } from './agent-session-core.js';
 import { hasCollectionWindowBoundary, parseBoundaryMillis, rowInAgentCollectionWindow, rowTimestampMillis } from './agent-session-window.js';
-
-function codexTokenTotal(info: Record<string, unknown>): number {
-  const direct = numeric(info.total_tokens) || numeric(info.total);
-  if (direct) return direct;
-  const total = asRecord(info.total_token_usage) ?? asRecord(info.token_usage) ?? info;
-  const nestedDirect = numeric(total.total_tokens) || numeric(total.total);
-  if (nestedDirect) return nestedDirect;
-  return numeric(total.input_tokens) + numeric(total.cached_input_tokens) + numeric(total.cache_read_input_tokens) + numeric(total.cache_creation_input_tokens) + numeric(total.output_tokens);
-}
-
-function codexCallArguments(call: Record<string, unknown>): Record<string, unknown> | null {
-  const direct = asRecord(call.arguments);
-  if (direct) return direct;
-  const argsText = asString(call.arguments);
-  return argsText ? asRecord(safeJsonParse(argsText)) : null;
-}
-
-function codexNestedToolName(value: unknown): string | null {
-  const name = asString(value);
-  if (!name) return null;
-  const parts = name.split('.');
-  return parts[parts.length - 1] || name;
-}
-
-function codexNestedToolParameters(toolUse: Record<string, unknown>): Record<string, unknown> {
-  const direct = asRecord(toolUse.parameters) ?? asRecord(toolUse.args) ?? asRecord(toolUse.arguments);
-  if (direct) return direct;
-  const argsText = asString(toolUse.arguments);
-  return argsText ? asRecord(safeJsonParse(argsText)) ?? {} : {};
-}
 
 type CodexCommandInvocation = {
   readonly command: string;

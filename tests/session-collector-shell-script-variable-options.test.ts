@@ -113,4 +113,29 @@ describe('shell script variable write options', () => {
     }
   });
 
+
+  it('captures Bun and Deno text writes with line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-js-runtime-writes-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "bun run <<'JS'",
+          'const content = `export const first = true;\nexport const second = true;\n`;',
+          "await Bun.write('src/generated-bun.ts', content);",
+          "await Deno.writeTextFile('src/generated-deno.ts', 'export const third = true;\n');",
+          'JS'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added]).sort()).toEqual([
+        ['src/generated-bun.ts', 2],
+        ['src/generated-deno.ts', 1]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
 });

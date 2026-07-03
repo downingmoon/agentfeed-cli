@@ -146,6 +146,27 @@ describe('Claude session collector metrics', () => {
     expect(metrics?.files_changed).toBe(1);
   });
 
+  it('does not count unconfirmed Claude file edits as changed files', async () => {
+    const sessionFile = join(dir, 'claude-unconfirmed-edit-session.jsonl');
+    await writeJsonl(sessionFile, [
+      { type: 'assistant', cwd: dir, sessionId: 'claude-unconfirmed-edit-session', timestamp: '2026-05-20T00:00:00Z', message: { model: 'claude-sonnet', content: [
+        { type: 'tool_use', id: 'write-started', name: 'Write', input: { file_path: join(dir, 'src', 'unconfirmed.ts'), content: 'export const unconfirmed = true;\\n' } },
+        { type: 'tool_use', id: 'edit-ok', name: 'Edit', input: { file_path: join(dir, 'src', 'api.ts'), old_string: 'true', new_string: 'false\\n' } }
+      ] } },
+      { type: 'user', cwd: dir, sessionId: 'claude-unconfirmed-edit-session', timestamp: '2026-05-20T00:00:02Z', message: { role: 'user', content: [
+        { type: 'tool_result', tool_use_id: 'edit-ok', content: 'Updated src/api.ts' }
+      ] } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'claude_code', sessionFile });
+
+    expect(metrics?.changed_files).toMatchObject([
+      { path: 'src/api.ts', status: 'modified', lines_added: 1, lines_removed: 1 }
+    ]);
+    expect(metrics?.changed_files.map((file) => file.path)).not.toContain('src/unconfirmed.ts');
+    expect(metrics?.files_changed).toBe(1);
+  });
+
   it('captures files created by successful Claude Bash heredoc commands', async () => {
     const sessionFile = join(dir, 'claude-shell-created-files.jsonl');
     await writeJsonl(sessionFile, [

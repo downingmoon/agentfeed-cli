@@ -13,7 +13,7 @@ export async function parseClaudeSessionFile(cwd: string, sessionFile: string, w
   const effectiveWindow = effective.window;
   const files = new Map<string, ChangedFileSummary>();
   const commands = new Map<string, { command: string; test: boolean; workdir: string | null }>();
-  const pendingFileEdits = new Map<string, { path: string; status: ChangedFileSummary['status']; added: number; removed: number; failed: boolean }>();
+  const pendingFileEdits = new Map<string, { path: string; status: ChangedFileSummary['status']; added: number; removed: number; confirmed: boolean; failed: boolean }>();
   let tokensUsed = 0;
   let durationSeconds: number | null = null;
   let estimatedCostUsd = 0;
@@ -52,8 +52,9 @@ export async function parseClaudeSessionFile(cwd: string, sessionFile: string, w
       if (item.type === 'tool_result') {
         const toolUseId = asString(item.tool_use_id);
         const pendingFileEdit = toolUseId ? pendingFileEdits.get(toolUseId) : null;
-        if (pendingFileEdit && (item.is_error === true || commandFailed(toolResultOutput(item)))) {
-          pendingFileEdit.failed = true;
+        if (pendingFileEdit) {
+          pendingFileEdit.confirmed = true;
+          if (item.is_error === true || commandFailed(toolResultOutput(item))) pendingFileEdit.failed = true;
         }
         const command = toolUseId ? commands.get(toolUseId) : null;
         const output = toolResultOutput(item);
@@ -90,7 +91,7 @@ export async function parseClaudeSessionFile(cwd: string, sessionFile: string, w
         }
         const status: ChangedFileSummary['status'] = name === 'Write' ? 'added' : 'modified';
         const toolUseId = asString(item.id);
-        if (toolUseId) pendingFileEdits.set(toolUseId, { path: rel, status, added, removed, failed: false });
+        if (toolUseId) pendingFileEdits.set(toolUseId, { path: rel, status, added, removed, confirmed: false, failed: false });
         else upsertFile(files, rel, { status, added, removed });
       }
       if (name === 'Bash') {
@@ -109,7 +110,7 @@ export async function parseClaudeSessionFile(cwd: string, sessionFile: string, w
     }
   }
   for (const edit of pendingFileEdits.values()) {
-    if (!edit.failed) upsertFile(files, edit.path, { status: edit.status, added: edit.added, removed: edit.removed });
+    if (edit.confirmed && !edit.failed) upsertFile(files, edit.path, { status: edit.status, added: edit.added, removed: edit.removed });
   }
   if (hasCollectionWindowBoundary(effectiveWindow) && !matchedWindowRow) return null;
   const collectionSources: CollectionSource[] = [{ type: 'agent_session', name: 'claude_code', quality: 'high' }];

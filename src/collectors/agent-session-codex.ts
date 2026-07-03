@@ -160,11 +160,12 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
       }
       const command = callId ? commands.get(callId) : null;
       const output = asString(payload.output) ?? '';
-      if (command && commandFailed(output)) {
+      const commandDidFail = failedStatus(payload.status) || commandFailed(output);
+      if (command && commandDidFail) {
         failedCommands += 1;
         if (command.test) failedTestCommands += 1;
       }
-      if (command && !failedStatus(payload.status) && !commandFailed(output)) {
+      if (command && !commandDidFail) {
         for (const invocation of command.invocations) {
           applyShellFileEvidence(cwd, { command: invocation.command, workdir: invocation.workdir, output }, files);
         }

@@ -6,6 +6,7 @@ import { contentBindingsFromPatterns, escapeRegExp, mergeAddedEvidence, scriptWr
 
 const PYTHON_TRIPLE_WRITE_TARGET = /\b(?:Path|open)\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*('''|""")(?<content>[\s\S]*?)\3/g;
 const PYTHON_WRITE_TARGET = /\b(?:Path|open)\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*(['"])(?<content>[\s\S]*?)\3/g;
+const PYTHON_CHANGED_WRITE_TARGET = /\b(?:Path|open)\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text|_bytes)?\(/g;
 const PYTHON_TRIPLE_CONTENT_BINDING = /\b(?<name>[A-Za-z_]\w*)\s*=\s*('''|""")(?<content>[\s\S]*?)\2/g;
 const PYTHON_STRING_PATH_BINDING_TARGET = /\b(?<name>[A-Za-z_]\w*)\s*=\s*(['"])(?<path>[^'"]+)\2/g;
 const PYTHON_CONTENT_VARIABLE_WRITE_TARGET = /\b(?:Path|open)\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*(?<contentName>[A-Za-z_]\w*)\s*(?:,[^\n)]*)?\)/g;
@@ -76,7 +77,7 @@ function pathVariableWriteEvidence(input: BoundScriptWriteEvidenceInput): FileEv
     if (!path) continue;
     const pathArgument = escapeRegExp(target.name);
     const openWriter = `open\\(\\s*${pathArgument}\\s*,\\s*(['"])[^'"]*[wax+][^'"]*\\1[\\s\\S]*?\\)\\.write`;
-    const pathWriter = `Path\\(\\s*${pathArgument}\\s*\\)\\.write_text`;
+    const pathWriter = `Path\\(\\s*${pathArgument}\\s*\\)\\.write_(?:text|bytes)`;
     const writerTarget = `(?:${openWriter}|${pathWriter})`;
 
     const triplePattern = new RegExp(`\\b${writerTarget}\\(\\s*('''|""")(?<content>[\\s\\S]*?)\\1`, 'g');
@@ -122,13 +123,25 @@ function boundScriptWriteEvidence(input: BoundScriptWriteEvidenceInput): FileEvi
     for (const match of input.command.matchAll(pattern)) {
       mergeAddedEvidence(files, path, countTextLines(unescapeScriptText(match.groups?.content ?? '')));
     }
-    const variablePattern = new RegExp(`\\b${escapeRegExp(target.name)}\\.write(?:_text)?\\(\\s*(?<contentName>[A-Za-z_]\\w*)\\s*(?:,[^\\n)]*)?\\)`, 'g');
+    const variablePattern = new RegExp(`\\b${escapeRegExp(target.name)}\\.write(?:_text|_bytes)?\\(\\s*(?<contentName>[A-Za-z_]\\w*)\\s*(?:,[^\\n)]*)?\\)`, 'g');
     for (const match of input.command.matchAll(variablePattern)) {
       const contentName = match.groups?.contentName;
       const content = contentName ? input.contentBindings.get(contentName) : undefined;
       if (content === undefined) mergeChangedEvidence(files, path);
       else mergeAddedEvidence(files, path, countTextLines(unescapeScriptText(content)));
     }
+    const targetPattern = new RegExp(`\\b${escapeRegExp(target.name)}\\.write(?:_text|_bytes)?\\(`, 'g');
+    if (targetPattern.test(input.command)) mergeChangedEvidence(files, path);
+  }
+  return [...files.values()];
+}
+
+function pythonChangedWriteTargetEvidence(context: ScriptWriteEvidenceContext, command: string): FileEvidence[] {
+  const files = new Map<string, FileEvidence>();
+  PYTHON_CHANGED_WRITE_TARGET.lastIndex = 0;
+  for (const match of command.matchAll(PYTHON_CHANGED_WRITE_TARGET)) {
+    const path = projectRelativeShellPath(context.projectRoot, context.workdir, match.groups?.path ?? '');
+    if (path) mergeChangedEvidence(files, path);
   }
   return [...files.values()];
 }
@@ -159,6 +172,7 @@ export function pythonScriptWriteEvidence(context: ScriptWriteEvidenceContext, c
   return [
     ...scriptWriteEvidence({ ...context, pattern: PYTHON_TRIPLE_WRITE_TARGET, command }),
     ...scriptWriteEvidence({ ...context, pattern: PYTHON_WRITE_TARGET, command }),
+    ...pythonChangedWriteTargetEvidence(context, command),
     ...variableContentWriteEvidence({ ...context, pattern: PYTHON_CONTENT_VARIABLE_WRITE_TARGET, command, contentBindings }),
     ...pythonDumpTargetEvidence(context, command),
     ...pathVariableWriteEvidence({ ...context, command, targets: pythonStringPathTargets(command), contentBindings }),

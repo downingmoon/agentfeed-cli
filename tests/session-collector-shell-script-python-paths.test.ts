@@ -100,4 +100,32 @@ describe('shell script Python path bindings', () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it('captures direct Python literal path expression and binary writes as changed files', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-direct-expression-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'from pathlib import Path',
+          'import json',
+          "Path('src/generated.json').write_text(json.dumps({'ok': True}, indent=2) + '\n')",
+          "Path('assets/icon.bin').write_bytes(b'abc')",
+          "open('assets/raw.bin', 'wb').write(b'raw')",
+          'PY'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added]).sort()).toEqual([
+        ['assets/icon.bin', null],
+        ['assets/raw.bin', null],
+        ['src/generated.json', null]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
 });

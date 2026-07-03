@@ -67,6 +67,15 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
     if (existing) existing.count += 1;
     else pendingSubagentCalls.set(callId, { failed: false, count: 1 });
   };
+  const patchTextFromToolInput = (args: Record<string, unknown> | null, rawInput: string | null): string | null => {
+    const structured = asString(args?.input) ?? asString(args?.patch) ?? asString(args?.content);
+    if (structured) return structured;
+    return rawInput?.startsWith('*** Begin Patch') ? rawInput : null;
+  };
+  const registerPatchFallback = (callId: string | null, patchText: string | null): void => {
+    if (!patchText) return;
+    patchTextFallbacks.push({ callId, patchText, failed: Boolean(callId && failedToolOutputCallIds.has(callId)) });
+  };
 
   for (const row of rows) {
     const payload = asRecord(row.payload);
@@ -117,6 +126,8 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
             trackSubagentCall(callId);
           } else if (nestedName === 'exec_command') {
             registerCommand(callId, asString(parameters.cmd) ?? asString(parameters.command) ?? '', asString(parameters.workdir));
+          } else if (nestedName === 'apply_patch') {
+            registerPatchFallback(callId, patchTextFromToolInput(parameters, asString(toolUse.arguments)));
           }
         }
         continue;
@@ -128,6 +139,10 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
       if (name === 'exec_command') {
         const args = codexCallArguments(payload);
         registerCommand(callId, asString(args?.cmd) ?? asString(args?.command) ?? '', asString(args?.workdir));
+      }
+      if (name === 'apply_patch' && !failedStatus(payload.status)) {
+        const args = codexCallArguments(payload);
+        registerPatchFallback(callId, patchTextFromToolInput(args, asString(payload.arguments)));
       }
     }
     if (payload.type === 'custom_tool_call') toolCalls += 1;

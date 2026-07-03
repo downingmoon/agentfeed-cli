@@ -209,6 +209,45 @@ describe('Codex session collector command metrics', () => {
     expect(metrics?.lines_added).toBe(2);
   });
 
+  it('captures changed paths from Codex function_call apply_patch arguments', async () => {
+    const sessionFile = join(dir, 'codex-function-call-apply-patch.jsonl');
+    const patch = [
+      '*** Begin Patch',
+      '*** Add File: src/generated-function-patch.ts',
+      '+export const first = true;',
+      '+export const second = true;',
+      '*** Update File: src/api.ts',
+      '@@',
+      '-export const ok = true;',
+      '+export const ok = false;',
+      '*** End Patch'
+    ].join('\n');
+    const structuredPatch = [
+      '*** Begin Patch',
+      '*** Add File: src/generated-structured-function-patch.ts',
+      '+export const structured = true;',
+      '*** End Patch'
+    ].join('\n');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-function-call-apply-patch', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'function_call', name: 'functions.apply_patch', arguments: patch, call_id: 'patch-function' } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'patch-function', output: 'Success. Updated the following files:\nA src/generated-function-patch.ts\nM src/api.ts' } },
+      { timestamp: '2026-05-20T00:00:03Z', type: 'response_item', payload: { type: 'function_call', name: 'functions.apply_patch', arguments: JSON.stringify({ input: structuredPatch }), call_id: 'patch-function-structured' } },
+      { timestamp: '2026-05-20T00:00:04Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'patch-function-structured', output: 'Success. Updated the following files:\nA src/generated-structured-function-patch.ts' } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.changed_files.map((file) => [file.path, file.status, file.lines_added, file.lines_removed]).sort()).toEqual([
+      ['src/api.ts', 'modified', 1, 1],
+      ['src/generated-function-patch.ts', 'added', 2, 0],
+      ['src/generated-structured-function-patch.ts', 'added', 1, 0]
+    ]);
+    expect(metrics?.files_changed).toBe(3);
+    expect(metrics?.lines_added).toBe(4);
+    expect(metrics?.lines_removed).toBe(1);
+  });
+
   it('captures changed paths from Codex git status shell output', async () => {
     const sessionFile = join(dir, 'codex-git-status-output.jsonl');
     await writeJsonl(sessionFile, [

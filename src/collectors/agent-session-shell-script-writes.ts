@@ -30,12 +30,13 @@ function heredocDelimiter(line: string): string | null {
 function heredocTarget(line: string): { readonly path: string; readonly delimiter: string } | null {
   const delimiter = heredocDelimiter(line);
   if (!delimiter) return null;
+  SHELL_TEE_TARGET.lastIndex = 0;
+  const tee = [...line.matchAll(SHELL_TEE_TARGET)].at(-1)?.[2];
+  if (tee) return { path: tee, delimiter };
   SHELL_REDIRECT_TARGET.lastIndex = 0;
   const redirect = [...line.matchAll(SHELL_REDIRECT_TARGET)].at(-1)?.[2];
   if (redirect) return { path: redirect, delimiter };
-  SHELL_TEE_TARGET.lastIndex = 0;
-  const tee = [...line.matchAll(SHELL_TEE_TARGET)].at(-1)?.[2];
-  return tee ? { path: tee, delimiter } : null;
+  return null;
 }
 
 function contentBindings(command: string): ReadonlyMap<string, string> {

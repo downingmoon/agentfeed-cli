@@ -104,4 +104,26 @@ describe('shell script variable write options', () => {
     }
   });
 
+  it('captures shell heredoc tee targets before suppressing redirects', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-tee-redirect-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "cat <<'EOF' | tee src/generated-tee.ts >/dev/null",
+          'export const first = true;',
+          'export const second = true;',
+          'EOF'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added])).toEqual([
+        ['src/generated-tee.ts', 2]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
 });

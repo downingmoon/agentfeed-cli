@@ -10,6 +10,8 @@ const SHELL_TEE_TARGET = /(?:^|\s)tee\s+(?:-[a-zA-Z]+\s+)*(['"]?)([^'"\s;&|<>]+)
 const APPLY_PATCH_FILE_HEADER = /^\*\*\* (?<kind>Add|Update|Delete) File: (?<path>.+)$/;
 const SHELL_PRINTF_SINGLE_REDIRECT = /^\s*printf\s+(?:--\s+)?'(?<content>[^']*)'\s*(?:\d?>|>>|>)\s*(['"]?)(?<path>[^'"\s;&|<>]+)\2/;
 const SHELL_PRINTF_DOUBLE_REDIRECT = /^\s*printf\s+(?:--\s+)?"(?<content>(?:\\"|[^"])*)"\s*(?:\d?>|>>|>)\s*(['"]?)(?<path>[^'"\s;&|<>]+)\2/;
+const SHELL_PRINTF_FORMAT_SINGLE_REDIRECT = /^\s*printf\s+(?:--\s+)?'(?<format>[^']*)'(?<args>.*?)\s*(?:\d?>|>>|>)\s*(['"]?)(?<path>[^'"\s;&|<>]+)\3/;
+const SHELL_PRINTF_FORMAT_DOUBLE_REDIRECT = /^\s*printf\s+(?:--\s+)?"(?<format>(?:\\"|[^"])*)"(?<args>.*?)\s*(?:\d?>|>>|>)\s*(['"]?)(?<path>[^'"\s;&|<>]+)\3/;
 const SHELL_ECHO_SINGLE_REDIRECT = /^\s*echo\s+(?<options>-[A-Za-z]+\s+)?'(?<content>[^']*)'\s*(?:\d?>|>>|>)\s*(['"]?)(?<path>[^'"\s;&|<>]+)\3/;
 const SHELL_ECHO_DOUBLE_REDIRECT = /^\s*echo\s+(?<options>-[A-Za-z]+\s+)?"(?<content>(?:\\"|[^"])*)"\s*(?:\d?>|>>|>)\s*(['"]?)(?<path>[^'"\s;&|<>]+)\3/;
 
@@ -78,7 +80,31 @@ function parseApplyPatchEvidence(projectRoot: string, workdir: string | null, co
   return files;
 }
 
+function shellQuotedArguments(value: string): string[] {
+  const args: string[] = [];
+  const pattern = /'(?<single>[^']*)'|"(?<double>(?:\\"|[^"])*)"/g;
+  for (const match of value.matchAll(pattern)) {
+    const content = match.groups?.single ?? match.groups?.double;
+    if (content !== undefined) args.push(content.replace(/\\"/g, '"'));
+  }
+  return args;
+}
+
+function printfFormatRedirectEvidence(projectRoot: string, workdir: string | null, line: string): FileEvidence | null {
+  const printf = SHELL_PRINTF_FORMAT_SINGLE_REDIRECT.exec(line) ?? SHELL_PRINTF_FORMAT_DOUBLE_REDIRECT.exec(line);
+  const format = unescapeScriptText(printf?.groups?.format ?? '');
+  if (!printf || format !== '%s\n') return null;
+  const args = shellQuotedArguments(printf.groups?.args ?? '');
+  if (!args.length) return null;
+  const path = projectRelativeShellPath(projectRoot, workdir, printf.groups?.path ?? '');
+  if (!path) return null;
+  return { path, status: 'modified', added: countTextLines(args.join('\n')) };
+}
+
 function shellLiteralRedirectEvidence(projectRoot: string, workdir: string | null, line: string): FileEvidence | null {
+  const formatted = printfFormatRedirectEvidence(projectRoot, workdir, line);
+  if (formatted) return formatted;
+
   const printf = SHELL_PRINTF_SINGLE_REDIRECT.exec(line) ?? SHELL_PRINTF_DOUBLE_REDIRECT.exec(line);
   if (printf) {
     const path = projectRelativeShellPath(projectRoot, workdir, printf.groups?.path ?? '');

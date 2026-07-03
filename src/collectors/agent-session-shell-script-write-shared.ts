@@ -72,6 +72,10 @@ export function variableContentWriteEvidence(input: VariableContentWriteEvidence
   return files;
 }
 
+export function mergeChangedEvidence(files: Map<string, FileEvidence>, path: string): void {
+  if (!files.has(path)) files.set(path, { path, status: 'modified' });
+}
+
 export function mergeAddedEvidence(files: Map<string, FileEvidence>, path: string, added: number): void {
   const current = files.get(path);
   files.set(path, {
@@ -79,4 +83,15 @@ export function mergeAddedEvidence(files: Map<string, FileEvidence>, path: strin
     status: 'modified',
     added: (current?.added ?? 0) + added
   });
+}
+
+export function changedPathWriteEvidence(input: ScriptWriteEvidenceInput): FileEvidence[] {
+  const files = new Map<string, FileEvidence>();
+  input.pattern.lastIndex = 0;
+  for (const match of input.command.matchAll(input.pattern)) {
+    const path = projectRelativeShellPath(input.projectRoot, input.workdir, match.groups?.path ?? '');
+    const mode = match.groups?.mode ?? 'w';
+    if (path && /[wax+]/.test(mode)) mergeChangedEvidence(files, path);
+  }
+  return [...files.values()];
 }

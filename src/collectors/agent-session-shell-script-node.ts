@@ -1,7 +1,8 @@
 import type { FileEvidence } from './agent-session-shell-file-evidence.js';
 import { projectRelativeShellPath } from './agent-session-shell-paths.js';
 import { countTextLines } from './agent-session-core.js';
-import { contentBindingsFromPatterns, escapeRegExp, mergeAddedEvidence, scriptWriteEvidence, unescapeScriptText, variableContentWriteEvidence, type ScriptWriteEvidenceContext } from './agent-session-shell-script-write-shared.js';
+import { changedPathWriteEvidence, contentBindingsFromPatterns, escapeRegExp, mergeAddedEvidence, mergeChangedEvidence, scriptWriteEvidence, unescapeScriptText, variableContentWriteEvidence, type ScriptWriteEvidenceContext } from './agent-session-shell-script-write-shared.js';
+import { jsRuntimeWriteEvidence } from './agent-session-shell-script-js-runtime.js';
 
 const NODE_CONTENT_BINDING = /\b(?:const|let|var)\s+(?<name>[A-Za-z_$][\w$]*)\s*=\s*(['"`])(?<content>[\s\S]*?)\2\s*;/g;
 const NODE_PATH_BINDING = /\b(?:const|let|var)\s+(?<name>[A-Za-z_$][\w$]*)\s*=\s*(['"`])(?<path>[^'"`]+)\2\s*;/g;
@@ -17,9 +18,6 @@ const NODE_FILEHANDLE_TARGET = /\b(?:const|let|var)\s+(?<name>[A-Za-z_$][\w$]*)\
 const NODE_DIRECT_FILEHANDLE_WRITE_TARGET = /\(\s*await\s+(?:[A-Za-z_$][\w$]*\.)*open\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(['"`])(?<mode>[^'"`]*)\3[\s\S]*?\)\s*\)\.writeFile\(\s*(['"`])(?<content>[\s\S]*?)\5/g;
 const NODE_DIRECT_FILEHANDLE_VARIABLE_WRITE_TARGET = /\(\s*await\s+(?:[A-Za-z_$][\w$]*\.)*open\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(['"`])(?<mode>[^'"`]*)\3[\s\S]*?\)\s*\)\.writeFile\(\s*(?<contentName>[A-Za-z_$][\w$]*)\s*(?:,[^\n)]*)?\)/g;
 const NODE_DIRECT_FILEHANDLE_CHANGED_TARGET = /\(\s*await\s+(?:[A-Za-z_$][\w$]*\.)*open\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(['"`])(?<mode>[^'"`]*)\3[\s\S]*?\)\s*\)\.writeFile\(\s*/g;
-const JS_RUNTIME_TEXT_WRITE_TARGET = /\b(?:Bun\.write|Deno\.writeTextFile)\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(['"`])(?<content>[\s\S]*?)\3/g;
-const JS_RUNTIME_VARIABLE_TEXT_WRITE_TARGET = /\b(?:Bun\.write|Deno\.writeTextFile)\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(?<contentName>[A-Za-z_$][\w$]*)\s*(?:,[^\n)]*)?\)/g;
-const JS_RUNTIME_CHANGED_WRITE_TARGET = /\b(?:Bun\.write|Deno\.writeTextFile|Deno\.writeFile)\(\s*(['"`])(?<path>[^'"`]+)\1\s*,/g;
 
 export function nodeContentBindings(command: string): ReadonlyMap<string, string> {
   return contentBindingsFromPatterns(command, [NODE_CONTENT_BINDING]);
@@ -87,27 +85,12 @@ function nodeFileHandleTargets(command: string): BoundNodePath[] {
   return handles;
 }
 
-function mergeChangedEvidence(files: Map<string, FileEvidence>, path: string): void {
-  if (!files.has(path)) files.set(path, { path, status: 'modified' });
-}
-
 function nodeChangedWriteEvidence(context: ScriptWriteEvidenceContext, command: string): FileEvidence[] {
   const files = new Map<string, FileEvidence>();
   NODE_CHANGED_WRITE_TARGET.lastIndex = 0;
   for (const match of command.matchAll(NODE_CHANGED_WRITE_TARGET)) {
     const path = projectRelativeShellPath(context.projectRoot, context.workdir, match.groups?.path ?? '');
     if (path) mergeChangedEvidence(files, path);
-  }
-  return [...files.values()];
-}
-
-function directPathChangedEvidence(context: ScriptWriteEvidenceContext, command: string, pattern: RegExp): FileEvidence[] {
-  const files = new Map<string, FileEvidence>();
-  pattern.lastIndex = 0;
-  for (const match of command.matchAll(pattern)) {
-    const path = projectRelativeShellPath(context.projectRoot, context.workdir, match.groups?.path ?? '');
-    const mode = match.groups?.mode ?? 'w';
-    if (path && /[wax+]/.test(mode)) mergeChangedEvidence(files, path);
   }
   return [...files.values()];
 }
@@ -185,13 +168,11 @@ export function nodeScriptWriteEvidence(context: ScriptWriteEvidenceContext, com
     ...nodeChangedWriteEvidence(context, command),
     ...scriptWriteEvidence({ ...context, pattern: NODE_DIRECT_STREAM_WRITE_TARGET, command }),
     ...variableContentWriteEvidence({ ...context, pattern: NODE_DIRECT_STREAM_VARIABLE_WRITE_TARGET, command, contentBindings }),
-    ...directPathChangedEvidence(context, command, NODE_DIRECT_STREAM_CHANGED_TARGET),
+    ...changedPathWriteEvidence({ ...context, pattern: NODE_DIRECT_STREAM_CHANGED_TARGET, command }),
     ...scriptWriteEvidence({ ...context, pattern: NODE_DIRECT_FILEHANDLE_WRITE_TARGET, command }),
     ...variableContentWriteEvidence({ ...context, pattern: NODE_DIRECT_FILEHANDLE_VARIABLE_WRITE_TARGET, command, contentBindings }),
-    ...directPathChangedEvidence(context, command, NODE_DIRECT_FILEHANDLE_CHANGED_TARGET),
-    ...scriptWriteEvidence({ ...context, pattern: JS_RUNTIME_TEXT_WRITE_TARGET, command }),
-    ...variableContentWriteEvidence({ ...context, pattern: JS_RUNTIME_VARIABLE_TEXT_WRITE_TARGET, command, contentBindings }),
-    ...directPathChangedEvidence(context, command, JS_RUNTIME_CHANGED_WRITE_TARGET),
+    ...changedPathWriteEvidence({ ...context, pattern: NODE_DIRECT_FILEHANDLE_CHANGED_TARGET, command }),
+    ...jsRuntimeWriteEvidence(context, command, contentBindings),
     ...nodePathWriteEvidence({ ...context, command, targets: nodePathBindings(command), contentBindings }),
     ...nodeStreamWriteEvidence({ ...context, command, targets: nodeStreamTargets(command), contentBindings }),
     ...nodeStreamWriteEvidence({ ...context, command, targets: nodeFileHandleTargets(command), contentBindings })

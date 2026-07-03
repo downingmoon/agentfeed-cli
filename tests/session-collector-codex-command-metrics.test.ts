@@ -149,6 +149,34 @@ describe('Codex session collector command metrics', () => {
     expect(metrics?.failed_commands).toBeNull();
   });
 
+  it('captures changed paths from Codex parallel apply_patch tool wrappers', async () => {
+    const sessionFile = join(dir, 'codex-parallel-apply-patch-wrapper.jsonl');
+    const patch = [
+      '*** Begin Patch',
+      '*** Add File: src/generated-parallel-patch.ts',
+      '+export const parallel = true;',
+      '*** End Patch'
+    ].join('\n');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-parallel-apply-patch-wrapper', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'function_call', name: 'multi_tool_use.parallel', arguments: JSON.stringify({
+        tool_uses: [
+          { recipient_name: 'functions.apply_patch', parameters: { input: patch } }
+        ]
+      }), call_id: 'parallel-patch' } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'parallel-patch', output: 'Success. Updated the following files:\nA src/generated-parallel-patch.ts' } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.changed_files.map((file) => [file.path, file.status, file.lines_added]).sort()).toEqual([
+      ['src/generated-parallel-patch.ts', 'added', 1]
+    ]);
+    expect(metrics?.files_changed).toBe(1);
+    expect(metrics?.lines_added).toBe(1);
+    expect(metrics?.tool_calls).toBe(1);
+  });
+
   it('counts Codex non-shell tool calls, spawned subagents, and agent turns', async () => {
     const sessionFile = join(dir, 'codex-tooling-session.jsonl');
     await writeJsonl(sessionFile, [

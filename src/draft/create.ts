@@ -16,6 +16,7 @@ import { writeDraft } from './write.js';
 import { pathExists } from '../utils/fs.js';
 import { collectionFingerprint, collectionPolicyForFingerprint, findDraftByFingerprint, redactedUserNoteForFingerprint } from './collection-fingerprint.js';
 import { autoAgentSources, explicitSessionProbeSources } from './agent-source-detection.js';
+import { globalAgentSignalMismatchWarnings } from './session-warnings.js';
 import { addOptionalCounts, agentMetricsForSession, configFilteredAgentMetrics, mergeAgentSessions, mergeChangedFiles, sessionModelsUsed, sumChangedFileLines, type AgentSessionCandidate } from './session-aggregation.js';
 
 function draftId(date = new Date()): string {
@@ -144,6 +145,13 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
       ? `Agent session file did not produce usable metrics: ${displayPath}. The file may be unreadable, outside the collection window, unrelated to this project, or unsupported for the selected source. Retry with --source <source> and --all, or run agentfeed doctor.`
       : `Agent session file was not found: ${displayPath}. Check the path or rerun without --session-file to use auto-discovery.`);
   }
+  warnings.push(...globalAgentSignalMismatchWarnings({
+    autoSources,
+    enabledSources,
+    explicitSource: options.source,
+    sessionFound: Boolean(session),
+    sessionFileProvided: Boolean(sessionFile)
+  }));
   const gitChangedFiles = sessionFileRel ? git.changed_files.filter((file) => file.path !== sessionFileRel) : git.changed_files;
   const changedFiles = mergeChangedFiles(gitChangedFiles, session?.changed_files ?? []);
   const linesAdded = sumChangedFileLines(changedFiles, 'lines_added');

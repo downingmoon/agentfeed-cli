@@ -3,9 +3,10 @@ import type { AgentFeedProjectConfig, AgentType } from '../types.js';
 import { detectAgentSignals } from '../collectors/agent-discovery.js';
 import { compactDraftReadFailure } from './collection-fingerprint.js';
 
-type AutoAgentSources = {
+export type AutoAgentSources = {
   readonly enabled: readonly AgentType[];
   readonly attributable: readonly AgentType[];
+  readonly globalOnly: readonly AgentType[];
   readonly warnings: readonly string[];
 };
 
@@ -22,6 +23,7 @@ export async function autoAgentSources(cwd: string, config: AgentFeedProjectConf
     return {
       enabled: sources,
       attributable: [],
+      globalOnly: [],
       warnings: [
         [
           'Agent signal auto-detection failed; collection fell back to enabled project agents only.',
@@ -59,9 +61,11 @@ export async function autoAgentSources(cwd: string, config: AgentFeedProjectConf
     other: 0
   };
   const enabled = [...sources].sort((a, b) => scores[b] - scores[a]);
+  const knownSources: readonly AgentType[] = ['claude_code', 'codex', 'cursor', 'gemini_cli'];
   return {
     enabled,
     attributable: enabled.filter((source) => localScores[source] > 0),
+    globalOnly: knownSources.filter((source) => scores[source] > 0 && localScores[source] === 0),
     warnings: []
   };
 }

@@ -6,13 +6,12 @@ import {
   asString,
   countUnifiedDiff,
   explicitCostUsd,
-  finalizeAgentSession,
   integer,
   relativeProjectPath,
   safeJsonParse,
   upsertFile,
-  type AgentSessionMetrics,
 } from './agent-session-core.js';
+import { finalizeAgentSession, type AgentSessionMetrics } from './agent-session-finalize.js';
 import { hasCollectionWindowBoundary, normalizedCollectionWindow, rowInCollectionWindow } from './agent-session-window.js';
 
 function firstInteger(record: Record<string, unknown>, keys: readonly string[]): number | null {

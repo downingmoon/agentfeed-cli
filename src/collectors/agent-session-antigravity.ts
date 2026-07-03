@@ -1,6 +1,7 @@
 import type { ChangedFileSummary, CollectionSource, CollectionWindow, CollectionWindowReason } from '../types.js';
 import { basename, dirname } from 'node:path';
-import { asRecord, asString, finalizeAgentSession, relativeProjectPath, safeJsonParse, upsertFile, type AgentSessionMetrics } from './agent-session-core.js';
+import { asRecord, asString, relativeProjectPath, safeJsonParse, upsertFile } from './agent-session-core.js';
+import { finalizeAgentSession, type AgentSessionMetrics } from './agent-session-finalize.js';
 import { applyShellFileEvidence } from './agent-session-shell-files.js';
 import { recordTestCommandResult } from './agent-session-test-metrics.js';
 import { failedStatus, isTestCommand, toolOutputFailed } from './agent-session-tooling.js';

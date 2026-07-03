@@ -1,7 +1,8 @@
 import type { ChangedFileSummary, CollectionSource, CollectionWindow } from '../types.js';
 import { readSessionJsonlRecords } from './agent-session-files.js';
 import { isAntigravityTranscript, parseAntigravityTranscript } from './agent-session-antigravity.js';
-import { asRecord, asString, countTextLines, explicitCostUsd, finalizeAgentSession, inferEffectiveCollectionWindow, numeric, pushSource, relativeProjectPath, upsertFile, type AgentSessionMetrics } from './agent-session-core.js';
+import { asRecord, asString, countTextLines, explicitCostUsd, inferEffectiveCollectionWindow, numeric, pushSource, relativeProjectPath, upsertFile } from './agent-session-core.js';
+import { finalizeAgentSession, type AgentSessionMetrics } from './agent-session-finalize.js';
 import { hasCollectionWindowBoundary, parseBoundaryMillis, parseIsoMillis, rowInAgentCollectionWindow, rowTimestampMillis } from './agent-session-window.js';
 import { commandFailed, failedStatus, isTestCommand, toolOutputFailed } from './agent-session-tooling.js';
 import { applyShellFileEvidence } from './agent-session-shell-files.js';

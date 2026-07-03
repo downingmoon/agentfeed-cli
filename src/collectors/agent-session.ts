@@ -5,9 +5,9 @@ import { parseCodexSessionFile } from './agent-session-codex.js';
 import { parseGenericMetadata } from './agent-session-generic.js';
 import { parseGeminiSessionFile } from './agent-session-gemini.js';
 import { discoverSessionFile, sessionFileMayBelongToProject } from './agent-session-files.js';
-import type { AgentSessionMetrics } from './agent-session-core.js';
+import type { AgentSessionMetrics } from './agent-session-finalize.js';
 
-export type { AgentSessionMetrics } from './agent-session-core.js';
+export type { AgentSessionMetrics } from './agent-session-finalize.js';
 export { sessionFileBelongsToProject } from './agent-session-files.js';
 
 export interface CollectAgentSessionOptions {

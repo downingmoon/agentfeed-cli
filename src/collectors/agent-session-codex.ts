@@ -7,7 +7,8 @@ import { codexCallArguments, codexNestedToolName, codexNestedToolParameters, cod
 import { applyShellFileEvidence } from './agent-session-shell-files.js';
 import { recordTestCommandResult } from './agent-session-test-metrics.js';
 import { commandFailed, failedStatus, isTestCommand, toolOutputFailed } from './agent-session-tooling.js';
-import { asRecord, asString, explicitCostUsd, finalizeAgentSession, inferEffectiveCollectionWindow, pushSource, type AgentSessionMetrics } from './agent-session-core.js';
+import { asRecord, asString, explicitCostUsd, inferEffectiveCollectionWindow, pushSource } from './agent-session-core.js';
+import { finalizeAgentSession, type AgentSessionMetrics } from './agent-session-finalize.js';
 import { hasCollectionWindowBoundary, parseBoundaryMillis, rowInAgentCollectionWindow, rowTimestampMillis } from './agent-session-window.js';
 
 type CodexCommandInvocation = {

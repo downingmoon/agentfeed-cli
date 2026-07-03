@@ -1,5 +1,6 @@
 import type { ChangedFileSummary, CollectionSource, CollectionWindow } from '../types.js';
-import { asRecord, asString, countTextLines, explicitCostUsd, finalizeAgentSession, inferEffectiveCollectionWindow, numeric, pushSource, relativeProjectPath, upsertFile, type AgentSessionMetrics } from './agent-session-core.js';
+import { asRecord, asString, countTextLines, explicitCostUsd, inferEffectiveCollectionWindow, numeric, pushSource, relativeProjectPath, upsertFile } from './agent-session-core.js';
+import { finalizeAgentSession, type AgentSessionMetrics } from './agent-session-finalize.js';
 import { readSessionJsonlRecords } from './agent-session-files.js';
 import { readOmcMetadata } from './agent-session-claude-omc.js';
 import { commandFailed, isTestCommand, toolOutputFailed, toolResultOutput } from './agent-session-tooling.js';

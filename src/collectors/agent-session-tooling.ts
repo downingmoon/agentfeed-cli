@@ -15,6 +15,7 @@ export function isTestCommand(command: string): boolean {
     || /(^|&&|\|\||;)\s*make\s+[\w:-]*test[\w:-]*\b/i.test(normalized)
     || /(^|&&|\|\||;)\s*(?:\.\/)?mvnw?\s+(?:-[^\s]+\s+)*test\b/i.test(normalized)
     || /(^|&&|\|\||;)\s*(?:\.\/)?gradlew?\s+(?:-[^\s]+\s+)*[\w.:-]*test[\w.:-]*\b/i.test(normalized)
+    || /(^|&&|\|\||;)\s*dotnet\s+test\b/i.test(normalized)
     || /(^|&&|\|\||;)\s*go\s+test\b/i.test(normalized)
     || /(^|&&|\|\||;)\s*cargo\s+test\b/i.test(normalized);
 }

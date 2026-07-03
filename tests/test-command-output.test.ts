@@ -118,6 +118,17 @@ describe('configured test command output parser', () => {
     });
   });
 
+  it('parses .NET test summary output', () => {
+    const output = [
+      'Failed!  - Failed:     1, Passed:     3, Skipped:     1, Total:     5, Duration: 1 s - AgentFeed.Tests.dll (net8.0)'
+    ].join('\n');
+
+    expect(parseTestCommandOutput(output, '')).toEqual({
+      testsRun: 5,
+      testsPassed: 3
+    });
+  });
+
   it('parses Gradle test summary output', () => {
     const output = [
       '> Task :app:test',

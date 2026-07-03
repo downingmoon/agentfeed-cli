@@ -150,6 +150,22 @@ function parseGradleSummary(text: string): TestCommandCounts | null {
   return testsRun > 0 ? { testsRun, testsPassed } : null;
 }
 
+function parseDotnetSummary(text: string): TestCommandCounts | null {
+  let testsRun = 0;
+  let testsPassed = 0;
+  const pattern = /\bFailed:\s*(\d+),\s*Passed:\s*(\d+),\s*Skipped:\s*(\d+),\s*Total:\s*(\d+)/gi;
+  for (const match of text.matchAll(pattern)) {
+    const failed = Number.parseInt(match[1], 10);
+    const passed = Number.parseInt(match[2], 10);
+    const skipped = Number.parseInt(match[3], 10);
+    const total = Number.parseInt(match[4], 10);
+    if (![failed, passed, skipped, total].every(Number.isFinite) || total <= 0) continue;
+    testsRun += total;
+    testsPassed += Math.min(passed, Math.max(0, total - failed - skipped));
+  }
+  return testsRun > 0 ? { testsRun, testsPassed } : null;
+}
+
 function parseTestResultLine(text: string): TestCommandCounts | null {
   let testsRun = 0;
   let testsPassed = 0;
@@ -199,6 +215,9 @@ export function parseTestCommandOutput(stdout: string, stderr: string): TestComm
 
   const gradle = parseGradleSummary(text);
   if (gradle) return gradle;
+
+  const dotnet = parseDotnetSummary(text);
+  if (dotnet) return dotnet;
 
   const summaryLines = text
     .split(/\r?\n/)

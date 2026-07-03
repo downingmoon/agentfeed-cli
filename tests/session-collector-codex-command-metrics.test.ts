@@ -104,6 +104,23 @@ describe('Codex session collector command metrics', () => {
     expect(metrics?.failed_commands).toBe(1);
   });
 
+  it('extracts .NET test summaries from Codex shell calls', async () => {
+    const sessionFile = join(dir, 'codex-dotnet-summary.jsonl');
+    const dotnetOutput = 'Failed!  - Failed:     1, Passed:     3, Skipped:     1, Total:     5, Duration: 1 s - AgentFeed.Tests.dll (net8.0)';
+    await writeJsonl(sessionFile, codexSessionRows({
+      id: 'codex-dotnet-summary',
+      cwd: dir,
+      steps: [{ kind: 'shell', callId: 'dotnet-test', cmd: 'dotnet test', output: dotnetOutput }]
+    }));
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.commands_run).toBe(1);
+    expect(metrics?.tests_run).toBe(5);
+    expect(metrics?.tests_passed).toBe(3);
+    expect(metrics?.failed_commands).toBe(1);
+  });
+
   it('extracts Gradle summaries from Codex shell calls', async () => {
     const sessionFile = join(dir, 'codex-gradle-summary.jsonl');
     const gradleOutput = ['> Task :app:test FAILED', '12 tests completed, 2 failed, 3 skipped'].join('\n');

@@ -148,4 +148,24 @@ describe('shell script variable write options', () => {
     }
   });
 
+  it('does not count shell heredoc targets overridden by later stdout suppress redirects', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-heredoc-stdout-override-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "cat <<'EOF' > src/generated-overridden.ts >/dev/null",
+          'export const first = true;',
+          'export const second = true;',
+          'EOF'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => file.path)).toEqual([]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
 });

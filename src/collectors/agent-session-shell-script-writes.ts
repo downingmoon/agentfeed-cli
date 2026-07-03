@@ -29,11 +29,12 @@ function heredocDelimiter(line: string): string | null {
 
 function heredocRedirectPath(line: string): string | null {
   SHELL_REDIRECT_TARGET.lastIndex = 0;
-  const redirects = [...line.matchAll(SHELL_REDIRECT_TARGET)]
+  const stdoutRedirects = [...line.matchAll(SHELL_REDIRECT_TARGET)]
     .filter((match) => !/^\s*[2-9]>/.test(match[0]))
     .map((match) => match[2])
-    .filter((path) => path && path !== '/dev/null');
-  return redirects.at(-1) ?? null;
+    .filter((path) => Boolean(path));
+  const lastRedirect = stdoutRedirects.at(-1);
+  return lastRedirect === '/dev/null' ? null : lastRedirect ?? null;
 }
 
 function heredocTarget(line: string): { readonly path: string; readonly delimiter: string } | null {

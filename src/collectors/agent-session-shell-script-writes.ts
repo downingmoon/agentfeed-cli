@@ -8,7 +8,6 @@ import { pythonContentBindings, pythonScriptWriteEvidence } from './agent-sessio
 import { unescapeScriptText } from './agent-session-shell-script-write-shared.js';
 
 const SHELL_REDIRECT_TARGET = /(?:^|\s)(?:\d?>|>>|>)\s*(['"]?)([^'"\s;&|<>]+)\1/g;
-const SHELL_TEE_TARGET = /(?:^|\s)tee\s+(?:-[a-zA-Z]+\s+)*(['"]?)([^'"\s;&|<>]+)\1/g;
 const SHELL_PRINTF_SINGLE_REDIRECT = /^\s*printf\s+(?:--\s+)?'(?<content>[^']*)'\s*(?:\d?>|>>|>)\s*(['"]?)(?<path>[^'"\s;&|<>]+)\2/;
 const SHELL_PRINTF_DOUBLE_REDIRECT = /^\s*printf\s+(?:--\s+)?"(?<content>(?:\\"|[^"])*)"\s*(?:\d?>|>>|>)\s*(['"]?)(?<path>[^'"\s;&|<>]+)\2/;
 const SHELL_PRINTF_FORMAT_SINGLE_REDIRECT = /^\s*printf\s+(?:--\s+)?'(?<format>[^']*)'(?<args>.*?)\s*(?:\d?>|>>|>)\s*(['"]?)(?<path>[^'"\s;&|<>]+)\3/;
@@ -37,14 +36,19 @@ function heredocRedirectPath(line: string): string | null {
   return lastRedirect === '/dev/null' ? null : lastRedirect ?? null;
 }
 
-function heredocTarget(line: string): { readonly path: string; readonly delimiter: string } | null {
+function heredocTeePaths(line: string): string[] {
+  const args = /(?:^|\s)tee\s+(?<args>[^|<>;&]*)/.exec(line)?.groups?.args?.trim();
+  if (!args) return [];
+  return args.split(/\s+/).filter((arg) => arg && !arg.startsWith('-') && arg !== '--');
+}
+
+function heredocTarget(line: string): { readonly paths: readonly string[]; readonly delimiter: string } | null {
   const delimiter = heredocDelimiter(line);
   if (!delimiter) return null;
-  SHELL_TEE_TARGET.lastIndex = 0;
-  const tee = [...line.matchAll(SHELL_TEE_TARGET)].at(-1)?.[2];
-  if (tee) return { path: tee, delimiter };
+  const tee = heredocTeePaths(line);
+  if (tee.length) return { paths: tee, delimiter };
   const redirect = heredocRedirectPath(line);
-  if (redirect) return { path: redirect, delimiter };
+  if (redirect) return { paths: [redirect], delimiter };
   return null;
 }
 
@@ -166,8 +170,10 @@ export function parseShellWriteCommands(projectRoot: string, workdir: string | n
         }
         content.push(lines[cursor]);
       }
-      const path = projectRelativeShellPath(projectRoot, currentWorkdir, heredoc.path);
-      if (path) files.push({ path, status: 'modified', added: countTextLines(content.join('\n')) });
+      for (const targetPath of heredoc.paths) {
+        const path = projectRelativeShellPath(projectRoot, currentWorkdir, targetPath);
+        if (path) files.push({ path, status: 'modified', added: countTextLines(content.join('\n')) });
+      }
       continue;
     }
 

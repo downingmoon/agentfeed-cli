@@ -126,6 +126,29 @@ describe('shell script variable write options', () => {
     }
   });
 
+  it('captures every shell heredoc tee target when tee writes multiple files', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-tee-multiple-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "cat <<'EOF' | tee src/generated-tee-one.ts src/generated-tee-two.ts >/dev/null",
+          'export const first = true;',
+          'export const second = true;',
+          'EOF'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added]).sort()).toEqual([
+        ['src/generated-tee-one.ts', 2],
+        ['src/generated-tee-two.ts', 2]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it('captures shell heredoc stdout targets before stderr redirects', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-heredoc-stderr-'));
     try {

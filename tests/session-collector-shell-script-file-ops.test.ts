@@ -138,4 +138,31 @@ describe('shell script file operation evidence', () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it('captures deterministic chmod and owner file targets without line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-file-mode-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          'chmod 755 scripts/deploy.sh "scripts/old deploy.sh"',
+          'chmod --reference scripts/ref.sh scripts/copied-mode.sh',
+          'chmod -R 755 scripts',
+          'chown ubuntu:ubuntu src/api.ts',
+          'chgrp staff src/grouped.ts'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.status, file.lines_added]).sort()).toEqual([
+        ['scripts/copied-mode.sh', 'modified', null],
+        ['scripts/deploy.sh', 'modified', null],
+        ['scripts/old deploy.sh', 'modified', null],
+        ['src/api.ts', 'modified', null],
+        ['src/grouped.ts', 'modified', null]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });

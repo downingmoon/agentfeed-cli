@@ -148,6 +148,35 @@ function touchEvidence(projectRoot: string, workdir: string | null, words: reado
   return modifiedEvidenceForPaths(projectRoot, workdir, paths);
 }
 
+function metadataEvidence(projectRoot: string, workdir: string | null, words: readonly string[]): FileEvidence[] {
+  const paths: string[] = [];
+  let subjectSeen = false;
+  let skipNext = false;
+  for (const word of words.slice(1)) {
+    if (skipNext) {
+      skipNext = false;
+      continue;
+    }
+    if (!subjectSeen && (word === '-R' || word === '--recursive')) return [];
+    if (!subjectSeen && (word === '--reference' || word === '--from')) {
+      skipNext = true;
+      subjectSeen = true;
+      continue;
+    }
+    if (!subjectSeen && (word.startsWith('--reference=') || word.startsWith('--from='))) {
+      subjectSeen = true;
+      continue;
+    }
+    if (!subjectSeen && /^-[cfhv]+$/.test(word)) continue;
+    if (!subjectSeen) {
+      subjectSeen = true;
+      continue;
+    }
+    paths.push(word);
+  }
+  return modifiedEvidenceForPaths(projectRoot, workdir, paths);
+}
+
 export function shellFileOperationEvidence(projectRoot: string, workdir: string | null, line: string): FileEvidence[] {
   const words = shellWords(line);
   const command = words[0];
@@ -155,6 +184,7 @@ export function shellFileOperationEvidence(projectRoot: string, workdir: string 
   if (command === 'touch') return touchEvidence(projectRoot, workdir, words);
   if (command === 'cp') return copyEvidence(projectRoot, workdir, words);
   if (command === 'install') return installEvidence(projectRoot, workdir, words);
+  if (command === 'chmod' || command === 'chown' || command === 'chgrp') return metadataEvidence(projectRoot, workdir, words);
   if (command === 'mv') return moveEvidence(projectRoot, workdir, words, 1);
   if (command === 'git' && words[1] === 'mv') return moveEvidence(projectRoot, workdir, words, 2);
   if (command === 'git' && words[1] === 'rm') return rmEvidence(projectRoot, workdir, words.slice(1));

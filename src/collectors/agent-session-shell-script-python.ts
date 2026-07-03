@@ -2,20 +2,14 @@ import { literalDumpLineCount, PYTHON_LITERAL_COLLECTION } from './agent-session
 import { countTextLines } from './agent-session-core.js';
 import type { FileEvidence } from './agent-session-shell-file-evidence.js';
 import { projectRelativeShellPath } from './agent-session-shell-paths.js';
+import { pythonBoundTargets, pythonStringPathTargets, type BoundScriptTarget } from './agent-session-shell-script-python-path-bindings.js';
 import { contentBindingsFromPatterns, escapeRegExp, mergeAddedEvidence, scriptWriteEvidence, unescapeScriptText, variableContentWriteEvidence, type ScriptWriteEvidenceContext } from './agent-session-shell-script-write-shared.js';
 
 const PYTHON_TRIPLE_WRITE_TARGET = /\b(?:Path|open)\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*('''|""")(?<content>[\s\S]*?)\3/g;
 const PYTHON_WRITE_TARGET = /\b(?:Path|open)\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*(['"])(?<content>[\s\S]*?)\3/g;
 const PYTHON_CHANGED_WRITE_TARGET = /\b(?:Path|open)\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text|_bytes)?\(/g;
 const PYTHON_TRIPLE_CONTENT_BINDING = /\b(?<name>[A-Za-z_]\w*)\s*=\s*('''|""")(?<content>[\s\S]*?)\2/g;
-const PYTHON_STRING_PATH_BINDING_TARGET = /\b(?<name>[A-Za-z_]\w*)\s*=\s*(['"])(?<path>[^'"]+)\2/g;
 const PYTHON_CONTENT_VARIABLE_WRITE_TARGET = /\b(?:Path|open)\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*(?<contentName>[A-Za-z_]\w*)\s*(?:,[^\n)]*)?\)/g;
-const PYTHON_PATH_BINDING_TARGET = /\b(?<name>[A-Za-z_]\w*)\s*=\s*Path\(\s*(['"])(?<path>[^'"]+)\2\s*\)/g;
-const PYTHON_PATH_DIVISION_BINDING_TARGET = /\b(?<name>[A-Za-z_]\w*)\s*=\s*(?<baseName>[A-Za-z_]\w*)\s*\/\s*(['"])(?<segment>[^'"]+)\3/g;
-const PYTHON_OPEN_BINDING_TARGET = /\bwith\s+open\(\s*(['"])(?<path>[^'"]+)\1\s*,\s*(['"])(?<mode>[^'"]*)\3[\s\S]*?\)\s+as\s+(?<name>[A-Za-z_]\w*)\s*:/g;
-const PYTHON_PATH_OPEN_BINDING_TARGET = /\bwith\s+Path\(\s*(['"])(?<path>[^'"]+)\1\s*\)\.open\(\s*(['"])(?<mode>[^'"]*)\3[\s\S]*?\)\s+as\s+(?<name>[A-Za-z_]\w*)\s*:/g;
-const PYTHON_OPEN_PATH_VARIABLE_BINDING_TARGET = /\bwith\s+open\(\s*(?<pathName>[A-Za-z_]\w*)\s*,\s*(['"])(?<mode>[^'"]*)\2[\s\S]*?\)\s+as\s+(?<name>[A-Za-z_]\w*)\s*:/g;
-const PYTHON_PATH_VARIABLE_OPEN_BINDING_TARGET = /\bwith\s+(?<pathName>[A-Za-z_]\w*)\.open\(\s*(['"])(?<mode>[^'"]*)\2[\s\S]*?\)\s+as\s+(?<name>[A-Za-z_]\w*)\s*:/g;
 const PYTHON_DUMP_OPEN_TARGET = /\b(?:json\.dump|yaml\.(?:safe_dump|dump))\([\s\S]*?,\s*open\(\s*(['"])(?<path>[^'"]+)\1\s*,\s*(['"])(?<mode>[^'"]*)\3[\s\S]*?\)/g;
 const PYTHON_DUMP_PATH_OPEN_TARGET = /\b(?:json\.dump|yaml\.(?:safe_dump|dump))\([\s\S]*?,\s*Path\(\s*(['"])(?<path>[^'"]+)\1\s*\)\.open\(\s*(['"])(?<mode>[^'"]*)\3[\s\S]*?\)/g;
 const PYTHON_DUMP_LITERAL_OPEN_TARGET = new RegExp(String.raw`\b(?<serializer>json\.dump|yaml\.(?:safe_dump|dump))\(\s*${PYTHON_LITERAL_COLLECTION}\s*,\s*open\(\s*(?<pathQuote>['"])(?<path>[^'"]+)\k<pathQuote>\s*,\s*(?<modeQuote>['"])(?<mode>[^'"]*)\k<modeQuote>[\s\S]*?\)\s*(?:,[^\n)]*)?\)`, 'g');
@@ -25,11 +19,6 @@ export function pythonContentBindings(command: string): ReadonlyMap<string, stri
   return contentBindingsFromPatterns(command, [PYTHON_TRIPLE_CONTENT_BINDING]);
 }
 
-type BoundScriptTarget = {
-  readonly name: string;
-  readonly path: string;
-};
-
 type BoundScriptWriteEvidenceInput = ScriptWriteEvidenceContext & {
   readonly command: string;
   readonly targets: readonly BoundScriptTarget[];
@@ -38,64 +27,6 @@ type BoundScriptWriteEvidenceInput = ScriptWriteEvidenceContext & {
 
 function mergeChangedEvidence(files: Map<string, FileEvidence>, path: string): void {
   if (!files.has(path)) files.set(path, { path, status: 'modified' });
-}
-
-function pythonStringPathTargets(command: string): BoundScriptTarget[] {
-  const targets: BoundScriptTarget[] = [];
-  PYTHON_STRING_PATH_BINDING_TARGET.lastIndex = 0;
-  for (const match of command.matchAll(PYTHON_STRING_PATH_BINDING_TARGET)) {
-    const name = match.groups?.name;
-    const path = match.groups?.path;
-    if (name && path) targets.push({ name, path });
-  }
-  return targets;
-}
-
-function pythonBoundTargets(command: string): BoundScriptTarget[] {
-  const targets: BoundScriptTarget[] = [];
-  const pathByName = new Map(pythonStringPathTargets(command).map((target) => [target.name, target.path]));
-  PYTHON_PATH_BINDING_TARGET.lastIndex = 0;
-  for (const match of command.matchAll(PYTHON_PATH_BINDING_TARGET)) {
-    const name = match.groups?.name;
-    const path = match.groups?.path;
-    if (name && path) {
-      targets.push({ name, path });
-      pathByName.set(name, path);
-    }
-  }
-  PYTHON_PATH_DIVISION_BINDING_TARGET.lastIndex = 0;
-  for (const match of command.matchAll(PYTHON_PATH_DIVISION_BINDING_TARGET)) {
-    const name = match.groups?.name;
-    const basePath = match.groups?.baseName ? pathByName.get(match.groups.baseName) : undefined;
-    const segment = match.groups?.segment;
-    if (name && basePath && segment && !segment.includes('${')) {
-      const path = `${basePath}/${segment}`.replace(/\/+/g, '/');
-      targets.push({ name, path });
-      pathByName.set(name, path);
-    }
-  }
-
-  PYTHON_OPEN_BINDING_TARGET.lastIndex = 0;
-  for (const pattern of [PYTHON_OPEN_BINDING_TARGET, PYTHON_PATH_OPEN_BINDING_TARGET]) {
-    pattern.lastIndex = 0;
-    for (const match of command.matchAll(pattern)) {
-      const name = match.groups?.name;
-      const path = match.groups?.path;
-      const mode = match.groups?.mode ?? '';
-      if (name && path && /[wax+]/.test(mode)) targets.push({ name, path });
-    }
-  }
-  for (const pattern of [PYTHON_OPEN_PATH_VARIABLE_BINDING_TARGET, PYTHON_PATH_VARIABLE_OPEN_BINDING_TARGET]) {
-    pattern.lastIndex = 0;
-    for (const match of command.matchAll(pattern)) {
-      const name = match.groups?.name;
-      const pathName = match.groups?.pathName;
-      const path = pathName ? pathByName.get(pathName) : undefined;
-      const mode = match.groups?.mode ?? '';
-      if (name && path && /[wax+]/.test(mode)) targets.push({ name, path });
-    }
-  }
-  return targets;
 }
 
 function pathVariableWriteEvidence(input: BoundScriptWriteEvidenceInput): FileEvidence[] {

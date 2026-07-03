@@ -114,6 +114,33 @@ describe('shell script variable write options', () => {
   });
 
 
+  it('captures Node FileHandle writeFile writes with line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-node-filehandle-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "node - <<'JS'",
+          "import { open } from 'node:fs/promises';",
+          'const content = `export const first = true;\nexport const second = true;\n`;',
+          "const handle = await open('src/generated-filehandle.ts', 'w');",
+          'await handle.writeFile(content);',
+          "await (await open('src/generated-direct-filehandle.ts', 'w')).writeFile('export const third = true;\n');",
+          'JS'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added]).sort()).toEqual([
+        ['src/generated-direct-filehandle.ts', 1],
+        ['src/generated-filehandle.ts', 2]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+
   it('captures Python JSON and YAML dump file targets with unknown line counts', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-dump-targets-'));
     try {

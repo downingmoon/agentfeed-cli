@@ -4,6 +4,7 @@ import { applyPatchDelimiter, parseApplyPatchEvidence } from './agent-session-sh
 import type { FileEvidence } from './agent-session-shell-file-evidence.js';
 import { projectRelativeShellPath } from './agent-session-shell-paths.js';
 import { nodeContentBindings, nodeScriptWriteEvidence } from './agent-session-shell-script-node.js';
+import { shellHeredocDelimiter, shellHeredocTarget } from './agent-session-shell-script-heredoc.js';
 import { pythonContentBindings, pythonScriptWriteEvidence } from './agent-session-shell-script-python.js';
 import { unescapeScriptText } from './agent-session-shell-script-write-shared.js';
 
@@ -21,42 +22,6 @@ type ScriptCommandBucket = {
   readonly workdir: string | null;
   readonly lines: string[];
 };
-
-function heredocDelimiter(line: string): string | null {
-  return /<<\s*['"]?(?<delimiter>[A-Za-z0-9_:-]+)['"]?/.exec(line)?.groups?.delimiter ?? null;
-}
-
-function heredocRedirectPath(line: string): string | null {
-  SHELL_REDIRECT_TARGET.lastIndex = 0;
-  const stdoutRedirects = [...line.matchAll(SHELL_REDIRECT_TARGET)]
-    .filter((match) => !/^\s*[2-9]>/.test(match[0]))
-    .map((match) => match[2])
-    .filter((path) => Boolean(path));
-  const lastRedirect = stdoutRedirects.at(-1);
-  return lastRedirect === '/dev/null' ? null : lastRedirect ?? null;
-}
-
-function heredocTeePaths(line: string): string[] {
-  const args = /(?:^|\s)tee\s+(?<args>[^|<>;&]*)/.exec(line)?.groups?.args?.trim();
-  if (!args) return [];
-  const words: string[] = [];
-  const pattern = /'(?<single>[^']*)'|"(?<double>(?:\\"|[^"])*)"|(?<bare>\S+)/g;
-  for (const match of args.matchAll(pattern)) {
-    const word = match.groups?.single ?? match.groups?.double?.replace(/\\"/g, '"') ?? match.groups?.bare;
-    if (word && !word.startsWith('-') && word !== '--') words.push(word);
-  }
-  return words;
-}
-
-function heredocTarget(line: string): { readonly paths: readonly string[]; readonly delimiter: string } | null {
-  const delimiter = heredocDelimiter(line);
-  if (!delimiter) return null;
-  const tee = heredocTeePaths(line);
-  if (tee.length) return { paths: tee, delimiter };
-  const redirect = heredocRedirectPath(line);
-  if (redirect) return { paths: [redirect], delimiter };
-  return null;
-}
 
 function contentBindings(command: string): ReadonlyMap<string, string> {
   return new Map([...pythonContentBindings(command), ...nodeContentBindings(command)]);
@@ -166,7 +131,7 @@ export function parseShellWriteCommands(projectRoot: string, workdir: string | n
       continue;
     }
 
-    const heredoc = heredocTarget(line);
+    const heredoc = shellHeredocTarget(line);
     if (heredoc) {
       const content: string[] = [];
       for (let cursor = index + 1; cursor < lines.length; cursor += 1) {
@@ -183,7 +148,7 @@ export function parseShellWriteCommands(projectRoot: string, workdir: string | n
       continue;
     }
 
-    const scriptDelimiter = heredocDelimiter(line);
+    const scriptDelimiter = shellHeredocDelimiter(line);
     if (scriptDelimiter) {
       const bucket = scriptBucket(currentWorkdir);
       bucket.lines.push(line);

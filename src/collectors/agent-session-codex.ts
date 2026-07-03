@@ -1,11 +1,12 @@
 import type { ChangedFileSummary, CollectionSource, CollectionWindow } from '../types.js';
 import { readSessionJsonlRecords } from './agent-session-files.js';
 import { readOmxMetadata } from './agent-session-codex-omx.js';
-import { applyCodexPatchText } from './agent-session-codex-patch.js';
+import { applyCodexPatchApplyEnd } from './agent-session-codex-patch-apply.js';
+import { createCodexPatchFallbacks } from './agent-session-codex-patch-fallbacks.js';
 import { codexCallArguments, codexNestedToolName, codexNestedToolParameters, codexTokenTotal } from './agent-session-codex-tools.js';
 import { applyShellFileEvidence } from './agent-session-shell-files.js';
 import { commandFailed, failedStatus, isTestCommand, toolOutputFailed } from './agent-session-tooling.js';
-import { asRecord, asString, countTextLines, countUnifiedDiff, explicitCostUsd, finalizeAgentSession, inferEffectiveCollectionWindow, pushSource, relativeProjectPath, upsertFile, type AgentSessionMetrics } from './agent-session-core.js';
+import { asRecord, asString, explicitCostUsd, finalizeAgentSession, inferEffectiveCollectionWindow, pushSource, type AgentSessionMetrics } from './agent-session-core.js';
 import { hasCollectionWindowBoundary, parseBoundaryMillis, rowInAgentCollectionWindow, rowTimestampMillis } from './agent-session-window.js';
 
 type CodexCommandInvocation = {
@@ -43,8 +44,7 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
   let model: string | null = null;
   let matchedWindowRow = false;
   let tokenBaselineBeforeWindow: number | null = null;
-  const failedToolOutputCallIds = new Set<string>();
-  const patchTextFallbacks: { callId: string | null; patchText: string; failed: boolean; confirmed: boolean }[] = [];
+  const patchFallbacks = createCodexPatchFallbacks();
   const sinceMillis = parseBoundaryMillis(effectiveWindow?.since);
   const registerCommand = (callId: string | null, command: string, workdir: string | null) => {
     if (!command) return;
@@ -71,15 +71,6 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
     const structured = asString(args?.input) ?? asString(args?.patch) ?? asString(args?.content);
     if (structured) return structured;
     return rawInput?.startsWith('*** Begin Patch') ? rawInput : null;
-  };
-  const registerPatchFallback = (callId: string | null, patchText: string | null, requiresOutput = false): void => {
-    if (!patchText) return;
-    patchTextFallbacks.push({
-      callId,
-      patchText,
-      failed: Boolean(callId && failedToolOutputCallIds.has(callId)),
-      confirmed: !requiresOutput
-    });
   };
 
   for (const row of rows) {
@@ -132,7 +123,7 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
           } else if (nestedName === 'exec_command') {
             registerCommand(callId, asString(parameters.cmd) ?? asString(parameters.command) ?? '', asString(parameters.workdir));
           } else if (nestedName === 'apply_patch') {
-            registerPatchFallback(callId, patchTextFromToolInput(parameters, asString(toolUse.arguments)), Boolean(callId));
+            patchFallbacks.register(callId, patchTextFromToolInput(parameters, asString(toolUse.arguments)), { requiresOutput: Boolean(callId) });
           }
         }
         continue;
@@ -147,7 +138,7 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
       }
       if (name === 'apply_patch' && !failedStatus(payload.status)) {
         const args = codexCallArguments(payload);
-        registerPatchFallback(callId, patchTextFromToolInput(args, asString(payload.arguments)), Boolean(callId));
+        patchFallbacks.register(callId, patchTextFromToolInput(args, asString(payload.arguments)), { requiresOutput: Boolean(callId) });
       }
     }
     if (payload.type === 'custom_tool_call') toolCalls += 1;
@@ -158,15 +149,10 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
         pendingSubagent.failed = true;
       }
       if (callId && (failedStatus(payload.status) || toolOutputFailed(asString(payload.output) ?? ''))) {
-        failedToolOutputCallIds.add(callId);
-        for (const fallback of patchTextFallbacks) {
-          if (fallback.callId === callId) fallback.failed = true;
-        }
+        patchFallbacks.fail(callId);
       }
       if (callId) {
-        for (const fallback of patchTextFallbacks) {
-          if (fallback.callId === callId) fallback.confirmed = true;
-        }
+        patchFallbacks.confirm(callId);
       }
       const command = callId ? commands.get(callId) : null;
       const output = asString(payload.output) ?? '';
@@ -184,44 +170,17 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
     if (payload.type === 'custom_tool_call' && payload.name === 'apply_patch' && !failedStatus(payload.status)) {
       const patchText = asString(payload.input);
       const callId = asString(payload.call_id);
-      registerPatchFallback(callId, patchText);
+      patchFallbacks.register(callId, patchText);
     }
     if (payload.type === 'patch_apply_end' && !failedStatus(payload.status)) {
-      const changes = asRecord(payload.changes);
-      if (!changes) continue;
-      for (const [absolutePath, changeRaw] of Object.entries(changes)) {
-        const rel = relativeProjectPath(cwd, absolutePath);
-        if (!rel) continue;
-        const change = asRecord(changeRaw) ?? {};
-        const kind = asString(change.type);
-        let added = 0;
-        let removed = 0;
-        const diff = asString(change.unified_diff);
-        if (diff) {
-          const counts = countUnifiedDiff(diff);
-          added = counts.added;
-          removed = counts.removed;
-        } else {
-          added = countTextLines(asString(change.content) ?? '');
-        }
-        upsertFile(files, rel, { status: kind === 'add' ? 'added' : kind === 'delete' ? 'deleted' : 'modified', added, removed });
-      }
+      applyCodexPatchApplyEnd(cwd, asRecord(payload.changes), files);
     }
   }
   for (const subagent of pendingSubagentCalls.values()) {
     if (!subagent.failed) subagentsSpawned += subagent.count;
   }
   if (hasCollectionWindowBoundary(effectiveWindow) && !matchedWindowRow) return null;
-  if (patchTextFallbacks.length) {
-    for (const { patchText, failed, confirmed } of patchTextFallbacks) {
-      if (failed || !confirmed) continue;
-      const fallbackFiles = new Map<string, ChangedFileSummary>();
-      applyCodexPatchText(cwd, patchText, fallbackFiles);
-      for (const file of fallbackFiles.values()) {
-        if (!files.has(file.path)) files.set(file.path, file);
-      }
-    }
-  }
+  patchFallbacks.applyConfirmed(cwd, files);
   if (tokenBaselineBeforeWindow != null && tokensUsed >= tokenBaselineBeforeWindow) {
     tokensUsed -= tokenBaselineBeforeWindow;
   }

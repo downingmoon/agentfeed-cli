@@ -1,0 +1,80 @@
+import { describe, expect, it } from 'vitest';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import type { ChangedFileSummary } from '../src/types.js';
+import { applyShellFileEvidence } from '../src/collectors/agent-session-shell-files.js';
+
+describe('shell script Python path composition bindings', () => {
+  it('captures Python Path division bindings with literal segments', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-path-division-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'from pathlib import Path',
+          "base = Path('src')",
+          "target = base / 'generated.ts'",
+          'target.write_text("""export const first = true;\\nexport const second = true;\\n""")',
+          'PY'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added])).toEqual([
+        ['src/generated.ts', 2]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('captures Python Path division bindings with multiple literal segments', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-path-multi-division-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'from pathlib import Path',
+          "base = Path('src')",
+          "target = base / 'generated' / 'feature.ts'",
+          'target.write_text("""export const first = true;\\nexport const second = true;\\n""")',
+          'PY'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added])).toEqual([
+        ['src/generated/feature.ts', 2]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('captures Python Path joinpath bindings with literal segments', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-path-joinpath-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'from pathlib import Path',
+          "base = Path('src')",
+          "target = base.joinpath('generated', 'feature.ts')",
+          'target.write_text("""export const first = true;\\nexport const second = true;\\n""")',
+          'PY'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added])).toEqual([
+        ['src/generated/feature.ts', 2]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});

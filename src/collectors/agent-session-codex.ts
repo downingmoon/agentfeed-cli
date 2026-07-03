@@ -5,6 +5,7 @@ import { applyCodexPatchApplyEnd } from './agent-session-codex-patch-apply.js';
 import { createCodexPatchFallbacks } from './agent-session-codex-patch-fallbacks.js';
 import { codexCallArguments, codexNestedToolName, codexNestedToolParameters, codexTokenTotal } from './agent-session-codex-tools.js';
 import { applyShellFileEvidence } from './agent-session-shell-files.js';
+import { recordTestCommandResult } from './agent-session-test-metrics.js';
 import { commandFailed, failedStatus, isTestCommand, toolOutputFailed } from './agent-session-tooling.js';
 import { asRecord, asString, explicitCostUsd, finalizeAgentSession, inferEffectiveCollectionWindow, pushSource, type AgentSessionMetrics } from './agent-session-core.js';
 import { hasCollectionWindowBoundary, parseBoundaryMillis, rowInAgentCollectionWindow, rowTimestampMillis } from './agent-session-window.js';
@@ -29,9 +30,8 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
   let tokensUsed = 0;
   let durationSeconds: number | null = null;
   let estimatedCostUsd = 0;
-  let testsRun = 0;
+  const testMetrics = { testsRun: 0, testsPassed: 0 };
   let failedCommands = 0;
-  let failedTestCommands = 0;
   let commandsRun = 0;
   let toolCalls = 0;
   const skills = new Set<string>();
@@ -50,8 +50,10 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
     if (!command) return;
     commandsRun += 1;
     const test = isTestCommand(command);
-    if (test) testsRun += 1;
-    if (!callId) return;
+    if (!callId) {
+      if (test) recordTestCommandResult(testMetrics, '', false);
+      return;
+    }
     const existing = commands.get(callId);
     commands.set(callId, {
       invocations: [...(existing?.invocations ?? []), { command, workdir }],
@@ -159,8 +161,8 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
       const commandDidFail = failedStatus(payload.status) || commandFailed(output);
       if (command && commandDidFail) {
         failedCommands += 1;
-        if (command.test) failedTestCommands += 1;
       }
+      if (command?.test) recordTestCommandResult(testMetrics, output, commandDidFail);
       if (command && !commandDidFail) {
         for (const invocation of command.invocations) {
           applyShellFileEvidence(cwd, { command: invocation.command, workdir: invocation.workdir, output }, files);
@@ -193,5 +195,5 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
   subagentsCompleted = Math.max(subagentsCompleted, omx.subagentsCompleted ?? 0);
   agentTurns = Math.max(agentTurns, omx.agentTurns ?? 0);
   for (const mode of omx.agentModes ?? []) agentModes.add(mode);
-  return finalizeAgentSession({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
+  return finalizeAgentSession({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun: testMetrics.testsRun, testsPassed: testMetrics.testsPassed, failedCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
 }

@@ -4,6 +4,7 @@ import { readSessionJsonlRecords } from './agent-session-files.js';
 import { readOmcMetadata } from './agent-session-claude-omc.js';
 import { commandFailed, isTestCommand, toolOutputFailed, toolResultOutput } from './agent-session-tooling.js';
 import { applyShellFileEvidence } from './agent-session-shell-files.js';
+import { recordTestCommandResult } from './agent-session-test-metrics.js';
 import { hasCollectionWindowBoundary, rowInAgentCollectionWindow } from './agent-session-window.js';
 
 export async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null, inferIdleGap = true): Promise<AgentSessionMetrics | null> {
@@ -17,9 +18,8 @@ export async function parseClaudeSessionFile(cwd: string, sessionFile: string, w
   let tokensUsed = 0;
   let durationSeconds: number | null = null;
   let estimatedCostUsd = 0;
-  let testsRun = 0;
+  const testMetrics = { testsRun: 0, testsPassed: 0 };
   let failedCommands = 0;
-  let failedTestCommands = 0;
   let commandsRun = 0;
   let toolCalls = 0;
   const skills = new Set<string>();
@@ -61,8 +61,8 @@ export async function parseClaudeSessionFile(cwd: string, sessionFile: string, w
         const commandDidFail = item.is_error === true || commandFailed(output);
         if (command && commandDidFail) {
           failedCommands += 1;
-          if (command.test) failedTestCommands += 1;
         }
+        if (command?.test) recordTestCommandResult(testMetrics, output, commandDidFail);
         if (command && !commandDidFail) {
           applyShellFileEvidence(cwd, { command: command.command, workdir: command.workdir, output }, files);
         }
@@ -98,9 +98,9 @@ export async function parseClaudeSessionFile(cwd: string, sessionFile: string, w
         const command = asString(input.command) ?? '';
         commandsRun += 1;
         const test = isTestCommand(command);
-        if (test) testsRun += 1;
         const toolUseId = asString(item.id);
         if (toolUseId && command) commands.set(toolUseId, { command, test, workdir: asString(input.workdir) });
+        else if (test) recordTestCommandResult(testMetrics, '', false);
       }
       if (name === 'Skill') {
         const skill = asString(input.skill);
@@ -121,5 +121,5 @@ export async function parseClaudeSessionFile(cwd: string, sessionFile: string, w
   subagentsSpawned = Math.max(subagentsSpawned, omc.subagentsSpawned ?? 0);
   subagentsCompleted = Math.max(subagentsCompleted, omc.subagentsCompleted ?? 0);
   for (const mode of omc.agentModes ?? []) agentModes.add(mode);
-  return finalizeAgentSession({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
+  return finalizeAgentSession({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun: testMetrics.testsRun, testsPassed: testMetrics.testsPassed, failedCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
 }

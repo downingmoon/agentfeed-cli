@@ -190,6 +190,7 @@ export function finalizeAgentSession(input: {
   readonly tokensUsed: number;
   readonly durationSeconds?: number | null;
   readonly testsRun: number;
+  readonly testsPassed?: number;
   readonly failedCommands: number;
   readonly failedTestCommands?: number;
   readonly commandsRun?: number;
@@ -223,7 +224,7 @@ export function finalizeAgentSession(input: {
     lines_added: linesAdded || null,
     lines_removed: linesRemoved || null,
     tests_run: input.testsRun || null,
-    tests_passed: input.testsRun ? Math.max(input.testsRun - (input.failedTestCommands ?? 0), 0) : null,
+    tests_passed: input.testsRun ? input.testsPassed ?? Math.max(input.testsRun - (input.failedTestCommands ?? 0), 0) : null,
     failed_commands: input.failedCommands || null,
     commands_run: input.commandsRun || null,
     tool_calls: input.toolCalls || null,

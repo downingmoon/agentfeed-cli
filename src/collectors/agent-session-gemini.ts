@@ -5,6 +5,7 @@ import { asRecord, asString, countTextLines, explicitCostUsd, finalizeAgentSessi
 import { hasCollectionWindowBoundary, parseBoundaryMillis, parseIsoMillis, rowInAgentCollectionWindow, rowTimestampMillis } from './agent-session-window.js';
 import { commandFailed, failedStatus, isTestCommand, toolOutputFailed } from './agent-session-tooling.js';
 import { applyShellFileEvidence } from './agent-session-shell-files.js';
+import { recordTestCommandResult } from './agent-session-test-metrics.js';
 
 function geminiTokenTotal(tokens: Record<string, unknown>): number {
   const total = numeric(tokens.total);
@@ -25,9 +26,8 @@ export async function parseGeminiSessionFile(cwd: string, sessionFile: string, w
   let model: string | null = null;
   let tokensUsed = 0;
   let estimatedCostUsd = 0;
-  let testsRun = 0;
+  const testMetrics = { testsRun: 0, testsPassed: 0 };
   let failedCommands = 0;
-  let failedTestCommands = 0;
   let commandsRun = 0;
   let toolCalls = 0;
   let startMillis: number | null = null;
@@ -91,8 +91,7 @@ export async function parseGeminiSessionFile(cwd: string, sessionFile: string, w
         if (commandDidFail) failedCommands += 1;
         else applyShellFileEvidence(cwd, { command, workdir: asString(args.cwd) ?? asString(args.Cwd), output }, files);
         if (isTestCommand(command)) {
-          testsRun += 1;
-          if (commandDidFail) failedTestCommands += 1;
+          recordTestCommandResult(testMetrics, output, commandDidFail);
         }
       } else if (name === 'invoke_agent') {
         if (!failed) subagentsSpawned += 1;
@@ -105,5 +104,5 @@ export async function parseGeminiSessionFile(cwd: string, sessionFile: string, w
   const durationSeconds = startMillis && endMillis && endMillis > startMillis ? (endMillis - startMillis) / 1000 : null;
   const collectionSources: CollectionSource[] = [{ type: 'agent_session', name: 'gemini_cli', quality: 'high' }];
   if (skills.size || agentModes.has('superpowers')) pushSource(collectionSources, { type: 'plugin_metadata', name: 'superpowers', quality: 'medium' });
-  return finalizeAgentSession({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted: subagentsSpawned, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
+  return finalizeAgentSession({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun: testMetrics.testsRun, testsPassed: testMetrics.testsPassed, failedCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted: subagentsSpawned, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
 }

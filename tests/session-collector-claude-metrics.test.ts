@@ -85,8 +85,8 @@ describe('Claude session collector metrics', () => {
     const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'claude_code', sessionFile });
 
     expect(metrics?.commands_run).toBe(1);
-    expect(metrics?.tests_run).toBe(1);
-    expect(metrics?.tests_passed).toBe(1);
+    expect(metrics?.tests_run).toBe(19);
+    expect(metrics?.tests_passed).toBe(19);
     expect(metrics?.failed_commands).toBeNull();
   });
 

@@ -2,6 +2,7 @@ import type { ChangedFileSummary, CollectionSource, CollectionWindow, Collection
 import { basename, dirname } from 'node:path';
 import { asRecord, asString, finalizeAgentSession, relativeProjectPath, safeJsonParse, upsertFile, type AgentSessionMetrics } from './agent-session-core.js';
 import { applyShellFileEvidence } from './agent-session-shell-files.js';
+import { recordTestCommandResult } from './agent-session-test-metrics.js';
 import { failedStatus, isTestCommand, toolOutputFailed } from './agent-session-tooling.js';
 import { hasCollectionWindowBoundary, rowInAgentCollectionWindow } from './agent-session-window.js';
 
@@ -76,9 +77,8 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
   const agentModes = new Set<string>();
   const pendingCommands: AntigravityCommand[] = [];
   let model: string | null = null;
-  let testsRun = 0;
+  const testMetrics = { testsRun: 0, testsPassed: 0 };
   let failedCommands = 0;
-  let failedTestCommands = 0;
   let commandsRun = 0;
   let toolCalls = 0;
   let agentTurns = 0;
@@ -102,7 +102,6 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
           if (command) {
             commandsRun += 1;
             const test = isTestCommand(command);
-            if (test) testsRun += 1;
             pendingCommands.push({ command, workdir, test });
           }
         }
@@ -123,10 +122,10 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
       const failed = antigravityCommandFailed(row, content);
       if (failed) {
         failedCommands += 1;
-        if (pending.test) failedTestCommands += 1;
       } else {
         applyShellFileEvidence(cwd, { command: pending.command, workdir: pending.workdir, output: content }, files);
       }
+      if (pending.test) recordTestCommandResult(testMetrics, content, failed);
     }
   }
   if (hasCollectionWindowBoundary(effectiveWindow) && !matchedWindowRow) return null;
@@ -134,5 +133,5 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
     { type: 'agent_session', name: 'gemini_cli', quality: 'high' },
     { type: 'agent_session', name: 'antigravity_cli', quality: 'high' }
   ];
-  return finalizeAgentSession({ sessionId: antigravitySessionId(sessionFile), model, files, tokensUsed: 0, estimatedCostUsd: 0, durationSeconds: null, testsRun, failedCommands, failedTestCommands, commandsRun, toolCalls, skills, subagentsSpawned: 0, subagentsCompleted: 0, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effectiveReason });
+  return finalizeAgentSession({ sessionId: antigravitySessionId(sessionFile), model, files, tokensUsed: 0, estimatedCostUsd: 0, durationSeconds: null, testsRun: testMetrics.testsRun, testsPassed: testMetrics.testsPassed, failedCommands, commandsRun, toolCalls, skills, subagentsSpawned: 0, subagentsCompleted: 0, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effectiveReason });
 }

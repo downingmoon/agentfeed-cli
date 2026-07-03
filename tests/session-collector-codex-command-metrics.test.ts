@@ -27,6 +27,22 @@ afterEach(async () => {
 });
 
 describe('Codex session collector command metrics', () => {
+  it('uses parsed test output counts when Codex shell output includes a summary', async () => {
+    const sessionFile = join(dir, 'codex-test-output-counts.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-test-output-counts', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'npm test', workdir: dir }), call_id: 'test-summary' } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'test-summary', output: 'Process exited with code 1\n======= 2 failed, 10 passed, 1 skipped in 3.21s =======' } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.commands_run).toBe(1);
+    expect(metrics?.tests_run).toBe(13);
+    expect(metrics?.tests_passed).toBe(10);
+    expect(metrics?.failed_commands).toBe(1);
+  });
+
   it('does not treat non-test command failures as failed tests', async () => {
     const sessionFile = join(dir, 'codex-failed-shell.jsonl');
     await writeJsonl(sessionFile, [
@@ -76,8 +92,8 @@ describe('Codex session collector command metrics', () => {
     const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
 
     expect(metrics?.commands_run).toBe(3);
-    expect(metrics?.tests_run).toBe(3);
-    expect(metrics?.tests_passed).toBe(2);
+    expect(metrics?.tests_run).toBe(26);
+    expect(metrics?.tests_passed).toBe(25);
     expect(metrics?.failed_commands).toBe(1);
   });
 
@@ -96,8 +112,8 @@ describe('Codex session collector command metrics', () => {
     const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
 
     expect(metrics?.commands_run).toBe(3);
-    expect(metrics?.tests_run).toBe(3);
-    expect(metrics?.tests_passed).toBe(2);
+    expect(metrics?.tests_run).toBe(31);
+    expect(metrics?.tests_passed).toBe(30);
     expect(metrics?.failed_commands).toBe(1);
   });
 

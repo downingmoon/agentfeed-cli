@@ -61,4 +61,30 @@ describe('shell script variable write options', () => {
     }
   });
 
+
+  it('captures Node createWriteStream variable writes with line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-node-stream-variable-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "node - <<'JS'",
+          "import { createWriteStream } from 'node:fs';",
+          'const content = `export const first = true;\nexport const second = true;\n`;',
+          "const stream = createWriteStream('src/generated-node-stream.ts');",
+          'stream.write(content);',
+          "stream.end('export const third = true;\n');",
+          'JS'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added])).toEqual([
+        ['src/generated-node-stream.ts', 3]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
 });

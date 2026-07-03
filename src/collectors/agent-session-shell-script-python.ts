@@ -11,6 +11,7 @@ const PYTHON_TRIPLE_CONTENT_BINDING = /\b(?<name>[A-Za-z_]\w*)\s*=\s*('''|""")(?
 const PYTHON_STRING_PATH_BINDING_TARGET = /\b(?<name>[A-Za-z_]\w*)\s*=\s*(['"])(?<path>[^'"]+)\2/g;
 const PYTHON_CONTENT_VARIABLE_WRITE_TARGET = /\b(?:Path|open)\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*(?<contentName>[A-Za-z_]\w*)\s*(?:,[^\n)]*)?\)/g;
 const PYTHON_PATH_BINDING_TARGET = /\b(?<name>[A-Za-z_]\w*)\s*=\s*Path\(\s*(['"])(?<path>[^'"]+)\2\s*\)/g;
+const PYTHON_PATH_DIVISION_BINDING_TARGET = /\b(?<name>[A-Za-z_]\w*)\s*=\s*(?<baseName>[A-Za-z_]\w*)\s*\/\s*(['"])(?<segment>[^'"]+)\3/g;
 const PYTHON_OPEN_BINDING_TARGET = /\bwith\s+open\(\s*(['"])(?<path>[^'"]+)\1\s*,\s*(['"])(?<mode>[^'"]*)\3[\s\S]*?\)\s+as\s+(?<name>[A-Za-z_]\w*)\s*:/g;
 const PYTHON_PATH_OPEN_BINDING_TARGET = /\bwith\s+Path\(\s*(['"])(?<path>[^'"]+)\1\s*\)\.open\(\s*(['"])(?<mode>[^'"]*)\3[\s\S]*?\)\s+as\s+(?<name>[A-Za-z_]\w*)\s*:/g;
 const PYTHON_OPEN_PATH_VARIABLE_BINDING_TARGET = /\bwith\s+open\(\s*(?<pathName>[A-Za-z_]\w*)\s*,\s*(['"])(?<mode>[^'"]*)\2[\s\S]*?\)\s+as\s+(?<name>[A-Za-z_]\w*)\s*:/g;
@@ -58,6 +59,17 @@ function pythonBoundTargets(command: string): BoundScriptTarget[] {
     const name = match.groups?.name;
     const path = match.groups?.path;
     if (name && path) {
+      targets.push({ name, path });
+      pathByName.set(name, path);
+    }
+  }
+  PYTHON_PATH_DIVISION_BINDING_TARGET.lastIndex = 0;
+  for (const match of command.matchAll(PYTHON_PATH_DIVISION_BINDING_TARGET)) {
+    const name = match.groups?.name;
+    const basePath = match.groups?.baseName ? pathByName.get(match.groups.baseName) : undefined;
+    const segment = match.groups?.segment;
+    if (name && basePath && segment && !segment.includes('${')) {
+      const path = `${basePath}/${segment}`.replace(/\/+/g, '/');
       targets.push({ name, path });
       pathByName.set(name, path);
     }

@@ -142,4 +142,36 @@ describe('shell script Python dump evidence', () => {
     }
   });
 
+  it('counts Python YAML explicit document marker lines for dump literals', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-yaml-marker-dump-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'import yaml',
+          'from pathlib import Path',
+          "yaml.safe_dump({'first': True, 'second': True}, open('src/generated-marker-yaml.yml', 'w'), explicit_start=True, explicit_end=True)",
+          "yaml.dump({'first': {'enabled': True}, 'items': ['one', 'two']}, Path('src/generated-marker-nested.yml').open('w'), explicit_start=True, explicit_end=True)",
+          "with open('src/generated-marker-flow.yml', 'w') as handle:",
+          "    yaml.safe_dump([{'name': 'one'}, {'name': 'two'}], handle, default_flow_style=True, explicit_start=True, explicit_end=True)",
+          'PY'
+        ].join('\n')
+      }, files);
+
+      const summaries = [...files.values()]
+        .map((file) => [file.path, file.lines_added])
+        .sort((left, right) => String(left[0]).localeCompare(String(right[0])));
+
+      expect(summaries).toEqual([
+        ['src/generated-marker-flow.yml', 2],
+        ['src/generated-marker-nested.yml', 7],
+        ['src/generated-marker-yaml.yml', 4]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
 });

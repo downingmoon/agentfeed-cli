@@ -134,10 +134,21 @@ function literalHasNestedCollection(payload: string): boolean {
   return false;
 }
 
+function yamlDocumentMarkerLineCount(call: string, flowStyle: boolean): number {
+  const explicitStartLines = !flowStyle && /,\s*explicit_start\s*=\s*True\b/.test(call) ? 1 : 0;
+  const explicitEndLines = /,\s*explicit_end\s*=\s*True\b/.test(call) ? 1 : 0;
+  return explicitStartLines + explicitEndLines;
+}
+
 export function literalDumpLineCount(serializer: string, payload: string, call: string): number | null {
   const items = literalCollectionItemCount(payload);
   if (serializer === 'json.dump') return /,\s*indent\s*=/.test(call) ? jsonPrettyLiteralLineCount(payload) : 1;
-  if (/,\s*default_flow_style\s*=\s*True\b/.test(call)) return 1;
-  if (literalHasNestedCollection(payload)) return yamlBlockLiteralLineCount(payload);
-  return Math.max(items, 1);
+  const flowStyle = /,\s*default_flow_style\s*=\s*True\b/.test(call);
+  if (flowStyle) return 1 + yamlDocumentMarkerLineCount(call, flowStyle);
+  const documentMarkerLines = yamlDocumentMarkerLineCount(call, flowStyle);
+  if (literalHasNestedCollection(payload)) {
+    const blockLines = yamlBlockLiteralLineCount(payload);
+    return blockLines == null ? null : blockLines + documentMarkerLines;
+  }
+  return Math.max(items, 1) + documentMarkerLines;
 }

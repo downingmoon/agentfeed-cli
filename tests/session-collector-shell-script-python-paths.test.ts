@@ -78,4 +78,26 @@ describe('shell script Python path bindings', () => {
     }
   });
 
+  it('captures inline Python Path.open context manager write targets', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-path-open-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'from pathlib import Path',
+          'with Path("src/generated.ts").open("w") as f:',
+          '    f.write("""export const generated = true;\\nexport const ok = true;\\n""")',
+          'PY'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added])).toEqual([
+        ['src/generated.ts', 2]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });

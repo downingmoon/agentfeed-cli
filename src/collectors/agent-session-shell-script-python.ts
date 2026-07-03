@@ -11,6 +11,7 @@ const PYTHON_STRING_PATH_BINDING_TARGET = /\b(?<name>[A-Za-z_]\w*)\s*=\s*(['"])(
 const PYTHON_CONTENT_VARIABLE_WRITE_TARGET = /\b(?:Path|open)\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*(?<contentName>[A-Za-z_]\w*)\s*(?:,[^\n)]*)?\)/g;
 const PYTHON_PATH_BINDING_TARGET = /\b(?<name>[A-Za-z_]\w*)\s*=\s*Path\(\s*(['"])(?<path>[^'"]+)\2\s*\)/g;
 const PYTHON_OPEN_BINDING_TARGET = /\bwith\s+open\(\s*(['"])(?<path>[^'"]+)\1\s*,\s*(['"])(?<mode>[^'"]*)\3[\s\S]*?\)\s+as\s+(?<name>[A-Za-z_]\w*)\s*:/g;
+const PYTHON_PATH_OPEN_BINDING_TARGET = /\bwith\s+Path\(\s*(['"])(?<path>[^'"]+)\1\s*\)\.open\(\s*(['"])(?<mode>[^'"]*)\3[\s\S]*?\)\s+as\s+(?<name>[A-Za-z_]\w*)\s*:/g;
 const PYTHON_DUMP_OPEN_TARGET = /\b(?:json\.dump|yaml\.(?:safe_dump|dump))\([\s\S]*?,\s*open\(\s*(['"])(?<path>[^'"]+)\1\s*,\s*(['"])(?<mode>[^'"]*)\3[\s\S]*?\)/g;
 const PYTHON_DUMP_PATH_OPEN_TARGET = /\b(?:json\.dump|yaml\.(?:safe_dump|dump))\([\s\S]*?,\s*Path\(\s*(['"])(?<path>[^'"]+)\1\s*\)\.open\(\s*(['"])(?<mode>[^'"]*)\3[\s\S]*?\)/g;
 const PYTHON_DUMP_LITERAL_OPEN_TARGET = new RegExp(String.raw`\b(?<serializer>json\.dump|yaml\.(?:safe_dump|dump))\(\s*${PYTHON_LITERAL_COLLECTION}\s*,\s*open\(\s*(?<pathQuote>['"])(?<path>[^'"]+)\k<pathQuote>\s*,\s*(?<modeQuote>['"])(?<mode>[^'"]*)\k<modeQuote>[\s\S]*?\)\s*(?:,[^\n)]*)?\)`, 'g');
@@ -56,11 +57,14 @@ function pythonBoundTargets(command: string): BoundScriptTarget[] {
   }
 
   PYTHON_OPEN_BINDING_TARGET.lastIndex = 0;
-  for (const match of command.matchAll(PYTHON_OPEN_BINDING_TARGET)) {
-    const name = match.groups?.name;
-    const path = match.groups?.path;
-    const mode = match.groups?.mode ?? '';
-    if (name && path && /[wax+]/.test(mode)) targets.push({ name, path });
+  for (const pattern of [PYTHON_OPEN_BINDING_TARGET, PYTHON_PATH_OPEN_BINDING_TARGET]) {
+    pattern.lastIndex = 0;
+    for (const match of command.matchAll(pattern)) {
+      const name = match.groups?.name;
+      const path = match.groups?.path;
+      const mode = match.groups?.mode ?? '';
+      if (name && path && /[wax+]/.test(mode)) targets.push({ name, path });
+    }
   }
   return targets;
 }

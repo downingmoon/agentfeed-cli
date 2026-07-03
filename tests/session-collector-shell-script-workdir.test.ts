@@ -85,4 +85,49 @@ describe('shell script workdir evidence', () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it('resolves inline cd Python heredoc writes relative to the changed directory', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-cd-python-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "cd packages/api && python3 - <<'PY'",
+          'from pathlib import Path',
+          "Path('src/generated.py').write_text('print(1)\\n')",
+          'PY'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()]).toMatchObject([
+        { path: 'packages/api/src/generated.py', status: 'modified', lines_added: 1 }
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('resolves standalone cd Node heredoc writes relative to the changed directory', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-cd-node-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          'cd packages/web',
+          "node - <<'JS'",
+          "import { writeFileSync } from 'node:fs';",
+          "writeFileSync('src/generated.ts', 'export const generated = true;\\n');",
+          'JS'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()]).toMatchObject([
+        { path: 'packages/web/src/generated.ts', status: 'modified', lines_added: 1 }
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });

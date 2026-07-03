@@ -25,6 +25,11 @@ type ApplyPatchFile = {
   readonly removed: number;
 };
 
+type ScriptCommandBucket = {
+  readonly workdir: string | null;
+  readonly lines: string[];
+};
+
 function heredocDelimiter(line: string): string | null {
   return /<<\s*['"]?(?<delimiter>[A-Za-z0-9_:-]+)['"]?/.exec(line)?.groups?.delimiter ?? null;
 }
@@ -138,7 +143,15 @@ function nextShellWorkdir(projectRoot: string, workdir: string | null, insidePro
 
 export function parseShellWriteCommands(projectRoot: string, workdir: string | null, command: string): FileEvidence[] {
   const files: FileEvidence[] = [];
-  const boundContent = contentBindings(command);
+  const scriptBuckets = new Map<string, ScriptCommandBucket>();
+  const scriptBucket = (nextWorkdir: string | null): ScriptCommandBucket => {
+    const key = nextWorkdir ?? '';
+    const existing = scriptBuckets.get(key);
+    if (existing) return existing;
+    const created: ScriptCommandBucket = { workdir: nextWorkdir, lines: [] };
+    scriptBuckets.set(key, created);
+    return created;
+  };
   const lines = command.split(/\r?\n/);
   let currentWorkdir = workdir;
   let workdirInsideProject = true;
@@ -194,6 +207,20 @@ export function parseShellWriteCommands(projectRoot: string, workdir: string | n
       continue;
     }
 
+    const scriptDelimiter = heredocDelimiter(line);
+    if (scriptDelimiter) {
+      const bucket = scriptBucket(currentWorkdir);
+      bucket.lines.push(line);
+      for (let cursor = index + 1; cursor < lines.length; cursor += 1) {
+        bucket.lines.push(lines[cursor]);
+        if (lines[cursor].trim() === scriptDelimiter) {
+          index = cursor;
+          break;
+        }
+      }
+      continue;
+    }
+
     const literalRedirect = shellLiteralRedirectEvidence(projectRoot, currentWorkdir, line);
     if (literalRedirect) {
       files.push(literalRedirect);
@@ -207,9 +234,14 @@ export function parseShellWriteCommands(projectRoot: string, workdir: string | n
       const path = projectRelativeShellPath(projectRoot, currentWorkdir, rawPath);
       if (path) files.push({ path, status: 'modified' });
     }
+    scriptBucket(currentWorkdir).lines.push(line);
   }
-  const context = { projectRoot, workdir };
-  files.push(...pythonScriptWriteEvidence(context, command, boundContent));
-  files.push(...nodeScriptWriteEvidence(context, command, boundContent));
+  for (const bucket of scriptBuckets.values()) {
+    const scriptCommand = bucket.lines.join('\n');
+    const boundContent = contentBindings(scriptCommand);
+    const context = { projectRoot, workdir: bucket.workdir };
+    files.push(...pythonScriptWriteEvidence(context, scriptCommand, boundContent));
+    files.push(...nodeScriptWriteEvidence(context, scriptCommand, boundContent));
+  }
   return files;
 }

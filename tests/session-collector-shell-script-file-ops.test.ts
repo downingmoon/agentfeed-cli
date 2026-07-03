@@ -58,4 +58,29 @@ describe('shell script file operation evidence', () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it('captures deterministic install file targets without claiming source changes', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-file-install-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          'install -m 0644 src/api.ts dist/api.ts',
+          'install --mode 0644 src/api.ts dist/api-mode.ts',
+          'install -D "src/old name.ts" dist/nested/new-name.ts',
+          'install -d dist/nested',
+          'install -t dist src/a.ts src/b.ts'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.status, file.lines_added]).sort()).toEqual([
+        ['dist/api-mode.ts', 'modified', null],
+        ['dist/api.ts', 'modified', null],
+        ['dist/nested/new-name.ts', 'modified', null]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });

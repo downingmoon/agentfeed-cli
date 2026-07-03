@@ -91,6 +91,26 @@ describe('configured test command output parser', () => {
     });
   });
 
+  it('aggregates multiple TAP summaries from combined command output', () => {
+    const output = [
+      '$ node --test unit.test.js',
+      '# tests 4',
+      '# suites 0',
+      '# pass 3',
+      '# fail 1',
+      '$ node --test integration.test.js',
+      '# tests 3',
+      '# suites 0',
+      '# pass 2',
+      '# fail 1'
+    ].join('\n');
+
+    expect(parseTestCommandOutput(output, '')).toEqual({
+      testsRun: 7,
+      testsPassed: 5
+    });
+  });
+
   it('returns null when command output has no reliable test count', () => {
     expect(parseTestCommandOutput('done', '')).toBeNull();
   });

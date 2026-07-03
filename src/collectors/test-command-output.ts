@@ -46,17 +46,23 @@ function countsFromStatusSummary(text: string): TestCommandCounts | null {
 }
 
 function parseTapSummary(text: string): TestCommandCounts | null {
-  const testsMatch = /(?:^|\n)\s*#?\s*tests\s+(\d+)\b/i.exec(text);
-  const passMatch = /(?:^|\n)\s*#?\s*pass(?:ed)?\s+(\d+)\b/i.exec(text);
-  const failMatch = /(?:^|\n)\s*#?\s*fail(?:ed)?\s+(\d+)\b/i.exec(text);
-  if (!testsMatch || !passMatch) return null;
-  const testsRun = Number.parseInt(testsMatch[1], 10);
-  const passed = Number.parseInt(passMatch[1], 10);
-  const failed = failMatch ? Number.parseInt(failMatch[1], 10) : 0;
-  if (!Number.isFinite(testsRun) || !Number.isFinite(passed) || !Number.isFinite(failed) || testsRun <= 0) return null;
+  const testMatches = [...text.matchAll(/(?:^|\n)\s*#?\s*tests\s+(\d+)\b/gi)];
+  const passMatches = [...text.matchAll(/(?:^|\n)\s*#?\s*pass(?:ed)?\s+(\d+)\b/gi)];
+  if (!testMatches.length || testMatches.length !== passMatches.length) return null;
+  let testsRun = 0;
+  let testsPassed = 0;
+  for (const [index, testMatch] of testMatches.entries()) {
+    const passMatch = passMatches[index];
+    if (!passMatch) return null;
+    const testCount = Number.parseInt(testMatch[1], 10);
+    const passCount = Number.parseInt(passMatch[1], 10);
+    if (!Number.isFinite(testCount) || !Number.isFinite(passCount) || testCount <= 0) return null;
+    testsRun += testCount;
+    testsPassed += Math.min(passCount, testCount);
+  }
   return {
     testsRun,
-    testsPassed: Math.min(passed, testsRun)
+    testsPassed
   };
 }
 

@@ -106,15 +106,17 @@ describe('Codex session collector command metrics', () => {
       { timestamp: '2026-05-20T00:00:03Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'vitest run', workdir: dir }), call_id: 'vitest-direct' } },
       { timestamp: '2026-05-20T00:00:04Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'vitest-direct', output: 'Process exited with code 0\nTest Files: 0 failed, 4 passed, 4 total\nTests: 0 failed, 4 passed, 4 total' } },
       { timestamp: '2026-05-20T00:00:05Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'playwright test', workdir: dir }), call_id: 'playwright-direct' } },
-      { timestamp: '2026-05-20T00:00:06Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'playwright-direct', output: 'Process exited with code 1\n1 failed, 2 passed' } }
+      { timestamp: '2026-05-20T00:00:06Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'playwright-direct', output: 'Process exited with code 1\n1 failed, 2 passed' } },
+      { timestamp: '2026-05-20T00:00:07Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'node --test unit.test.js && node --test integration.test.js', workdir: dir }), call_id: 'node-test-direct' } },
+      { timestamp: '2026-05-20T00:00:08Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'node-test-direct', output: 'Process exited with code 1\n# tests 4\n# suites 0\n# pass 3\n# fail 1\n# tests 3\n# suites 0\n# pass 2\n# fail 1' } }
     ]);
 
     const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
 
-    expect(metrics?.commands_run).toBe(3);
-    expect(metrics?.tests_run).toBe(31);
-    expect(metrics?.tests_passed).toBe(30);
-    expect(metrics?.failed_commands).toBe(1);
+    expect(metrics?.commands_run).toBe(4);
+    expect(metrics?.tests_run).toBe(38);
+    expect(metrics?.tests_passed).toBe(35);
+    expect(metrics?.failed_commands).toBe(2);
   });
 
   it('does not count browser test setup commands as executed tests', async () => {

@@ -3,6 +3,7 @@ import { countTextLines } from './agent-session-core.js';
 import { applyPatchDelimiter, parseApplyPatchEvidence } from './agent-session-shell-apply-patch.js';
 import type { FileEvidence } from './agent-session-shell-file-evidence.js';
 import { projectRelativeShellPath } from './agent-session-shell-paths.js';
+import { shellFileOperationEvidence } from './agent-session-shell-script-file-ops.js';
 import { shellInPlaceEditEvidence } from './agent-session-shell-script-inplace.js';
 import { nodeContentBindings, nodeScriptWriteEvidence } from './agent-session-shell-script-node.js';
 import { shellHeredocDelimiter, shellHeredocTarget } from './agent-session-shell-script-heredoc.js';
@@ -117,6 +118,12 @@ export function parseShellWriteCommands(projectRoot: string, workdir: string | n
       if (cdLine) continue;
     }
     if (!workdirInsideProject) continue;
+
+    const fileOperation = shellFileOperationEvidence(projectRoot, currentWorkdir, line);
+    if (fileOperation.length) {
+      files.push(...fileOperation);
+      continue;
+    }
 
     const inPlaceEdit = shellInPlaceEditEvidence(projectRoot, currentWorkdir, line);
     if (inPlaceEdit.length) {

@@ -2,9 +2,10 @@ export const PYTHON_LITERAL_COLLECTION = String.raw`(?<payload>\{[^\n]*\}|\[[^\n
 
 type LiteralParseResult = {
   readonly next: number;
-  readonly lines: number;
+  readonly jsonPrettyLines: number;
+  readonly yamlBlockLines: number;
+  readonly collection: boolean;
 };
-
 
 function literalCollectionItemCount(payload: string): number {
   const inner = payload.slice(1, -1).trim();
@@ -69,8 +70,9 @@ function parseLiteralCollection(payload: string, index: number): LiteralParseRes
   const isDict = payload[index] === '{';
   const close = isDict ? '}' : ']';
   let current = skipLiteralSpace(payload, index + 1);
-  if (payload[current] === close) return { next: current + 1, lines: 1 };
-  let lines = 2;
+  if (payload[current] === close) return { next: current + 1, jsonPrettyLines: 1, yamlBlockLines: 1, collection: true };
+  let jsonPrettyLines = 2;
+  let yamlBlockLines = 0;
   while (current < payload.length) {
     if (isDict) {
       current = payload[current] === '"' || payload[current] === "'"
@@ -82,13 +84,14 @@ function parseLiteralCollection(payload: string, index: number): LiteralParseRes
     }
     const value = parseLiteralValue(payload, current);
     if (!value) return null;
-    lines += value.lines;
+    jsonPrettyLines += value.jsonPrettyLines;
+    yamlBlockLines += isDict && value.collection ? value.yamlBlockLines + 1 : value.yamlBlockLines;
     current = skipLiteralSpace(payload, value.next);
     if (payload[current] === ',') {
       current = skipLiteralSpace(payload, current + 1);
       continue;
     }
-    if (payload[current] === close) return { next: current + 1, lines };
+    if (payload[current] === close) return { next: current + 1, jsonPrettyLines, yamlBlockLines, collection: true };
     return null;
   }
   return null;
@@ -98,13 +101,19 @@ function parseLiteralValue(payload: string, index: number): LiteralParseResult |
   const current = skipLiteralSpace(payload, index);
   if (payload[current] === '{' || payload[current] === '[') return parseLiteralCollection(payload, current);
   const next = skipLiteralScalar(payload, current);
-  return next > current ? { next, lines: 1 } : null;
+  return next > current ? { next, jsonPrettyLines: 1, yamlBlockLines: 1, collection: false } : null;
 }
 
 function jsonPrettyLiteralLineCount(payload: string): number | null {
   const parsed = parseLiteralValue(payload, 0);
   if (!parsed) return null;
-  return skipLiteralSpace(payload, parsed.next) === payload.length ? parsed.lines : null;
+  return skipLiteralSpace(payload, parsed.next) === payload.length ? parsed.jsonPrettyLines : null;
+}
+
+function yamlBlockLiteralLineCount(payload: string): number | null {
+  const parsed = parseLiteralValue(payload, 0);
+  if (!parsed) return null;
+  return skipLiteralSpace(payload, parsed.next) === payload.length ? parsed.yamlBlockLines : null;
 }
 
 function literalHasNestedCollection(payload: string): boolean {
@@ -129,6 +138,6 @@ export function literalDumpLineCount(serializer: string, payload: string, call: 
   const items = literalCollectionItemCount(payload);
   if (serializer === 'json.dump') return /,\s*indent\s*=/.test(call) ? jsonPrettyLiteralLineCount(payload) : 1;
   if (/,\s*default_flow_style\s*=\s*True\b/.test(call)) return null;
-  if (literalHasNestedCollection(payload)) return null;
+  if (literalHasNestedCollection(payload)) return yamlBlockLiteralLineCount(payload);
   return Math.max(items, 1);
 }

@@ -78,4 +78,36 @@ describe('shell script Python dump evidence', () => {
     }
   });
 
+  it('captures deterministic nested Python YAML dump literals with line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-nested-yaml-dump-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'import yaml',
+          'from pathlib import Path',
+          "yaml.safe_dump({'first': {'enabled': True}, 'items': ['one', 'two']}, open('src/generated-nested-yaml.yml', 'w'))",
+          "yaml.dump([{'name': 'one'}, {'name': 'two'}], Path('src/generated-nested-list.yml').open('w'))",
+          "with open('src/generated-nested-handle.yml', 'w') as handle:",
+          "    yaml.safe_dump({'outer': {'inner': False}}, handle)",
+          'PY'
+        ].join('\n')
+      }, files);
+
+      const summaries = [...files.values()]
+        .map((file) => [file.path, file.lines_added])
+        .sort((left, right) => String(left[0]).localeCompare(String(right[0])));
+
+      expect(summaries).toEqual([
+        ['src/generated-nested-handle.yml', 2],
+        ['src/generated-nested-list.yml', 2],
+        ['src/generated-nested-yaml.yml', 5]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
 });

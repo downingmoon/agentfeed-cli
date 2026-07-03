@@ -35,6 +35,35 @@ describe('shell script JavaScript runtime write evidence', () => {
     }
   });
 
+  it('captures Node expression writes as changed files without guessed line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-node-expression-writes-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "node - <<'JS'",
+          "import { writeFileSync } from 'node:fs';",
+          "import { writeFile } from 'node:fs/promises';",
+          "writeFileSync('dist/data.json', JSON.stringify({ ok: true }, null, 2));",
+          "fs.writeFileSync('assets/icon.bin', Buffer.from('abc'));",
+          "await fs.promises.writeFile('dist/promises.json', JSON.stringify({ ok: true }));",
+          "await writeFile('dist/async.json', JSON.stringify({ ok: true }));",
+          'JS'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added]).sort()).toEqual([
+        ['assets/icon.bin', null],
+        ['dist/async.json', null],
+        ['dist/data.json', null],
+        ['dist/promises.json', null]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it('captures Node createWriteStream variable writes with line counts', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-node-stream-variable-'));
     try {

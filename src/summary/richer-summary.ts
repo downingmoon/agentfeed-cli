@@ -74,6 +74,9 @@ function boundedPublicPrompt(value?: string | null): string | null {
 function fileMetricSentence(input: RicherSummaryInput): string | null {
   if (!positive(input.metrics.files_changed) && input.metrics.files_changed !== 0) return null;
   const files = input.metrics.files_changed ?? 0;
+  if (input.metrics.lines_added == null && input.metrics.lines_removed == null) {
+    return `It changed ${files} files; aggregate line totals were not available from the collected evidence.`;
+  }
   const additions = input.metrics.lines_added ?? 0;
   const deletions = input.metrics.lines_removed ?? 0;
   return `It changed ${files} files with ${additions} additions and ${deletions} deletions captured as aggregate metrics.`;

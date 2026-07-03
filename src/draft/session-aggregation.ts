@@ -25,8 +25,16 @@ export function mergeChangedFiles(gitFiles: ChangedFileSummary[], sessionFiles: 
   return [...files.values()];
 }
 
-export function sumChangedFileLines(files: ChangedFileSummary[], key: 'lines_added' | 'lines_removed'): number {
-  return files.reduce((sum, file) => sum + (file[key] ?? 0), 0);
+export function sumChangedFileLines(files: ChangedFileSummary[], key: 'lines_added' | 'lines_removed'): number | null {
+  let total = 0;
+  let seen = false;
+  for (const file of files) {
+    const value = file[key];
+    if (value == null) continue;
+    total += value;
+    seen = true;
+  }
+  return seen ? total : null;
 }
 
 export function addOptionalCounts(...values: Array<number | null | undefined>): number | null {
@@ -206,8 +214,8 @@ export function mergeAgentSessions(candidates: AgentSessionCandidate[], requeste
     estimated_cost_usd: addOptionalCounts(...candidates.map((candidate) => candidate.session.estimated_cost_usd)),
     duration_seconds: addOptionalCounts(...candidates.map((candidate) => candidate.session.duration_seconds)),
     files_changed: changedFiles.length || null,
-    lines_added: linesAdded || null,
-    lines_removed: linesRemoved || null,
+    lines_added: linesAdded,
+    lines_removed: linesRemoved,
     tests_run: addOptionalCounts(...candidates.map((candidate) => candidate.session.tests_run)),
     tests_passed: addOptionalCounts(...candidates.map((candidate) => candidate.session.tests_passed)),
     failed_commands: addOptionalCounts(...candidates.map((candidate) => candidate.session.failed_commands)),

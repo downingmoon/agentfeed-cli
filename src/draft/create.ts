@@ -159,7 +159,7 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
   const filesChanged = changedFiles.length;
   const actualWindow = session?.collection_window ?? window;
   const actualWindowReason = session?.collection_window_reason ?? null;
-  const mergedGit = { ...git, changed_files: changedFiles, files_changed: filesChanged, lines_added: linesAdded, lines_removed: linesRemoved };
+  const mergedGit = { ...git, changed_files: changedFiles, files_changed: filesChanged, lines_added: linesAdded ?? 0, lines_removed: linesRemoved ?? 0 };
   const areas = changedAreas(changedFiles);
   const safeAreas = areas.length ? areas : ['Application code'];
   const configuredCommandIntent = options.runConfiguredCommands === true && options.skipConfiguredCommands !== true;

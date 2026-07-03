@@ -8,6 +8,7 @@ const NODE_PATH_BINDING = /\b(?:const|let|var)\s+(?<name>[A-Za-z_$][\w$]*)\s*=\s
 const NODE_RESOLVED_PATH_BINDING = /\b(?:const|let|var)\s+(?<name>[A-Za-z_$][\w$]*)\s*=\s*(?:[A-Za-z_$][\w$]*\.)?(?:join|resolve)\(\s*(['"`])(?<path>[^'"`]+)\2\s*\)\s*;/g;
 const NODE_WRITE_TARGET = /\b(?:[A-Za-z_$][\w$]*\.)?(?:writeFile|appendFile)(?:Sync)?\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(['"`])(?<content>[\s\S]*?)\3/g;
 const NODE_CONTENT_VARIABLE_WRITE_TARGET = /\b(?:[A-Za-z_$][\w$]*\.)?(?:writeFile|appendFile)(?:Sync)?\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(?<contentName>[A-Za-z_$][\w$]*)\s*(?:,[^\n)]*)?\)/g;
+const NODE_CHANGED_WRITE_TARGET = /\b(?:await\s+)?(?:[A-Za-z_$][\w$]*\.)*(?:writeFile|appendFile)(?:Sync)?\(\s*(['"`])(?<path>[^'"`]+)\1\s*,/g;
 const NODE_STREAM_TARGET = /\b(?:const|let|var)\s+(?<name>[A-Za-z_$][\w$]*)\s*=\s*(?:[A-Za-z_$][\w$]*\.)?createWriteStream\(\s*(['"`])(?<path>[^'"`]+)\2[\s\S]*?\)\s*;/g;
 const NODE_DIRECT_STREAM_WRITE_TARGET = /\b(?:[A-Za-z_$][\w$]*\.)?createWriteStream\(\s*(['"`])(?<path>[^'"`]+)\1(?:\s*,[^)]*)?\)\.(?:write|end)\(\s*(['"`])(?<content>[\s\S]*?)\3/g;
 const NODE_DIRECT_STREAM_VARIABLE_WRITE_TARGET = /\b(?:[A-Za-z_$][\w$]*\.)?createWriteStream\(\s*(['"`])(?<path>[^'"`]+)\1(?:\s*,[^)]*)?\)\.(?:write|end)\(\s*(?<contentName>[A-Za-z_$][\w$]*)\s*(?:,[^\n)]*)?\)/g;
@@ -87,6 +88,16 @@ function mergeChangedEvidence(files: Map<string, FileEvidence>, path: string): v
   if (!files.has(path)) files.set(path, { path, status: 'modified' });
 }
 
+function nodeChangedWriteEvidence(context: ScriptWriteEvidenceContext, command: string): FileEvidence[] {
+  const files = new Map<string, FileEvidence>();
+  NODE_CHANGED_WRITE_TARGET.lastIndex = 0;
+  for (const match of command.matchAll(NODE_CHANGED_WRITE_TARGET)) {
+    const path = projectRelativeShellPath(context.projectRoot, context.workdir, match.groups?.path ?? '');
+    if (path) mergeChangedEvidence(files, path);
+  }
+  return [...files.values()];
+}
+
 function nodePathWriteEvidence(input: NodeBoundWriteEvidenceInput): FileEvidence[] {
   const files = new Map<string, FileEvidence>();
   for (const target of input.targets) {
@@ -155,6 +166,7 @@ export function nodeScriptWriteEvidence(context: ScriptWriteEvidenceContext, com
   return [
     ...scriptWriteEvidence({ ...context, pattern: NODE_WRITE_TARGET, command }),
     ...variableContentWriteEvidence({ ...context, pattern: NODE_CONTENT_VARIABLE_WRITE_TARGET, command, contentBindings }),
+    ...nodeChangedWriteEvidence(context, command),
     ...scriptWriteEvidence({ ...context, pattern: NODE_DIRECT_STREAM_WRITE_TARGET, command }),
     ...variableContentWriteEvidence({ ...context, pattern: NODE_DIRECT_STREAM_VARIABLE_WRITE_TARGET, command, contentBindings }),
     ...scriptWriteEvidence({ ...context, pattern: NODE_DIRECT_FILEHANDLE_WRITE_TARGET, command }),

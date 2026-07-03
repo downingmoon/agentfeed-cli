@@ -102,6 +102,32 @@ describe('agent session collector', () => {
     expect(JSON.stringify(draft)).not.toContain('.obsidian');
   });
 
+  it('keeps aggregate line counts unknown when session evidence only proves changed paths', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });
+    execFileSync('git', ['commit', '-m', 'agentfeed config'], { cwd: dir, stdio: 'ignore' });
+    const sessionFile = join(dir, 'codex-expression-writes.jsonl');
+    const command = [
+      "node - <<'JS'",
+      "import { writeFileSync } from 'node:fs';",
+      "writeFileSync('dist/data.json', JSON.stringify({ ok: true }, null, 2));",
+      "fs.writeFileSync('assets/icon.bin', Buffer.from('abc'));",
+      'JS'
+    ].join('\n');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-expression-writes', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: command, workdir: dir }), call_id: 'node-expression' } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'node-expression', output: 'Process exited with code 0' } }
+    ]);
+
+    const draft = await collectDraft({ cwd: dir, source: 'codex', sessionFile, since: '2026-05-20T00:00:00Z', until: '2026-05-20T01:00:00Z' });
+
+    expect(draft.worklog.metrics.files_changed).toBe(2);
+    expect(draft.worklog.metrics.lines_added).toBeNull();
+    expect(draft.worklog.metrics.lines_removed).toBeNull();
+    expect(draft.worklog.summary).not.toContain('0 additions');
+  });
+
   it('stores explicit collection windows on created drafts', async () => {
     await initProject({ cwd: dir, noGitCheck: false });
     execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });

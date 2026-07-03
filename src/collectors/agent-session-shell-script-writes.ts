@@ -6,9 +6,13 @@ const SHELL_REDIRECT_TARGET = /(?:^|\s)(?:\d?>|>>|>)\s*(['"]?)([^'"\s;&|<>]+)\1/
 const SHELL_TEE_TARGET = /(?:^|\s)tee\s+(?:-[a-zA-Z]+\s+)*(['"]?)([^'"\s;&|<>]+)\1/g;
 const PYTHON_TRIPLE_WRITE_TARGET = /\b(?:Path|open)\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*('''|""")(?<content>[\s\S]*?)\3/g;
 const PYTHON_WRITE_TARGET = /\b(?:Path|open)\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*(['"])(?<content>[\s\S]*?)\3/g;
+const PYTHON_TRIPLE_CONTENT_BINDING = /\b(?<name>[A-Za-z_]\w*)\s*=\s*('''|""")(?<content>[\s\S]*?)\2/g;
+const PYTHON_CONTENT_VARIABLE_WRITE_TARGET = /\b(?:Path|open)\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*(?<contentName>[A-Za-z_]\w*)\s*\)/g;
 const PYTHON_PATH_BINDING_TARGET = /\b(?<name>[A-Za-z_]\w*)\s*=\s*Path\(\s*(['"])(?<path>[^'"]+)\2\s*\)/g;
 const PYTHON_OPEN_BINDING_TARGET = /\bwith\s+open\(\s*(['"])(?<path>[^'"]+)\1\s*,\s*(['"])(?<mode>[^'"]*)\3[\s\S]*?\)\s+as\s+(?<name>[A-Za-z_]\w*)\s*:/g;
+const NODE_CONTENT_BINDING = /\b(?:const|let|var)\s+(?<name>[A-Za-z_$][\w$]*)\s*=\s*(['"`])(?<content>[\s\S]*?)\2\s*;/g;
 const NODE_WRITE_TARGET = /\b(?:[A-Za-z_$][\w$]*\.)?writeFile(?:Sync)?\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(['"`])(?<content>[\s\S]*?)\3/g;
+const NODE_CONTENT_VARIABLE_WRITE_TARGET = /\b(?:[A-Za-z_$][\w$]*\.)?writeFile(?:Sync)?\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(?<contentName>[A-Za-z_$][\w$]*)\s*\)/g;
 
 type ScriptWriteEvidenceInput = {
   readonly projectRoot: string;
@@ -27,6 +31,15 @@ type BoundScriptWriteEvidenceInput = {
   readonly workdir: string | null;
   readonly command: string;
   readonly targets: readonly BoundScriptTarget[];
+  readonly contentBindings: ReadonlyMap<string, string>;
+};
+
+type VariableContentWriteEvidenceInput = {
+  readonly projectRoot: string;
+  readonly workdir: string | null;
+  readonly pattern: RegExp;
+  readonly command: string;
+  readonly contentBindings: ReadonlyMap<string, string>;
 };
 
 function heredocTarget(line: string): { readonly path: string; readonly delimiter: string } | null {
@@ -62,6 +75,36 @@ function scriptWriteEvidence(input: ScriptWriteEvidenceInput): FileEvidence[] {
       path,
       status: 'modified',
       added: countTextLines(unescapeScriptText(match.groups?.content ?? ''))
+    });
+  }
+  return files;
+}
+
+function contentBindings(command: string): ReadonlyMap<string, string> {
+  const bindings = new Map<string, string>();
+  for (const pattern of [PYTHON_TRIPLE_CONTENT_BINDING, NODE_CONTENT_BINDING]) {
+    pattern.lastIndex = 0;
+    for (const match of command.matchAll(pattern)) {
+      const name = match.groups?.name;
+      const content = match.groups?.content;
+      if (name && content !== undefined) bindings.set(name, content);
+    }
+  }
+  return bindings;
+}
+
+function variableContentWriteEvidence(input: VariableContentWriteEvidenceInput): FileEvidence[] {
+  const files: FileEvidence[] = [];
+  input.pattern.lastIndex = 0;
+  for (const match of input.command.matchAll(input.pattern)) {
+    const path = projectRelativeShellPath(input.projectRoot, input.workdir, match.groups?.path ?? '');
+    const contentName = match.groups?.contentName;
+    const content = contentName ? input.contentBindings.get(contentName) : undefined;
+    if (!path || content === undefined) continue;
+    files.push({
+      path,
+      status: 'modified',
+      added: countTextLines(unescapeScriptText(content))
     });
   }
   return files;
@@ -111,12 +154,26 @@ function boundScriptWriteEvidence(input: BoundScriptWriteEvidenceInput): FileEvi
         added: (current?.added ?? 0) + added
       });
     }
+    const variablePattern = new RegExp(`\\b${escapeRegExp(target.name)}\\.write(?:_text)?\\(\\s*(?<contentName>[A-Za-z_]\\w*)\\s*\\)`, 'g');
+    for (const match of input.command.matchAll(variablePattern)) {
+      const contentName = match.groups?.contentName;
+      const content = contentName ? input.contentBindings.get(contentName) : undefined;
+      if (content === undefined) continue;
+      const added = countTextLines(unescapeScriptText(content));
+      const current = files.get(path);
+      files.set(path, {
+        path,
+        status: 'modified',
+        added: (current?.added ?? 0) + added
+      });
+    }
   }
   return [...files.values()];
 }
 
 export function parseShellWriteCommands(projectRoot: string, workdir: string | null, command: string): FileEvidence[] {
   const files: FileEvidence[] = [];
+  const boundContent = contentBindings(command);
   const lines = command.split(/\r?\n/);
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
@@ -145,7 +202,9 @@ export function parseShellWriteCommands(projectRoot: string, workdir: string | n
   }
   files.push(...scriptWriteEvidence({ projectRoot, workdir, pattern: PYTHON_TRIPLE_WRITE_TARGET, command }));
   files.push(...scriptWriteEvidence({ projectRoot, workdir, pattern: PYTHON_WRITE_TARGET, command }));
-  files.push(...boundScriptWriteEvidence({ projectRoot, workdir, command, targets: pythonBoundTargets(command) }));
+  files.push(...variableContentWriteEvidence({ projectRoot, workdir, pattern: PYTHON_CONTENT_VARIABLE_WRITE_TARGET, command, contentBindings: boundContent }));
+  files.push(...boundScriptWriteEvidence({ projectRoot, workdir, command, targets: pythonBoundTargets(command), contentBindings: boundContent }));
   files.push(...scriptWriteEvidence({ projectRoot, workdir, pattern: NODE_WRITE_TARGET, command }));
+  files.push(...variableContentWriteEvidence({ projectRoot, workdir, pattern: NODE_CONTENT_VARIABLE_WRITE_TARGET, command, contentBindings: boundContent }));
   return files;
 }

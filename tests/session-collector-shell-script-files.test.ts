@@ -119,6 +119,29 @@ describe('shell script file evidence', () => {
     }
   });
 
+  it('captures Python content variable writes with line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-content-variable-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'from pathlib import Path',
+          'content = """export const first = true;\\nexport const second = true;\\n"""',
+          "Path('src/generated-content-variable.ts').write_text(content)",
+          'PY'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()]).toMatchObject([
+        { path: 'src/generated-content-variable.ts', status: 'modified', lines_added: 2 }
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it('captures Node writeFileSync targets with line counts', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-node-'));
     try {
@@ -157,6 +180,29 @@ describe('shell script file evidence', () => {
 
       expect([...files.values()]).toMatchObject([
         { path: 'src/generated-node-async.ts', status: 'modified', lines_added: 2 }
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('captures Node content variable writeFile targets with line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-node-content-variable-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "node - <<'JS'",
+          "import { writeFile } from 'node:fs/promises';",
+          'const content = `export const first = true;\\nexport const second = true;\\n`;',
+          "await writeFile('src/generated-node-content-variable.ts', content);",
+          'JS'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()]).toMatchObject([
+        { path: 'src/generated-node-content-variable.ts', status: 'modified', lines_added: 2 }
       ]);
     } finally {
       await rm(dir, { recursive: true, force: true });

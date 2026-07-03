@@ -134,6 +134,22 @@ function parseSurefireSummary(text: string): TestCommandCounts | null {
   return testsRun > 0 ? { testsRun, testsPassed } : null;
 }
 
+function parseGradleSummary(text: string): TestCommandCounts | null {
+  let testsRun = 0;
+  let testsPassed = 0;
+  const pattern = /(\d+)\s+tests?\s+completed\b([^\n]*)/gi;
+  for (const match of text.matchAll(pattern)) {
+    const completed = Number.parseInt(match[1], 10);
+    if (!Number.isFinite(completed) || completed <= 0) continue;
+    const counts = countStatusPairs(match[2]);
+    const failed = counts.failed ?? 0;
+    const skipped = counts.skipped ?? 0;
+    testsRun += completed;
+    testsPassed += Math.max(0, completed - failed - skipped);
+  }
+  return testsRun > 0 ? { testsRun, testsPassed } : null;
+}
+
 function parseTestResultLine(text: string): TestCommandCounts | null {
   let testsRun = 0;
   let testsPassed = 0;
@@ -180,6 +196,9 @@ export function parseTestCommandOutput(stdout: string, stderr: string): TestComm
 
   const surefire = parseSurefireSummary(text);
   if (surefire) return surefire;
+
+  const gradle = parseGradleSummary(text);
+  if (gradle) return gradle;
 
   const summaryLines = text
     .split(/\r?\n/)

@@ -156,6 +156,22 @@ describe('configured test command output parser', () => {
     });
   });
 
+  it('parses Gradle test summary output', () => {
+    const output = [
+      '> Task :app:test',
+      '',
+      'AgentFeedContractTest > publishesWorklog FAILED',
+      '    org.opentest4j.AssertionFailedError at AgentFeedContractTest.java:42',
+      '',
+      '12 tests completed, 2 failed, 3 skipped'
+    ].join('\n');
+
+    expect(parseTestCommandOutput(output, '')).toEqual({
+      testsRun: 12,
+      testsPassed: 7
+    });
+  });
+
   it('parses Python unittest summary output', () => {
     const output = [
       '.......Fs',

@@ -104,6 +104,23 @@ describe('Codex session collector command metrics', () => {
     expect(metrics?.failed_commands).toBe(1);
   });
 
+  it('extracts Gradle summaries from Codex shell calls', async () => {
+    const sessionFile = join(dir, 'codex-gradle-summary.jsonl');
+    const gradleOutput = ['> Task :app:test FAILED', '12 tests completed, 2 failed, 3 skipped'].join('\n');
+    await writeJsonl(sessionFile, codexSessionRows({
+      id: 'codex-gradle-summary',
+      cwd: dir,
+      steps: [{ kind: 'shell', callId: 'gradle-test', cmd: './gradlew test', output: gradleOutput }]
+    }));
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.commands_run).toBe(1);
+    expect(metrics?.tests_run).toBe(12);
+    expect(metrics?.tests_passed).toBe(7);
+    expect(metrics?.failed_commands).toBe(1);
+  });
+
   it('extracts Python unittest summaries from Codex shell calls', async () => {
     const sessionFile = join(dir, 'codex-python-unittest-summary.jsonl');
     const unittestOutput = ['.......Fs', '----------------------------------------------------------------------', 'Ran 9 tests in 0.123s', '', 'FAILED (failures=1, skipped=1)'].join('\n');

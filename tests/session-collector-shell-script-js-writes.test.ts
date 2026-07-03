@@ -194,4 +194,31 @@ describe('shell script JavaScript runtime write evidence', () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it('captures Bun and Deno expression writes without guessed line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-js-runtime-expression-writes-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "bun run <<'JS'",
+          "await Bun.write('dist/bun-data.json', JSON.stringify({ ok: true }));",
+          "await Bun.write('dist/bun-bytes.bin', Buffer.from('abc'));",
+          "await Deno.writeTextFile('dist/deno-data.json', JSON.stringify({ ok: true }));",
+          "await Deno.writeFile('dist/deno-bytes.bin', new TextEncoder().encode('abc'));",
+          'JS'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added]).sort()).toEqual([
+        ['dist/bun-bytes.bin', null],
+        ['dist/bun-data.json', null],
+        ['dist/deno-bytes.bin', null],
+        ['dist/deno-data.json', null]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });

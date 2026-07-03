@@ -19,6 +19,7 @@ const NODE_DIRECT_FILEHANDLE_VARIABLE_WRITE_TARGET = /\(\s*await\s+(?:[A-Za-z_$]
 const NODE_DIRECT_FILEHANDLE_CHANGED_TARGET = /\(\s*await\s+(?:[A-Za-z_$][\w$]*\.)*open\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(['"`])(?<mode>[^'"`]*)\3[\s\S]*?\)\s*\)\.writeFile\(\s*/g;
 const JS_RUNTIME_TEXT_WRITE_TARGET = /\b(?:Bun\.write|Deno\.writeTextFile)\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(['"`])(?<content>[\s\S]*?)\3/g;
 const JS_RUNTIME_VARIABLE_TEXT_WRITE_TARGET = /\b(?:Bun\.write|Deno\.writeTextFile)\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(?<contentName>[A-Za-z_$][\w$]*)\s*(?:,[^\n)]*)?\)/g;
+const JS_RUNTIME_CHANGED_WRITE_TARGET = /\b(?:Bun\.write|Deno\.writeTextFile|Deno\.writeFile)\(\s*(['"`])(?<path>[^'"`]+)\1\s*,/g;
 
 export function nodeContentBindings(command: string): ReadonlyMap<string, string> {
   return contentBindingsFromPatterns(command, [NODE_CONTENT_BINDING]);
@@ -190,6 +191,7 @@ export function nodeScriptWriteEvidence(context: ScriptWriteEvidenceContext, com
     ...directPathChangedEvidence(context, command, NODE_DIRECT_FILEHANDLE_CHANGED_TARGET),
     ...scriptWriteEvidence({ ...context, pattern: JS_RUNTIME_TEXT_WRITE_TARGET, command }),
     ...variableContentWriteEvidence({ ...context, pattern: JS_RUNTIME_VARIABLE_TEXT_WRITE_TARGET, command, contentBindings }),
+    ...directPathChangedEvidence(context, command, JS_RUNTIME_CHANGED_WRITE_TARGET),
     ...nodePathWriteEvidence({ ...context, command, targets: nodePathBindings(command), contentBindings }),
     ...nodeStreamWriteEvidence({ ...context, command, targets: nodeStreamTargets(command), contentBindings }),
     ...nodeStreamWriteEvidence({ ...context, command, targets: nodeFileHandleTargets(command), contentBindings })

@@ -4,6 +4,7 @@ import { countTextLines } from './agent-session-core.js';
 import { contentBindingsFromPatterns, escapeRegExp, mergeAddedEvidence, scriptWriteEvidence, unescapeScriptText, variableContentWriteEvidence, type ScriptWriteEvidenceContext } from './agent-session-shell-script-write-shared.js';
 
 const NODE_CONTENT_BINDING = /\b(?:const|let|var)\s+(?<name>[A-Za-z_$][\w$]*)\s*=\s*(['"`])(?<content>[\s\S]*?)\2\s*;/g;
+const NODE_PATH_BINDING = /\b(?:const|let|var)\s+(?<name>[A-Za-z_$][\w$]*)\s*=\s*(['"`])(?<path>[^'"`]+)\2\s*;/g;
 const NODE_WRITE_TARGET = /\b(?:[A-Za-z_$][\w$]*\.)?(?:writeFile|appendFile)(?:Sync)?\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(['"`])(?<content>[\s\S]*?)\3/g;
 const NODE_CONTENT_VARIABLE_WRITE_TARGET = /\b(?:[A-Za-z_$][\w$]*\.)?(?:writeFile|appendFile)(?:Sync)?\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(?<contentName>[A-Za-z_$][\w$]*)\s*(?:,[^\n)]*)?\)/g;
 const NODE_STREAM_TARGET = /\b(?:const|let|var)\s+(?<name>[A-Za-z_$][\w$]*)\s*=\s*(?:[A-Za-z_$][\w$]*\.)?createWriteStream\(\s*(['"`])(?<path>[^'"`]+)\2[\s\S]*?\)\s*;/g;
@@ -19,19 +20,30 @@ export function nodeContentBindings(command: string): ReadonlyMap<string, string
   return contentBindingsFromPatterns(command, [NODE_CONTENT_BINDING]);
 }
 
-type BoundNodeStream = {
+type BoundNodePath = {
   readonly name: string;
   readonly path: string;
 };
 
-type NodeStreamWriteEvidenceInput = ScriptWriteEvidenceContext & {
+type NodeBoundWriteEvidenceInput = ScriptWriteEvidenceContext & {
   readonly command: string;
-  readonly streams: readonly BoundNodeStream[];
+  readonly targets: readonly BoundNodePath[];
   readonly contentBindings: ReadonlyMap<string, string>;
 };
 
-function nodeStreamTargets(command: string): BoundNodeStream[] {
-  const streams: BoundNodeStream[] = [];
+function nodePathBindings(command: string): BoundNodePath[] {
+  const paths: BoundNodePath[] = [];
+  NODE_PATH_BINDING.lastIndex = 0;
+  for (const match of command.matchAll(NODE_PATH_BINDING)) {
+    const name = match.groups?.name;
+    const path = match.groups?.path;
+    if (name && path) paths.push({ name, path });
+  }
+  return paths;
+}
+
+function nodeStreamTargets(command: string): BoundNodePath[] {
+  const streams: BoundNodePath[] = [];
   NODE_STREAM_TARGET.lastIndex = 0;
   for (const match of command.matchAll(NODE_STREAM_TARGET)) {
     const name = match.groups?.name;
@@ -41,8 +53,8 @@ function nodeStreamTargets(command: string): BoundNodeStream[] {
   return streams;
 }
 
-function nodeFileHandleTargets(command: string): BoundNodeStream[] {
-  const handles: BoundNodeStream[] = [];
+function nodeFileHandleTargets(command: string): BoundNodePath[] {
+  const handles: BoundNodePath[] = [];
   NODE_FILEHANDLE_TARGET.lastIndex = 0;
   for (const match of command.matchAll(NODE_FILEHANDLE_TARGET)) {
     const name = match.groups?.name;
@@ -53,16 +65,42 @@ function nodeFileHandleTargets(command: string): BoundNodeStream[] {
   return handles;
 }
 
-function nodeStreamWriteEvidence(input: NodeStreamWriteEvidenceInput): FileEvidence[] {
+function mergeChangedEvidence(files: Map<string, FileEvidence>, path: string): void {
+  if (!files.has(path)) files.set(path, { path, status: 'modified' });
+}
+
+function nodePathWriteEvidence(input: NodeBoundWriteEvidenceInput): FileEvidence[] {
   const files = new Map<string, FileEvidence>();
-  for (const stream of input.streams) {
-    const path = projectRelativeShellPath(input.projectRoot, input.workdir, stream.path);
+  for (const target of input.targets) {
+    const path = projectRelativeShellPath(input.projectRoot, input.workdir, target.path);
     if (!path) continue;
-    const textPattern = new RegExp(`\\b${escapeRegExp(stream.name)}\\.(?:write|end|writeFile)\\(\\s*(['"\`])(?<content>[\\s\\S]*?)\\1`, 'g');
+    const textPattern = new RegExp(`\\b(?:[A-Za-z_$][\\w$]*\\.)?(?:writeFile|appendFile)(?:Sync)?\\(\\s*${escapeRegExp(target.name)}\\s*,\\s*(['"\`])(?<content>[\\s\\S]*?)\\1`, 'g');
     for (const match of input.command.matchAll(textPattern)) {
       mergeAddedEvidence(files, path, countTextLines(unescapeScriptText(match.groups?.content ?? '')));
     }
-    const variablePattern = new RegExp(`\\b${escapeRegExp(stream.name)}\\.(?:write|end|writeFile)\\(\\s*(?<contentName>[A-Za-z_$][\\w$]*)\\s*(?:,[^\\n)]*)?\\)`, 'g');
+    const variablePattern = new RegExp(`\\b(?:[A-Za-z_$][\\w$]*\\.)?(?:writeFile|appendFile)(?:Sync)?\\(\\s*${escapeRegExp(target.name)}\\s*,\\s*(?<contentName>[A-Za-z_$][\\w$]*)\\s*(?:,[^\\n)]*)?\\)`, 'g');
+    for (const match of input.command.matchAll(variablePattern)) {
+      const contentName = match.groups?.contentName;
+      const content = contentName ? input.contentBindings.get(contentName) : undefined;
+      if (content === undefined) continue;
+      mergeAddedEvidence(files, path, countTextLines(unescapeScriptText(content)));
+    }
+    const targetPattern = new RegExp(`\\b(?:[A-Za-z_$][\\w$]*\\.)?(?:writeFile|appendFile)(?:Sync)?\\(\\s*${escapeRegExp(target.name)}\\s*,`, 'g');
+    if (targetPattern.test(input.command)) mergeChangedEvidence(files, path);
+  }
+  return [...files.values()];
+}
+
+function nodeStreamWriteEvidence(input: NodeBoundWriteEvidenceInput): FileEvidence[] {
+  const files = new Map<string, FileEvidence>();
+  for (const target of input.targets) {
+    const path = projectRelativeShellPath(input.projectRoot, input.workdir, target.path);
+    if (!path) continue;
+    const textPattern = new RegExp(`\\b${escapeRegExp(target.name)}\\.(?:write|end|writeFile)\\(\\s*(['"\`])(?<content>[\\s\\S]*?)\\1`, 'g');
+    for (const match of input.command.matchAll(textPattern)) {
+      mergeAddedEvidence(files, path, countTextLines(unescapeScriptText(match.groups?.content ?? '')));
+    }
+    const variablePattern = new RegExp(`\\b${escapeRegExp(target.name)}\\.(?:write|end|writeFile)\\(\\s*(?<contentName>[A-Za-z_$][\\w$]*)\\s*(?:,[^\\n)]*)?\\)`, 'g');
     for (const match of input.command.matchAll(variablePattern)) {
       const contentName = match.groups?.contentName;
       const content = contentName ? input.contentBindings.get(contentName) : undefined;
@@ -83,7 +121,8 @@ export function nodeScriptWriteEvidence(context: ScriptWriteEvidenceContext, com
     ...variableContentWriteEvidence({ ...context, pattern: NODE_DIRECT_FILEHANDLE_VARIABLE_WRITE_TARGET, command, contentBindings }),
     ...scriptWriteEvidence({ ...context, pattern: JS_RUNTIME_TEXT_WRITE_TARGET, command }),
     ...variableContentWriteEvidence({ ...context, pattern: JS_RUNTIME_VARIABLE_TEXT_WRITE_TARGET, command, contentBindings }),
-    ...nodeStreamWriteEvidence({ ...context, command, streams: nodeStreamTargets(command), contentBindings }),
-    ...nodeStreamWriteEvidence({ ...context, command, streams: nodeFileHandleTargets(command), contentBindings })
+    ...nodePathWriteEvidence({ ...context, command, targets: nodePathBindings(command), contentBindings }),
+    ...nodeStreamWriteEvidence({ ...context, command, targets: nodeStreamTargets(command), contentBindings }),
+    ...nodeStreamWriteEvidence({ ...context, command, targets: nodeFileHandleTargets(command), contentBindings })
   ];
 }

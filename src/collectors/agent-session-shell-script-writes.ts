@@ -39,7 +39,13 @@ function heredocRedirectPath(line: string): string | null {
 function heredocTeePaths(line: string): string[] {
   const args = /(?:^|\s)tee\s+(?<args>[^|<>;&]*)/.exec(line)?.groups?.args?.trim();
   if (!args) return [];
-  return args.split(/\s+/).filter((arg) => arg && !arg.startsWith('-') && arg !== '--');
+  const words: string[] = [];
+  const pattern = /'(?<single>[^']*)'|"(?<double>(?:\\"|[^"])*)"|(?<bare>\S+)/g;
+  for (const match of args.matchAll(pattern)) {
+    const word = match.groups?.single ?? match.groups?.double?.replace(/\\"/g, '"') ?? match.groups?.bare;
+    if (word && !word.startsWith('-') && word !== '--') words.push(word);
+  }
+  return words;
 }
 
 function heredocTarget(line: string): { readonly paths: readonly string[]; readonly delimiter: string } | null {

@@ -111,6 +111,20 @@ describe('configured test command output parser', () => {
     });
   });
 
+  it('aggregates multiple Rust test result summaries from workspace output', () => {
+    const output = [
+      'running 4 tests',
+      'test result: ok. 3 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s',
+      'running 3 tests',
+      'test result: ok. 2 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s'
+    ].join('\n');
+
+    expect(parseTestCommandOutput(output, '')).toEqual({
+      testsRun: 7,
+      testsPassed: 5
+    });
+  });
+
   it('returns null when command output has no reliable test count', () => {
     expect(parseTestCommandOutput('done', '')).toBeNull();
   });

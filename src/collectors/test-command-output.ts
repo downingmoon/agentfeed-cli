@@ -67,10 +67,15 @@ function parseTapSummary(text: string): TestCommandCounts | null {
 }
 
 function parseTestResultLine(text: string): TestCommandCounts | null {
-  const matches = [...text.matchAll(/test result:\s*(?:ok|failed)\.\s*([^\n]+)/gi)];
-  const match = matches.at(-1);
-  if (!match) return null;
-  return countsFromStatusSummary(match[1]);
+  let testsRun = 0;
+  let testsPassed = 0;
+  for (const match of text.matchAll(/test result:\s*(?:ok|failed)\.\s*([^\n]+)/gi)) {
+    const counts = countsFromStatusSummary(match[1]);
+    if (!counts) continue;
+    testsRun += counts.testsRun;
+    testsPassed += counts.testsPassed;
+  }
+  return testsRun > 0 ? { testsRun, testsPassed } : null;
 }
 
 function isTestSummaryLine(line: string): boolean {

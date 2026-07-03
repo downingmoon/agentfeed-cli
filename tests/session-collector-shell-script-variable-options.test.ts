@@ -87,4 +87,30 @@ describe('shell script variable write options', () => {
     }
   });
 
+
+  it('captures direct Node createWriteStream writes with line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-node-direct-stream-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "node - <<'JS'",
+          "import { createWriteStream } from 'node:fs';",
+          'const content = `export const first = true;\nexport const second = true;\n`;',
+          "createWriteStream('src/generated-node-direct-stream.ts').write(content);",
+          "createWriteStream('src/generated-node-direct-stream-end.ts').end('export const third = true;\n');",
+          'JS'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added]).sort()).toEqual([
+        ['src/generated-node-direct-stream-end.ts', 1],
+        ['src/generated-node-direct-stream.ts', 2]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
 });

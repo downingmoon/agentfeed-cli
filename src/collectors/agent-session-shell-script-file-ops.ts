@@ -84,6 +84,47 @@ function installEvidence(projectRoot: string, workdir: string | null, words: rea
   return installed ? [installed] : [];
 }
 
+function modifiedEvidenceForPaths(projectRoot: string, workdir: string | null, paths: readonly string[]): FileEvidence[] {
+  const files: FileEvidence[] = [];
+  for (const rawPath of paths) {
+    if (rawPath === '.') continue;
+    const file = evidence(projectRoot, workdir, rawPath, 'modified');
+    if (file) files.push(file);
+  }
+  return files;
+}
+
+function gitRestoreEvidence(projectRoot: string, workdir: string | null, words: readonly string[]): FileEvidence[] {
+  const paths: string[] = [];
+  let optionsEnded = false;
+  let skipNext = false;
+  for (const word of words.slice(2)) {
+    if (skipNext) {
+      skipNext = false;
+      continue;
+    }
+    if (!optionsEnded && word === '--') {
+      optionsEnded = true;
+      continue;
+    }
+    if (!optionsEnded && (word === '--pathspec-from-file' || word.startsWith('--pathspec-from-file='))) return [];
+    if (!optionsEnded && (word === '-p' || word === '--patch')) return [];
+    if (!optionsEnded && (word === '-s' || word === '--source')) {
+      skipNext = true;
+      continue;
+    }
+    if (!optionsEnded && (word.startsWith('--source=') || word.startsWith('-'))) continue;
+    paths.push(word);
+  }
+  return modifiedEvidenceForPaths(projectRoot, workdir, paths);
+}
+
+function gitCheckoutEvidence(projectRoot: string, workdir: string | null, words: readonly string[]): FileEvidence[] {
+  const delimiter = words.indexOf('--');
+  if (delimiter < 0) return [];
+  return modifiedEvidenceForPaths(projectRoot, workdir, words.slice(delimiter + 1));
+}
+
 export function shellFileOperationEvidence(projectRoot: string, workdir: string | null, line: string): FileEvidence[] {
   const words = shellWords(line);
   const command = words[0];
@@ -93,5 +134,7 @@ export function shellFileOperationEvidence(projectRoot: string, workdir: string 
   if (command === 'mv') return moveEvidence(projectRoot, workdir, words, 1);
   if (command === 'git' && words[1] === 'mv') return moveEvidence(projectRoot, workdir, words, 2);
   if (command === 'git' && words[1] === 'rm') return rmEvidence(projectRoot, workdir, words.slice(1));
+  if (command === 'git' && words[1] === 'restore') return gitRestoreEvidence(projectRoot, workdir, words);
+  if (command === 'git' && words[1] === 'checkout') return gitCheckoutEvidence(projectRoot, workdir, words);
   return [];
 }

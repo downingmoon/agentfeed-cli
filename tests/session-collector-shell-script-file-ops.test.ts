@@ -83,4 +83,32 @@ describe('shell script file operation evidence', () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it('captures deterministic git restore and checkout file targets', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-file-git-restore-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          'git restore src/api.ts "src/old name.ts"',
+          'git restore --source HEAD~1 -- src/config.ts',
+          'git checkout -- package.json',
+          'git checkout HEAD~1 -- src/from-head.ts',
+          'git checkout main',
+          'git restore .'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.status, file.lines_added]).sort()).toEqual([
+        ['package.json', 'modified', null],
+        ['src/api.ts', 'modified', null],
+        ['src/config.ts', 'modified', null],
+        ['src/from-head.ts', 'modified', null],
+        ['src/old name.ts', 'modified', null]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });

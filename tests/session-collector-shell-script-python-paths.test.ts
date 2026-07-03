@@ -52,4 +52,30 @@ describe('shell script Python path bindings', () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it('captures Python Path variable write_text calls with unknown expression content as changed files', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-bound-expression-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'from pathlib import Path',
+          "p = Path('src/api.ts')",
+          's = p.read_text()',
+          "s = s.replace('export const ok = true;', 'export const ok = false;')",
+          'p.write_text(s)',
+          'PY'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added])).toEqual([
+        ['src/api.ts', null]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
 });

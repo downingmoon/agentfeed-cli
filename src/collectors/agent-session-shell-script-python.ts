@@ -122,8 +122,8 @@ function boundScriptWriteEvidence(input: BoundScriptWriteEvidenceInput): FileEvi
     for (const match of input.command.matchAll(variablePattern)) {
       const contentName = match.groups?.contentName;
       const content = contentName ? input.contentBindings.get(contentName) : undefined;
-      if (content === undefined) continue;
-      mergeAddedEvidence(files, path, countTextLines(unescapeScriptText(content)));
+      if (content === undefined) mergeChangedEvidence(files, path);
+      else mergeAddedEvidence(files, path, countTextLines(unescapeScriptText(content)));
     }
   }
   return [...files.values()];

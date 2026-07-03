@@ -45,4 +45,37 @@ describe('shell script Python dump evidence', () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it('captures deterministic nested Python JSON dump literals with line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-nested-json-dump-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'import json',
+          'from pathlib import Path',
+          "json.dump({'first': {'enabled': True}, 'items': ['one', 'two']}, open('src/generated-nested-json.json', 'w'), indent=2)",
+          "json.dump([{'name': 'one'}, {'name': 'two'}], Path('src/generated-nested-list.json').open('w'), indent=2)",
+          "with open('src/generated-nested-handle.json', 'w') as handle:",
+          "    json.dump({'outer': {'inner': False}}, handle, indent=2)",
+          'PY'
+        ].join('\n')
+      }, files);
+
+      const summaries = [...files.values()]
+        .map((file) => [file.path, file.lines_added])
+        .sort((left, right) => String(left[0]).localeCompare(String(right[0])));
+
+      expect(summaries).toEqual([
+        ['src/generated-nested-handle.json', 5],
+        ['src/generated-nested-json.json', 9],
+        ['src/generated-nested-list.json', 8]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
 });

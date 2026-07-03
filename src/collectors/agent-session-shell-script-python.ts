@@ -11,9 +11,9 @@ const PYTHON_PATH_BINDING_TARGET = /\b(?<name>[A-Za-z_]\w*)\s*=\s*Path\(\s*(['"]
 const PYTHON_OPEN_BINDING_TARGET = /\bwith\s+open\(\s*(['"])(?<path>[^'"]+)\1\s*,\s*(['"])(?<mode>[^'"]*)\3[\s\S]*?\)\s+as\s+(?<name>[A-Za-z_]\w*)\s*:/g;
 const PYTHON_DUMP_OPEN_TARGET = /\b(?:json\.dump|yaml\.(?:safe_dump|dump))\([\s\S]*?,\s*open\(\s*(['"])(?<path>[^'"]+)\1\s*,\s*(['"])(?<mode>[^'"]*)\3[\s\S]*?\)/g;
 const PYTHON_DUMP_PATH_OPEN_TARGET = /\b(?:json\.dump|yaml\.(?:safe_dump|dump))\([\s\S]*?,\s*Path\(\s*(['"])(?<path>[^'"]+)\1\s*\)\.open\(\s*(['"])(?<mode>[^'"]*)\3[\s\S]*?\)/g;
-const PYTHON_FLAT_LITERAL_COLLECTION = String.raw`(?<payload>\{[^\n{}\[\]]*\}|\[[^\n{}\[\]]*\])`;
-const PYTHON_DUMP_LITERAL_OPEN_TARGET = new RegExp(String.raw`\b(?<serializer>json\.dump|yaml\.(?:safe_dump|dump))\(\s*${PYTHON_FLAT_LITERAL_COLLECTION}\s*,\s*open\(\s*(?<pathQuote>['"])(?<path>[^'"]+)\k<pathQuote>\s*,\s*(?<modeQuote>['"])(?<mode>[^'"]*)\k<modeQuote>[\s\S]*?\)\s*(?:,[^\n)]*)?\)`, 'g');
-const PYTHON_DUMP_LITERAL_PATH_OPEN_TARGET = new RegExp(String.raw`\b(?<serializer>json\.dump|yaml\.(?:safe_dump|dump))\(\s*${PYTHON_FLAT_LITERAL_COLLECTION}\s*,\s*Path\(\s*(?<pathQuote>['"])(?<path>[^'"]+)\k<pathQuote>\s*\)\.open\(\s*(?<modeQuote>['"])(?<mode>[^'"]*)\k<modeQuote>[\s\S]*?\)\s*(?:,[^\n)]*)?\)`, 'g');
+const PYTHON_LITERAL_COLLECTION = String.raw`(?<payload>\{[^\n]*\}|\[[^\n]*\])`;
+const PYTHON_DUMP_LITERAL_OPEN_TARGET = new RegExp(String.raw`\b(?<serializer>json\.dump|yaml\.(?:safe_dump|dump))\(\s*${PYTHON_LITERAL_COLLECTION}\s*,\s*open\(\s*(?<pathQuote>['"])(?<path>[^'"]+)\k<pathQuote>\s*,\s*(?<modeQuote>['"])(?<mode>[^'"]*)\k<modeQuote>[\s\S]*?\)\s*(?:,[^\n)]*)?\)`, 'g');
+const PYTHON_DUMP_LITERAL_PATH_OPEN_TARGET = new RegExp(String.raw`\b(?<serializer>json\.dump|yaml\.(?:safe_dump|dump))\(\s*${PYTHON_LITERAL_COLLECTION}\s*,\s*Path\(\s*(?<pathQuote>['"])(?<path>[^'"]+)\k<pathQuote>\s*\)\.open\(\s*(?<modeQuote>['"])(?<mode>[^'"]*)\k<modeQuote>[\s\S]*?\)\s*(?:,[^\n)]*)?\)`, 'g');
 
 export function pythonContentBindings(command: string): ReadonlyMap<string, string> {
   return contentBindingsFromPatterns(command, [PYTHON_TRIPLE_CONTENT_BINDING]);
@@ -28,6 +28,11 @@ type BoundScriptWriteEvidenceInput = ScriptWriteEvidenceContext & {
   readonly command: string;
   readonly targets: readonly BoundScriptTarget[];
   readonly contentBindings: ReadonlyMap<string, string>;
+};
+
+type LiteralParseResult = {
+  readonly next: number;
+  readonly lines: number;
 };
 
 function mergeChangedEvidence(files: Map<string, FileEvidence>, path: string): void {
@@ -62,10 +67,102 @@ function literalCollectionItemCount(payload: string): number {
   return items;
 }
 
+function skipLiteralSpace(payload: string, index: number): number {
+  let current = index;
+  while (/\s/.test(payload[current] ?? '')) current += 1;
+  return current;
+}
+
+function skipQuotedLiteral(payload: string, index: number): number {
+  const quote = payload[index];
+  let escaped = false;
+  for (let current = index + 1; current < payload.length; current += 1) {
+    const char = payload[current];
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (char === '\\') {
+      escaped = true;
+      continue;
+    }
+    if (char === quote) return current + 1;
+  }
+  return payload.length;
+}
+
+function skipLiteralScalar(payload: string, index: number): number {
+  if (payload[index] === '"' || payload[index] === "'") return skipQuotedLiteral(payload, index);
+  let current = index;
+  while (current < payload.length && !/[,\]}]/.test(payload[current])) current += 1;
+  return current;
+}
+
+function parseLiteralCollection(payload: string, index: number): LiteralParseResult | null {
+  const isDict = payload[index] === '{';
+  const close = isDict ? '}' : ']';
+  let current = skipLiteralSpace(payload, index + 1);
+  if (payload[current] === close) return { next: current + 1, lines: 1 };
+  let lines = 2;
+  while (current < payload.length) {
+    if (isDict) {
+      current = payload[current] === '"' || payload[current] === "'"
+        ? skipQuotedLiteral(payload, current)
+        : skipLiteralScalar(payload, current);
+      current = skipLiteralSpace(payload, current);
+      if (payload[current] !== ':') return null;
+      current = skipLiteralSpace(payload, current + 1);
+    }
+    const value = parseLiteralValue(payload, current);
+    if (!value) return null;
+    lines += value.lines;
+    current = skipLiteralSpace(payload, value.next);
+    if (payload[current] === ',') {
+      current = skipLiteralSpace(payload, current + 1);
+      continue;
+    }
+    if (payload[current] === close) return { next: current + 1, lines };
+    return null;
+  }
+  return null;
+}
+
+function parseLiteralValue(payload: string, index: number): LiteralParseResult | null {
+  const current = skipLiteralSpace(payload, index);
+  if (payload[current] === '{' || payload[current] === '[') return parseLiteralCollection(payload, current);
+  const next = skipLiteralScalar(payload, current);
+  return next > current ? { next, lines: 1 } : null;
+}
+
+function jsonPrettyLiteralLineCount(payload: string): number | null {
+  const parsed = parseLiteralValue(payload, 0);
+  if (!parsed) return null;
+  return skipLiteralSpace(payload, parsed.next) === payload.length ? parsed.lines : null;
+}
+
+function literalHasNestedCollection(payload: string): boolean {
+  let depth = 0;
+  for (let index = 0; index < payload.length; index += 1) {
+    const char = payload[index];
+    if (char === '"' || char === "'") {
+      index = skipQuotedLiteral(payload, index) - 1;
+      continue;
+    }
+    if (char === '{' || char === '[') {
+      if (depth > 0) return true;
+      depth += 1;
+    } else if (char === '}' || char === ']') {
+      depth = Math.max(0, depth - 1);
+    }
+  }
+  return false;
+}
+
 function literalDumpLineCount(serializer: string, payload: string, call: string): number | null {
   const items = literalCollectionItemCount(payload);
-  if (serializer === 'json.dump') return /,\s*indent\s*=/.test(call) ? items + 2 : 1;
+  if (serializer === 'json.dump') return /,\s*indent\s*=/.test(call) ? jsonPrettyLiteralLineCount(payload) : 1;
   if (/,\s*default_flow_style\s*=\s*True\b/.test(call)) return null;
+  if (literalHasNestedCollection(payload)) return null;
   return Math.max(items, 1);
 }
 
@@ -97,7 +194,7 @@ function boundScriptWriteEvidence(input: BoundScriptWriteEvidenceInput): FileEvi
     for (const match of input.command.matchAll(dumpPattern)) {
       if (match[0]) mergeChangedEvidence(files, path);
     }
-    const literalDumpPattern = new RegExp(`\\b(?<serializer>json\\.dump|yaml\\.(?:safe_dump|dump))\\(\\s*${PYTHON_FLAT_LITERAL_COLLECTION}\\s*,\\s*${escapeRegExp(target.name)}\\s*(?:,[^\\n)]*)?\\)`, 'g');
+    const literalDumpPattern = new RegExp(`\\b(?<serializer>json\\.dump|yaml\\.(?:safe_dump|dump))\\(\\s*${PYTHON_LITERAL_COLLECTION}\\s*,\\s*${escapeRegExp(target.name)}\\s*(?:,[^\\n)]*)?\\)`, 'g');
     for (const match of input.command.matchAll(literalDumpPattern)) {
       const added = literalDumpLineCount(match.groups?.serializer ?? '', match.groups?.payload ?? '', match[0]);
       if (added != null) mergeAddedEvidence(files, path, added);

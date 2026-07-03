@@ -137,7 +137,7 @@ function literalHasNestedCollection(payload: string): boolean {
 export function literalDumpLineCount(serializer: string, payload: string, call: string): number | null {
   const items = literalCollectionItemCount(payload);
   if (serializer === 'json.dump') return /,\s*indent\s*=/.test(call) ? jsonPrettyLiteralLineCount(payload) : 1;
-  if (/,\s*default_flow_style\s*=\s*True\b/.test(call)) return null;
+  if (/,\s*default_flow_style\s*=\s*True\b/.test(call)) return 1;
   if (literalHasNestedCollection(payload)) return yamlBlockLiteralLineCount(payload);
   return Math.max(items, 1);
 }

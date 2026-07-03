@@ -110,4 +110,36 @@ describe('shell script Python dump evidence', () => {
     }
   });
 
+  it('captures Python YAML flow-style dump literals as one-line writes', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-flow-yaml-dump-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'import yaml',
+          'from pathlib import Path',
+          "yaml.safe_dump({'first': True, 'second': True}, open('src/generated-flow-yaml.yml', 'w'), default_flow_style=True)",
+          "yaml.dump([{'name': 'one'}, {'name': 'two'}], Path('src/generated-flow-list.yml').open('w'), default_flow_style=True)",
+          "with open('src/generated-flow-handle.yml', 'w') as handle:",
+          "    yaml.safe_dump({'first': {'enabled': True}, 'items': ['one', 'two']}, handle, default_flow_style=True)",
+          'PY'
+        ].join('\n')
+      }, files);
+
+      const summaries = [...files.values()]
+        .map((file) => [file.path, file.lines_added])
+        .sort((left, right) => String(left[0]).localeCompare(String(right[0])));
+
+      expect(summaries).toEqual([
+        ['src/generated-flow-handle.yml', 1],
+        ['src/generated-flow-list.yml', 1],
+        ['src/generated-flow-yaml.yml', 1]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
 });

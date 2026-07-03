@@ -118,6 +118,22 @@ function parseUnittestSummary(text: string): TestCommandCounts | null {
   return { testsRun, testsPassed };
 }
 
+function parseSurefireSummary(text: string): TestCommandCounts | null {
+  let testsRun = 0;
+  let testsPassed = 0;
+  const pattern = /Tests run:\s*(\d+),\s*Failures:\s*(\d+),\s*Errors:\s*(\d+),\s*Skipped:\s*(\d+)/gi;
+  for (const match of text.matchAll(pattern)) {
+    const runCount = Number.parseInt(match[1], 10);
+    const failures = Number.parseInt(match[2], 10);
+    const errors = Number.parseInt(match[3], 10);
+    const skipped = Number.parseInt(match[4], 10);
+    if (![runCount, failures, errors, skipped].every(Number.isFinite) || runCount <= 0) continue;
+    testsRun += runCount;
+    testsPassed += Math.max(0, runCount - failures - errors - skipped);
+  }
+  return testsRun > 0 ? { testsRun, testsPassed } : null;
+}
+
 function parseTestResultLine(text: string): TestCommandCounts | null {
   let testsRun = 0;
   let testsPassed = 0;
@@ -161,6 +177,9 @@ export function parseTestCommandOutput(stdout: string, stderr: string): TestComm
 
   const unittest = parseUnittestSummary(text);
   if (unittest) return unittest;
+
+  const surefire = parseSurefireSummary(text);
+  if (surefire) return surefire;
 
   const summaryLines = text
     .split(/\r?\n/)

@@ -141,6 +141,21 @@ describe('configured test command output parser', () => {
     });
   });
 
+  it('parses Maven Surefire summary output', () => {
+    const output = [
+      '[INFO] -------------------------------------------------------',
+      '[INFO]  T E S T S',
+      '[INFO] -------------------------------------------------------',
+      '[INFO] Running com.example.AgentFeedContractTest',
+      '[ERROR] Tests run: 8, Failures: 1, Errors: 1, Skipped: 2, Time elapsed: 0.421 s <<< FAILURE! - in com.example.AgentFeedContractTest'
+    ].join('\n');
+
+    expect(parseTestCommandOutput(output, '')).toEqual({
+      testsRun: 8,
+      testsPassed: 4
+    });
+  });
+
   it('parses Python unittest summary output', () => {
     const output = [
       '.......Fs',

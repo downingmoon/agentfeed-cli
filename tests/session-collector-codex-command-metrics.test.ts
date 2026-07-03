@@ -87,6 +87,23 @@ describe('Codex session collector command metrics', () => {
     expect(metrics?.failed_commands).toBe(1);
   });
 
+  it('extracts Maven Surefire summaries from Codex shell calls', async () => {
+    const sessionFile = join(dir, 'codex-maven-surefire-summary.jsonl');
+    const mavenOutput = '[ERROR] Tests run: 8, Failures: 1, Errors: 1, Skipped: 2, Time elapsed: 0.421 s <<< FAILURE!';
+    await writeJsonl(sessionFile, codexSessionRows({
+      id: 'codex-maven-surefire-summary',
+      cwd: dir,
+      steps: [{ kind: 'shell', callId: 'maven-test', cmd: 'mvn test', output: mavenOutput }]
+    }));
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.commands_run).toBe(1);
+    expect(metrics?.tests_run).toBe(8);
+    expect(metrics?.tests_passed).toBe(4);
+    expect(metrics?.failed_commands).toBe(1);
+  });
+
   it('extracts Python unittest summaries from Codex shell calls', async () => {
     const sessionFile = join(dir, 'codex-python-unittest-summary.jsonl');
     const unittestOutput = ['.......Fs', '----------------------------------------------------------------------', 'Ran 9 tests in 0.123s', '', 'FAILED (failures=1, skipped=1)'].join('\n');

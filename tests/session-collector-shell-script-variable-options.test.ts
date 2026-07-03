@@ -202,6 +202,28 @@ describe('shell script variable write options', () => {
   });
 
 
+  it('captures shell printf and echo redirects with line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-literal-redirects-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "printf 'export const first = true;\\nexport const second = true;\\n' > src/generated-printf.ts",
+          "echo 'export const third = true;' > src/generated-echo.ts"
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added]).sort()).toEqual([
+        ['src/generated-echo.ts', 1],
+        ['src/generated-printf.ts', 2]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+
   it('captures Bun and Deno text writes with line counts', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-js-runtime-writes-'));
     try {

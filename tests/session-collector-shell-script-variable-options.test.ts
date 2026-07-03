@@ -171,6 +171,37 @@ describe('shell script variable write options', () => {
   });
 
 
+  it('captures shell apply_patch heredoc file evidence with line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-apply-patch-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "apply_patch <<'PATCH'",
+          '*** Begin Patch',
+          '*** Add File: src/generated-patch.ts',
+          '+export const first = true;',
+          '+export const second = true;',
+          '*** Update File: src/api.ts',
+          '@@',
+          '-export const ok = true;',
+          '+export const ok = false;',
+          '*** End Patch',
+          'PATCH'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.status, file.lines_added, file.lines_removed]).sort()).toEqual([
+        ['src/api.ts', 'modified', 1, 1],
+        ['src/generated-patch.ts', 'added', 2, 0]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+
   it('captures Bun and Deno text writes with line counts', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-js-runtime-writes-'));
     try {

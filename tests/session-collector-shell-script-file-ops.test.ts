@@ -33,4 +33,29 @@ describe('shell script file operation evidence', () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it('captures deterministic cp file targets without claiming source changes', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-file-cp-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          'cp package.json package.json.bak',
+          'cp -f "src/old name.ts" src/new-name.ts',
+          'cp --force src/api.ts src/api-copy.ts',
+          'cp -R templates generated',
+          'cp src/a.ts src/b.ts src/out'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.status, file.lines_added]).sort()).toEqual([
+        ['package.json.bak', 'modified', null],
+        ['src/api-copy.ts', 'modified', null],
+        ['src/new-name.ts', 'modified', null]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });

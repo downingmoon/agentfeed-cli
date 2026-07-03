@@ -97,6 +97,29 @@ describe('Codex session collector command metrics', () => {
     expect(metrics?.failed_commands).toBe(1);
   });
 
+  it('extracts Python unittest summaries from Codex shell calls', async () => {
+    const sessionFile = join(dir, 'codex-python-unittest-summary.jsonl');
+    const unittestOutput = [
+      '.......Fs',
+      '----------------------------------------------------------------------',
+      'Ran 9 tests in 0.123s',
+      '',
+      'FAILED (failures=1, skipped=1)'
+    ].join('\n');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-python-unittest-summary', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'python -m unittest discover', workdir: dir }), call_id: 'python-unittest' } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'python-unittest', output: unittestOutput } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.commands_run).toBe(1);
+    expect(metrics?.tests_run).toBe(9);
+    expect(metrics?.tests_passed).toBe(7);
+    expect(metrics?.failed_commands).toBe(1);
+  });
+
   it('extracts go test JSON events and marks failed events as failed commands', async () => {
     const sessionFile = join(dir, 'codex-go-json-test-events.jsonl');
     const goJsonOutput = [

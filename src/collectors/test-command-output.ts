@@ -99,6 +99,25 @@ function parseGoTestJsonSummary(text: string): TestCommandCounts | null {
   return testsRun > 0 ? { testsRun, testsPassed } : null;
 }
 
+function countNamedStatus(text: string, name: string): number {
+  const pattern = new RegExp(`${name}=(\\d+)`, 'i');
+  const match = pattern.exec(text);
+  return match ? Number.parseInt(match[1], 10) : 0;
+}
+
+function parseUnittestSummary(text: string): TestCommandCounts | null {
+  const matches = [...text.matchAll(/(?:^|\n)\s*Ran\s+(\d+)\s+tests?\s+in\s+[^\n]+/gi)];
+  const match = matches.at(-1);
+  if (!match) return null;
+  const testsRun = Number.parseInt(match[1], 10);
+  if (!Number.isFinite(testsRun) || testsRun <= 0) return null;
+  const failures = countNamedStatus(text, 'failures');
+  const errors = countNamedStatus(text, 'errors');
+  const skipped = countNamedStatus(text, 'skipped');
+  const testsPassed = Math.max(0, testsRun - failures - errors - skipped);
+  return { testsRun, testsPassed };
+}
+
 function parseTestResultLine(text: string): TestCommandCounts | null {
   let testsRun = 0;
   let testsPassed = 0;
@@ -139,6 +158,9 @@ export function parseTestCommandOutput(stdout: string, stderr: string): TestComm
 
   const cargoLike = parseTestResultLine(text);
   if (cargoLike) return cargoLike;
+
+  const unittest = parseUnittestSummary(text);
+  if (unittest) return unittest;
 
   const summaryLines = text
     .split(/\r?\n/)

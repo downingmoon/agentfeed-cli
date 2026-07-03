@@ -141,6 +141,36 @@ describe('configured test command output parser', () => {
     });
   });
 
+  it('parses Python unittest summary output', () => {
+    const output = [
+      '.......Fs',
+      '----------------------------------------------------------------------',
+      'Ran 9 tests in 0.123s',
+      '',
+      'FAILED (failures=1, skipped=1)'
+    ].join('\n');
+
+    expect(parseTestCommandOutput(output, '')).toEqual({
+      testsRun: 9,
+      testsPassed: 7
+    });
+  });
+
+  it('parses successful Python unittest output with skipped tests', () => {
+    const output = [
+      '.....s',
+      '----------------------------------------------------------------------',
+      'Ran 6 tests in 0.050s',
+      '',
+      'OK (skipped=1)'
+    ].join('\n');
+
+    expect(parseTestCommandOutput(output, '')).toEqual({
+      testsRun: 6,
+      testsPassed: 5
+    });
+  });
+
   it('returns null when command output has no reliable test count', () => {
     expect(parseTestCommandOutput('done', '')).toBeNull();
   });

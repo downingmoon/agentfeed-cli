@@ -1,3 +1,4 @@
+import { isAbsolute, resolve } from 'node:path';
 import { countTextLines } from './agent-session-core.js';
 import type { FileEvidence } from './agent-session-shell-file-evidence.js';
 import { projectRelativeShellPath } from './agent-session-shell-paths.js';
@@ -14,6 +15,8 @@ const SHELL_PRINTF_FORMAT_SINGLE_REDIRECT = /^\s*printf\s+(?:--\s+)?'(?<format>[
 const SHELL_PRINTF_FORMAT_DOUBLE_REDIRECT = /^\s*printf\s+(?:--\s+)?"(?<format>(?:\\"|[^"])*)"(?<args>.*?)\s*(?:\d?>|>>|>)\s*(['"]?)(?<path>[^'"\s;&|<>]+)\3/;
 const SHELL_ECHO_SINGLE_REDIRECT = /^\s*echo\s+(?<options>-[A-Za-z]+\s+)?'(?<content>[^']*)'\s*(?:\d?>|>>|>)\s*(['"]?)(?<path>[^'"\s;&|<>]+)\3/;
 const SHELL_ECHO_DOUBLE_REDIRECT = /^\s*echo\s+(?<options>-[A-Za-z]+\s+)?"(?<content>(?:\\"|[^"])*)"\s*(?:\d?>|>>|>)\s*(['"]?)(?<path>[^'"\s;&|<>]+)\3/;
+const SHELL_CD_PREFIX = /^\s*cd\s+(['"]?)(?<path>[^'"\s;&|<>]+)\1\s*(?:&&|;)\s*(?<rest>.*)$/;
+const SHELL_CD_LINE = /^\s*cd\s+(['"]?)(?<path>[^'"\s;&|<>]+)\1\s*$/;
 
 type ApplyPatchFile = {
   readonly path: string;
@@ -122,13 +125,46 @@ function shellLiteralRedirectEvidence(projectRoot: string, workdir: string | nul
   return { path, status: 'modified', added: countTextLines(content) };
 }
 
+function shellWorkdir(projectRoot: string, workdir: string | null, rawPath: string): string | null {
+  if (rawPath === '.') return workdir ?? projectRoot;
+  const path = projectRelativeShellPath(projectRoot, workdir, rawPath);
+  return path ? resolve(projectRoot, path) : null;
+}
+
+function nextShellWorkdir(projectRoot: string, workdir: string | null, insideProject: boolean, rawPath: string): string | null {
+  if (!insideProject && !isAbsolute(rawPath)) return null;
+  return shellWorkdir(projectRoot, insideProject ? workdir : null, rawPath);
+}
+
 export function parseShellWriteCommands(projectRoot: string, workdir: string | null, command: string): FileEvidence[] {
   const files: FileEvidence[] = [];
-  const context = { projectRoot, workdir };
   const boundContent = contentBindings(command);
   const lines = command.split(/\r?\n/);
+  let currentWorkdir = workdir;
+  let workdirInsideProject = true;
   for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
+    let line = lines[index];
+    const cdPrefix = SHELL_CD_PREFIX.exec(line);
+    if (cdPrefix?.groups?.path) {
+      const nextWorkdir = nextShellWorkdir(projectRoot, currentWorkdir, workdirInsideProject, cdPrefix.groups.path);
+      if (!nextWorkdir) {
+        workdirInsideProject = false;
+        continue;
+      }
+      currentWorkdir = nextWorkdir;
+      workdirInsideProject = true;
+      line = cdPrefix.groups.rest ?? '';
+    } else {
+      const cdLine = SHELL_CD_LINE.exec(line);
+      if (cdLine?.groups?.path) {
+        const nextWorkdir = nextShellWorkdir(projectRoot, currentWorkdir, workdirInsideProject, cdLine.groups.path);
+        workdirInsideProject = Boolean(nextWorkdir);
+        if (nextWorkdir) currentWorkdir = nextWorkdir;
+      }
+      if (cdLine) continue;
+    }
+    if (!workdirInsideProject) continue;
+
     const applyPatch = applyPatchDelimiter(line);
     if (applyPatch) {
       const content: string[] = [];
@@ -139,7 +175,7 @@ export function parseShellWriteCommands(projectRoot: string, workdir: string | n
         }
         content.push(lines[cursor]);
       }
-      files.push(...parseApplyPatchEvidence(projectRoot, workdir, content));
+      files.push(...parseApplyPatchEvidence(projectRoot, currentWorkdir, content));
       continue;
     }
 
@@ -153,12 +189,12 @@ export function parseShellWriteCommands(projectRoot: string, workdir: string | n
         }
         content.push(lines[cursor]);
       }
-      const path = projectRelativeShellPath(projectRoot, workdir, heredoc.path);
+      const path = projectRelativeShellPath(projectRoot, currentWorkdir, heredoc.path);
       if (path) files.push({ path, status: 'modified', added: countTextLines(content.join('\n')) });
       continue;
     }
 
-    const literalRedirect = shellLiteralRedirectEvidence(projectRoot, workdir, line);
+    const literalRedirect = shellLiteralRedirectEvidence(projectRoot, currentWorkdir, line);
     if (literalRedirect) {
       files.push(literalRedirect);
       continue;
@@ -168,10 +204,11 @@ export function parseShellWriteCommands(projectRoot: string, workdir: string | n
     for (const match of line.matchAll(SHELL_REDIRECT_TARGET)) {
       const rawPath = match[2];
       if (!rawPath || /^\d?>&/.test(match[0])) continue;
-      const path = projectRelativeShellPath(projectRoot, workdir, rawPath);
+      const path = projectRelativeShellPath(projectRoot, currentWorkdir, rawPath);
       if (path) files.push({ path, status: 'modified' });
     }
   }
+  const context = { projectRoot, workdir };
   files.push(...pythonScriptWriteEvidence(context, command, boundContent));
   files.push(...nodeScriptWriteEvidence(context, command, boundContent));
   return files;

@@ -54,4 +54,31 @@ describe('shell script Node path bindings', () => {
     }
   });
 
+  it('captures Node path.join writes when the base path is bound from path.resolve', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-node-join-path-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "node - <<'NODE'",
+          "const fs = require('fs');",
+          "const path = require('path');",
+          "const out = path.resolve('.omo/evidence/carrot-integration-manual-qa');",
+          "const content = 'export const first = true;\nexport const second = true;\n';",
+          "fs.writeFileSync(path.join(out, 'browser-ui-scenarios.json'), JSON.stringify([{ ok: true }], null, 2));",
+          "await fs.promises.writeFile(path.join(out, 'generated-summary.ts'), content, 'utf8');",
+          'NODE'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added]).sort()).toEqual([
+        ['.omo/evidence/carrot-integration-manual-qa/browser-ui-scenarios.json', null],
+        ['.omo/evidence/carrot-integration-manual-qa/generated-summary.ts', 2]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
 });

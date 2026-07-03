@@ -5,6 +5,7 @@ import { contentBindingsFromPatterns, escapeRegExp, mergeAddedEvidence, scriptWr
 
 const NODE_CONTENT_BINDING = /\b(?:const|let|var)\s+(?<name>[A-Za-z_$][\w$]*)\s*=\s*(['"`])(?<content>[\s\S]*?)\2\s*;/g;
 const NODE_PATH_BINDING = /\b(?:const|let|var)\s+(?<name>[A-Za-z_$][\w$]*)\s*=\s*(['"`])(?<path>[^'"`]+)\2\s*;/g;
+const NODE_RESOLVED_PATH_BINDING = /\b(?:const|let|var)\s+(?<name>[A-Za-z_$][\w$]*)\s*=\s*(?:[A-Za-z_$][\w$]*\.)?(?:join|resolve)\(\s*(['"`])(?<path>[^'"`]+)\2\s*\)\s*;/g;
 const NODE_WRITE_TARGET = /\b(?:[A-Za-z_$][\w$]*\.)?(?:writeFile|appendFile)(?:Sync)?\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(['"`])(?<content>[\s\S]*?)\3/g;
 const NODE_CONTENT_VARIABLE_WRITE_TARGET = /\b(?:[A-Za-z_$][\w$]*\.)?(?:writeFile|appendFile)(?:Sync)?\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(?<contentName>[A-Za-z_$][\w$]*)\s*(?:,[^\n)]*)?\)/g;
 const NODE_STREAM_TARGET = /\b(?:const|let|var)\s+(?<name>[A-Za-z_$][\w$]*)\s*=\s*(?:[A-Za-z_$][\w$]*\.)?createWriteStream\(\s*(['"`])(?<path>[^'"`]+)\2[\s\S]*?\)\s*;/g;
@@ -33,13 +34,30 @@ type NodeBoundWriteEvidenceInput = ScriptWriteEvidenceContext & {
 
 function nodePathBindings(command: string): BoundNodePath[] {
   const paths: BoundNodePath[] = [];
-  NODE_PATH_BINDING.lastIndex = 0;
-  for (const match of command.matchAll(NODE_PATH_BINDING)) {
-    const name = match.groups?.name;
-    const path = match.groups?.path;
-    if (name && path) paths.push({ name, path });
+  for (const pattern of [NODE_PATH_BINDING, NODE_RESOLVED_PATH_BINDING]) {
+    pattern.lastIndex = 0;
+    for (const match of command.matchAll(pattern)) {
+      const name = match.groups?.name;
+      const path = match.groups?.path;
+      if (name && path) paths.push({ name, path });
+    }
   }
   return paths;
+}
+
+function joinedNodePath(basePath: string, rawSegments: string): string | null {
+  const segments: string[] = [];
+  const pattern = /\s*,\s*(['"`])(?<segment>[^'"`]*?)\1/g;
+  let cursor = 0;
+  for (const match of rawSegments.matchAll(pattern)) {
+    if (match.index !== cursor) return null;
+    const segment = match.groups?.segment;
+    if (!segment || segment.includes('${')) return null;
+    segments.push(segment);
+    cursor = match.index + match[0].length;
+  }
+  if (!segments.length || rawSegments.slice(cursor).trim()) return null;
+  return [basePath, ...segments].join('/').replace(/\/+/g, '/');
 }
 
 function nodeStreamTargets(command: string): BoundNodePath[] {
@@ -87,6 +105,28 @@ function nodePathWriteEvidence(input: NodeBoundWriteEvidenceInput): FileEvidence
     }
     const targetPattern = new RegExp(`\\b(?:[A-Za-z_$][\\w$]*\\.)?(?:writeFile|appendFile)(?:Sync)?\\(\\s*${escapeRegExp(target.name)}\\s*,`, 'g');
     if (targetPattern.test(input.command)) mergeChangedEvidence(files, path);
+
+    const joinedTarget = `(?:[A-Za-z_$][\\w$]*\\.)?(?:join|resolve)\\(\\s*${escapeRegExp(target.name)}(?<segments>[^)]*)\\)`;
+    const joinedTextPattern = new RegExp(`\\b(?:[A-Za-z_$][\\w$]*\\.)*(?:writeFile|appendFile)(?:Sync)?\\(\\s*${joinedTarget}\\s*,\\s*(['"\`])(?<content>[\\s\\S]*?)\\2`, 'g');
+    for (const match of input.command.matchAll(joinedTextPattern)) {
+      const joinedPath = joinedNodePath(target.path, match.groups?.segments ?? '');
+      const relativePath = joinedPath ? projectRelativeShellPath(input.projectRoot, input.workdir, joinedPath) : null;
+      if (relativePath) mergeAddedEvidence(files, relativePath, countTextLines(unescapeScriptText(match.groups?.content ?? '')));
+    }
+    const joinedVariablePattern = new RegExp(`\\b(?:[A-Za-z_$][\\w$]*\\.)*(?:writeFile|appendFile)(?:Sync)?\\(\\s*${joinedTarget}\\s*,\\s*(?<contentName>[A-Za-z_$][\\w$]*)\\s*(?:,[^\\n)]*)?\\)`, 'g');
+    for (const match of input.command.matchAll(joinedVariablePattern)) {
+      const joinedPath = joinedNodePath(target.path, match.groups?.segments ?? '');
+      const relativePath = joinedPath ? projectRelativeShellPath(input.projectRoot, input.workdir, joinedPath) : null;
+      const contentName = match.groups?.contentName;
+      const content = contentName ? input.contentBindings.get(contentName) : undefined;
+      if (relativePath && content !== undefined) mergeAddedEvidence(files, relativePath, countTextLines(unescapeScriptText(content)));
+    }
+    const joinedChangedPattern = new RegExp(`\\b(?:[A-Za-z_$][\\w$]*\\.)*(?:writeFile|appendFile)(?:Sync)?\\(\\s*${joinedTarget}\\s*,`, 'g');
+    for (const match of input.command.matchAll(joinedChangedPattern)) {
+      const joinedPath = joinedNodePath(target.path, match.groups?.segments ?? '');
+      const relativePath = joinedPath ? projectRelativeShellPath(input.projectRoot, input.workdir, joinedPath) : null;
+      if (relativePath) mergeChangedEvidence(files, relativePath);
+    }
   }
   return [...files.values()];
 }

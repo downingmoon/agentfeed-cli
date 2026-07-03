@@ -3,7 +3,7 @@ import { readSessionJsonlRecords } from './agent-session-files.js';
 import { isAntigravityTranscript, parseAntigravityTranscript } from './agent-session-antigravity.js';
 import { asRecord, asString, countTextLines, explicitCostUsd, finalizeAgentSession, inferEffectiveCollectionWindow, numeric, pushSource, relativeProjectPath, upsertFile, type AgentSessionMetrics } from './agent-session-core.js';
 import { hasCollectionWindowBoundary, parseBoundaryMillis, parseIsoMillis, rowInAgentCollectionWindow, rowTimestampMillis } from './agent-session-window.js';
-import { commandFailed, failedStatus, isTestCommand } from './agent-session-tooling.js';
+import { commandFailed, failedStatus, isTestCommand, toolOutputFailed } from './agent-session-tooling.js';
 import { applyShellFileEvidence } from './agent-session-shell-files.js';
 
 function geminiTokenTotal(tokens: Record<string, unknown>): number {
@@ -68,26 +68,28 @@ export async function parseGeminiSessionFile(cwd: string, sessionFile: string, w
       const name = asString(call.name);
       const args = asRecord(call.args) ?? {};
       const status = asString(call.status);
+      const output = asString(call.resultDisplay) ?? '';
       const failed = failedStatus(status);
+      const fileEditFailed = failed || toolOutputFailed(output);
       if (name === 'activate_skill') {
         const skill = asString(args.name) ?? asString(args.skill_name) ?? asString(args.skillName);
         if (skill && !failed) skills.add(skill);
       } else if (name === 'write_file') {
-        if (!failed) {
+        if (!fileEditFailed) {
           const rel = relativeProjectPath(cwd, asString(args.file_path) ?? '');
           if (rel) upsertFile(files, rel, { status: 'added', added: countTextLines(asString(args.content) ?? ''), removed: 0 });
         }
       } else if (name === 'replace') {
-        if (!failed) {
+        if (!fileEditFailed) {
           const rel = relativeProjectPath(cwd, asString(args.file_path) ?? '');
           if (rel) upsertFile(files, rel, { status: 'modified', added: countTextLines(asString(args.new_string) ?? ''), removed: countTextLines(asString(args.old_string) ?? '') });
         }
       } else if (name === 'run_shell_command') {
         commandsRun += 1;
         const command = asString(args.command) ?? '';
-        const commandDidFail = failed || commandFailed(asString(call.resultDisplay) ?? '');
+        const commandDidFail = failed || commandFailed(output);
         if (commandDidFail) failedCommands += 1;
-        else applyShellFileEvidence(cwd, { command, workdir: asString(args.cwd) ?? asString(args.Cwd), output: asString(call.resultDisplay) ?? '' }, files);
+        else applyShellFileEvidence(cwd, { command, workdir: asString(args.cwd) ?? asString(args.Cwd), output }, files);
         if (isTestCommand(command)) {
           testsRun += 1;
           if (commandDidFail) failedTestCommands += 1;

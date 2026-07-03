@@ -27,14 +27,22 @@ function heredocDelimiter(line: string): string | null {
   return /<<\s*['"]?(?<delimiter>[A-Za-z0-9_:-]+)['"]?/.exec(line)?.groups?.delimiter ?? null;
 }
 
+function heredocRedirectPath(line: string): string | null {
+  SHELL_REDIRECT_TARGET.lastIndex = 0;
+  const redirects = [...line.matchAll(SHELL_REDIRECT_TARGET)]
+    .filter((match) => !/^\s*[2-9]>/.test(match[0]))
+    .map((match) => match[2])
+    .filter((path) => path && path !== '/dev/null');
+  return redirects.at(-1) ?? null;
+}
+
 function heredocTarget(line: string): { readonly path: string; readonly delimiter: string } | null {
   const delimiter = heredocDelimiter(line);
   if (!delimiter) return null;
   SHELL_TEE_TARGET.lastIndex = 0;
   const tee = [...line.matchAll(SHELL_TEE_TARGET)].at(-1)?.[2];
   if (tee) return { path: tee, delimiter };
-  SHELL_REDIRECT_TARGET.lastIndex = 0;
-  const redirect = [...line.matchAll(SHELL_REDIRECT_TARGET)].at(-1)?.[2];
+  const redirect = heredocRedirectPath(line);
   if (redirect) return { path: redirect, delimiter };
   return null;
 }

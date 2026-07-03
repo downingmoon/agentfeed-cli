@@ -126,4 +126,26 @@ describe('shell script variable write options', () => {
     }
   });
 
+  it('captures shell heredoc stdout targets before stderr redirects', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-heredoc-stderr-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "cat <<'EOF' > src/generated-cat.ts 2>/dev/null",
+          'export const first = true;',
+          'export const second = true;',
+          'EOF'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added])).toEqual([
+        ['src/generated-cat.ts', 2]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
 });

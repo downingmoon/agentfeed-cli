@@ -97,6 +97,30 @@ describe('Codex session collector command metrics', () => {
     expect(metrics?.failed_commands).toBe(1);
   });
 
+  it('extracts go test JSON events and marks failed events as failed commands', async () => {
+    const sessionFile = join(dir, 'codex-go-json-test-events.jsonl');
+    const goJsonOutput = [
+      '{"Action":"run","Package":"example.test","Test":"TestCreateDraft"}',
+      '{"Action":"pass","Package":"example.test","Test":"TestCreateDraft"}',
+      '{"Action":"run","Package":"example.test","Test":"TestPublishDraft"}',
+      '{"Action":"fail","Package":"example.test","Test":"TestPublishDraft"}',
+      '{"Action":"skip","Package":"example.test","Test":"TestLegacyImport"}',
+      '{"Action":"fail","Package":"example.test"}'
+    ].join('\n');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-go-json-test-events', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'go test -json ./...', workdir: dir }), call_id: 'go-json-test' } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'go-json-test', output: goJsonOutput } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.commands_run).toBe(1);
+    expect(metrics?.tests_run).toBe(3);
+    expect(metrics?.tests_passed).toBe(1);
+    expect(metrics?.failed_commands).toBe(1);
+  });
+
   it('recognizes direct test runner commands in Codex shell calls', async () => {
     const sessionFile = join(dir, 'codex-direct-test-commands.jsonl');
     await writeJsonl(sessionFile, [

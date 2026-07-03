@@ -26,6 +26,7 @@ export function commandFailed(output: string): boolean {
   if (/\bfailed\s*[:=]\s*[1-9]\d*\b/i.test(text)) return true;
   if (/\bfailures?\s*[:=]\s*[1-9]\d*\b/i.test(text)) return true;
   if (/(?:^|\n)\s*#?\s*fail(?:ed)?\s+[1-9]\d*\b/i.test(text)) return true;
+  if (/"Action"\s*:\s*"fail"/i.test(text)) return true;
   return false;
 }
 

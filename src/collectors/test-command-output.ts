@@ -66,6 +66,39 @@ function parseTapSummary(text: string): TestCommandCounts | null {
   };
 }
 
+function stringField(record: object, key: string): string | null {
+  const value: unknown = Reflect.get(record, key);
+  return typeof value === 'string' ? value : null;
+}
+
+function parseGoTestJsonSummary(text: string): TestCommandCounts | null {
+  let testsRun = 0;
+  let testsPassed = 0;
+  const completedTests = new Set<string>();
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith('{')) continue;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(trimmed);
+    } catch (error) {
+      if (error instanceof SyntaxError) continue;
+      throw error;
+    }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) continue;
+    const action = stringField(parsed, 'Action')?.toLowerCase();
+    const test = stringField(parsed, 'Test');
+    if (!test || (action !== 'pass' && action !== 'fail' && action !== 'skip')) continue;
+    const packageName = stringField(parsed, 'Package') ?? '';
+    const key = `${packageName}\0${test}`;
+    if (completedTests.has(key)) continue;
+    completedTests.add(key);
+    testsRun += 1;
+    if (action === 'pass') testsPassed += 1;
+  }
+  return testsRun > 0 ? { testsRun, testsPassed } : null;
+}
+
 function parseTestResultLine(text: string): TestCommandCounts | null {
   let testsRun = 0;
   let testsPassed = 0;
@@ -100,6 +133,9 @@ export function parseTestCommandOutput(stdout: string, stderr: string): TestComm
   const text = `${stdout}\n${stderr}`;
   const tap = parseTapSummary(text);
   if (tap) return tap;
+
+  const goJson = parseGoTestJsonSummary(text);
+  if (goJson) return goJson;
 
   const cargoLike = parseTestResultLine(text);
   if (cargoLike) return cargoLike;

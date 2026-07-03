@@ -125,6 +125,22 @@ describe('configured test command output parser', () => {
     });
   });
 
+  it('parses go test JSON event output', () => {
+    const output = [
+      '{"Time":"2026-07-03T00:00:00Z","Action":"run","Package":"example.test","Test":"TestCreateDraft"}',
+      '{"Time":"2026-07-03T00:00:01Z","Action":"pass","Package":"example.test","Test":"TestCreateDraft"}',
+      '{"Time":"2026-07-03T00:00:02Z","Action":"run","Package":"example.test","Test":"TestPublishDraft"}',
+      '{"Time":"2026-07-03T00:00:03Z","Action":"fail","Package":"example.test","Test":"TestPublishDraft"}',
+      '{"Time":"2026-07-03T00:00:04Z","Action":"skip","Package":"example.test","Test":"TestLegacyImport"}',
+      '{"Time":"2026-07-03T00:00:05Z","Action":"fail","Package":"example.test"}'
+    ].join('\n');
+
+    expect(parseTestCommandOutput(output, '')).toEqual({
+      testsRun: 3,
+      testsPassed: 1
+    });
+  });
+
   it('returns null when command output has no reliable test count', () => {
     expect(parseTestCommandOutput('done', '')).toBeNull();
   });

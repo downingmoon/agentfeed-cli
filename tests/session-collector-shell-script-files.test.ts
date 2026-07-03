@@ -140,4 +140,26 @@ describe('shell script file evidence', () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it('captures Node async writeFile targets with line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-node-async-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "node - <<'JS'",
+          "import { writeFile } from 'node:fs/promises';",
+          "await writeFile('src/generated-node-async.ts', `export const first = true;\\nexport const second = true;\\n`);",
+          'JS'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()]).toMatchObject([
+        { path: 'src/generated-node-async.ts', status: 'modified', lines_added: 2 }
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });

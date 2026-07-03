@@ -44,12 +44,16 @@ describe('shell script variable write options', () => {
           'const content = `export const first = true;\\nexport const second = true;\\n`;',
           "writeFileSync('src/generated-node-sync.ts', content, 'utf8');",
           "await writeFile('src/generated-node-async.ts', content, { encoding: 'utf8' });",
+          "await fs.promises.writeFile('src/generated-node-promises.ts', content, 'utf8');",
+          "fs.appendFileSync('src/generated-node-append.ts', content, 'utf8');",
           'JS'
         ].join('\n')
       }, files);
 
       expect([...files.values()].map((file) => [file.path, file.lines_added]).sort()).toEqual([
+        ['src/generated-node-append.ts', 2],
         ['src/generated-node-async.ts', 2],
+        ['src/generated-node-promises.ts', 2],
         ['src/generated-node-sync.ts', 2]
       ]);
     } finally {

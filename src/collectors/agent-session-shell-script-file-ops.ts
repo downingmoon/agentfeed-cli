@@ -1,44 +1,29 @@
 import type { FileEvidence } from './agent-session-shell-file-evidence.js';
-import { projectRelativeShellPath } from './agent-session-shell-paths.js';
+import { fileEvidence, modifiedEvidenceForPaths, shellWords, type ShellScriptEvidenceContext } from './agent-session-shell-script-helpers.js';
 
-function shellWords(line: string): string[] {
-  const words: string[] = [];
-  const pattern = /'(?<single>[^']*)'|"(?<double>(?:\\"|[^"])*)"|(?<bare>\S+)/g;
-  for (const match of line.matchAll(pattern)) {
-    const word = match.groups?.single ?? match.groups?.double?.replace(/\\"/g, '"') ?? match.groups?.bare;
-    if (word) words.push(word);
-  }
-  return words;
-}
-
-function evidence(projectRoot: string, workdir: string | null, rawPath: string, status: FileEvidence['status']): FileEvidence | null {
-  const path = projectRelativeShellPath(projectRoot, workdir, rawPath);
-  return path ? { path, status } : null;
-}
-
-function rmEvidence(projectRoot: string, workdir: string | null, words: readonly string[]): FileEvidence[] {
+function rmEvidence(context: ShellScriptEvidenceContext, words: readonly string[]): FileEvidence[] {
   const files: FileEvidence[] = [];
   for (const word of words.slice(1)) {
     if (word.startsWith('-')) {
       if (/[rR]/.test(word)) return [];
       continue;
     }
-    const file = evidence(projectRoot, workdir, word, 'deleted');
+    const file = fileEvidence(context, word, 'deleted');
     if (file) files.push(file);
   }
   return files;
 }
 
-function moveEvidence(projectRoot: string, workdir: string | null, words: readonly string[], offset: number): FileEvidence[] {
+function moveEvidence(context: ShellScriptEvidenceContext, words: readonly string[], offset: number): FileEvidence[] {
   const source = words[offset];
   const target = words[offset + 1];
   if (!source || !target || words.length !== offset + 2) return [];
-  const deleted = evidence(projectRoot, workdir, source, 'deleted');
-  const renamed = evidence(projectRoot, workdir, target, 'renamed');
+  const deleted = fileEvidence(context, source, 'deleted');
+  const renamed = fileEvidence(context, target, 'renamed');
   return [deleted, renamed].filter((file): file is FileEvidence => file !== null);
 }
 
-function copyEvidence(projectRoot: string, workdir: string | null, words: readonly string[]): FileEvidence[] {
+function copyEvidence(context: ShellScriptEvidenceContext, words: readonly string[]): FileEvidence[] {
   const paths: string[] = [];
   let optionsEnded = false;
   for (const word of words.slice(1)) {
@@ -54,11 +39,11 @@ function copyEvidence(projectRoot: string, workdir: string | null, words: readon
     paths.push(word);
   }
   if (paths.length !== 2) return [];
-  const copied = evidence(projectRoot, workdir, paths[1], 'modified');
+  const copied = fileEvidence(context, paths[1], 'modified');
   return copied ? [copied] : [];
 }
 
-function installEvidence(projectRoot: string, workdir: string | null, words: readonly string[]): FileEvidence[] {
+function installEvidence(context: ShellScriptEvidenceContext, words: readonly string[]): FileEvidence[] {
   const paths: string[] = [];
   let optionsEnded = false;
   let skipNext = false;
@@ -80,11 +65,11 @@ function installEvidence(projectRoot: string, workdir: string | null, words: rea
     paths.push(word);
   }
   if (paths.length !== 2) return [];
-  const installed = evidence(projectRoot, workdir, paths[1], 'modified');
+  const installed = fileEvidence(context, paths[1], 'modified');
   return installed ? [installed] : [];
 }
 
-function linkEvidence(projectRoot: string, workdir: string | null, words: readonly string[]): FileEvidence[] {
+function linkEvidence(context: ShellScriptEvidenceContext, words: readonly string[]): FileEvidence[] {
   const paths: string[] = [];
   let optionsEnded = false;
   let skipNext = false;
@@ -106,21 +91,11 @@ function linkEvidence(projectRoot: string, workdir: string | null, words: readon
     paths.push(word);
   }
   if (paths.length !== 2) return [];
-  const linked = evidence(projectRoot, workdir, paths[1], 'modified');
+  const linked = fileEvidence(context, paths[1], 'modified');
   return linked ? [linked] : [];
 }
 
-function modifiedEvidenceForPaths(projectRoot: string, workdir: string | null, paths: readonly string[]): FileEvidence[] {
-  const files: FileEvidence[] = [];
-  for (const rawPath of paths) {
-    if (rawPath === '.') continue;
-    const file = evidence(projectRoot, workdir, rawPath, 'modified');
-    if (file) files.push(file);
-  }
-  return files;
-}
-
-function gitRestoreEvidence(projectRoot: string, workdir: string | null, words: readonly string[]): FileEvidence[] {
+function gitRestoreEvidence(context: ShellScriptEvidenceContext, words: readonly string[]): FileEvidence[] {
   const paths: string[] = [];
   let optionsEnded = false;
   let skipNext = false;
@@ -142,16 +117,16 @@ function gitRestoreEvidence(projectRoot: string, workdir: string | null, words: 
     if (!optionsEnded && (word.startsWith('--source=') || word.startsWith('-'))) continue;
     paths.push(word);
   }
-  return modifiedEvidenceForPaths(projectRoot, workdir, paths);
+  return modifiedEvidenceForPaths(context, paths);
 }
 
-function gitCheckoutEvidence(projectRoot: string, workdir: string | null, words: readonly string[]): FileEvidence[] {
+function gitCheckoutEvidence(context: ShellScriptEvidenceContext, words: readonly string[]): FileEvidence[] {
   const delimiter = words.indexOf('--');
   if (delimiter < 0) return [];
-  return modifiedEvidenceForPaths(projectRoot, workdir, words.slice(delimiter + 1));
+  return modifiedEvidenceForPaths(context, words.slice(delimiter + 1));
 }
 
-function touchEvidence(projectRoot: string, workdir: string | null, words: readonly string[]): FileEvidence[] {
+function touchEvidence(context: ShellScriptEvidenceContext, words: readonly string[]): FileEvidence[] {
   const paths: string[] = [];
   let optionsEnded = false;
   let skipNext = false;
@@ -171,10 +146,10 @@ function touchEvidence(projectRoot: string, workdir: string | null, words: reado
     if (!optionsEnded && (word.startsWith('--reference=') || word.startsWith('--date=') || word.startsWith('-'))) continue;
     paths.push(word);
   }
-  return modifiedEvidenceForPaths(projectRoot, workdir, paths);
+  return modifiedEvidenceForPaths(context, paths);
 }
 
-function metadataEvidence(projectRoot: string, workdir: string | null, words: readonly string[]): FileEvidence[] {
+function metadataEvidence(context: ShellScriptEvidenceContext, words: readonly string[]): FileEvidence[] {
   const paths: string[] = [];
   let subjectSeen = false;
   let skipNext = false;
@@ -200,22 +175,23 @@ function metadataEvidence(projectRoot: string, workdir: string | null, words: re
     }
     paths.push(word);
   }
-  return modifiedEvidenceForPaths(projectRoot, workdir, paths);
+  return modifiedEvidenceForPaths(context, paths);
 }
 
 export function shellFileOperationEvidence(projectRoot: string, workdir: string | null, line: string): FileEvidence[] {
   const words = shellWords(line);
   const command = words[0];
-  if (command === 'rm') return rmEvidence(projectRoot, workdir, words);
-  if (command === 'touch') return touchEvidence(projectRoot, workdir, words);
-  if (command === 'cp') return copyEvidence(projectRoot, workdir, words);
-  if (command === 'install') return installEvidence(projectRoot, workdir, words);
-  if (command === 'ln') return linkEvidence(projectRoot, workdir, words);
-  if (command === 'chmod' || command === 'chown' || command === 'chgrp') return metadataEvidence(projectRoot, workdir, words);
-  if (command === 'mv') return moveEvidence(projectRoot, workdir, words, 1);
-  if (command === 'git' && words[1] === 'mv') return moveEvidence(projectRoot, workdir, words, 2);
-  if (command === 'git' && words[1] === 'rm') return rmEvidence(projectRoot, workdir, words.slice(1));
-  if (command === 'git' && words[1] === 'restore') return gitRestoreEvidence(projectRoot, workdir, words);
-  if (command === 'git' && words[1] === 'checkout') return gitCheckoutEvidence(projectRoot, workdir, words);
+  const context = { projectRoot, workdir };
+  if (command === 'rm') return rmEvidence(context, words);
+  if (command === 'touch') return touchEvidence(context, words);
+  if (command === 'cp') return copyEvidence(context, words);
+  if (command === 'install') return installEvidence(context, words);
+  if (command === 'ln') return linkEvidence(context, words);
+  if (command === 'chmod' || command === 'chown' || command === 'chgrp') return metadataEvidence(context, words);
+  if (command === 'mv') return moveEvidence(context, words, 1);
+  if (command === 'git' && words[1] === 'mv') return moveEvidence(context, words, 2);
+  if (command === 'git' && words[1] === 'rm') return rmEvidence(context, words.slice(1));
+  if (command === 'git' && words[1] === 'restore') return gitRestoreEvidence(context, words);
+  if (command === 'git' && words[1] === 'checkout') return gitCheckoutEvidence(context, words);
   return [];
 }

@@ -1,19 +1,8 @@
 import type { FileEvidence } from './agent-session-shell-file-evidence.js';
-import { projectRelativeShellPath } from './agent-session-shell-paths.js';
-
-function shellWords(line: string): string[] {
-  const words: string[] = [];
-  const pattern = /'(?<single>[^']*)'|"(?<double>(?:\\"|[^"])*)"|(?<bare>\S+)/g;
-  for (const match of line.matchAll(pattern)) {
-    const word = match.groups?.single ?? match.groups?.double?.replace(/\\"/g, '"') ?? match.groups?.bare;
-    if (word) words.push(word);
-  }
-  return words;
-}
+import { fileEvidence, shellWords } from './agent-session-shell-script-helpers.js';
 
 function changedFile(projectRoot: string, workdir: string | null, rawPath: string): FileEvidence | null {
-  const path = projectRelativeShellPath(projectRoot, workdir, rawPath);
-  return path ? { path, status: 'modified' } : null;
+  return fileEvidence({ projectRoot, workdir }, rawPath, 'modified');
 }
 
 function sedTargetWords(words: readonly string[]): readonly string[] {

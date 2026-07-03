@@ -2,7 +2,7 @@ import type { ChangedFileSummary, CollectionSource, CollectionWindow } from '../
 import { asRecord, asString, countTextLines, explicitCostUsd, finalizeAgentSession, inferEffectiveCollectionWindow, numeric, pushSource, relativeProjectPath, upsertFile, type AgentSessionMetrics } from './agent-session-core.js';
 import { readSessionJsonlRecords } from './agent-session-files.js';
 import { readOmcMetadata } from './agent-session-claude-omc.js';
-import { commandFailed, isTestCommand, toolResultOutput } from './agent-session-tooling.js';
+import { commandFailed, isTestCommand, toolOutputFailed, toolResultOutput } from './agent-session-tooling.js';
 import { applyShellFileEvidence } from './agent-session-shell-files.js';
 import { hasCollectionWindowBoundary, rowInAgentCollectionWindow } from './agent-session-window.js';
 
@@ -52,12 +52,12 @@ export async function parseClaudeSessionFile(cwd: string, sessionFile: string, w
       if (item.type === 'tool_result') {
         const toolUseId = asString(item.tool_use_id);
         const pendingFileEdit = toolUseId ? pendingFileEdits.get(toolUseId) : null;
+        const output = toolResultOutput(item);
         if (pendingFileEdit) {
           pendingFileEdit.confirmed = true;
-          if (item.is_error === true || commandFailed(toolResultOutput(item))) pendingFileEdit.failed = true;
+          if (item.is_error === true || toolOutputFailed(output)) pendingFileEdit.failed = true;
         }
         const command = toolUseId ? commands.get(toolUseId) : null;
-        const output = toolResultOutput(item);
         const commandDidFail = item.is_error === true || commandFailed(output);
         if (command && commandDidFail) {
           failedCommands += 1;

@@ -2,7 +2,7 @@ import type { ChangedFileSummary, CollectionSource, CollectionWindow, Collection
 import { basename, dirname } from 'node:path';
 import { asRecord, asString, finalizeAgentSession, relativeProjectPath, safeJsonParse, upsertFile, type AgentSessionMetrics } from './agent-session-core.js';
 import { applyShellFileEvidence } from './agent-session-shell-files.js';
-import { failedStatus, isTestCommand } from './agent-session-tooling.js';
+import { failedStatus, isTestCommand, toolOutputFailed } from './agent-session-tooling.js';
 import { hasCollectionWindowBoundary, rowInAgentCollectionWindow } from './agent-session-window.js';
 
 type AntigravityCommand = {
@@ -110,7 +110,7 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
       continue;
     }
     if (rowType === 'CODE_ACTION') {
-      if (!failedStatus(asString(row.status))) {
+      if (!failedStatus(asString(row.status)) && !toolOutputFailed(content)) {
         toolCalls += 1;
         applyAntigravityCodeAction(cwd, content, files);
       }

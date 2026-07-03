@@ -9,6 +9,8 @@ const PYTHON_TRIPLE_CONTENT_BINDING = /\b(?<name>[A-Za-z_]\w*)\s*=\s*('''|""")(?
 const PYTHON_CONTENT_VARIABLE_WRITE_TARGET = /\b(?:Path|open)\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*(?<contentName>[A-Za-z_]\w*)\s*(?:,[^\n)]*)?\)/g;
 const PYTHON_PATH_BINDING_TARGET = /\b(?<name>[A-Za-z_]\w*)\s*=\s*Path\(\s*(['"])(?<path>[^'"]+)\2\s*\)/g;
 const PYTHON_OPEN_BINDING_TARGET = /\bwith\s+open\(\s*(['"])(?<path>[^'"]+)\1\s*,\s*(['"])(?<mode>[^'"]*)\3[\s\S]*?\)\s+as\s+(?<name>[A-Za-z_]\w*)\s*:/g;
+const PYTHON_DUMP_OPEN_TARGET = /\b(?:json\.dump|yaml\.(?:safe_dump|dump))\([\s\S]*?,\s*open\(\s*(['"])(?<path>[^'"]+)\1\s*,\s*(['"])(?<mode>[^'"]*)\3[\s\S]*?\)/g;
+const PYTHON_DUMP_PATH_OPEN_TARGET = /\b(?:json\.dump|yaml\.(?:safe_dump|dump))\([\s\S]*?,\s*Path\(\s*(['"])(?<path>[^'"]+)\1\s*\)\.open\(\s*(['"])(?<mode>[^'"]*)\3[\s\S]*?\)/g;
 
 export function pythonContentBindings(command: string): ReadonlyMap<string, string> {
   return contentBindingsFromPatterns(command, [PYTHON_TRIPLE_CONTENT_BINDING]);
@@ -24,6 +26,10 @@ type BoundScriptWriteEvidenceInput = ScriptWriteEvidenceContext & {
   readonly targets: readonly BoundScriptTarget[];
   readonly contentBindings: ReadonlyMap<string, string>;
 };
+
+function mergeChangedEvidence(files: Map<string, FileEvidence>, path: string): void {
+  if (!files.has(path)) files.set(path, { path, status: 'modified' });
+}
 
 function pythonBoundTargets(command: string): BoundScriptTarget[] {
   const targets: BoundScriptTarget[] = [];
@@ -49,6 +55,10 @@ function boundScriptWriteEvidence(input: BoundScriptWriteEvidenceInput): FileEvi
   for (const target of input.targets) {
     const path = projectRelativeShellPath(input.projectRoot, input.workdir, target.path);
     if (!path) continue;
+    const dumpPattern = new RegExp(`\\b(?:json\\.dump|yaml\\.(?:safe_dump|dump))\\([\\s\\S]*?,\\s*${escapeRegExp(target.name)}\\s*(?:,[^\\n)]*)?\\)`, 'g');
+    for (const match of input.command.matchAll(dumpPattern)) {
+      if (match[0]) mergeChangedEvidence(files, path);
+    }
     const triplePattern = new RegExp(`\\b${escapeRegExp(target.name)}\\.write(?:_text)?\\(\\s*('''|""")(?<content>[\\s\\S]*?)\\1`, 'g');
     for (const match of input.command.matchAll(triplePattern)) {
       mergeAddedEvidence(files, path, countTextLines(unescapeScriptText(match.groups?.content ?? '')));
@@ -68,11 +78,25 @@ function boundScriptWriteEvidence(input: BoundScriptWriteEvidenceInput): FileEvi
   return [...files.values()];
 }
 
+function pythonDumpTargetEvidence(context: ScriptWriteEvidenceContext, command: string): FileEvidence[] {
+  const files = new Map<string, FileEvidence>();
+  for (const pattern of [PYTHON_DUMP_OPEN_TARGET, PYTHON_DUMP_PATH_OPEN_TARGET]) {
+    pattern.lastIndex = 0;
+    for (const match of command.matchAll(pattern)) {
+      const mode = match.groups?.mode ?? '';
+      const path = projectRelativeShellPath(context.projectRoot, context.workdir, match.groups?.path ?? '');
+      if (path && /[wax+]/.test(mode)) mergeChangedEvidence(files, path);
+    }
+  }
+  return [...files.values()];
+}
+
 export function pythonScriptWriteEvidence(context: ScriptWriteEvidenceContext, command: string, contentBindings: ReadonlyMap<string, string>): FileEvidence[] {
   return [
     ...scriptWriteEvidence({ ...context, pattern: PYTHON_TRIPLE_WRITE_TARGET, command }),
     ...scriptWriteEvidence({ ...context, pattern: PYTHON_WRITE_TARGET, command }),
     ...variableContentWriteEvidence({ ...context, pattern: PYTHON_CONTENT_VARIABLE_WRITE_TARGET, command, contentBindings }),
+    ...pythonDumpTargetEvidence(context, command),
     ...boundScriptWriteEvidence({ ...context, command, targets: pythonBoundTargets(command), contentBindings })
   ];
 }

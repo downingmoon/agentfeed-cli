@@ -114,6 +114,36 @@ describe('shell script variable write options', () => {
   });
 
 
+  it('captures Python JSON and YAML dump file targets with unknown line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-dump-targets-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'import json, yaml',
+          'from pathlib import Path',
+          "data = {'first': True, 'second': True}",
+          "json.dump(data, open('src/generated-json.json', 'w'), indent=2)",
+          "json.dump(data, Path('src/generated-path-json.json').open('w'), indent=2)",
+          "with open('src/generated-yaml.yml', 'w') as handle:",
+          '    yaml.safe_dump(data, handle)',
+          'PY'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added]).sort()).toEqual([
+        ['src/generated-json.json', null],
+        ['src/generated-path-json.json', null],
+        ['src/generated-yaml.yml', null]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+
   it('captures Bun and Deno text writes with line counts', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-js-runtime-writes-'));
     try {

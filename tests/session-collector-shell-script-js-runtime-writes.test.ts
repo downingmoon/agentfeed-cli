@@ -56,4 +56,35 @@ describe('shell script JavaScript runtime write evidence', () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it('captures Bun and Deno path variable writes without guessed line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-js-runtime-path-variable-writes-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "bun run <<'JS'",
+          "const bunDataPath = 'dist/bun-data.json';",
+          "const bunBytePath = 'dist/bun-bytes.bin';",
+          "const denoTextPath = 'dist/deno-data.json';",
+          "const denoBytePath = 'dist/deno-bytes.bin';",
+          'await Bun.write(bunDataPath, JSON.stringify({ ok: true }));',
+          "await Bun.write(bunBytePath, Buffer.from('abc'));",
+          'await Deno.writeTextFile(denoTextPath, JSON.stringify({ ok: true }));',
+          "await Deno.writeFile(denoBytePath, new TextEncoder().encode('abc'));",
+          'JS'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added]).sort()).toEqual([
+        ['dist/bun-bytes.bin', null],
+        ['dist/bun-data.json', null],
+        ['dist/deno-bytes.bin', null],
+        ['dist/deno-data.json', null]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });

@@ -177,4 +177,23 @@ describe('agent session Gemini metrics', () => {
     ]);
   });
 
+  it('does not count Antigravity planned shell file evidence when command fails', async () => {
+    const sessionFile = join(dir, 'antigravity-failed-command-transcript.jsonl');
+    await writeJsonl(sessionFile, [
+      { step_index: 0, source: 'USER_EXPLICIT', type: 'USER_INPUT', status: 'DONE', created_at: '2026-06-25T03:56:15Z', content: '<USER_REQUEST>Create generated file</USER_REQUEST>' },
+      { step_index: 1, source: 'MODEL', type: 'PLANNER_RESPONSE', status: 'DONE', created_at: '2026-06-25T03:56:20Z', tool_calls: [
+        { name: 'run_command', args: { CommandLine: JSON.stringify("cat > src/failed-antigravity.ts <<'EOF'\nexport const failed = true;\nEOF"), Cwd: JSON.stringify(dir) } }
+      ] },
+      { step_index: 2, source: 'MODEL', type: 'RUN_COMMAND', status: 'FAILED', created_at: '2026-06-25T03:56:21Z', content: 'Command failed.\nOutput:\npermission denied\n' }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile });
+
+    expect(metrics?.commands_run).toBe(1);
+    expect(metrics?.failed_commands).toBe(1);
+    expect(metrics?.changed_files).toEqual([]);
+    expect(metrics?.files_changed).toBeNull();
+    expect(metrics?.lines_added).toBeNull();
+  });
+
 });

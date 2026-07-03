@@ -104,7 +104,6 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
             const test = isTestCommand(command);
             if (test) testsRun += 1;
             pendingCommands.push({ command, workdir, test });
-            applyShellFileEvidence(cwd, { command, workdir, output: null }, files);
           }
         }
       }

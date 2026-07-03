@@ -31,4 +31,30 @@ describe('shell script variable write options', () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it('captures Node content variable writes with encoding options', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-node-variable-options-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "node - <<'JS'",
+          "import { writeFile, writeFileSync } from 'node:fs';",
+          'const content = `export const first = true;\\nexport const second = true;\\n`;',
+          "writeFileSync('src/generated-node-sync.ts', content, 'utf8');",
+          "await writeFile('src/generated-node-async.ts', content, { encoding: 'utf8' });",
+          'JS'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added]).sort()).toEqual([
+        ['src/generated-node-async.ts', 2],
+        ['src/generated-node-sync.ts', 2]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
 });

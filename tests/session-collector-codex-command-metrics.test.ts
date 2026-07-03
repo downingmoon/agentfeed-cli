@@ -106,6 +106,25 @@ describe('Codex session collector command metrics', () => {
     expect(metrics?.failed_commands).toBeNull();
   });
 
+  it('recognizes namespaced direct Codex tool calls as command and subagent metrics', async () => {
+    const sessionFile = join(dir, 'codex-namespaced-direct-tools.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-namespaced-direct-tools', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'function_call', name: 'functions.exec_command', arguments: JSON.stringify({ cmd: 'npm test', workdir: dir }), call_id: 'namespaced-test' } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'namespaced-test', output: 'Process exited with code 0\nPASS tests/api.test.ts' } },
+      { timestamp: '2026-05-20T00:00:03Z', type: 'response_item', payload: { type: 'function_call', name: 'multi_agent_v1.spawn_agent', arguments: JSON.stringify({ role: 'explore' }), call_id: 'namespaced-agent' } },
+      { timestamp: '2026-05-20T00:00:04Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'namespaced-agent', output: 'spawned agent' } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(2);
+    expect(metrics?.commands_run).toBe(1);
+    expect(metrics?.tests_run).toBe(1);
+    expect(metrics?.tests_passed).toBe(1);
+    expect(metrics?.subagents_spawned).toBe(1);
+  });
+
   it('expands Codex parallel tool wrappers into nested command and tool metrics', async () => {
     const sessionFile = join(dir, 'codex-parallel-tool-wrapper.jsonl');
     await writeJsonl(sessionFile, [

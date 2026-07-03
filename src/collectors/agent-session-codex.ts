@@ -127,9 +127,9 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
       }
     }
     if (payload.type === 'function_call') {
-      const name = asString(payload.name);
+      const name = codexNestedToolName(payload.name);
       const callId = asString(payload.call_id);
-      if (name === 'multi_tool_use.parallel') {
+      if (name === 'parallel') {
         const args = codexCallArguments(payload);
         const toolUses = Array.isArray(args?.tool_uses) ? args.tool_uses : [];
         if (!toolUses.length) {

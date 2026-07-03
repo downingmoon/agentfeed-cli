@@ -140,6 +140,8 @@ agentfeed collect --source claude-code --session-file "$CLAUDE_SESSION_FILE" --e
 agentfeed hook install claude-code
 ```
 
+If `doctor` detects global agent logs but `collect --explain` says no session matched this project root, run `agentfeed` from the same initialized repository root where the agent worked. For parent-workspace or monorepo sessions, initialize and collect from that parent root, or pass a session file that belongs to the current project.
+
 The CLI creates `.agentfeed/drafts/*.json` first and uploads only reviewable private drafts. It does not upload raw diffs, raw transcripts, `.env` contents, or secrets.
 
 

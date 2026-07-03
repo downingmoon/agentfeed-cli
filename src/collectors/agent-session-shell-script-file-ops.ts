@@ -125,10 +125,34 @@ function gitCheckoutEvidence(projectRoot: string, workdir: string | null, words:
   return modifiedEvidenceForPaths(projectRoot, workdir, words.slice(delimiter + 1));
 }
 
+function touchEvidence(projectRoot: string, workdir: string | null, words: readonly string[]): FileEvidence[] {
+  const paths: string[] = [];
+  let optionsEnded = false;
+  let skipNext = false;
+  for (const word of words.slice(1)) {
+    if (skipNext) {
+      skipNext = false;
+      continue;
+    }
+    if (!optionsEnded && word === '--') {
+      optionsEnded = true;
+      continue;
+    }
+    if (!optionsEnded && (word === '-r' || word === '--reference' || word === '-d' || word === '--date' || word === '-t')) {
+      skipNext = true;
+      continue;
+    }
+    if (!optionsEnded && (word.startsWith('--reference=') || word.startsWith('--date=') || word.startsWith('-'))) continue;
+    paths.push(word);
+  }
+  return modifiedEvidenceForPaths(projectRoot, workdir, paths);
+}
+
 export function shellFileOperationEvidence(projectRoot: string, workdir: string | null, line: string): FileEvidence[] {
   const words = shellWords(line);
   const command = words[0];
   if (command === 'rm') return rmEvidence(projectRoot, workdir, words);
+  if (command === 'touch') return touchEvidence(projectRoot, workdir, words);
   if (command === 'cp') return copyEvidence(projectRoot, workdir, words);
   if (command === 'install') return installEvidence(projectRoot, workdir, words);
   if (command === 'mv') return moveEvidence(projectRoot, workdir, words, 1);

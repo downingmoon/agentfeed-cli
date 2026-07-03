@@ -111,4 +111,31 @@ describe('shell script file operation evidence', () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it('captures deterministic touch file targets without line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-file-touch-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          'touch src/generated.ts "src/old name.ts"',
+          'touch -c package.json',
+          'touch -r src/api.ts src/copied-time.ts',
+          'touch --date "2026-07-03 00:00:00" src/dated.ts',
+          'touch .'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.status, file.lines_added]).sort()).toEqual([
+        ['package.json', 'modified', null],
+        ['src/copied-time.ts', 'modified', null],
+        ['src/dated.ts', 'modified', null],
+        ['src/generated.ts', 'modified', null],
+        ['src/old name.ts', 'modified', null]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });

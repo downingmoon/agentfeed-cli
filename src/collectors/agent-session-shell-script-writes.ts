@@ -1,5 +1,6 @@
 import { isAbsolute, resolve } from 'node:path';
 import { countTextLines } from './agent-session-core.js';
+import { applyPatchDelimiter, parseApplyPatchEvidence } from './agent-session-shell-apply-patch.js';
 import type { FileEvidence } from './agent-session-shell-file-evidence.js';
 import { projectRelativeShellPath } from './agent-session-shell-paths.js';
 import { nodeContentBindings, nodeScriptWriteEvidence } from './agent-session-shell-script-node.js';
@@ -8,7 +9,6 @@ import { unescapeScriptText } from './agent-session-shell-script-write-shared.js
 
 const SHELL_REDIRECT_TARGET = /(?:^|\s)(?:\d?>|>>|>)\s*(['"]?)([^'"\s;&|<>]+)\1/g;
 const SHELL_TEE_TARGET = /(?:^|\s)tee\s+(?:-[a-zA-Z]+\s+)*(['"]?)([^'"\s;&|<>]+)\1/g;
-const APPLY_PATCH_FILE_HEADER = /^\*\*\* (?<kind>Add|Update|Delete) File: (?<path>.+)$/;
 const SHELL_PRINTF_SINGLE_REDIRECT = /^\s*printf\s+(?:--\s+)?'(?<content>[^']*)'\s*(?:\d?>|>>|>)\s*(['"]?)(?<path>[^'"\s;&|<>]+)\2/;
 const SHELL_PRINTF_DOUBLE_REDIRECT = /^\s*printf\s+(?:--\s+)?"(?<content>(?:\\"|[^"])*)"\s*(?:\d?>|>>|>)\s*(['"]?)(?<path>[^'"\s;&|<>]+)\2/;
 const SHELL_PRINTF_FORMAT_SINGLE_REDIRECT = /^\s*printf\s+(?:--\s+)?'(?<format>[^']*)'(?<args>.*?)\s*(?:\d?>|>>|>)\s*(['"]?)(?<path>[^'"\s;&|<>]+)\3/;
@@ -17,13 +17,6 @@ const SHELL_ECHO_SINGLE_REDIRECT = /^\s*echo\s+(?<options>-[A-Za-z]+\s+)?'(?<con
 const SHELL_ECHO_DOUBLE_REDIRECT = /^\s*echo\s+(?<options>-[A-Za-z]+\s+)?"(?<content>(?:\\"|[^"])*)"\s*(?:\d?>|>>|>)\s*(['"]?)(?<path>[^'"\s;&|<>]+)\3/;
 const SHELL_CD_PREFIX = /^\s*cd\s+(['"]?)(?<path>[^'"\s;&|<>]+)\1\s*(?:&&|;)\s*(?<rest>.*)$/;
 const SHELL_CD_LINE = /^\s*cd\s+(['"]?)(?<path>[^'"\s;&|<>]+)\1\s*$/;
-
-type ApplyPatchFile = {
-  readonly path: string;
-  readonly status: FileEvidence['status'];
-  readonly added: number;
-  readonly removed: number;
-};
 
 type ScriptCommandBucket = {
   readonly workdir: string | null;
@@ -47,45 +40,6 @@ function heredocTarget(line: string): { readonly path: string; readonly delimite
 
 function contentBindings(command: string): ReadonlyMap<string, string> {
   return new Map([...pythonContentBindings(command), ...nodeContentBindings(command)]);
-}
-
-function applyPatchDelimiter(line: string): string | null {
-  if (!/(?:^|\s)apply_patch(?:\s|$)/.test(line)) return null;
-  return heredocDelimiter(line);
-}
-
-function applyPatchStatus(kind: string): FileEvidence['status'] {
-  if (kind === 'Add') return 'added';
-  if (kind === 'Delete') return 'deleted';
-  return 'modified';
-}
-
-function parseApplyPatchEvidence(projectRoot: string, workdir: string | null, content: readonly string[]): FileEvidence[] {
-  const files: FileEvidence[] = [];
-  let current: ApplyPatchFile | null = null;
-
-  const flush = (): void => {
-    if (!current) return;
-    const path = projectRelativeShellPath(projectRoot, workdir, current.path);
-    if (path) files.push({ path, status: current.status, added: current.added, removed: current.removed });
-    current = null;
-  };
-
-  for (const line of content) {
-    const header = APPLY_PATCH_FILE_HEADER.exec(line);
-    const kind = header?.groups?.kind;
-    const filePath = header?.groups?.path;
-    if (kind && filePath) {
-      flush();
-      current = { path: filePath, status: applyPatchStatus(kind), added: 0, removed: 0 };
-      continue;
-    }
-    if (!current) continue;
-    if (line.startsWith('+') && !line.startsWith('+++')) current = { ...current, added: current.added + 1 };
-    if (line.startsWith('-') && !line.startsWith('---')) current = { ...current, removed: current.removed + 1 };
-  }
-  flush();
-  return files;
 }
 
 function shellQuotedArguments(value: string): string[] {

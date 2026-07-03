@@ -101,6 +101,34 @@ describe('shell script Python path bindings', () => {
     }
   });
 
+  it('captures Python context manager writes when open target is a path variable', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-path-open-variable-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'from pathlib import Path',
+          "string_path = 'src/string-target.ts'",
+          "path_target = Path('src/path-target.ts')",
+          'with open(string_path, "w") as string_handle:',
+          '    string_handle.write("""export const first = true;\\nexport const second = true;\\n""")',
+          'with path_target.open("w") as path_handle:',
+          '    path_handle.write("""export const third = true;\\n""")',
+          'PY'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added]).sort()).toEqual([
+        ['src/path-target.ts', 1],
+        ['src/string-target.ts', 2]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it('captures direct Python literal path expression and binary writes as changed files', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-direct-expression-'));
     try {

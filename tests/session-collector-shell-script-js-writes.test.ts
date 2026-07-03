@@ -114,6 +114,37 @@ describe('shell script JavaScript runtime write evidence', () => {
     }
   });
 
+  it('captures Node stream and FileHandle expression writes without guessed line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-node-stream-expression-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "node - <<'JS'",
+          "import { createWriteStream } from 'node:fs';",
+          "import { open } from 'node:fs/promises';",
+          "const stream = createWriteStream('dist/bound-stream.json');",
+          "stream.write(JSON.stringify({ ok: true }));",
+          "createWriteStream('dist/direct-stream.json').end(Buffer.from('abc'));",
+          "const handle = await open('dist/bound-filehandle.json', 'w');",
+          "await handle.writeFile(JSON.stringify({ ok: true }));",
+          "await (await open('dist/direct-filehandle.bin', 'w')).writeFile(Buffer.from('abc'));",
+          'JS'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added]).sort()).toEqual([
+        ['dist/bound-filehandle.json', null],
+        ['dist/bound-stream.json', null],
+        ['dist/direct-filehandle.bin', null],
+        ['dist/direct-stream.json', null]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it('captures Node FileHandle writeFile writes with line counts', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-node-filehandle-'));
     try {

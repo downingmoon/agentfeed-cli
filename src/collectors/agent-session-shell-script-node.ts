@@ -12,9 +12,11 @@ const NODE_CHANGED_WRITE_TARGET = /\b(?:await\s+)?(?:[A-Za-z_$][\w$]*\.)*(?:writ
 const NODE_STREAM_TARGET = /\b(?:const|let|var)\s+(?<name>[A-Za-z_$][\w$]*)\s*=\s*(?:[A-Za-z_$][\w$]*\.)?createWriteStream\(\s*(['"`])(?<path>[^'"`]+)\2[\s\S]*?\)\s*;/g;
 const NODE_DIRECT_STREAM_WRITE_TARGET = /\b(?:[A-Za-z_$][\w$]*\.)?createWriteStream\(\s*(['"`])(?<path>[^'"`]+)\1(?:\s*,[^)]*)?\)\.(?:write|end)\(\s*(['"`])(?<content>[\s\S]*?)\3/g;
 const NODE_DIRECT_STREAM_VARIABLE_WRITE_TARGET = /\b(?:[A-Za-z_$][\w$]*\.)?createWriteStream\(\s*(['"`])(?<path>[^'"`]+)\1(?:\s*,[^)]*)?\)\.(?:write|end)\(\s*(?<contentName>[A-Za-z_$][\w$]*)\s*(?:,[^\n)]*)?\)/g;
+const NODE_DIRECT_STREAM_CHANGED_TARGET = /\b(?:[A-Za-z_$][\w$]*\.)?createWriteStream\(\s*(['"`])(?<path>[^'"`]+)\1(?:\s*,[^)]*)?\)\.(?:write|end)\(\s*/g;
 const NODE_FILEHANDLE_TARGET = /\b(?:const|let|var)\s+(?<name>[A-Za-z_$][\w$]*)\s*=\s*(?:await\s+)?(?:[A-Za-z_$][\w$]*\.)*open\(\s*(['"`])(?<path>[^'"`]+)\2\s*,\s*(['"`])(?<mode>[^'"`]*)\4[\s\S]*?\)\s*;/g;
 const NODE_DIRECT_FILEHANDLE_WRITE_TARGET = /\(\s*await\s+(?:[A-Za-z_$][\w$]*\.)*open\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(['"`])(?<mode>[^'"`]*)\3[\s\S]*?\)\s*\)\.writeFile\(\s*(['"`])(?<content>[\s\S]*?)\5/g;
 const NODE_DIRECT_FILEHANDLE_VARIABLE_WRITE_TARGET = /\(\s*await\s+(?:[A-Za-z_$][\w$]*\.)*open\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(['"`])(?<mode>[^'"`]*)\3[\s\S]*?\)\s*\)\.writeFile\(\s*(?<contentName>[A-Za-z_$][\w$]*)\s*(?:,[^\n)]*)?\)/g;
+const NODE_DIRECT_FILEHANDLE_CHANGED_TARGET = /\(\s*await\s+(?:[A-Za-z_$][\w$]*\.)*open\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(['"`])(?<mode>[^'"`]*)\3[\s\S]*?\)\s*\)\.writeFile\(\s*/g;
 const JS_RUNTIME_TEXT_WRITE_TARGET = /\b(?:Bun\.write|Deno\.writeTextFile)\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(['"`])(?<content>[\s\S]*?)\3/g;
 const JS_RUNTIME_VARIABLE_TEXT_WRITE_TARGET = /\b(?:Bun\.write|Deno\.writeTextFile)\(\s*(['"`])(?<path>[^'"`]+)\1\s*,\s*(?<contentName>[A-Za-z_$][\w$]*)\s*(?:,[^\n)]*)?\)/g;
 
@@ -98,6 +100,17 @@ function nodeChangedWriteEvidence(context: ScriptWriteEvidenceContext, command: 
   return [...files.values()];
 }
 
+function directPathChangedEvidence(context: ScriptWriteEvidenceContext, command: string, pattern: RegExp): FileEvidence[] {
+  const files = new Map<string, FileEvidence>();
+  pattern.lastIndex = 0;
+  for (const match of command.matchAll(pattern)) {
+    const path = projectRelativeShellPath(context.projectRoot, context.workdir, match.groups?.path ?? '');
+    const mode = match.groups?.mode ?? 'w';
+    if (path && /[wax+]/.test(mode)) mergeChangedEvidence(files, path);
+  }
+  return [...files.values()];
+}
+
 function nodePathWriteEvidence(input: NodeBoundWriteEvidenceInput): FileEvidence[] {
   const files = new Map<string, FileEvidence>();
   for (const target of input.targets) {
@@ -158,6 +171,8 @@ function nodeStreamWriteEvidence(input: NodeBoundWriteEvidenceInput): FileEviden
       if (content === undefined) continue;
       mergeAddedEvidence(files, path, countTextLines(unescapeScriptText(content)));
     }
+    const changedPattern = new RegExp(`\\b${escapeRegExp(target.name)}\\.(?:write|end|writeFile)\\(\\s*`, 'g');
+    if (changedPattern.test(input.command)) mergeChangedEvidence(files, path);
   }
   return [...files.values()];
 }
@@ -169,8 +184,10 @@ export function nodeScriptWriteEvidence(context: ScriptWriteEvidenceContext, com
     ...nodeChangedWriteEvidence(context, command),
     ...scriptWriteEvidence({ ...context, pattern: NODE_DIRECT_STREAM_WRITE_TARGET, command }),
     ...variableContentWriteEvidence({ ...context, pattern: NODE_DIRECT_STREAM_VARIABLE_WRITE_TARGET, command, contentBindings }),
+    ...directPathChangedEvidence(context, command, NODE_DIRECT_STREAM_CHANGED_TARGET),
     ...scriptWriteEvidence({ ...context, pattern: NODE_DIRECT_FILEHANDLE_WRITE_TARGET, command }),
     ...variableContentWriteEvidence({ ...context, pattern: NODE_DIRECT_FILEHANDLE_VARIABLE_WRITE_TARGET, command, contentBindings }),
+    ...directPathChangedEvidence(context, command, NODE_DIRECT_FILEHANDLE_CHANGED_TARGET),
     ...scriptWriteEvidence({ ...context, pattern: JS_RUNTIME_TEXT_WRITE_TARGET, command }),
     ...variableContentWriteEvidence({ ...context, pattern: JS_RUNTIME_VARIABLE_TEXT_WRITE_TARGET, command, contentBindings }),
     ...nodePathWriteEvidence({ ...context, command, targets: nodePathBindings(command), contentBindings }),

@@ -104,7 +104,7 @@ describe('Codex session collector command metrics', () => {
       { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'pytest tests -q', workdir: dir }), call_id: 'pytest-direct' } },
       { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'pytest-direct', output: 'Process exited with code 0\n24 passed' } },
       { timestamp: '2026-05-20T00:00:03Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'vitest run', workdir: dir }), call_id: 'vitest-direct' } },
-      { timestamp: '2026-05-20T00:00:04Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'vitest-direct', output: 'Process exited with code 0\nTest Files: 0 failed, 4 passed, 4 total' } },
+      { timestamp: '2026-05-20T00:00:04Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'vitest-direct', output: 'Process exited with code 0\nTest Files: 0 failed, 4 passed, 4 total\nTests: 0 failed, 4 passed, 4 total' } },
       { timestamp: '2026-05-20T00:00:05Z', type: 'response_item', payload: { type: 'function_call', name: 'exec_command', arguments: JSON.stringify({ cmd: 'playwright test', workdir: dir }), call_id: 'playwright-direct' } },
       { timestamp: '2026-05-20T00:00:06Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'playwright-direct', output: 'Process exited with code 1\n1 failed, 2 passed' } }
     ]);

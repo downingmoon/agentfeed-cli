@@ -67,6 +67,24 @@ function parseTestResultLine(text: string): TestCommandCounts | null {
   return countsFromStatusSummary(match[1]);
 }
 
+function isTestSummaryLine(line: string): boolean {
+  if (!/\b(passed|pass|passing|failed|fail|failing|errors?|skipped|skip|pending|todo|xfailed|xpassed|total)\b/i.test(line)) return false;
+  return !/^(?:test\s+files?|files?|suites?|test\s+suites?)\b/i.test(line);
+}
+
+function aggregateSummaryLineCounts(lines: readonly string[]): TestCommandCounts | null {
+  let testsRun = 0;
+  let testsPassed = 0;
+  for (const line of lines) {
+    if (!isTestSummaryLine(line)) continue;
+    const counts = countsFromStatusSummary(line);
+    if (!counts) continue;
+    testsRun += counts.testsRun;
+    testsPassed += counts.testsPassed;
+  }
+  return testsRun > 0 ? { testsRun, testsPassed } : null;
+}
+
 export function parseTestCommandOutput(stdout: string, stderr: string): TestCommandCounts | null {
   const text = `${stdout}\n${stderr}`;
   const tap = parseTapSummary(text);
@@ -81,11 +99,5 @@ export function parseTestCommandOutput(stdout: string, stderr: string): TestComm
     .filter(Boolean)
     .reverse();
 
-  for (const line of summaryLines) {
-    if (!/\b(passed|pass|passing|failed|fail|failing|errors?|skipped|skip|pending|todo|xfailed|xpassed|total)\b/i.test(line)) continue;
-    const counts = countsFromStatusSummary(line);
-    if (counts) return counts;
-  }
-
-  return null;
+  return aggregateSummaryLineCounts(summaryLines);
 }

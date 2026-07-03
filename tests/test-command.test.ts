@@ -60,6 +60,22 @@ describe('configured test command output parser', () => {
     });
   });
 
+  it('aggregates multiple test summaries from combined command output', () => {
+    const output = [
+      '$ npm test',
+      '======= 2 failed, 10 passed, 1 skipped in 3.21s =======',
+      '$ npm run e2e',
+      ' Test Files  1 failed (1)',
+      '      Tests  1 failed | 2 passed (3)',
+      '   Duration  1.23s'
+    ].join('\n');
+
+    expect(parseTestCommandOutput(output, '')).toEqual({
+      testsRun: 16,
+      testsPassed: 12
+    });
+  });
+
   it('parses TAP summaries from node test output', () => {
     const output = [
       '# tests 4',

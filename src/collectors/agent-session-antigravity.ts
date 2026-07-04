@@ -178,6 +178,12 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
       }
       continue;
     }
+    if (rowType === 'GENERIC') {
+      if (/\bactive subagent/i.test(content)) {
+        for (const id of antigravitySubagentIds(content)) spawnedSubagentIds.add(id);
+      }
+      continue;
+    }
     if (rowType === 'SYSTEM_MESSAGE') {
       const completedId = completedAntigravitySubagentId(content, spawnedSubagentIds);
       if (completedId) completedSubagentIds.add(completedId);

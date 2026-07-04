@@ -147,4 +147,38 @@ describe('Antigravity file edit evidence', () => {
     expect(metrics?.tool_calls).toBe(1);
     expect(metrics?.files_changed).toBeNull();
   });
+
+  it('uses Antigravity manage_subagents list results as spawned subagent evidence', async () => {
+    const dir = fixture.dir();
+    const sessionFile = join(dir, 'antigravity-manage-subagents-list.jsonl');
+    await fixture.writeJsonl(sessionFile, [
+      { step_index: 0, source: 'MODEL', type: 'PLANNER_RESPONSE', status: 'DONE', created_at: '2026-06-25T03:56:20Z', tool_calls: [
+        { name: 'manage_subagents', args: { Action: '"list"' } }
+      ] },
+      { step_index: 1, source: 'MODEL', type: 'GENERIC', status: 'DONE', created_at: '2026-06-25T03:56:21Z', content: 'You have 2 active subagent(s):\n{\n  "result": { "conversationId": "subagent-a" }\n}\n{\n  "result": { "conversationId": "subagent-b" }\n}' }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(1);
+    expect(metrics?.subagents_spawned).toBe(2);
+    expect(metrics?.subagents_completed).toBeNull();
+  });
+
+  it('does not infer completed subagents from Antigravity kill_all cleanup rows', async () => {
+    const dir = fixture.dir();
+    const sessionFile = join(dir, 'antigravity-manage-subagents-kill.jsonl');
+    await fixture.writeJsonl(sessionFile, [
+      { step_index: 0, source: 'MODEL', type: 'PLANNER_RESPONSE', status: 'DONE', created_at: '2026-06-25T03:56:20Z', tool_calls: [
+        { name: 'manage_subagents', args: { Action: '"kill_all"' } }
+      ] },
+      { step_index: 1, source: 'MODEL', type: 'GENERIC', status: 'DONE', created_at: '2026-06-25T03:56:21Z', content: 'Successfully killed 2 subagent(s) and their descendants.\nKilled roles: Builder A, Builder B' }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(1);
+    expect(metrics?.subagents_spawned).toBeNull();
+    expect(metrics?.subagents_completed).toBeNull();
+  });
 });

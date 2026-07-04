@@ -57,6 +57,26 @@ describe('Antigravity file edit evidence', () => {
     ]);
   });
 
+
+  it('extracts Antigravity spawned subagent counts from invoke rows', async () => {
+    const dir = fixture.dir();
+    const sessionFile = join(dir, 'antigravity-subagents.jsonl');
+    await fixture.writeJsonl(sessionFile, [
+      { step_index: 0, source: 'USER_EXPLICIT', type: 'USER_INPUT', status: 'DONE', created_at: '2026-06-25T03:56:15Z', content: '<USER_REQUEST>Use subagents</USER_REQUEST>' },
+      { step_index: 1, source: 'MODEL', type: 'PLANNER_RESPONSE', status: 'DONE', created_at: '2026-06-25T03:56:20Z', tool_calls: [
+        { name: 'invoke_subagent', args: { Subagents: JSON.stringify([{ Role: 'Builder A' }, { Role: 'Builder B' }]) } }
+      ] },
+      { step_index: 2, source: 'MODEL', type: 'INVOKE_SUBAGENT', status: 'DONE', created_at: '2026-06-25T03:56:21Z', content: 'Created the following subagents:\n{\n  "conversationId": "subagent-a"\n}\n{\n  "conversationId": "subagent-b"\n}' }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(1);
+    expect(metrics?.subagents_spawned).toBe(2);
+    expect(metrics?.subagents_completed).toBeNull();
+  });
+
+
   it('does not count Antigravity code action rows with error text as changed files', async () => {
     const dir = fixture.dir();
     const sessionFile = join(dir, 'antigravity-error-text-code-action.jsonl');

@@ -49,6 +49,18 @@ function orderedAntigravityRows(rows: readonly Record<string, unknown>[]): reado
   return rows.map((row, index) => ({ row, index })).sort(compareOrderedAntigravityRows).map((entry) => entry.row);
 }
 
+
+function countAntigravitySubagentSpecs(value: unknown): number {
+  const text = unquotedAntigravityString(value);
+  if (!text) return 0;
+  const parsed = safeJsonParse(text);
+  return Array.isArray(parsed) ? parsed.length : 0;
+}
+
+function countCreatedAntigravitySubagents(content: string): number {
+  return content.match(/"conversationId"\s*:/g)?.length ?? 0;
+}
+
 function antigravitySessionId(sessionFile: string): string {
   const transcriptParent = dirname(dirname(dirname(sessionFile)));
   const conversationId = basename(transcriptParent);
@@ -114,6 +126,8 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
   let commandsRun = 0;
   let toolCalls = 0;
   let agentTurns = 0;
+  let plannedSubagentsSpawned = 0;
+  let createdSubagentsSpawned = 0;
   let tokensUsed = 0;
   let estimatedCostUsd = 0;
   let startMillis: number | null = null;
@@ -155,6 +169,8 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
             const test = isTestCommand(command);
             pendingCommands.push({ command, workdir, test });
           }
+        } else if (name === 'invoke_subagent') {
+          plannedSubagentsSpawned += countAntigravitySubagentSpecs(args.Subagents);
         }
       }
       continue;
@@ -163,6 +179,12 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
       if (!failedStatus(asString(row.status)) && !toolOutputFailed(content)) {
         toolCalls += 1;
         applyAntigravityCodeAction(cwd, content, files);
+      }
+      continue;
+    }
+    if (rowType === 'INVOKE_SUBAGENT') {
+      if (!failedStatus(asString(row.status)) && !toolOutputFailed(content)) {
+        createdSubagentsSpawned += countCreatedAntigravitySubagents(content);
       }
       continue;
     }
@@ -185,5 +207,6 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
     { type: 'agent_session', name: 'antigravity_cli', quality: 'high' }
   ];
   const durationSeconds = startMillis != null && endMillis != null && endMillis > startMillis ? (endMillis - startMillis) / 1000 : null;
-  return finalizeAgentSession({ sessionId: antigravitySessionId(sessionFile), model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun: testMetrics.testsRun, testsPassed: testMetrics.testsPassed, failedCommands, commandsRun, toolCalls, skills, subagentsSpawned: 0, subagentsCompleted: 0, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effectiveReason });
+  const subagentsSpawned = Math.max(plannedSubagentsSpawned, createdSubagentsSpawned);
+  return finalizeAgentSession({ sessionId: antigravitySessionId(sessionFile), model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun: testMetrics.testsRun, testsPassed: testMetrics.testsPassed, failedCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted: 0, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effectiveReason });
 }

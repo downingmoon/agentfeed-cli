@@ -15,6 +15,7 @@ export function isAntigravityToolResultRowType(rowType: string | null): boolean 
 export type AntigravityToolResultTracker = {
   readonly plan: (toolName: string | null, expectedPath?: string | null) => void;
   readonly countResult: (rowType: string | null, observedPaths?: readonly string[]) => boolean;
+  readonly clearPending: () => void;
 };
 
 type PendingAntigravityResult = {
@@ -67,5 +68,9 @@ export function createAntigravityToolResultTracker(): AntigravityToolResultTrack
     return false;
   }
 
-  return { plan, countResult };
+  function clearPending(): void {
+    pendingResults.length = 0;
+  }
+
+  return { plan, countResult, clearPending };
 }

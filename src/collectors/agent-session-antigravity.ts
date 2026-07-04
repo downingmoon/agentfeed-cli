@@ -147,6 +147,11 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
       startMillis = Math.min(startMillis ?? effectiveStart, effectiveStart);
       endMillis = Math.max(endMillis ?? effectiveEnd, effectiveEnd);
     }
+    if (rowType === 'ERROR_MESSAGE') {
+      toolResults.clearPending();
+      pendingCommands.length = 0;
+      continue;
+    }
     if (rowType === 'PLANNER_RESPONSE') {
       agentTurns += 1;
       for (const call of antigravityToolCalls(row)) {

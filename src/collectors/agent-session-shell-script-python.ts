@@ -7,14 +7,14 @@ import { directPythonPathWriteEvidence } from './agent-session-shell-script-pyth
 import { contentBindingsFromPatterns, escapeRegExp, mergeAddedEvidence, scriptWriteEvidence, unescapeScriptText, variableContentWriteEvidence, type ScriptWriteEvidenceContext } from './agent-session-shell-script-write-shared.js';
 
 const PYTHON_TRIPLE_PATH_WRITE_TARGET = /\bPath\(\s*(['"])(?<path>[^'"]+)\1\s*\)\.write(?:_text)?\(\s*('''|""")(?<content>[\s\S]*?)\3/g;
-const PYTHON_TRIPLE_OPEN_WRITE_TARGET = /\bopen\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*('''|""")(?<content>[\s\S]*?)\3/g;
+const PYTHON_TRIPLE_OPEN_WRITE_TARGET = /(?<!\.)\bopen\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*('''|""")(?<content>[\s\S]*?)\3/g;
 const PYTHON_WRITE_PATH_TARGET = /\bPath\(\s*(['"])(?<path>[^'"]+)\1\s*\)\.write(?:_text)?\(\s*(['"])(?<content>[\s\S]*?)\3/g;
-const PYTHON_WRITE_OPEN_TARGET = /\bopen\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*(['"])(?<content>[\s\S]*?)\3/g;
+const PYTHON_WRITE_OPEN_TARGET = /(?<!\.)\bopen\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*(['"])(?<content>[\s\S]*?)\3/g;
 const PYTHON_CHANGED_PATH_WRITE_TARGET = /\bPath\(\s*(['"])(?<path>[^'"]+)\1\s*\)\.write(?:_text|_bytes)?\(/g;
-const PYTHON_CHANGED_OPEN_WRITE_TARGET = /\bopen\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text|_bytes)?\(/g;
+const PYTHON_CHANGED_OPEN_WRITE_TARGET = /(?<!\.)\bopen\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text|_bytes)?\(/g;
 const PYTHON_TRIPLE_CONTENT_BINDING = /\b(?<name>[A-Za-z_]\w*)\s*=\s*('''|""")(?<content>[\s\S]*?)\2/g;
 const PYTHON_CONTENT_VARIABLE_PATH_WRITE_TARGET = /\bPath\(\s*(['"])(?<path>[^'"]+)\1\s*\)\.write(?:_text)?\(\s*(?<contentName>[A-Za-z_]\w*)\s*(?:,[^\n)]*)?\)/g;
-const PYTHON_CONTENT_VARIABLE_OPEN_WRITE_TARGET = /\bopen\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*(?<contentName>[A-Za-z_]\w*)\s*(?:,[^\n)]*)?\)/g;
+const PYTHON_CONTENT_VARIABLE_OPEN_WRITE_TARGET = /(?<!\.)\bopen\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*(?<contentName>[A-Za-z_]\w*)\s*(?:,[^\n)]*)?\)/g;
 const PYTHON_DUMP_OPEN_TARGET = /\b(?:json\.dump|yaml\.(?:safe_dump|dump))\([\s\S]*?,\s*open\(\s*(['"])(?<path>[^'"]+)\1\s*,\s*(['"])(?<mode>[^'"]*)\3[\s\S]*?\)/g;
 const PYTHON_DUMP_PATH_OPEN_TARGET = /\b(?:json\.dump|yaml\.(?:safe_dump|dump))\([\s\S]*?,\s*Path\(\s*(['"])(?<path>[^'"]+)\1\s*\)\.open\(\s*(['"])(?<mode>[^'"]*)\3[\s\S]*?\)/g;
 const PYTHON_DUMP_LITERAL_OPEN_TARGET = new RegExp(String.raw`\b(?<serializer>json\.dump|yaml\.(?:safe_dump|dump))\(\s*${PYTHON_LITERAL_COLLECTION}\s*,\s*open\(\s*(?<pathQuote>['"])(?<path>[^'"]+)\k<pathQuote>\s*,\s*(?<modeQuote>['"])(?<mode>[^'"]*)\k<modeQuote>[\s\S]*?\)\s*(?:,[^\n)]*)?\)`, 'g');

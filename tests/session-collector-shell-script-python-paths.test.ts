@@ -101,6 +101,31 @@ describe('shell script Python path bindings', () => {
     }
   });
 
+  it('captures direct Python Path.open write targets', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-direct-path-open-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'from pathlib import Path',
+          'content = """export const first = true;\\nexport const second = true;\\n"""',
+          'Path("src/direct-open.ts").open("w").write("""export const generated = true;\\n""")',
+          'Path("src/direct-open-content.ts").open("w").write(content)',
+          'PY'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added]).sort()).toEqual([
+        ['src/direct-open-content.ts', 2],
+        ['src/direct-open.ts', 1]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it('captures Python context manager writes when open target is a path variable', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-path-open-variable-'));
     try {

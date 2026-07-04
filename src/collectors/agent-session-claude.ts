@@ -82,12 +82,17 @@ export async function parseClaudeSessionFile(cwd: string, sessionFile: string, w
   const untilMillis = parseBoundaryMillis(effectiveWindow?.until);
 
   for (const row of rows) {
-    const message = asRecord(row.message);
-    if (!message) continue;
     sessionId ??= asString(row.sessionId);
-    model ??= asString(message.model);
     if (!rowInAgentCollectionWindow(row, effectiveWindow)) continue;
     matchedWindowRow = true;
+    if (row.type === 'mode') {
+      const mode = asString(row.mode);
+      if (mode) agentModes.add(mode);
+      continue;
+    }
+    const message = asRecord(row.message);
+    if (!message) continue;
+    model ??= asString(message.model);
     if (row.type === 'assistant') agentTurns += 1;
     const rowMillis = rowTimestampMillis(row);
     if (rowMillis != null) {

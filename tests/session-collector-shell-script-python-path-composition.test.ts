@@ -124,6 +124,29 @@ describe('shell script Python path composition bindings', () => {
     }
   });
 
+  it('captures direct Python Path joinpath writes with keyword data content', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-path-direct-joinpath-data-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'from pathlib import Path',
+          'content = """export const first = true;\\nexport const second = true;\\n"""',
+          "Path('src').joinpath('generated', 'data.ts').write_text(data=content, encoding='utf-8')",
+          'PY'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added])).toEqual([
+        ['src/generated/data.ts', 2]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it('captures direct Python Path division writes with literal segments', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-path-direct-division-'));
     try {
@@ -163,6 +186,29 @@ describe('shell script Python path composition bindings', () => {
 
       expect([...files.values()].map((file) => [file.path, file.lines_added])).toEqual([
         ['src/generated/division-content.ts', 2]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('captures direct Python Path division writes with keyword data content', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-path-direct-division-data-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'from pathlib import Path',
+          'content = """export const first = true;\\nexport const second = true;\\n"""',
+          "(Path('src') / 'generated' / 'division-data.ts').write_text(data=content, encoding='utf-8')",
+          'PY'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added])).toEqual([
+        ['src/generated/division-data.ts', 2]
       ]);
     } finally {
       await rm(dir, { recursive: true, force: true });

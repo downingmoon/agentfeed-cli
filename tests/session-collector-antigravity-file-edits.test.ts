@@ -58,6 +58,21 @@ describe('Antigravity file edit evidence', () => {
   });
 
 
+  it('uses the first in-window Antigravity model for partial collection windows', async () => {
+    const dir = fixture.dir();
+    const sessionFile = join(dir, 'antigravity-window-model.jsonl');
+    await fixture.writeJsonl(sessionFile, [
+      { step_index: 0, source: 'MODEL', type: 'PLANNER_RESPONSE', status: 'DONE', model: 'gemini-2.5-pro', created_at: '2026-06-25T03:56:15Z', tokens: { total: 100 }, tool_calls: [] },
+      { step_index: 1, source: 'MODEL', type: 'PLANNER_RESPONSE', status: 'DONE', model: 'gemini-3-flash-preview', created_at: '2026-06-25T04:00:00Z', tokens: { total: 15 }, tool_calls: [] }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile, since: '2026-06-25T04:00:00Z' });
+
+    expect(metrics?.model).toBe('gemini-3-flash-preview');
+    expect(metrics?.tokens_used).toBe(15);
+    expect(metrics?.agent_turns).toBe(1);
+  });
+
   it('extracts Antigravity spawned subagent counts from invoke rows', async () => {
     const dir = fixture.dir();
     const sessionFile = join(dir, 'antigravity-subagents.jsonl');

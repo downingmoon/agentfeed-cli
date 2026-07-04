@@ -129,9 +129,9 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
   const toolResults = createAntigravityToolResultTracker();
 
   for (const row of orderedAntigravityRows(rows)) {
-    model ??= asString(row.model);
     if (!rowInAgentCollectionWindow(row, effectiveWindow)) continue;
     matchedWindowRow = true;
+    model ??= asString(row.model);
     const rowType = asString(row.type);
     const content = asString(row.content) ?? '';
     estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(row) ?? 0);

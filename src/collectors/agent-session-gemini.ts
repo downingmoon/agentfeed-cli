@@ -41,9 +41,9 @@ export async function parseGeminiSessionFile(cwd: string, sessionFile: string, w
 
   for (const row of rows) {
     sessionId ??= asString(row.sessionId);
-    model ??= asString(row.model);
     if (!rowInAgentCollectionWindow(row, effectiveWindow)) continue;
     matchedWindowRow = true;
+    model ??= asString(row.model);
     if (row.type === 'gemini') agentTurns += 1;
     estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(row) ?? 0);
     const rowStartMillis = parseIsoMillis(row.startTime) ?? rowTimestampMillis(row);

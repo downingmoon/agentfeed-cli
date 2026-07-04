@@ -56,6 +56,21 @@ describe('agent session Gemini metrics', () => {
     expect(metrics?.changed_files.map((file) => file.path).sort()).toEqual(['src/api.ts', 'src/gemini.ts']);
   });
 
+  it('uses the first in-window Gemini model for partial collection windows', async () => {
+    const sessionFile = join(dir, 'gemini-window-model.jsonl');
+    await writeJsonl(sessionFile, [
+      { sessionId: 'gemini-window-model', startTime: '2026-05-20T00:00:00Z', lastUpdated: '2026-05-20T01:05:00Z', kind: 'main' },
+      { id: 'g-old', timestamp: '2026-05-20T00:30:00Z', type: 'gemini', model: 'gemini-2.5-pro', tokens: { total: 100 }, toolCalls: [] },
+      { id: 'g-new', timestamp: '2026-05-20T01:00:00Z', type: 'gemini', model: 'gemini-3-flash-preview', tokens: { total: 15 }, toolCalls: [] }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile, since: '2026-05-20T01:00:00Z' });
+
+    expect(metrics?.model).toBe('gemini-3-flash-preview');
+    expect(metrics?.tokens_used).toBe(15);
+    expect(metrics?.agent_turns).toBe(1);
+  });
+
   it('does not count failed Gemini skill or agent activation as completed usage', async () => {
     const sessionFile = join(dir, 'gemini-failed-skill-session.jsonl');
     await writeJsonl(sessionFile, [

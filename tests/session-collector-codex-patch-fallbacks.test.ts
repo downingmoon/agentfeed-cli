@@ -58,4 +58,43 @@ describe('Codex patch fallback evidence', () => {
     expect(metrics?.tool_calls).toBe(1);
   });
 
+  it('counts multiple confirmed parallel apply_patch fallback changes from one output row', async () => {
+    const dir = fixture.dir();
+    const sessionFile = join(dir, 'codex-parallel-multi-apply-patch.jsonl');
+    const firstPatch = [
+      '*** Begin Patch',
+      '*** Add File: src/parallel-first.ts',
+      '+export const first = true;',
+      '*** End Patch'
+    ].join('\n');
+    const secondPatch = [
+      '*** Begin Patch',
+      '*** Add File: src/parallel-second.ts',
+      '+export const second = true;',
+      '+export const secondLine = true;',
+      '*** End Patch'
+    ].join('\n');
+    await fixture.writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-parallel-multi-apply-patch', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'function_call', name: 'multi_tool_use.parallel', arguments: JSON.stringify({
+        tool_uses: [
+          { recipient_name: 'functions.apply_patch', parameters: { input: firstPatch } },
+          { recipient_name: 'functions.apply_patch', parameters: { input: secondPatch } }
+        ]
+      }), call_id: 'parallel-patches' } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'parallel-patches', output: 'Success. Updated the following files:\nA src/parallel-first.ts\nA src/parallel-second.ts' } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.changed_files.map((file) => [file.path, file.status, file.lines_added]).sort()).toEqual([
+      ['src/parallel-first.ts', 'added', 1],
+      ['src/parallel-second.ts', 'added', 2]
+    ]);
+    expect(metrics?.files_changed).toBe(2);
+    expect(metrics?.lines_added).toBe(3);
+    expect(metrics?.tool_calls).toBe(2);
+  });
+
+
 });

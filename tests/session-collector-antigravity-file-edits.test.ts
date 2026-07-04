@@ -154,6 +154,40 @@ describe('Antigravity file edit evidence', () => {
     ]);
   });
 
+  it('does not double count planned Antigravity view result rows as tool calls', async () => {
+    const dir = fixture.dir();
+    const sessionFile = join(dir, 'antigravity-planned-view-file.jsonl');
+    await fixture.writeJsonl(sessionFile, [
+      { step_index: 0, source: 'USER_EXPLICIT', type: 'USER_INPUT', status: 'DONE', created_at: '2026-06-25T03:56:15Z', content: '<USER_REQUEST>Read a file</USER_REQUEST>' },
+      { step_index: 1, source: 'MODEL', type: 'PLANNER_RESPONSE', status: 'DONE', created_at: '2026-06-25T03:56:20Z', tool_calls: [
+        { name: 'view_file', args: { AbsolutePath: JSON.stringify(join(dir, 'src', 'api.ts')) } }
+      ] },
+      { step_index: 2, source: 'MODEL', type: 'VIEW_FILE', status: 'DONE', created_at: '2026-06-25T03:56:21Z', content: `File Path: \`file://${join(dir, 'src', 'api.ts')}\`` }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(1);
+    expect(metrics?.files_changed).toBeNull();
+  });
+
+  it('does not double count planned Antigravity list directory result rows as tool calls', async () => {
+    const dir = fixture.dir();
+    const sessionFile = join(dir, 'antigravity-planned-list-directory.jsonl');
+    await fixture.writeJsonl(sessionFile, [
+      { step_index: 0, source: 'USER_EXPLICIT', type: 'USER_INPUT', status: 'DONE', created_at: '2026-06-25T03:56:15Z', content: '<USER_REQUEST>List a directory</USER_REQUEST>' },
+      { step_index: 1, source: 'MODEL', type: 'PLANNER_RESPONSE', status: 'DONE', created_at: '2026-06-25T03:56:20Z', tool_calls: [
+        { name: 'list_dir', args: { Path: JSON.stringify(join(dir, 'src')) } }
+      ] },
+      { step_index: 2, source: 'MODEL', type: 'LIST_DIRECTORY', status: 'DONE', created_at: '2026-06-25T03:56:21Z', content: `Directory: \`file://${join(dir, 'src')}\`\n- api.ts` }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(1);
+    expect(metrics?.files_changed).toBeNull();
+  });
+
   it('counts direct Antigravity view rows when no planner tool call is present', async () => {
     const dir = fixture.dir();
     const sessionFile = join(dir, 'antigravity-direct-view.jsonl');

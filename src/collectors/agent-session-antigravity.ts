@@ -71,6 +71,20 @@ function antigravityToolCalls(row: Record<string, unknown>): readonly Record<str
   }) : [];
 }
 
+function antigravityToolResultPaths(cwd: string, rowType: string | null, content: string): readonly string[] {
+  switch (rowType) {
+    case 'LIST_DIRECTORY':
+    case 'VIEW_FILE':
+      return [...content.matchAll(/\b(?:Directory|File Path|Path):\s+`?(?<path>file:\/\/[^\s`]+|\/[^\s`]+|[^\s`]+)`?/gi)].flatMap((match) => {
+        const rawPath = match.groups?.path;
+        const rel = rawPath ? relativeProjectPath(cwd, antigravityFilePathFromUri(rawPath)) : null;
+        return rel ? [rel] : [];
+      });
+    default:
+      return [];
+  }
+}
+
 function antigravityPlannedResultPath(cwd: string, toolName: string | null, args: Record<string, unknown>): string | null {
   let rawPath: string | null = null;
   switch (toolName) {
@@ -163,7 +177,7 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
       continue;
     }
     if (rowType !== 'CODE_ACTION' && rowType !== 'INVOKE_SUBAGENT' && isAntigravityToolResultRowType(rowType)) {
-      if (toolResults.countResult(rowType)) toolCalls += 1;
+      if (toolResults.countResult(rowType, antigravityToolResultPaths(cwd, rowType, content))) toolCalls += 1;
       continue;
     }
     if (rowType === 'INVOKE_SUBAGENT') {

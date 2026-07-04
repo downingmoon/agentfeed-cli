@@ -121,6 +121,23 @@ describe('shell script variable write options', () => {
     }
   });
 
+  it('captures shell printf format escaped unquoted argument redirects with line counts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-printf-format-escaped-unquoted-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: "printf '%s\\n' export\\ const\\ first=true export\\ const\\ second=true > src/generated-printf-escaped-unquoted.ts"
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added])).toEqual([
+        ['src/generated-printf-escaped-unquoted.ts', 2]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it('captures shell heredoc tee targets before suppressing redirects', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-tee-redirect-'));
     try {

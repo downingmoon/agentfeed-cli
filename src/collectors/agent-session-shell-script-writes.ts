@@ -29,8 +29,26 @@ function contentBindings(command: string): ReadonlyMap<string, string> {
   return new Map([...pythonContentBindings(command), ...nodeContentBindings(command)]);
 }
 
-function unsafeUnquotedShellArgument(value: string): boolean {
-  return /[$`\\*?\[\]{}()<>|&;]/.test(value);
+function unsafeUnescapedShellCharacter(value: string): boolean {
+  return /[$`*?\[\]{}()<>|&;]/.test(value);
+}
+
+function unquotedShellArgument(value: string, start: number): { readonly value: string; readonly nextIndex: number } | null {
+  let content = '';
+  for (let index = start; index < value.length; index += 1) {
+    const character = value[index];
+    if (character === undefined || /\s/.test(character)) return { value: content, nextIndex: index };
+    if (character === '\\') {
+      const escaped = value[index + 1];
+      if (escaped === undefined || /\r|\n/.test(escaped)) return null;
+      content += escaped;
+      index += 1;
+      continue;
+    }
+    if (unsafeUnescapedShellCharacter(character)) return null;
+    content += character;
+  }
+  return { value: content, nextIndex: value.length };
 }
 
 function doubleQuotedShellArgument(value: string, start: number): { readonly value: string; readonly nextIndex: number } | null {
@@ -73,12 +91,10 @@ function shellPrintfArguments(value: string): string[] | null {
       continue;
     }
 
-    let end = index;
-    while (end < value.length && !/\s/.test(value[end] ?? '')) end += 1;
-    const argument = value.slice(index, end);
-    if (unsafeUnquotedShellArgument(argument)) return null;
-    args.push(argument);
-    index = end;
+    const argument = unquotedShellArgument(value, index);
+    if (!argument) return null;
+    args.push(argument.value);
+    index = argument.nextIndex;
   }
 
   return args;

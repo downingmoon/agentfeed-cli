@@ -20,16 +20,14 @@ describe('CLI guidance next actions', () => {
   });
 
   it('returns hook lifecycle follow-up actions', () => {
-    expect(hookNextActions('install', true)).toEqual(['agentfeed hook install claude-code']);
-    expect(hookNextActions('install')).toEqual(['agentfeed status', 'agentfeed share --dry']);
-    expect(hookNextActions('uninstall')).toEqual(['agentfeed status']);
+    expect(hookNextActions()).toEqual(['agentfeed status']);
   });
 
   it('returns initialization follow-up actions by initialization state', () => {
     expect(initNextActions(false)).toEqual([
       'agentfeed login',
-      'agentfeed hook install claude-code',
-      'agentfeed share --dry'
+      'agentfeed share --dry',
+      'agentfeed status'
     ]);
     expect(initNextActions(true)).toEqual([
       'agentfeed status',

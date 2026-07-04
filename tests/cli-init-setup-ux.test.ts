@@ -28,13 +28,12 @@ describe('CLI init setup UX', () => {
     expect(stdout).toContain('Setup checklist');
     expect(stdout).toContain('Project: config ready');
     expect(stdout).toContain('Account: connect this terminal to AgentFeed');
-    expect(stdout).toContain('Agent hook: capture Claude Code sessions automatically');
     expect(stdout).toContain('First draft: collect locally without uploading');
     expect(stdout).toContain('Next');
     expect(stdout).toContain('Recommended order:');
     expect(stdout).toContain('  1. agentfeed login');
-    expect(stdout).toContain('  2. agentfeed hook install claude-code');
-    expect(stdout).toContain('  3. agentfeed share --dry');
+    expect(stdout).toContain('  2. agentfeed share --dry');
+    expect(stdout).toContain('  3. agentfeed status');
     expect(stderr).toBe('');
   });
 
@@ -56,7 +55,7 @@ describe('CLI init setup UX', () => {
       project: { name: 'setup-json', visibility: 'private', tags: [] },
       config_path: '.agentfeed/config.json',
       backup_paths: [],
-      next_actions: ['agentfeed login', 'agentfeed hook install claude-code', 'agentfeed share --dry']
+      next_actions: ['agentfeed login', 'agentfeed share --dry', 'agentfeed status']
     });
     expect(output.setup_checklist).toEqual(expect.arrayContaining([
       expect.objectContaining({ name: 'Project', detail: 'config ready' }),
@@ -83,7 +82,7 @@ describe('CLI init setup UX', () => {
     expect(stdout).toContain('Project: setup-polish');
     expect(stdout).toContain('Setup checklist');
     expect(stdout).toContain('Project: existing config kept');
-    expect(stdout).toContain('Status: inspect credentials, API, hooks, and drafts');
+    expect(stdout).toContain('Status: inspect credentials, API, and drafts');
     expect(stdout).toContain('Reinitialize: backup and recreate config only if needed');
     expect(stdout).toContain('Next');
     expect(stdout).toContain('Recommended order:');

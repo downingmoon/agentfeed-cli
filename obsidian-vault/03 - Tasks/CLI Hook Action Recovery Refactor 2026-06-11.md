@@ -18,7 +18,7 @@ CLI `hook` 명령의 알 수 없는 action 복구 메시지를 `src/cli/index.ts
 
 - `src/cli/command-recovery.ts`
   - `unknownHookActionMessage(action, supportedActions)` 추가.
-  - action typo일 때 `agentfeed hook install claude-code` 제안을 생성한다.
+  - action typo일 때 `legacy Claude Code hook setup` (deprecated) 제안을 생성한다.
   - 멀리 떨어진 action에는 suggestion 없이 usage와 recovery command만 보여준다.
 - `src/cli/index.ts`
   - `hook.validatePositionals`의 inline closest-match/recovery 문자열 조합 제거.
@@ -33,8 +33,8 @@ CLI `hook` 명령의 알 수 없는 action 복구 메시지를 `src/cli/index.ts
 - Build: `npm run build` 통과.
 - CLI surface smoke: `node dist/cli/index.js hook instal claude-code`가 exit 1로 실패하며 다음을 stderr에 출력.
   - `Unknown hook action: instal`
-  - `Did you mean: agentfeed hook install claude-code`
-  - `Usage: agentfeed hook install|uninstall claude-code`
+  - `Did you mean: legacy Claude Code hook setup (deprecated)`
+  - `Usage: agentfeed hook uninstall claude-code`
 - Full regression: `npm test -- --run` 통과, 50 files / 653 tests.
 - Diff hygiene: `git diff --check` 통과.
 - Strict grep: touched TS/test files에서 `as any`, `as unknown`, `@ts-ignore`, `@ts-expect-error`, empty catch, `: any`, `enum`, non-null assertion 패턴 없음.

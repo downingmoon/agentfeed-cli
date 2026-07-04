@@ -30,7 +30,7 @@ describe('command argument specs', () => {
     // Then: recovery remains command-aware and suggestion-rich.
     expect(tokenError).toContain('Unexpected argument for token rotate: browser');
     expect(tokenError).toContain('Did you mean: agentfeed token rotate --browser');
-    expect(hookError).toContain('Did you mean: agentfeed hook install claude-code');
+    expect(hookError).toContain('Did you mean: agentfeed hook uninstall claude-code');
     expect(helpError).toContain('Did you mean: agentfeed help status');
   });
 

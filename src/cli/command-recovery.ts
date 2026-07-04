@@ -64,9 +64,21 @@ export function helpUnexpectedTokenArgumentMessage(argument: string): string {
 
 export function hookUsageMessage(): string {
   return [
-    'Usage: agentfeed hook install|uninstall claude-code',
+    'Usage: agentfeed hook uninstall claude-code',
+    'Claude Code hook install is deprecated.',
     'Run: agentfeed hook --help',
-    'Run: agentfeed hook install claude-code --dry-run'
+    'Run: agentfeed hook uninstall claude-code --help'
+  ].join('\n');
+}
+
+export function hookInstallDeprecatedMessage(): string {
+  return [
+    'AgentFeed hook install is deprecated.',
+    'Use explicit transcript collection instead:',
+    'Run: agentfeed collect --source claude-code --explain',
+    'Run: agentfeed share --dry',
+    'Clean up an existing legacy hook if needed:',
+    'Run: agentfeed hook uninstall claude-code'
   ].join('\n');
 }
 
@@ -100,9 +112,9 @@ export function unsupportedHookTargetMessage(action = 'install', target?: string
     ? `Did you mean: agentfeed hook ${action} claude-code`
     : null;
   return [
-    'Only claude-code hooks are supported.',
+    'Only legacy claude-code hook cleanup is supported.',
     ...(suggestion ? [suggestion] : []),
-    'Run: agentfeed hook install claude-code --help'
+    'Run: agentfeed hook uninstall claude-code --help'
   ].join('\n');
 }
 

@@ -22,7 +22,7 @@ Extracted remaining general-purpose CLI next-action guidance from the oversized 
 - `src/cli/index.ts`
   - Imports the extracted pure guidance helpers while keeping command orchestration and rendering local.
 - `tests/cli-guidance-actions.test.ts`
-  - Adds focused coverage for privacy scan targets/modes, hook install/uninstall, init existing/new states, and command catalog onboarding actions.
+  - Adds focused coverage for privacy scan targets/modes, legacy hook setup/uninstall, init existing/new states, and command catalog onboarding actions.
 
 ## Verification
 

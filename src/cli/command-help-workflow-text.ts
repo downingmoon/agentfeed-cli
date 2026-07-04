@@ -124,25 +124,25 @@ Examples:
   agentfeed scan --latest --dry-run
   agentfeed scan --id draft_20260606_120000_abcd
   agentfeed scan --path .`,
-  hook: `Usage: agentfeed hook install|uninstall claude-code [options]
+  hook: `Usage: agentfeed hook uninstall claude-code [options]
 
-Install or remove the AgentFeed Claude Code hook.
+Deprecated legacy cleanup for the AgentFeed Claude Code hook.
+Hook install is disabled; use explicit transcript collection instead.
 
 When to use:
-  Use to capture Claude Code sessions automatically for richer drafts.
+  Use only to remove an older AgentFeed Claude Code hook from settings.
 
 Options:
   --global                  Modify the global Claude Code settings
   --project                 Use project settings (default)
   --settings-path <path>    Override the Claude Code settings path
-  --dry-run                 Print intended install changes without writing
-  --json                    Print machine-readable hook result
+  --json                    Print machine-readable cleanup result
   --help, -h                Show this help
 
 Examples:
-  agentfeed hook install claude-code --dry-run
-  agentfeed hook install claude-code
-  agentfeed hook uninstall claude-code`,
+  agentfeed hook uninstall claude-code
+  agentfeed collect --source claude-code --explain
+  agentfeed share --dry`,
   doctor: `Usage: agentfeed doctor
 
 Run local AgentFeed diagnostics for credentials, API reachability,

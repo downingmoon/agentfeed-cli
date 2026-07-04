@@ -125,7 +125,7 @@ Safety:
   Run agentfeed status after logout to confirm no active token remains.`,
   status: `Usage: agentfeed status
 
-Show credential, API, project, hook, draft, and collection cursor status.
+Show credential, API, project, draft, and collection cursor status.
 
 When to use:
   Run when setup feels stuck or before sharing from a new shell.

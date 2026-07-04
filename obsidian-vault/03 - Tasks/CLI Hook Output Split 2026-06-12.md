@@ -12,7 +12,7 @@ tags:
 # CLI Hook Output Split 2026-06-12
 
 > [!success] 완료
-> `agentfeed hook install/uninstall claude-code`의 JSON payload와 human-readable lifecycle rendering을 `src/cli/hook-output.ts`로 분리했다. Claude settings discovery/write/remove side effect는 `cmdHook`에 남기고 출력 계약만 helper로 이동했다.
+> `legacy Claude Code hook lifecycle cleanup`의 JSON payload와 human-readable lifecycle rendering을 `src/cli/hook-output.ts`로 분리했다. Claude settings discovery/write/remove side effect는 `cmdHook`에 남기고 출력 계약만 helper로 이동했다.
 
 ## 변경 범위
 
@@ -21,7 +21,7 @@ tags:
   - `renderHookHumanLines`로 hook heading, lifecycle message, summary, backup, guided next action rendering을 집중화했다.
   - install-only `dry_run` field와 uninstall JSON shape를 discriminated input/output type으로 분리했다.
 - `src/cli/index.ts`
-  - `cmdHook`은 target validation, project resolution, config loading, hook install/uninstall execution만 유지하고 출력 조립을 helper에 위임한다.
+  - `cmdHook`은 target validation, project resolution, config loading, legacy hook setup/uninstall execution만 유지하고 출력 조립을 helper에 위임한다.
 - `tests/hook-output.test.ts`
   - dry-run install JSON, uninstall JSON, install human output, uninstall human output을 순수 단위 테스트로 고정했다.
 
@@ -33,9 +33,9 @@ tags:
   - `npx vitest run tests/hook-output.test.ts tests/cli-init-hook.test.ts tests/api-hook.test.ts tests/cli-guidance-actions.test.ts --reporter=verbose` → 153 tests passed.
 - Full suite: `npm test -- --run` → 89 files / 747 tests passed.
 - 실제 CLI smoke:
-  - temp project `agentfeed hook install claude-code --dry-run` human output에서 dry-run heading, summary, next action 확인 및 settings 파일 미생성 확인.
-  - temp project `agentfeed hook install claude-code --dry-run --json` JSON에서 target/action/scope/dry_run/settings_path/backup_path/next_actions 확인.
-  - temp project `agentfeed hook install claude-code` human output에서 installed heading, dry-run no, recommended order 확인.
+  - temp project `legacy hook dry-run smoke (deprecated)` human output에서 dry-run heading, summary, next action 확인 및 settings 파일 미생성 확인.
+  - temp project `legacy hook dry-run JSON smoke (deprecated)` JSON에서 target/action/scope/dry_run/settings_path/backup_path/next_actions 확인.
+  - temp project `legacy Claude Code hook setup` (deprecated) human output에서 installed heading, dry-run no, recommended order 확인.
   - temp project `agentfeed hook uninstall claude-code` human output에서 removed heading 및 status next action 확인.
   - temp project `agentfeed hook uninstall claude-code --json` JSON에서 uninstall shape 및 `dry_run` 미노출 확인.
 - 정적 검증:

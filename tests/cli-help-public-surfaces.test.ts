@@ -49,7 +49,6 @@ describe('CLI public command help surfaces', () => {
       [['share', '--help'], ['Examples:', 'agentfeed share --dry', 'agentfeed share --dry --explain', 'agentfeed share --yes --open-review']],
       [['publish', '--help'], ['Examples:', 'agentfeed publish --latest --yes', 'agentfeed publish --latest --json --clipboard']],
       [['scan', '--help'], ['Examples:', 'agentfeed scan --latest --dry-run', 'agentfeed scan --path .']],
-      [['hook', '--help'], ['Examples:', 'agentfeed hook install claude-code --dry-run', 'agentfeed hook uninstall claude-code']],
       [['open', '--help'], ['Examples:', 'agentfeed open --latest', 'agentfeed open --id draft_20260606_120000_abcd']],
     ];
 
@@ -78,7 +77,6 @@ describe('CLI public command help surfaces', () => {
       ['preview', '--help'],
       ['publish', '--help'],
       ['scan', '--help'],
-      ['hook', '--help'],
       ['doctor', '--help'],
       ['drafts', '--help'],
       ['discard', '--help'],
@@ -113,7 +111,6 @@ describe('CLI public command help surfaces', () => {
       ['preview', '--help'],
       ['publish', '--help'],
       ['scan', '--help'],
-      ['hook', '--help'],
       ['doctor', '--help'],
       ['drafts', '--help'],
       ['discard', '--help'],
@@ -145,7 +142,6 @@ describe('CLI public command help surfaces', () => {
       [['preview', '--help'], ['Usage: agentfeed preview', '--remote', '--json']],
       [['publish', '--help'], ['Usage: agentfeed publish', '--open-review', '--json']],
       [['scan', '--help'], ['Usage: agentfeed scan', '--path <path>', '--dry-run']],
-      [['hook', '--help'], ['Usage: agentfeed hook', '--settings-path', 'claude-code']],
       [['doctor', '--help'], ['Usage: agentfeed doctor', 'diagnostics', '--json']],
       [['drafts', '--help'], ['Usage: agentfeed drafts', '--json']],
       [['discard', '--help'], ['Usage: agentfeed discard', '--latest', '--id', '--yes', '--json']],
@@ -159,6 +155,17 @@ describe('CLI public command help surfaces', () => {
       for (const line of expectedLines) expect(stdout).toContain(line);
       expect(stdout).not.toContain('Usage: agentfeed <command>');
     }
+  });
+
+  it('keeps legacy hook help limited to uninstall cleanup', async () => {
+    const { stdout, stderr } = await runCli(['hook', '--help']);
+
+    expect(stderr).toBe('');
+    expect(stdout).toContain('Usage: agentfeed hook uninstall claude-code');
+    expect(stdout).toContain('Hook install is disabled');
+    expect(stdout).toContain('agentfeed hook uninstall claude-code');
+    expect(stdout).toContain('agentfeed collect --source claude-code --explain');
+    expect(stdout).not.toContain('agentfeed hook install claude-code');
   });
 
   it('prints login-specific help for login --help', async () => {

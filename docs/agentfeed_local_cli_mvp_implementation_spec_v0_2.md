@@ -84,7 +84,6 @@ agentfeed status
 agentfeed collect
 agentfeed preview
 agentfeed publish
-agentfeed hook install claude-code
 agentfeed hook uninstall claude-code
 agentfeed scan
 agentfeed doctor
@@ -747,7 +746,7 @@ Config: .agentfeed/config.json
 
 Next:
   agentfeed login
-  agentfeed hook install claude-code
+  agentfeed share --dry
 ```
 
 ---
@@ -806,7 +805,6 @@ API base URL
 Project initialized: yes/no
 Project name
 Git repository: yes/no
-Claude Code hook: installed/not installed/unknown
 Local drafts count
 Pending upload count
 ```
@@ -975,20 +973,19 @@ For path scan:
 
 ---
 
-## 9.8 agentfeed hook install claude-code
+## 9.8 agentfeed hook uninstall claude-code
 
 ### Purpose
 
-Install a Claude Code Stop hook that runs AgentFeed collection after sessions.
+Remove a legacy AgentFeed Claude Code Stop hook from Claude settings. New collection uses explicit `agentfeed collect` / `agentfeed share` commands instead.
 
 ### Usage
 
 ```bash
-agentfeed hook install claude-code
-agentfeed hook install claude-code --project
-agentfeed hook install claude-code --global
-agentfeed hook install claude-code --settings-path <path>
-agentfeed hook install claude-code --dry-run
+agentfeed hook uninstall claude-code
+agentfeed hook uninstall claude-code --project
+agentfeed hook uninstall claude-code --global
+agentfeed hook uninstall claude-code --settings-path <path>
 ```
 
 ### Project Scope Default
@@ -2022,7 +2019,7 @@ The local CLI MVP is considered complete when:
 6. `agentfeed preview` displays the latest draft.
 7. `agentfeed publish` uploads to backend `/ingest/worklogs`.
 8. Successful upload stores `worklog_id` and `review_url` in draft JSON.
-9. `agentfeed hook install claude-code` modifies Claude Code settings safely.
+9. `agentfeed hook uninstall claude-code` removes legacy AgentFeed Claude Code settings safely.
 10. `agentfeed hook uninstall claude-code` removes only the AgentFeed hook.
 11. Privacy scanner catches common secrets.
 12. Tests pass.
@@ -2214,7 +2211,6 @@ npm install -g agentfeed-cli
 cd ~/projects/binance-signal-bot
 agentfeed init
 agentfeed login --token af_live_xxxxxxxxx
-agentfeed hook install claude-code
 ```
 
 ## 29.2 After AI Coding Session
@@ -2287,7 +2283,6 @@ The CLI MVP should feel like this:
 ```bash
 agentfeed init
 agentfeed login --token af_live_xxx
-agentfeed hook install claude-code
 # user works with Claude Code
 agentfeed preview
 agentfeed publish --latest --open-review

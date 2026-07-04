@@ -177,17 +177,17 @@ describe('CLI help option validation and recovery', () => {
   it('prints hook recovery commands when hook action or target is missing', async () => {
     const failure = await runCliFailure(['hook']);
 
-    expect(failure.stderr).toContain('Usage: agentfeed hook install|uninstall claude-code');
+    expect(failure.stderr).toContain('Usage: agentfeed hook uninstall claude-code');
+    expect(failure.stderr).toContain('Claude Code hook install is deprecated.');
     expect(failure.stderr).toContain('Run: agentfeed hook --help');
-    expect(failure.stderr).toContain('Run: agentfeed hook install claude-code --dry-run');
     expect(failure.stdout).toBe('');
   });
 
   it('prints supported hook target guidance for unsupported hook targets', async () => {
-    const failure = await runCliFailure(['hook', 'install', 'cursor']);
+    const failure = await runCliFailure(['hook', 'uninstall', 'cursor']);
 
-    expect(failure.stderr).toContain('Only claude-code hooks are supported.');
-    expect(failure.stderr).toContain('Run: agentfeed hook install claude-code --help');
+    expect(failure.stderr).toContain('Only legacy claude-code hook cleanup is supported.');
+    expect(failure.stderr).toContain('Run: agentfeed hook uninstall claude-code --help');
     expect(failure.stdout).toBe('');
   });
 });

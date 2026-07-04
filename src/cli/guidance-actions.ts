@@ -4,8 +4,6 @@ export type PrivacyScanNextActionOptions = {
   readonly path?: string;
 };
 
-export type HookLifecycleAction = 'install' | 'uninstall';
-
 export function privacyScanNextActions(options: PrivacyScanNextActionOptions = {}): string[] {
   if (options.draftId) {
     return options.dryRun
@@ -16,16 +14,14 @@ export function privacyScanNextActions(options: PrivacyScanNextActionOptions = {
   return ['agentfeed status'];
 }
 
-export function hookNextActions(action: HookLifecycleAction, dryRun = false): string[] {
-  if (action === 'install' && dryRun) return ['agentfeed hook install claude-code'];
-  if (action === 'install') return ['agentfeed status', 'agentfeed share --dry'];
+export function hookNextActions(): string[] {
   return ['agentfeed status'];
 }
 
 export function initNextActions(alreadyInitialized: boolean): string[] {
   return alreadyInitialized
     ? ['agentfeed status', 'agentfeed share --dry', 'agentfeed init --force']
-    : ['agentfeed login', 'agentfeed hook install claude-code', 'agentfeed share --dry'];
+    : ['agentfeed login', 'agentfeed share --dry', 'agentfeed status'];
 }
 
 export function commandCatalogNextActions(): string[] {

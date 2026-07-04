@@ -55,13 +55,13 @@ describe('Claude Code hook installer', () => {
     expect(await pathExists(settings)).toBe(false);
   });
 
-  it('fails hook install with actionable guidance when Claude settings JSON is malformed', async () => {
+  it('reports malformed settings with legacy cleanup guidance when Claude settings JSON is malformed', async () => {
     const settings = join(dir, '.claude', 'settings.json');
     await mkdir(join(dir, '.claude'), { recursive: true });
     await writeFile(settings, '{not-json');
 
     await expect(installClaudeCodeHook({ projectRoot: dir, settingsPath: settings }))
-      .rejects.toThrow(/Claude Code settings could not be parsed.*settings\.json.*rerun agentfeed hook install claude-code/s);
+      .rejects.toThrow(/Claude Code settings could not be parsed.*settings\.json.*rerun agentfeed hook uninstall claude-code/s);
   });
 
   it('rejects non-object Claude settings instead of replacing user configuration shape', async () => {

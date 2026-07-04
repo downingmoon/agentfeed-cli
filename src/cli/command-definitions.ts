@@ -12,7 +12,6 @@ export const PUBLIC_COMMANDS = [
   'status',
   'doctor',
   'version',
-  'hook',
   'drafts',
   'discard',
   'rotate',
@@ -41,7 +40,6 @@ export const COMMAND_DESCRIPTIONS: Readonly<Record<PublicCommand, string>> = {
   status: 'Show credentials, project, and draft status',
   doctor: 'Run local diagnostics',
   version: 'Print the installed AgentFeed CLI version',
-  hook: 'Install or remove agent hooks',
   drafts: 'List local draft summaries',
   discard: 'Delete a local draft',
   rotate: 'Replace the saved ingestion token',
@@ -63,7 +61,6 @@ export const COMMAND_EXAMPLES: Readonly<Record<PublicCommand, string>> = {
   status: 'agentfeed status',
   doctor: 'agentfeed doctor',
   version: 'agentfeed version',
-  hook: 'agentfeed hook install claude-code --dry-run',
   drafts: 'agentfeed drafts',
   discard: 'agentfeed discard --id <draft_id>',
   rotate: 'agentfeed rotate',
@@ -72,7 +69,6 @@ export const COMMAND_EXAMPLES: Readonly<Record<PublicCommand, string>> = {
 };
 
 export const COMMAND_USAGE_OVERRIDES: Readonly<Partial<Record<PublicCommand, string>>> = {
-  hook: 'agentfeed hook install|uninstall claude-code [options]',
   completion: 'agentfeed completion <shell>'
 };
 
@@ -80,7 +76,7 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
   { title: 'Start', commands: ['help', 'commands', 'init', 'login', 'status'] },
   { title: 'Share work', commands: ['share', 'collect', 'preview', 'publish', 'open'] },
   { title: 'Privacy and drafts', commands: ['scan', 'drafts', 'discard'] },
-  { title: 'Automation', commands: ['hook', 'completion'] },
+  { title: 'Automation', commands: ['completion'] },
   { title: 'Account and diagnostics', commands: ['doctor', 'version', 'rotate', 'logout'] }
 ];
 

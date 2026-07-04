@@ -15,7 +15,7 @@ aliases:
 # CLI Hook Command Split 2026-06-21
 
 > [!success]
-> `agentfeed hook install/uninstall claude-code` orchestration을 `src/cli/index.ts`에서 `src/cli/hook-command.ts`로 분리했다. 기존 project/global scope resolution, project init guard, settings path override, dry-run/install/uninstall JSON/human output behavior는 유지했다.
+> `legacy Claude Code hook lifecycle cleanup` orchestration을 `src/cli/index.ts`에서 `src/cli/hook-command.ts`로 분리했다. 기존 project/global scope resolution, project init guard, settings path override, dry-run/install/uninstall JSON/human output behavior는 유지했다.
 
 ## Scope
 
@@ -28,7 +28,7 @@ aliases:
 ## Cleanup Plan
 
 1. 기존 hook behavior를 `tests/cli-init-hook.test.ts`, `tests/hook-output.test.ts`, command recovery/arg spec tests와 `tsc --noEmit`으로 baseline 고정한다.
-2. hook install/uninstall side-effect orchestration을 전용 command module로 이동한다.
+2. legacy hook setup/uninstall side-effect orchestration을 전용 command module로 이동한다.
 3. `src/cli/index.ts`는 process cwd와 output dependency만 전달하는 dispatcher로 축소한다.
 4. focused tests, typecheck/build, full suite, dist CLI hook smoke, diff/no-excuse audit로 회귀를 확인한다.
 
@@ -36,7 +36,7 @@ aliases:
 
 1. `src/cli/hook-command.ts`를 추가했다.
 2. hook target validation, project root resolution, install-time project config guard, scope/settings-path/dry-run option handling을 새 module로 이동했다.
-3. Claude Code hook install/uninstall execution 및 JSON/human output assembly를 새 module로 이동했다.
+3. Claude Code legacy hook setup/uninstall execution 및 JSON/human output assembly를 새 module로 이동했다.
 4. `src/cli/index.ts`에서 hook 전용 imports와 orchestration을 제거했다.
 5. `cmdHook`는 `runHookCommand(args, { cwd, print, printLines })` 호출만 남겼다.
 
@@ -90,7 +90,7 @@ npm test -- --run tests/cli-init-hook.test.ts tests/hook-output.test.ts tests/cl
 npm test -- --run
 git diff --check
 rg no-excuse audit on src/cli/index.ts and src/cli/hook-command.ts
-dist CLI hook install dry-run/install/uninstall smoke in isolated temp cwd/home
+dist CLI legacy hook setup dry-run/install/uninstall smoke in isolated temp cwd/home
 ```
 
 Result:
@@ -110,10 +110,10 @@ dist CLI hook smoke: passed; dry-run human/json, install settings write, uninsta
 Smoke assertions:
 
 - `agentfeed init --no-git-check --project-name hook-split-smoke --json` ran in temp cwd.
-- `agentfeed hook install claude-code --dry-run` human output contained dry-run heading and install next action.
-- `agentfeed hook install claude-code --dry-run --json` parsed successfully with `action: install`, `dry_run: true`, `backup_path: null`.
+- `legacy hook dry-run smoke (deprecated)` human output contained dry-run heading and install next action.
+- `legacy hook dry-run JSON smoke (deprecated)` parsed successfully with `action: install`, `dry_run: true`, `backup_path: null`.
 - Dry-run did not create `.claude/settings.json`.
-- `agentfeed hook install claude-code` human output contained installed heading and wrote the Claude Code Stop hook command.
+- `legacy Claude Code hook setup` (deprecated) human output contained installed heading and wrote the Claude Code Stop hook command.
 - `agentfeed hook uninstall claude-code --json` parsed successfully with `action: uninstall`, no `dry_run`, and `agentfeed status` next action.
 - Post-uninstall settings no longer contained the AgentFeed Claude Code Stop hook marker.
 

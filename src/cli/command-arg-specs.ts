@@ -6,6 +6,7 @@ import {
   helpTopicError,
   helpUnexpectedArgumentMessage,
   helpUnexpectedTokenArgumentMessage,
+  hookInstallDeprecatedMessage,
   hookUnexpectedArgumentMessage,
   hookUsageMessage,
   tokenRotateUnexpectedArgumentMessage,
@@ -138,8 +139,9 @@ export const COMMAND_ARG_SPECS: Readonly<Record<string, CommandArgSpec>> = {
       if (positionals.length < 2) return hookUsageMessage();
       if (positionals.length > 2) return hookUnexpectedArgumentMessage(positionals[2]);
       const [action, target] = positionals;
-      if (action !== 'install' && action !== 'uninstall') {
-        return unknownHookActionMessage(action, ['install', 'uninstall']);
+      if (action === 'install') return hookInstallDeprecatedMessage();
+      if (action !== 'uninstall') {
+        return unknownHookActionMessage(action, ['uninstall']);
       }
       if (target !== 'claude-code') return unsupportedHookTargetMessage(action, target);
       return null;

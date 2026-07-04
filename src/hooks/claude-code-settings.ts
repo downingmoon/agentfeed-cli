@@ -64,10 +64,10 @@ async function readSettings(path: string): Promise<JsonObj> {
     parsed = JSON.parse(await readFile(path, 'utf8'));
   } catch (error) {
     const reason = error instanceof Error && error.message ? ` ${error.message}` : '';
-    throw new Error(`Claude Code settings could not be parsed at ${path}.${reason} Fix the JSON or move the file aside, then rerun agentfeed hook install claude-code.`);
+    throw new Error(`Claude Code settings could not be parsed at ${path}.${reason} Fix the JSON or move the file aside, then rerun agentfeed hook uninstall claude-code.`);
   }
   if (!isJsonObject(parsed)) {
-    throw new Error(`Claude Code settings must be a JSON object at ${path}. Fix the file or move it aside, then rerun agentfeed hook install claude-code.`);
+    throw new Error(`Claude Code settings must be a JSON object at ${path}. Fix the file or move it aside, then rerun agentfeed hook uninstall claude-code.`);
   }
   return parsed;
 }
@@ -83,7 +83,7 @@ async function backupSettings(projectRoot: string, path: string): Promise<string
 }
 
 function settingsShapeError(path: string, field: string, shape: string): Error {
-  return new Error(`Claude Code settings ${field} must be ${shape} at ${path}. Fix the file or move it aside, then rerun agentfeed hook install claude-code.`);
+  return new Error(`Claude Code settings ${field} must be ${shape} at ${path}. Fix the file or move it aside, then rerun agentfeed hook uninstall claude-code.`);
 }
 
 function hooksObject(settings: JsonObj, path: string): JsonObj {

@@ -12,7 +12,7 @@ status: done
 
 ## Result
 
-`agentfeed hook install claude-code <extra>`의 unexpected positional recovery 메시지를 `src/cli/command-recovery.ts`의 `hookUnexpectedArgumentMessage`로 분리했다. hook positional validation은 arity/action/target 판정만 남기고, recovery message assembly는 focused helper가 담당한다.
+`legacy hook extra-argument case (deprecated)`의 unexpected positional recovery 메시지를 `src/cli/command-recovery.ts`의 `hookUnexpectedArgumentMessage`로 분리했다. hook positional validation은 arity/action/target 판정만 남기고, recovery message assembly는 focused helper가 담당한다.
 
 ## Changed
 
@@ -28,7 +28,7 @@ status: done
 - Red test confirmed first: helper import failed with `hookUnexpectedArgumentMessage is not a function`.
 - `npm run build` passed.
 - `npx vitest run tests/cli-command-recovery-extra.test.ts tests/cli-help.test.ts --reporter=verbose` passed: 2 files, 49 tests.
-- CLI surface smoke passed: `node dist/cli/index.js hook install claude-code extra` exited 1 and printed `Unexpected argument for hook: extra` plus `Run: agentfeed hook --help`.
+- CLI surface smoke passed: `node dist/cli/index.js legacy hook setup claude-code extra` exited 1 and printed `Unexpected argument for hook: extra` plus `Run: agentfeed hook --help`.
 - `npm test -- --run` passed: 50 files, 659 tests.
 - `git diff --check` passed.
 - Escape-hatch grep passed for touched TS/test files: no `as any`, `as unknown`, `@ts-ignore`, `@ts-expect-error`, empty catch, `: any`, enum, or non-null assertion.

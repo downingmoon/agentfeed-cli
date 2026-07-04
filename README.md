@@ -138,7 +138,6 @@ agentfeed collect --source codex --explain
 agentfeed collect --source gemini-cli --explain
 agentfeed collect --source antigravity-cli --explain
 agentfeed collect --source claude-code --session-file "$CLAUDE_SESSION_FILE" --explain
-agentfeed hook install claude-code
 ```
 
 If `doctor` detects global agent logs but `collect --explain` says no session matched this project root, run `agentfeed` from the same initialized repository root where the agent worked. For parent-workspace or monorepo sessions, initialize and collect from that parent root, or pass a session file that belongs to the current project.

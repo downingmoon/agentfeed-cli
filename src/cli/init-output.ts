@@ -51,14 +51,13 @@ export function initSetupChecklist(alreadyInitialized: boolean): InitChecklistIt
   return alreadyInitialized
     ? [
       { name: 'Project', detail: 'existing config kept' },
-      { name: 'Status', detail: 'inspect credentials, API, hooks, and drafts', next_action: 'agentfeed status' },
+      { name: 'Status', detail: 'inspect credentials, API, and drafts', next_action: 'agentfeed status' },
       { name: 'First draft', detail: 'collect locally without uploading', next_action: 'agentfeed share --dry' },
       { name: 'Reinitialize', detail: 'backup and recreate config only if needed', next_action: 'agentfeed init --force' }
     ]
     : [
       { name: 'Project', detail: 'config ready' },
       { name: 'Account', detail: 'connect this terminal to AgentFeed', next_action: 'agentfeed login' },
-      { name: 'Agent hook', detail: 'capture Claude Code sessions automatically', next_action: 'agentfeed hook install claude-code' },
       { name: 'First draft', detail: 'collect locally without uploading', next_action: 'agentfeed share --dry' }
     ];
 }

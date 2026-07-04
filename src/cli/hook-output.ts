@@ -1,16 +1,8 @@
-import { hookNextActions, type HookLifecycleAction } from './guidance-actions.js';
+import { hookNextActions } from './guidance-actions.js';
 import { renderGuidedNextCommandLines } from './guided-next-command-renderer.js';
 import * as ui from './ui.js';
 
 export type HookScope = 'project' | 'global';
-
-export type HookInstallOutputInput = {
-  readonly action: 'install';
-  readonly scope: HookScope;
-  readonly dryRun: boolean;
-  readonly settingsPath: string;
-  readonly backupPath: string | null;
-};
 
 export type HookUninstallOutputInput = {
   readonly action: 'uninstall';
@@ -19,17 +11,7 @@ export type HookUninstallOutputInput = {
   readonly backupPath: string | null;
 };
 
-export type HookOutputInput = HookInstallOutputInput | HookUninstallOutputInput;
-
-export type HookInstallJsonPayload = {
-  readonly target: typeof HOOK_TARGET;
-  readonly action: 'install';
-  readonly scope: HookScope;
-  readonly dry_run: boolean;
-  readonly settings_path: string;
-  readonly backup_path: string | null;
-  readonly next_actions: readonly string[];
-};
+export type HookOutputInput = HookUninstallOutputInput;
 
 export type HookUninstallJsonPayload = {
   readonly target: typeof HOOK_TARGET;
@@ -40,7 +22,7 @@ export type HookUninstallJsonPayload = {
   readonly next_actions: readonly string[];
 };
 
-export type HookJsonPayload = HookInstallJsonPayload | HookUninstallJsonPayload;
+export type HookJsonPayload = HookUninstallJsonPayload;
 
 export type HookOutputStyle = {
   readonly heading: (text: string) => string;
@@ -56,33 +38,20 @@ const DEFAULT_STYLE: HookOutputStyle = {
 };
 
 export function hookJsonPayload(input: HookOutputInput): HookJsonPayload {
-  const base = {
+  return {
     target: HOOK_TARGET,
     action: input.action,
     scope: input.scope,
     settings_path: input.settingsPath,
     backup_path: input.backupPath,
-    next_actions: nextActions(input)
-  };
-
-  if (input.action === 'install') {
-    return {
-      ...base,
-      action: input.action,
-      dry_run: input.dryRun
-    };
-  }
-
-  return {
-    ...base,
-    action: input.action
+    next_actions: nextActions()
   };
 }
 
 export function renderHookHumanLines(input: HookOutputInput, style: HookOutputStyle = DEFAULT_STYLE): string[] {
   const lines = [
-    style.heading(hookHeading(input)),
-    hookMessage(input),
+    style.heading(hookHeading()),
+    hookMessage(),
     '',
     style.section('Summary'),
     `Target: ${HOOK_TARGET}`,
@@ -90,29 +59,25 @@ export function renderHookHumanLines(input: HookOutputInput, style: HookOutputSt
     `Scope: ${input.scope}`
   ];
 
-  if (input.action === 'install') lines.push(`Dry run: ${input.dryRun ? 'yes' : 'no'}`);
   lines.push(`Settings: ${input.settingsPath}`);
   if (input.backupPath) lines.push(`Backup: ${input.backupPath}`);
   lines.push(
     '',
     style.section('Next'),
-    ...renderGuidedNextCommandLines({ commands: nextActions(input), command: style.command })
+    ...renderGuidedNextCommandLines({ commands: nextActions(), command: style.command })
   );
 
   return lines;
 }
 
-function hookHeading(input: HookOutputInput): string {
-  if (input.action === 'uninstall') return 'AgentFeed hook removed';
-  return input.dryRun ? 'AgentFeed hook dry run' : 'AgentFeed hook installed';
+function hookHeading(): string {
+  return 'AgentFeed hook removed';
 }
 
-function hookMessage(input: HookOutputInput): string {
-  if (input.action === 'uninstall') return 'Uninstalled AgentFeed Claude Code hook.';
-  return `${input.dryRun ? 'Would install' : 'Installed'} AgentFeed Claude Code hook.`;
+function hookMessage(): string {
+  return 'Uninstalled legacy AgentFeed Claude Code hook.';
 }
 
-function nextActions(input: HookOutputInput): string[] {
-  const dryRun = input.action === 'install' ? input.dryRun : false;
-  return hookNextActions(input.action satisfies HookLifecycleAction, dryRun);
+function nextActions(): string[] {
+  return hookNextActions();
 }

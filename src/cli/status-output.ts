@@ -25,7 +25,6 @@ export type StatusOutputInput = {
   readonly projectRoot: string | null;
   readonly projectConfigError: string | null;
   readonly insideGitRepository: boolean;
-  readonly claudeCodeHook: string;
   readonly localDraftsCount: number;
   readonly pendingUploadCount: number;
   readonly lastCollectionCursor: string | null;
@@ -62,7 +61,6 @@ export type StatusJsonPayload = {
     readonly root: string | null;
     readonly config_error: string | null;
     readonly git_repository: boolean;
-    readonly claude_code_hook: string;
   };
   readonly collection: {
     readonly local_drafts_count: number;
@@ -127,8 +125,7 @@ export function statusJsonPayload(input: StatusOutputInput): StatusJsonPayload {
       name: input.projectName,
       root: input.projectRoot,
       config_error: input.projectConfigError,
-      git_repository: input.insideGitRepository,
-      claude_code_hook: input.claudeCodeHook
+      git_repository: input.insideGitRepository
     },
     collection: {
       local_drafts_count: input.localDraftsCount,
@@ -176,7 +173,6 @@ export function renderStatusHumanLines(input: StatusOutputInput): string[] {
   if (input.projectConfigError) lines.push(`Project config error: ${input.projectConfigError}`);
   lines.push(
     `Git repository: ${input.insideGitRepository ? 'yes' : 'no'}`,
-    `Claude Code hook: ${input.claudeCodeHook}`,
     '',
     ui.section('Collection'),
     `Local drafts count: ${input.localDraftsCount}`,

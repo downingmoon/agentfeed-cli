@@ -64,7 +64,7 @@ export async function detectAgentSignals(options: { cwd: string; home?: string }
   const omx = await existing([join(cwd, '.omx')]);
   const superpowers = await existing([join(cwd, '.gemini', 'superpowers'), join(home, '.gemini', 'extensions', 'superpowers'), join(home, '.gemini', 'tmp')]);
   return {
-    claude_code: signal('Claude Code', claude, claude.length ? 'Claude Code session signals found.' : 'Run Claude Code in this project or install the AgentFeed hook.'),
+    claude_code: signal('Claude Code', claude, claude.length ? 'Claude Code session signals found.' : 'Run Claude Code in this project or pass a session file.'),
     codex: signal('Codex CLI', codex, codex.length ? 'Codex/OMX signals found.' : 'Run Codex CLI in this project.'),
     cursor: signal('Cursor', cursor, cursor.length ? 'Cursor workspace signals found.' : 'Run Cursor in this project.'),
     gemini_cli: signal('Gemini/Antigravity CLI', gemini, gemini.length ? 'Gemini/Antigravity CLI signals found.' : 'Run Gemini or Antigravity CLI in this project.'),
@@ -113,7 +113,7 @@ export function summarizeAgentSignals(signals: AgentSignals): AgentSignalSummary
 function agentSignalNextActions(key: AgentSignalKey): string[] {
   switch (key) {
     case 'claude_code':
-      return ['agentfeed collect --source claude-code --explain', 'agentfeed hook install claude-code'];
+      return ['agentfeed collect --source claude-code --explain', 'agentfeed collect --source claude-code --session-file <path> --explain'];
     case 'codex':
       return ['agentfeed collect --source codex --explain', 'agentfeed collect --source codex --session-file <path> --explain'];
     case 'cursor':
@@ -140,7 +140,8 @@ function agentSignalGuidanceLines(key: AgentSignalKey): string[] {
       return [
         '  Quality: high when Claude Code session rows are available.',
         '  Try: agentfeed collect --source claude-code --explain',
-        '  Improve: agentfeed hook install claude-code'
+        '  If discovery misses logs:',
+        '    agentfeed collect --source claude-code --session-file <path> --explain'
       ];
     case 'codex':
       return [

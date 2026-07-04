@@ -49,7 +49,7 @@ Frontend Settings는 `/me/integrations` status와 `/integrations/{type}/setup-gu
 
 현재 source별 안내 기준:
 
-- Claude Code: `agentfeed login`, `agentfeed hook install claude-code`, `agentfeed share --dry`
+- Claude Code: `agentfeed login`, `legacy Claude Code hook setup` (deprecated), `agentfeed share --dry`
 - Codex: `agentfeed collect --source codex --explain`
 - Cursor: `agentfeed collect --source cursor --explain`
 - Gemini CLI: `agentfeed collect --source gemini-cli --explain`

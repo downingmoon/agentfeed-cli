@@ -41,7 +41,7 @@ describe('init output helpers', () => {
         '.agentfeed/backups/config.20260612.json',
         '.agentfeed/backups/redaction-rules.20260612.json'
       ],
-      next_actions: ['agentfeed login', 'agentfeed hook install claude-code', 'agentfeed share --dry']
+      next_actions: ['agentfeed login', 'agentfeed share --dry', 'agentfeed status']
     });
     expect(payload.setup_checklist).toEqual(expect.arrayContaining([
       expect.objectContaining({ name: 'Project', detail: 'config ready' }),
@@ -100,7 +100,7 @@ describe('init output helpers', () => {
     const existing = initSetupChecklist(true);
 
     // Then: follow-up actions match the state of initialization.
-    expect(fresh.map((item) => item.name)).toEqual(['Project', 'Account', 'Agent hook', 'First draft']);
+    expect(fresh.map((item) => item.name)).toEqual(['Project', 'Account', 'First draft']);
     expect(existing.map((item) => item.name)).toEqual(['Project', 'Status', 'First draft', 'Reinitialize']);
   });
 });

@@ -83,7 +83,7 @@ describe('agent discovery', () => {
       detected: false,
       status: 'missing',
       path_count: 0,
-      next_actions: expect.arrayContaining(['agentfeed hook install claude-code'])
+      next_actions: expect.arrayContaining(['agentfeed collect --source claude-code --session-file <path> --explain'])
     });
   });
 

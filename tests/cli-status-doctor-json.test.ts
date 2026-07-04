@@ -75,7 +75,7 @@ describe('doctor JSON diagnostics output', () => {
       expect.objectContaining({
         key: 'claude_code',
         label: 'Claude Code',
-        next_actions: expect.arrayContaining(['agentfeed hook install claude-code'])
+        next_actions: expect.arrayContaining(['agentfeed collect --source claude-code --session-file <path> --explain'])
       })
     ]));
     expect(Array.isArray(output.agent_signals)).toBe(true);

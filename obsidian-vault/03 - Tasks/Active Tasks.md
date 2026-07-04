@@ -962,8 +962,8 @@ updated: 2026-07-02
 
 
 
-> [!success] 2026-06-22 CLI Claude hook installer test split
-> CLI oversized `tests/api-hook.test.ts`에서 Claude Code hook installer 계약을 `cli-claude-code-hook-installer` suite로 분리했다. Baseline 1 file / 133 tests, targeted split 2 files / 133 tests, typecheck/build, full CLI suite 133 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> [!success] 2026-06-22 CLI Claude legacy hook setuper test split
+> CLI oversized `tests/api-hook.test.ts`에서 Claude Code legacy hook setuper 계약을 `cli-claude-code-hook-installer` suite로 분리했다. Baseline 1 file / 133 tests, targeted split 2 files / 133 tests, typecheck/build, full CLI suite 133 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Claude Hook Installer Test Split 2026-06-22]]
 
 
@@ -1092,7 +1092,7 @@ updated: 2026-07-02
 
 
 > [!success] 2026-06-21 CLI hook command split
-> `agentfeed hook install/uninstall claude-code` orchestration을 `src/cli/index.ts`에서 `src/cli/hook-command.ts`로 분리했다. Baseline/focused hook/recovery tests, full CLI suite, typecheck/build, dist CLI hook smoke를 통과했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> `legacy Claude Code hook lifecycle cleanup` orchestration을 `src/cli/index.ts`에서 `src/cli/hook-command.ts`로 분리했다. Baseline/focused hook/recovery tests, full CLI suite, typecheck/build, dist CLI hook smoke를 통과했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Hook Command Split 2026-06-21]]
 
 
@@ -2154,7 +2154,7 @@ updated: 2026-07-02
 
 
 > [!success] 2026-06-12 CLI hook output split
-> `agentfeed hook install/uninstall claude-code`의 JSON payload 및 human-readable lifecycle rendering을 `hook-output` helper로 분리해 hook 출력 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 153 tests, full `npm test -- --run` 747 tests, 실제 temp project CLI smoke(`hook install --dry-run`, `hook install`, `hook uninstall`, JSON variants) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> `legacy Claude Code hook lifecycle cleanup`의 JSON payload 및 human-readable lifecycle rendering을 `hook-output` helper로 분리해 hook 출력 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 153 tests, full `npm test -- --run` 747 tests, 실제 temp project CLI smoke(`legacy hook dry-run`, `legacy hook setup`, `hook uninstall`, JSON variants) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Hook Output Split 2026-06-12]]
 
 
@@ -2415,7 +2415,7 @@ updated: 2026-07-02
 
 
 > [!success] 2026-06-11 CLI hook unexpected recovery refactor
-> `agentfeed hook install claude-code <extra>` unexpected positional recovery를 `hookUnexpectedArgumentMessage`로 분리해 hook validation의 inline message assembly를 줄였다. Red test 확인 후 `npm run build`, focused Vitest 49 tests, full `npm test -- --run` 659 tests, CLI surface smoke(`hook install claude-code extra`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
+> `legacy hook extra-argument case (deprecated)` unexpected positional recovery를 `hookUnexpectedArgumentMessage`로 분리해 hook validation의 inline message assembly를 줄였다. Red test 확인 후 `npm run build`, focused Vitest 49 tests, full `npm test -- --run` 659 tests, CLI surface smoke(`legacy hook setup claude-code extra`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Hook Unexpected Recovery Refactor 2026-06-11]]
 
 

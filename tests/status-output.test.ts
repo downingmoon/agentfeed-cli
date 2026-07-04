@@ -25,7 +25,6 @@ const baseStatusInput = {
   projectRoot: '/repo/agentfeed-cli',
   projectConfigError: null,
   insideGitRepository: true,
-  claudeCodeHook: 'installed',
   localDraftsCount: 2,
   pendingUploadCount: 1,
   lastCollectionCursor: '2026-06-12T01:02:03.000Z',
@@ -57,8 +56,7 @@ describe('status output helpers', () => {
       initialized: true,
       name: 'agentfeed-cli',
       root: '/repo/agentfeed-cli',
-      git_repository: true,
-      claude_code_hook: 'installed'
+      git_repository: true
     });
     expect(payload.collection).toMatchObject({
       local_drafts_count: 2,
@@ -87,7 +85,6 @@ describe('status output helpers', () => {
     expect(text).toContain('API base URL: https://agentfeed.api.downingmoon.dev/v1');
     expect(text).toContain('Project initialized: yes');
     expect(text).toContain('Project name: agentfeed-cli');
-    expect(text).toContain('Claude Code hook: installed');
     expect(text).toContain('Local drafts count: 2');
     expect(text).toContain('Pending upload count: 1');
     expect(text).toContain('Last collection cursor: 2026-06-12T01:02:03.000Z');

@@ -13,9 +13,9 @@ status: done
 
 ## Context
 
-Claude Code hook installation edits a user-owned `.claude/settings.json` file. The previous implementation validated the settings root, but then used broad `as unknown[]` casts around `hooks.Stop`.
+Claude Code legacy hook setupation edits a user-owned `.claude/settings.json` file. The previous implementation validated the settings root, but then used broad `as unknown[]` casts around `hooks.Stop`.
 
-If `hooks` was not a JSON object, or if `hooks.Stop` existed but was not an array, `agentfeed hook install claude-code` could silently mutate or replace the user's existing settings shape.
+If `hooks` was not a JSON object, or if `hooks.Stop` existed but was not an array, `legacy Claude Code hook setup` (deprecated) could silently mutate or replace the user's existing settings shape.
 
 ## Decision
 
@@ -44,7 +44,7 @@ Added `tests/claude-code-settings.test.ts`:
 - `npm test -- --run tests/claude-code-settings.test.ts` passed.
 - `npm test -- --run tests/claude-code-settings.test.ts tests/api-hook.test.ts` passed: 2 files / 134 tests.
 - `npm run clean && npm run build && npm run typecheck && npm test -- --run` passed: 31 files / 597 tests.
-- CLI smoke through `node dist/cli/index.js hook install claude-code --settings-path ...` returned exit 1 with: `Claude Code settings hooks must be a JSON object ...`.
+- CLI smoke through `node dist/cli/index.js legacy hook setup claude-code --settings-path ...` returned exit 1 with: `Claude Code settings hooks must be a JSON object ...`.
 - Escape-hatch scan found no `as unknown`, `as any`, `any`, `@ts-ignore`, or `@ts-expect-error` in the changed hook files.
 - Pure LOC:
   - `src/hooks/claude-code-settings.ts`: 166

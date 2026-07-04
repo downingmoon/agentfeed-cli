@@ -9,13 +9,13 @@ describe('command definitions', () => {
     // Then: order, grouping, descriptions, examples, and usage overrides remain stable.
     expect(publicCommands).toEqual([
       'help', 'commands', 'init', 'login', 'share', 'collect', 'preview', 'publish', 'open',
-      'scan', 'status', 'doctor', 'version', 'hook', 'drafts', 'discard', 'rotate', 'logout', 'completion'
+      'scan', 'status', 'doctor', 'version', 'drafts', 'discard', 'rotate', 'logout', 'completion'
     ]);
     expect(COMMAND_GROUPS.map((group) => [group.title, [...group.commands]])).toEqual([
       ['Start', ['help', 'commands', 'init', 'login', 'status']],
       ['Share work', ['share', 'collect', 'preview', 'publish', 'open']],
       ['Privacy and drafts', ['scan', 'drafts', 'discard']],
-      ['Automation', ['hook', 'completion']],
+      ['Automation', ['completion']],
       ['Account and diagnostics', ['doctor', 'version', 'rotate', 'logout']]
     ]);
     expect(COMMAND_DESCRIPTIONS.share).toBe('Collect, preview, and optionally upload in one workflow');
@@ -29,7 +29,9 @@ describe('command definitions', () => {
 
     // Then: token stays known for parsing/recovery but remains absent from public command catalogs.
     expect(publicCommands).not.toContain('token');
+    expect(publicCommands).not.toContain('hook');
     expect(KNOWN_COMMANDS.has('token')).toBe(true);
+    expect(KNOWN_COMMANDS.has('hook')).toBe(true);
     expect(KNOWN_COMMANDS.has('share')).toBe(true);
   });
 });

@@ -2,8 +2,7 @@ import { readCollectionStateWithDiagnostics } from '../config/collection-state.j
 import { resolveApiBaseUrl } from '../config/api-base.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { listDrafts } from '../draft/read.js';
-import { hasAgentFeedHook, resolveClaudeSettingsPath } from '../hooks/claude-code-settings.js';
-import { readJson, pathExists } from '../utils/fs.js';
+import { readJson } from '../utils/fs.js';
 import { flag } from './args.js';
 import { loadDiagnosticCredentialsWithMetadata } from './diagnostic-credentials.js';
 import { resolveStatusProject } from './status-project.js';
@@ -32,20 +31,6 @@ async function draftUploadPendingForStatus(path: string): Promise<boolean> {
   }
 }
 
-async function claudeCodeHookStatus(options: { readonly projectRoot: string; readonly hookScope: 'project' | 'global' }): Promise<{ readonly status: string; readonly warnings: readonly string[] }> {
-  const settingsPath = resolveClaudeSettingsPath({ projectRoot: options.projectRoot, scope: options.hookScope });
-  if (!settingsPath || !await pathExists(settingsPath)) return { status: 'unknown', warnings: [] };
-  try {
-    const status = hasAgentFeedHook(await readJson<Record<string, unknown>>(settingsPath)) ? 'installed' : 'not installed';
-    return { status, warnings: [] };
-  } catch {
-    return {
-      status: 'unknown',
-      warnings: [`Claude Code settings could not be parsed at ${settingsPath}; hook status is unknown.`]
-    };
-  }
-}
-
 export async function runStatusCommand(args: string[] = [], io: StatusCommandIo): Promise<void> {
   const diagnostics = await loadDiagnosticCredentialsWithMetadata({ cwd: io.cwd });
   const credentialResolution = diagnostics.metadata;
@@ -59,13 +44,9 @@ export async function runStatusCommand(args: string[] = [], io: StatusCommandIo)
   const pending = (await Promise.all(drafts.map((draft) => draftUploadPendingForStatus(draft.path)))).filter(Boolean).length;
   const collectionStateResult = config ? await readCollectionStateWithDiagnostics(root) : null;
   const collectionState = collectionStateResult?.state ?? {};
-  const hook = config
-    ? await claudeCodeHookStatus({ projectRoot: root, hookScope: config.agents.claude_code.hook_scope })
-    : { status: 'unknown', warnings: [] };
   const allWarnings = [
     ...credentialResolution.warnings,
     ...(projectConfigError ? [projectConfigError] : []),
-    ...hook.warnings,
     ...(collectionStateResult?.warnings ?? [])
   ];
   const apiBaseUrl = credentialResolution.api_base_url ?? creds?.api_base_url ?? await resolveApiBaseUrl();
@@ -108,7 +89,6 @@ export async function runStatusCommand(args: string[] = [], io: StatusCommandIo)
     projectRoot: config ? root : null,
     projectConfigError,
     insideGitRepository,
-    claudeCodeHook: hook.status,
     localDraftsCount: drafts.length,
     pendingUploadCount: pending,
     lastCollectionCursor: collectionState.last_collected_at ?? null,

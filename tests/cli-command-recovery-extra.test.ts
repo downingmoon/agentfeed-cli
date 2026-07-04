@@ -27,9 +27,10 @@ describe('CLI help and hook recovery messages', () => {
 
   it('formats hook usage guidance', () => {
     expect(hookUsageMessage()).toBe([
-      'Usage: agentfeed hook install|uninstall claude-code',
+      'Usage: agentfeed hook uninstall claude-code',
+      'Claude Code hook install is deprecated.',
       'Run: agentfeed hook --help',
-      'Run: agentfeed hook install claude-code --dry-run'
+      'Run: agentfeed hook uninstall claude-code --help'
     ].join('\n'));
   });
 
@@ -48,30 +49,32 @@ describe('CLI help and hook recovery messages', () => {
   });
 
   it('formats unknown hook action guidance with action suggestions', () => {
-    expect(unknownHookActionMessage('instal', ['install', 'uninstall'])).toBe([
+    expect(unknownHookActionMessage('instal', ['uninstall'])).toBe([
       'Unknown hook action: instal',
-      'Did you mean: agentfeed hook install claude-code',
-      'Usage: agentfeed hook install|uninstall claude-code',
+      'Did you mean: agentfeed hook uninstall claude-code',
+      'Usage: agentfeed hook uninstall claude-code',
+      'Claude Code hook install is deprecated.',
       'Run: agentfeed hook --help',
-      'Run: agentfeed hook install claude-code --dry-run'
+      'Run: agentfeed hook uninstall claude-code --help'
     ].join('\n'));
-    expect(unknownHookActionMessage('enable', ['install', 'uninstall'])).toBe([
+    expect(unknownHookActionMessage('enable', ['uninstall'])).toBe([
       'Unknown hook action: enable',
-      'Usage: agentfeed hook install|uninstall claude-code',
+      'Usage: agentfeed hook uninstall claude-code',
+      'Claude Code hook install is deprecated.',
       'Run: agentfeed hook --help',
-      'Run: agentfeed hook install claude-code --dry-run'
+      'Run: agentfeed hook uninstall claude-code --help'
     ].join('\n'));
   });
 
   it('formats unsupported hook target guidance with Claude target suggestions only', () => {
-    expect(unsupportedHookTargetMessage('install', 'claude')).toBe([
-      'Only claude-code hooks are supported.',
-      'Did you mean: agentfeed hook install claude-code',
-      'Run: agentfeed hook install claude-code --help'
+    expect(unsupportedHookTargetMessage('uninstall', 'claude')).toBe([
+      'Only legacy claude-code hook cleanup is supported.',
+      'Did you mean: agentfeed hook uninstall claude-code',
+      'Run: agentfeed hook uninstall claude-code --help'
     ].join('\n'));
-    expect(unsupportedHookTargetMessage('install', 'cursor')).toBe([
-      'Only claude-code hooks are supported.',
-      'Run: agentfeed hook install claude-code --help'
+    expect(unsupportedHookTargetMessage('uninstall', 'cursor')).toBe([
+      'Only legacy claude-code hook cleanup is supported.',
+      'Run: agentfeed hook uninstall claude-code --help'
     ].join('\n'));
   });
 

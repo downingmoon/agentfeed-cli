@@ -39,7 +39,7 @@ CLI oversized `tests/cli-init-hook.test.ts`를 init setup UX와 hook setup UX fo
   - Existing config preservation without `--force`.
   - Forced init backup behavior.
 - `tests/cli-hook-setup-ux.test.ts`
-  - Uninitialized hook install recovery guidance.
+  - Uninitialized legacy hook setup recovery guidance.
   - Uninitialized hook uninstall cleanup behavior.
   - Hook install dry-run human/JSON output.
   - Hook install write behavior.

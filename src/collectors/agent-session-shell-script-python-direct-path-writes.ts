@@ -11,10 +11,10 @@ const PYTHON_PATH_JOINPATH_VARIABLE_WRITE_TARGET = /\bPath\(\s*(?<baseQuote>['"]
 const PYTHON_TRIPLE_PATH_DIVISION_WRITE_TARGET = /\(\s*Path\(\s*(?<baseQuote>['"])(?<basePath>[^'"]+)\k<baseQuote>\s*\)(?<segments>(?:\s*\/\s*(['"])[^'"]+\4)+)\s*\)\.write(?:_text)?\(\s*(?<contentQuote>'''|""")(?<content>[\s\S]*?)\k<contentQuote>/g;
 const PYTHON_PATH_DIVISION_VARIABLE_WRITE_TARGET = /\(\s*Path\(\s*(?<baseQuote>['"])(?<basePath>[^'"]+)\k<baseQuote>\s*\)(?<segments>(?:\s*\/\s*(['"])[^'"]+\4)+)\s*\)\.write(?:_text)?\(\s*(?<contentName>[A-Za-z_]\w*)\s*(?:,[^\n)]*)?\)/g;
 const PYTHON_CHANGED_PATH_DIVISION_WRITE_TARGET = /\(\s*Path\(\s*(?<baseQuote>['"])(?<basePath>[^'"]+)\k<baseQuote>\s*\)(?<segments>(?:\s*\/\s*(['"])[^'"]+\4)+)\s*\)\.write(?:_text|_bytes)?\(/g;
-const PYTHON_TRIPLE_PATH_OPEN_WRITE_TARGET = /\bPath\(\s*(?<pathQuote>['"])(?<path>[^'"]+)\k<pathQuote>\s*\)\.open\(\s*(?<modeQuote>['"])(?<mode>[^'"]*)\k<modeQuote>[^\n)]*\)\.write\(\s*(?<contentQuote>'''|""")(?<content>[\s\S]*?)\k<contentQuote>/g;
-const PYTHON_PATH_OPEN_WRITE_TARGET = /\bPath\(\s*(?<pathQuote>['"])(?<path>[^'"]+)\k<pathQuote>\s*\)\.open\(\s*(?<modeQuote>['"])(?<mode>[^'"]*)\k<modeQuote>[^\n)]*\)\.write\(\s*(?<contentQuote>['"])(?<content>(?:\\.|(?!\k<contentQuote>)[^\r\n])*)\k<contentQuote>/g;
-const PYTHON_PATH_OPEN_VARIABLE_WRITE_TARGET = /\bPath\(\s*(?<pathQuote>['"])(?<path>[^'"]+)\k<pathQuote>\s*\)\.open\(\s*(?<modeQuote>['"])(?<mode>[^'"]*)\k<modeQuote>[^\n)]*\)\.write\(\s*(?<contentName>[A-Za-z_]\w*)\s*(?:,[^\n)]*)?\)/g;
-const PYTHON_CHANGED_PATH_OPEN_WRITE_TARGET = /\bPath\(\s*(?<pathQuote>['"])(?<path>[^'"]+)\k<pathQuote>\s*\)\.open\(\s*(?<modeQuote>['"])(?<mode>[^'"]*)\k<modeQuote>[^\n)]*\)\.write\(/g;
+const PYTHON_TRIPLE_PATH_OPEN_WRITE_TARGET = /\bPath\(\s*(?<pathQuote>['"])(?<path>[^'"]+)\k<pathQuote>\s*\)\.open\((?<openArgs>[^\n)]*)\)\.write\(\s*(?<contentQuote>'''|""")(?<content>[\s\S]*?)\k<contentQuote>/g;
+const PYTHON_PATH_OPEN_WRITE_TARGET = /\bPath\(\s*(?<pathQuote>['"])(?<path>[^'"]+)\k<pathQuote>\s*\)\.open\((?<openArgs>[^\n)]*)\)\.write\(\s*(?<contentQuote>['"])(?<content>(?:\\.|(?!\k<contentQuote>)[^\r\n])*)\k<contentQuote>/g;
+const PYTHON_PATH_OPEN_VARIABLE_WRITE_TARGET = /\bPath\(\s*(?<pathQuote>['"])(?<path>[^'"]+)\k<pathQuote>\s*\)\.open\((?<openArgs>[^\n)]*)\)\.write\(\s*(?<contentName>[A-Za-z_]\w*)\s*(?:,[^\n)]*)?\)/g;
+const PYTHON_CHANGED_PATH_OPEN_WRITE_TARGET = /\bPath\(\s*(?<pathQuote>['"])(?<path>[^'"]+)\k<pathQuote>\s*\)\.open\((?<openArgs>[^\n)]*)\)\.write\(/g;
 
 type DirectPathWriteEvidenceInput = ScriptWriteEvidenceContext & {
   readonly command: string;
@@ -118,7 +118,13 @@ function directDivisionPath(context: ScriptWriteEvidenceContext, match: RegExpMa
 }
 
 function directOpenPath(context: ScriptWriteEvidenceContext, match: RegExpMatchArray): string | null {
-  const mode = match.groups?.mode ?? '';
+  const mode = pythonOpenMode(match.groups?.openArgs ?? '');
   const path = match.groups?.path;
   return path && /[wax+]/.test(mode) ? projectRelativeShellPath(context.projectRoot, context.workdir, path) : null;
+}
+
+function pythonOpenMode(openArgs: string): string {
+  const positional = /^\s*(?<quote>['"])(?<mode>[^'"]*)\k<quote>/.exec(openArgs)?.groups?.mode;
+  if (positional !== undefined) return positional;
+  return /\bmode\s*=\s*(?<quote>['"])(?<mode>[^'"]*)\k<quote>/.exec(openArgs)?.groups?.mode ?? '';
 }

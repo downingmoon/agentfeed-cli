@@ -126,6 +126,32 @@ describe('shell script Python path bindings', () => {
     }
   });
 
+  it('captures direct Python Path.open named-mode write targets', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-direct-path-open-named-mode-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'from pathlib import Path',
+          'content = """export const first = true;\\nexport const second = true;\\n"""',
+          'Path("src/named-mode.ts").open(mode="w", encoding="utf-8").write("""export const generated = true;\\n""")',
+          'Path("src/named-mode-content.ts").open(mode="a", encoding="utf-8").write(content)',
+          'Path("src/read-mode.ts").open(mode="r", encoding="utf-8").write("""ignored\\n""")',
+          'PY'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added]).sort()).toEqual([
+        ['src/named-mode-content.ts', 2],
+        ['src/named-mode.ts', 1]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it('captures Python context manager writes when open target is a path variable', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-path-open-variable-'));
     try {

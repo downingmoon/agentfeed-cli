@@ -1,7 +1,7 @@
 import { beforeAll, beforeEach, afterEach } from 'vitest';
 import { execFile, execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { initProject } from '../src/config/project-config.js';
@@ -22,8 +22,8 @@ export function useShareGuidanceFixture() {
   });
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), 'agentfeed-cli-share-guidance-'));
-    home = await mkdtemp(join(tmpdir(), 'agentfeed-cli-home-'));
+    home = await mkdtemp(join(homedir(), '.agentfeed-test-cli-home-'));
+    dir = await mkdtemp(join(home, 'agentfeed-cli-share-guidance-'));
     execFileSync('git', ['init'], { cwd: dir });
     execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: dir });
     execFileSync('git', ['config', 'user.name', 'Test'], { cwd: dir });

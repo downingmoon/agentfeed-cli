@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { afterEach, beforeAll, beforeEach } from 'vitest';
@@ -34,8 +34,8 @@ export function createCliInitHookHarness(): CliInitHookHarness {
   });
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), 'agentfeed-cli-init-hook-'));
-    home = await mkdtemp(join(tmpdir(), 'agentfeed-home-'));
+    home = await mkdtemp(join(homedir(), '.agentfeed-test-home-'));
+    dir = await mkdtemp(join(home, 'agentfeed-cli-init-hook-'));
   });
 
   afterEach(async () => {

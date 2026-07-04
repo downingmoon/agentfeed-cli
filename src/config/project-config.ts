@@ -1,5 +1,6 @@
 import { cp } from 'node:fs/promises';
-import { basename, dirname, join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { basename, dirname, join, resolve } from 'node:path';
 import { cwd as processCwd } from 'node:process';
 import type { AgentFeedProjectConfig } from '../types.js';
 import { defaultProjectConfig, defaultRedactionRules } from './defaults.js';
@@ -18,9 +19,12 @@ export function slugify(value: string): string {
 }
 
 export async function findUp(start: string, name: string): Promise<string | null> {
-  let dir = start;
+  const normalizedStart = resolve(start);
+  const sharedTempRoot = resolve(tmpdir());
+  let dir = normalizedStart;
   for (;;) {
-    if (await pathExists(join(dir, name))) return dir;
+    const isSharedTempAncestor = dir === sharedTempRoot && normalizedStart !== sharedTempRoot;
+    if (!isSharedTempAncestor && await pathExists(join(dir, name))) return dir;
     const parent = dirname(dir);
     if (parent === dir) return null;
     dir = parent;

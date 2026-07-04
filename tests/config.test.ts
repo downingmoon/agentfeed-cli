@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { initProject, loadProjectConfig } from '../src/config/project-config.js';
+import { findUp, initProject, loadProjectConfig } from '../src/config/project-config.js';
 
 let dir: string;
 let home: string;
@@ -66,6 +66,21 @@ describe('project config', () => {
     const other = await mkdtemp(join(tmpdir(), 'agentfeed-missing-'));
     await expect(loadProjectConfig(other)).rejects.toThrow(/AgentFeed project is not initialized[\s\S]*Run: agentfeed init[\s\S]*Run: agentfeed init --no-git-check/i);
     await rm(other, { recursive: true, force: true });
+  });
+
+
+  it('ignores shared temp-root markers when resolving child projects', async () => {
+    const markerName = `.agentfeed-findup-${process.pid}`;
+    const child = await mkdtemp(join(tmpdir(), 'agentfeed-findup-child-'));
+    await mkdir(join(tmpdir(), markerName));
+
+    try {
+      await expect(findUp(child, markerName)).resolves.toBeNull();
+      await expect(findUp(tmpdir(), markerName)).resolves.toBe(tmpdir());
+    } finally {
+      await rm(child, { recursive: true, force: true });
+      await rm(join(tmpdir(), markerName), { recursive: true, force: true });
+    }
   });
 
   it('keeps an existing project config when init is rerun without force', async () => {

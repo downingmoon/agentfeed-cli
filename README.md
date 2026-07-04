@@ -135,7 +135,8 @@ agentfeed doctor
 agentfeed commands
 agentfeed help share
 agentfeed collect --source codex --explain
-agentfeed collect --source gemini-cli --explain   # also accepts antigravity-cli / agy aliases
+agentfeed collect --source gemini-cli --explain
+agentfeed collect --source antigravity-cli --explain
 agentfeed collect --source claude-code --session-file "$CLAUDE_SESSION_FILE" --explain
 agentfeed hook install claude-code
 ```
@@ -246,6 +247,7 @@ agentfeed share --no-clipboard
 agentfeed share --json --clipboard   # automation JSON keeps clipboard off unless explicitly requested
 agentfeed share --source codex
 agentfeed share --source gemini-cli --session-file ./session.jsonl
+agentfeed share --source antigravity-cli --session-file ./transcript.jsonl
 agentfeed share --run-configured-commands
 ```
 

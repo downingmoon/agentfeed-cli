@@ -119,13 +119,18 @@ function agentSignalNextActions(key: AgentSignalKey): string[] {
     case 'cursor':
       return ['agentfeed collect --source cursor --explain', 'agentfeed collect --source cursor --session-file <path> --explain'];
     case 'gemini_cli':
-      return ['agentfeed collect --source gemini-cli --explain', 'agentfeed collect --source gemini-cli --session-file <path> --explain'];
+      return [
+        'agentfeed collect --source gemini-cli --explain',
+        'agentfeed collect --source antigravity-cli --explain',
+        'agentfeed collect --source gemini-cli --session-file <path> --explain',
+        'agentfeed collect --source antigravity-cli --session-file <path> --explain'
+      ];
     case 'omc':
       return ['agentfeed collect --source claude-code --explain'];
     case 'omx':
       return ['agentfeed collect --source codex --explain'];
     case 'superpowers':
-      return ['agentfeed collect --source gemini-cli --explain'];
+      return ['agentfeed collect --source gemini-cli --explain', 'agentfeed collect --source antigravity-cli --explain'];
   }
 }
 
@@ -154,9 +159,11 @@ function agentSignalGuidanceLines(key: AgentSignalKey): string[] {
     case 'gemini_cli':
       return [
         '  Quality: high with Gemini/Antigravity rows; medium with Superpowers metadata.',
-        '  Try: agentfeed collect --source gemini-cli --explain',
+        '  Try Gemini: agentfeed collect --source gemini-cli --explain',
+        '  Try Antigravity: agentfeed collect --source antigravity-cli --explain',
         '  If discovery misses logs:',
-        '    agentfeed collect --source gemini-cli --session-file <path> --explain'
+        '    agentfeed collect --source gemini-cli --session-file <path> --explain',
+        '    agentfeed collect --source antigravity-cli --session-file <path> --explain'
       ];
     case 'omc':
       return [
@@ -171,7 +178,8 @@ function agentSignalGuidanceLines(key: AgentSignalKey): string[] {
     case 'superpowers':
       return [
         '  Plugin role: enriches Gemini evidence with skill/mode signals.',
-        '  Best paired with: agentfeed collect --source gemini-cli --explain'
+        '  Best paired with Gemini: agentfeed collect --source gemini-cli --explain',
+        '  Antigravity: agentfeed collect --source antigravity-cli --explain'
       ];
   }
 }

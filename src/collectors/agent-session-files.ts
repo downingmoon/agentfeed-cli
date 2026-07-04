@@ -188,8 +188,8 @@ export async function discoverSessionFile(cwd: string, source: AgentType): Promi
     for (const tmpProject of await readdir(join(home, '.gemini', 'tmp'), { withFileTypes: true }).catch(() => [])) {
       if (tmpProject.isDirectory()) candidates.push(...(await newestJsonlUnder(join(home, '.gemini', 'tmp', tmpProject.name, 'chats'), 20)).map((path) => ({ path })));
     }
-    for (const brainProject of await readdir(join(home, '.gemini', 'antigravity-cli', 'brain'), { withFileTypes: true }).catch(() => [])) {
-      if (brainProject.isDirectory()) candidates.push({ path: join(home, '.gemini', 'antigravity-cli', 'brain', brainProject.name, '.system_generated', 'logs', 'transcript.jsonl') });
+    for (const path of await newestJsonlUnder(join(home, '.gemini', 'antigravity-cli', 'brain'), 160)) {
+      if (path.endsWith('/.system_generated/logs/transcript.jsonl')) candidates.push({ path });
     }
   } else {
     return null;

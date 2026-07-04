@@ -1,10 +1,42 @@
 import { describe, expect, it } from 'vitest';
+import { mkdir, utimes } from 'node:fs/promises';
 import { join } from 'node:path';
 import { collectAgentSessionMetrics } from '../src/collectors/agent-session.js';
 import { useSessionCollectorFixture } from './session-collector-window-helpers.js';
 
 describe('Antigravity file edit evidence', () => {
   const fixture = useSessionCollectorFixture();
+
+  it('auto-discovers the newest matching Antigravity transcript', async () => {
+    const dir = fixture.dir();
+    const previousHome = process.env.HOME;
+    const home = join(dir, 'home');
+    process.env.HOME = home;
+    try {
+      const oldTranscript = join(home, '.gemini', 'antigravity-cli', 'brain', '000-old-conversation', '.system_generated', 'logs', 'transcript.jsonl');
+      const newTranscript = join(home, '.gemini', 'antigravity-cli', 'brain', '999-new-conversation', '.system_generated', 'logs', 'transcript.jsonl');
+      await mkdir(join(oldTranscript, '..'), { recursive: true });
+      await mkdir(join(newTranscript, '..'), { recursive: true });
+      await fixture.writeJsonl(oldTranscript, [
+        { step_index: 0, source: 'USER_EXPLICIT', type: 'USER_INPUT', status: 'DONE', created_at: '2026-06-25T03:56:15Z', content: `Update file://${join(dir, 'src', 'api.ts')}` },
+        { step_index: 1, source: 'MODEL', type: 'CODE_ACTION', status: 'DONE', created_at: '2026-06-25T03:56:23Z', content: `Created file file://${join(dir, 'src', 'old-antigravity.ts')} with requested content.` }
+      ]);
+      await fixture.writeJsonl(newTranscript, [
+        { step_index: 0, source: 'USER_EXPLICIT', type: 'USER_INPUT', status: 'DONE', created_at: '2026-06-25T04:56:15Z', content: `Update file://${join(dir, 'src', 'api.ts')}` },
+        { step_index: 1, source: 'MODEL', type: 'CODE_ACTION', status: 'DONE', created_at: '2026-06-25T04:56:23Z', content: `Created file file://${join(dir, 'src', 'new-antigravity.ts')} with requested content.` }
+      ]);
+      await utimes(oldTranscript, new Date('2026-06-25T03:57:00Z'), new Date('2026-06-25T03:57:00Z'));
+      await utimes(newTranscript, new Date('2026-06-25T04:57:00Z'), new Date('2026-06-25T04:57:00Z'));
+
+      const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli' });
+
+      expect(metrics?.session_id).toBe('999-new-conversation');
+      expect(metrics?.changed_files.map((file) => file.path)).toEqual(['src/new-antigravity.ts']);
+    } finally {
+      if (previousHome === undefined) delete process.env.HOME;
+      else process.env.HOME = previousHome;
+    }
+  });
 
   it('does not count Antigravity code action rows with error text as changed files', async () => {
     const dir = fixture.dir();

@@ -21,7 +21,7 @@ describe('CLI ingest payload contract', () => {
     expect(payload.source.collection_window).toEqual(draft.source.collection_window);
     expect(payload.source.collection_window_reason).toBe('idle_gap');
     expect(payload.source.collection_fingerprint).toBe('agentfeed-window-fingerprint');
-    expect(payload.source.host_label).toBeUndefined();
+    expect(payload.source.host_label).toBe('Downing MacBook');
     expect(payload.source.session_id).not.toBe('raw-agent-session-id');
     expect(payload.source.session_id).toMatch(/^session_[a-f0-9]{16}$/);
     expect(payload.source.local_draft_id).not.toBe(draft.id);

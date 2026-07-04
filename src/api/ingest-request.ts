@@ -8,6 +8,7 @@ export function draftToIngestRequest(draft: LocalDraft): IngestWorklogRequest {
   const source: IngestWorklogRequest['source'] = {
     agent: safeDraft.source.agent,
     tool_version: safeDraft.source.tool_version,
+    host_label: safeDraft.source.host_label ?? null,
     local_draft_id: `draft_${shortHash(`draft:${safeDraft.id}`, 16)}`,
     collection_window: safeDraft.source.collection_window ?? null,
     collection_window_reason: safeDraft.source.collection_window_reason ?? null,

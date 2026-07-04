@@ -109,6 +109,32 @@ describe('Claude session collector metrics', () => {
     expect(metrics?.agent_turns).toBe(2);
   });
 
+  it('counts completed Claude sidecar subagent transcripts linked by toolUseId', async () => {
+    const sessionFile = join(dir, 'claude-sidecar-subagent-session.jsonl');
+    const sessionBase = join(dir, 'claude-sidecar-subagent-session');
+    const subagentDir = join(sessionBase, 'subagents');
+    await mkdir(subagentDir, { recursive: true });
+    await writeJsonl(sessionFile, [
+      { type: 'assistant', cwd: dir, sessionId: 'claude-sidecar-subagent-session', timestamp: '2026-05-20T00:00:00Z', message: { model: 'claude-sonnet', content: [
+        { type: 'tool_use', id: 'agent-complete', name: 'Agent', input: { description: 'Explore repo', prompt: 'Map relevant files' } },
+        { type: 'tool_use', id: 'agent-running', name: 'Agent', input: { description: 'Review docs', prompt: 'Check docs' } }
+      ] } }
+    ]);
+    await writeFile(join(subagentDir, 'agent-complete.meta.json'), JSON.stringify({ toolUseId: 'agent-complete' }));
+    await writeJsonl(join(subagentDir, 'agent-complete.jsonl'), [
+      { type: 'assistant', isSidechain: true, sessionId: 'claude-sidecar-subagent-session', timestamp: '2026-05-20T00:00:05Z', message: { role: 'assistant', stop_reason: 'end_turn', content: [{ type: 'text', text: 'completed' }] } }
+    ]);
+    await writeFile(join(subagentDir, 'agent-running.meta.json'), JSON.stringify({ toolUseId: 'agent-running' }));
+    await writeJsonl(join(subagentDir, 'agent-running.jsonl'), [
+      { type: 'assistant', isSidechain: true, sessionId: 'claude-sidecar-subagent-session', timestamp: '2026-05-20T00:00:06Z', message: { role: 'assistant', stop_reason: 'tool_use', content: [] } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'claude_code', sessionFile });
+
+    expect(metrics?.subagents_spawned).toBe(2);
+    expect(metrics?.subagents_completed).toBe(1);
+  });
+
   it('does not count Claude TaskCreate todo planning as a subagent launch', async () => {
     const sessionFile = join(dir, 'claude-taskcreate-todo-session.jsonl');
     await writeJsonl(sessionFile, [

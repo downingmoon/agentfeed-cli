@@ -1,12 +1,57 @@
+import { readdir } from 'node:fs/promises';
+import { join } from 'node:path';
 import type { ChangedFileSummary, CollectionSource, CollectionWindow } from '../types.js';
 import { asRecord, asString, countTextLines, explicitCostUsd, inferEffectiveCollectionWindow, numeric, pushSource, relativeProjectPath, upsertFile } from './agent-session-core.js';
 import { finalizeAgentSession, type AgentSessionMetrics } from './agent-session-finalize.js';
 import { readSessionJsonlRecords } from './agent-session-files.js';
+import { pathExists, readJson } from '../utils/fs.js';
 import { readOmcMetadata } from './agent-session-claude-omc.js';
 import { commandFailed, isTestCommand, toolOutputFailed, toolResultOutput } from './agent-session-tooling.js';
 import { applyShellFileEvidence } from './agent-session-shell-files.js';
 import { recordTestCommandResult } from './agent-session-test-metrics.js';
 import { hasCollectionWindowBoundary, parseBoundaryMillis, rowInAgentCollectionWindow, rowTimestampMillis } from './agent-session-window.js';
+
+
+function claudeSubagentsDir(sessionFile: string): string {
+  return join(sessionFile.replace(/\.jsonl$/, ''), 'subagents');
+}
+
+function claudeSubagentJsonlPath(metaPath: string): string {
+  return metaPath.replace(/\.meta\.json$/, '.jsonl');
+}
+
+async function readClaudeSubagentMeta(metaPath: string): Promise<Record<string, unknown> | null> {
+  return asRecord(await readJson<unknown>(metaPath).catch(() => null));
+}
+
+function completedClaudeSubagentRows(rows: readonly Record<string, unknown>[], sessionId: string): boolean {
+  return rows.some((row) => {
+    const message = asRecord(row.message);
+    return row.type === 'assistant' && asString(row.sessionId) === sessionId && asString(message?.stop_reason) === 'end_turn';
+  });
+}
+
+async function countCompletedClaudeSidecarSubagents(input: {
+  readonly sessionFile: string;
+  readonly sessionId: string | null;
+  readonly spawnedToolUseIds: ReadonlySet<string>;
+}): Promise<number> {
+  if (!input.sessionId || !input.spawnedToolUseIds.size) return 0;
+  const subagentsDir = claudeSubagentsDir(input.sessionFile);
+  if (!await pathExists(subagentsDir)) return 0;
+  const entries = await readdir(subagentsDir, { withFileTypes: true });
+  let completed = 0;
+  for (const entry of entries) {
+    if (!entry.isFile() || !entry.name.endsWith('.meta.json')) continue;
+    const metaPath = join(subagentsDir, entry.name);
+    const meta = await readClaudeSubagentMeta(metaPath);
+    const toolUseId = asString(meta?.toolUseId);
+    if (!toolUseId || !input.spawnedToolUseIds.has(toolUseId)) continue;
+    const rows = await readSessionJsonlRecords(claudeSubagentJsonlPath(metaPath));
+    if (rows && completedClaudeSubagentRows(rows, input.sessionId)) completed += 1;
+  }
+  return completed;
+}
 
 export async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null, inferIdleGap = true): Promise<AgentSessionMetrics | null> {
   const rows = await readSessionJsonlRecords(sessionFile);
@@ -29,6 +74,7 @@ export async function parseClaudeSessionFile(cwd: string, sessionFile: string, w
   let agentTurns = 0;
   let subagentsSpawned = 0;
   let subagentsCompleted = 0;
+  const spawnedSubagentToolUseIds = new Set<string>();
   let sessionId: string | null = null;
   let model: string | null = null;
   let matchedWindowRow = false;
@@ -117,13 +163,18 @@ export async function parseClaudeSessionFile(cwd: string, sessionFile: string, w
         const skill = asString(input.skill);
         if (skill) skills.add(skill);
       }
-      if (name === 'Agent' || name === 'Task') subagentsSpawned += 1;
+      if (name === 'Agent' || name === 'Task') {
+        subagentsSpawned += 1;
+        const toolUseId = asString(item.id);
+        if (toolUseId) spawnedSubagentToolUseIds.add(toolUseId);
+      }
     }
   }
   for (const edit of pendingFileEdits.values()) {
     if (edit.confirmed && !edit.failed) upsertFile(files, edit.path, { status: edit.status, added: edit.added, removed: edit.removed });
   }
   if (hasCollectionWindowBoundary(effectiveWindow) && !matchedWindowRow) return null;
+  subagentsCompleted = Math.max(subagentsCompleted, await countCompletedClaudeSidecarSubagents({ sessionFile, sessionId, spawnedToolUseIds: spawnedSubagentToolUseIds }));
   const collectionSources: CollectionSource[] = [{ type: 'agent_session', name: 'claude_code', quality: 'high' }];
   const omc = await readOmcMetadata(cwd, sessionId);
   if (omc.detected) pushSource(collectionSources, { type: 'plugin_metadata', name: 'omc', quality: 'medium' });

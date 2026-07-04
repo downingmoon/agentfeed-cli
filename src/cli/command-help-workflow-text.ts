@@ -10,7 +10,7 @@ When to use:
 
 Common options:
   --source <source>         Override source (auto-detect is default)
-      Values: claude-code, codex, cursor, gemini-cli, other
+      Values: claude-code, codex, cursor, gemini-cli, antigravity-cli, other
   --session-file <path>     Read an explicit agent session file
   --since <timestamp>       Start window (ISO timestamp or last-collect)
   --until <timestamp>       End collection window (ISO timestamp)
@@ -47,7 +47,7 @@ Options:
   --yes, -y                 Upload without interactive confirmation
   --dry, --dry-run          Collect and preview only; do not upload
   --source <source>         Override source (auto-detect is default)
-      Values: claude-code, codex, cursor, gemini-cli, other
+      Values: claude-code, codex, cursor, gemini-cli, antigravity-cli, other
   --session-file <path>     Read an explicit agent session file
   --since <timestamp>       Start window (ISO timestamp or last-collect)
   --until <timestamp>       End collection window (ISO timestamp)

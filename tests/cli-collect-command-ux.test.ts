@@ -76,7 +76,7 @@ describe('collect command UX and validation', () => {
     ]);
 
     expect(failure.stderr ?? '').toContain('Unsupported agent source: gemni-cli');
-    expect(failure.stderr ?? '').toContain('Supported sources: claude-code, codex, cursor, gemini-cli, other');
+    expect(failure.stderr ?? '').toContain('Supported sources: claude-code, codex, cursor, gemini-cli, antigravity-cli, other');
     expect(failure.stderr ?? '').toContain('Tip: omit --source to let AgentFeed auto-detect Claude/Codex/Cursor/Gemini/Antigravity sessions.');
     expect(failure.stderr ?? '').toContain('Did you mean: --source gemini-cli');
     expect(failure.stderr ?? '').toContain('Run: agentfeed collect --explain');

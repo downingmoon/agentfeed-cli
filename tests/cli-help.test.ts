@@ -156,7 +156,7 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('--source <source>');
     expect(stdout).toContain('Omit --source to auto-detect Claude/Codex/Cursor/Gemini/Antigravity logs.');
     expect(stdout).toContain('Override source (auto-detect is default)');
-    expect(stdout).toContain('Values: claude-code, codex, cursor, gemini-cli, other');
+    expect(stdout).toContain('Values: claude-code, codex, cursor, gemini-cli, antigravity-cli, other');
     expect(stdout).toContain('--session-file <path>');
     expect(stdout).toContain('--no-save-cursor');
     expect(stdout).toContain('Examples:');

@@ -10,6 +10,7 @@
     "codex",
     "claude-code",
     "gemini-cli",
+    "antigravity-cli",
     "cursor"
   ],
   "homepage": "https://github.com/downingmoon/agentfeed-cli#readme",

@@ -63,6 +63,7 @@ describe('CLI version metadata', () => {
       'codex',
       'claude-code',
       'gemini-cli',
+      'antigravity-cli',
       'cursor'
     ]));
     expect(packageJson.homepage).toBe('https://github.com/downingmoon/agentfeed-cli#readme');

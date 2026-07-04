@@ -9,6 +9,12 @@ const DEFAULT_SESSION_FILE_MAX_BYTES = 10 * 1024 * 1024;
 const DEFAULT_SESSION_JSONL_MAX_ROWS = 50_000;
 const DEFAULT_SESSION_JSONL_MAX_LINE_CHARS = 1_000_000;
 
+type SessionFileCandidate = {
+  readonly path: string;
+  readonly allowProjectScopedNoCwd?: boolean;
+  readonly trustedProjectMatch?: boolean;
+};
+
 function boundedPositiveIntegerEnv(name: string, fallback: number): number {
   const raw = process.env[name];
   if (!raw) return fallback;
@@ -154,6 +160,35 @@ function claudeProjectDirName(cwd: string): string {
   return resolve(cwd).replace(/\//g, '-');
 }
 
+function pathBelongsToProject(cwd: string, workspace: string): boolean {
+  const projectRoot = canonicalPath(cwd);
+  const absoluteWorkspace = canonicalPath(workspace);
+  return absoluteWorkspace === projectRoot || absoluteWorkspace.startsWith(`${projectRoot}/`);
+}
+
+async function existingFile(path: string): Promise<boolean> {
+  return (await stat(path).catch(() => null))?.isFile() === true;
+}
+
+async function antigravityHistoryTranscriptCandidates(home: string, cwd: string): Promise<SessionFileCandidate[]> {
+  const historyFile = join(home, '.gemini', 'antigravity-cli', 'history.jsonl');
+  const text = await readFile(historyFile, 'utf8').catch(() => '');
+  const candidates: SessionFileCandidate[] = [];
+  const seen = new Set<string>();
+  for (const line of text.split('\n').reverse()) {
+    if (!line.trim()) continue;
+    const row = asRecord(safeJsonParse(line));
+    const conversationId = asString(row?.conversationId);
+    const workspace = asString(row?.workspace);
+    if (!conversationId || !workspace || !pathBelongsToProject(cwd, workspace)) continue;
+    const transcript = join(home, '.gemini', 'antigravity-cli', 'brain', conversationId, '.system_generated', 'logs', 'transcript.jsonl');
+    if (seen.has(transcript)) continue;
+    seen.add(transcript);
+    candidates.push({ path: transcript, trustedProjectMatch: true });
+  }
+  return candidates;
+}
+
 async function newestJsonlUnder(dir: string, limit = 80): Promise<string[]> {
   async function walk(current: string, depth: number): Promise<Array<{ readonly path: string; readonly mtime: number }>> {
     if (depth < 0) return [];
@@ -178,13 +213,14 @@ async function newestJsonlUnder(dir: string, limit = 80): Promise<string[]> {
 
 export async function discoverSessionFile(cwd: string, source: AgentType): Promise<string | null> {
   const home = homedir();
-  const candidates: Array<{ readonly path: string; readonly allowProjectScopedNoCwd?: boolean }> = [];
+  const candidates: SessionFileCandidate[] = [];
   if (source === 'claude_code') {
     candidates.push(...(await newestJsonlUnder(join(home, '.claude', 'projects', claudeProjectDirName(cwd)), 20)).map((path) => ({ path, allowProjectScopedNoCwd: true })));
     candidates.push(...(await newestJsonlUnder(join(home, '.claude', 'projects'), 80)).map((path) => ({ path })));
   } else if (source === 'codex') {
     candidates.push(...(await newestJsonlUnder(join(home, '.codex', 'sessions'), 120)).map((path) => ({ path })));
   } else if (source === 'gemini_cli') {
+    candidates.push(...await antigravityHistoryTranscriptCandidates(home, cwd));
     for (const tmpProject of await readdir(join(home, '.gemini', 'tmp'), { withFileTypes: true }).catch(() => [])) {
       if (tmpProject.isDirectory()) candidates.push(...(await newestJsonlUnder(join(home, '.gemini', 'tmp', tmpProject.name, 'chats'), 20)).map((path) => ({ path })));
     }
@@ -199,6 +235,7 @@ export async function discoverSessionFile(cwd: string, source: AgentType): Promi
     if (seen.has(candidate.path)) continue;
     seen.add(candidate.path);
     if (source === 'gemini_cli') {
+      if (candidate.trustedProjectMatch && await existingFile(candidate.path)) return candidate.path;
       const projectRoot = await readFile(join(dirname(dirname(candidate.path)), '.project_root'), 'utf8').catch(() => '');
       if (projectRoot && resolve(projectRoot.trim()) === resolve(cwd)) return candidate.path;
       if (await sessionFileCanBeAutoDiscovered(candidate.path, cwd, { allowProjectScopedNoCwd: candidate.allowProjectScopedNoCwd, allowContentPathMatch: true }).catch(() => false)) return candidate.path;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { bareDoubleDashArgumentMessage, completionUnexpectedArgumentMessage, conflictingOptionsMessage, optionDoesNotAcceptValueMessage, optionRequiresValueMessage, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, hookUnexpectedArgumentMessage, hookUsageMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownCommandOptionMessage, unknownHookActionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage, unsupportedHookTargetMessage } from '../src/cli/command-recovery.js';
+import { bareDoubleDashArgumentMessage, completionUnexpectedArgumentMessage, conflictingOptionsMessage, optionDoesNotAcceptValueMessage, optionRequiresValueMessage, flaglessOptionSuggestionLines, helpTopicError, helpUnexpectedArgumentMessage, helpUnexpectedTokenArgumentMessage, tokenRotateUnexpectedArgumentMessage, tokenUsageMessage, unknownCommandOptionMessage, unknownTokenSubcommandMessage, unsupportedCompletionShellMessage } from '../src/cli/command-recovery.js';
 
-describe('CLI help and hook recovery messages', () => {
+describe('CLI help and recovery messages', () => {
   it('formats help topic recovery with closest known topic suggestions', () => {
     expect(helpTopicError('statsu', ['status', 'share', 'scan'])).toBe([
       'Unknown help topic: statsu',
@@ -25,56 +25,10 @@ describe('CLI help and hook recovery messages', () => {
     ].join('\n'));
   });
 
-  it('formats hook usage guidance', () => {
-    expect(hookUsageMessage()).toBe([
-      'Usage: agentfeed hook uninstall claude-code',
-      'Claude Code hook install is deprecated.',
-      'Run: agentfeed hook --help',
-      'Run: agentfeed hook uninstall claude-code --help'
-    ].join('\n'));
-  });
-
-  it('formats unexpected hook positional recovery', () => {
-    expect(hookUnexpectedArgumentMessage('extra')).toBe([
-      'Unexpected argument for hook: extra',
-      'Run: agentfeed hook --help'
-    ].join('\n'));
-  });
-
   it('formats bare double-dash argument recovery for command parsers', () => {
     expect(bareDoubleDashArgumentMessage('status')).toBe([
       'Unexpected argument for status: --',
       'Run: agentfeed status --help'
-    ].join('\n'));
-  });
-
-  it('formats unknown hook action guidance with action suggestions', () => {
-    expect(unknownHookActionMessage('instal', ['uninstall'])).toBe([
-      'Unknown hook action: instal',
-      'Did you mean: agentfeed hook uninstall claude-code',
-      'Usage: agentfeed hook uninstall claude-code',
-      'Claude Code hook install is deprecated.',
-      'Run: agentfeed hook --help',
-      'Run: agentfeed hook uninstall claude-code --help'
-    ].join('\n'));
-    expect(unknownHookActionMessage('enable', ['uninstall'])).toBe([
-      'Unknown hook action: enable',
-      'Usage: agentfeed hook uninstall claude-code',
-      'Claude Code hook install is deprecated.',
-      'Run: agentfeed hook --help',
-      'Run: agentfeed hook uninstall claude-code --help'
-    ].join('\n'));
-  });
-
-  it('formats unsupported hook target guidance with Claude target suggestions only', () => {
-    expect(unsupportedHookTargetMessage('uninstall', 'claude')).toBe([
-      'Only legacy claude-code hook cleanup is supported.',
-      'Did you mean: agentfeed hook uninstall claude-code',
-      'Run: agentfeed hook uninstall claude-code --help'
-    ].join('\n'));
-    expect(unsupportedHookTargetMessage('uninstall', 'cursor')).toBe([
-      'Only legacy claude-code hook cleanup is supported.',
-      'Run: agentfeed hook uninstall claude-code --help'
     ].join('\n'));
   });
 

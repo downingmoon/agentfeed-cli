@@ -1,9 +1,9 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { createCliInitHookHarness } from './cli-init-hook-harness.js';
+import { createCliInitHarness } from './cli-init-harness.js';
 
-const harness = createCliInitHookHarness();
+const harness = createCliInitHarness();
 
 describe('CLI init setup UX', () => {
   it('gives copyable recovery when init runs outside a git repository', async () => {
@@ -62,7 +62,7 @@ describe('CLI init setup UX', () => {
       expect.objectContaining({ name: 'Account', detail: 'connect this terminal to AgentFeed', next_action: 'agentfeed login' }),
       expect.objectContaining({ name: 'First draft', next_action: 'agentfeed share --dry' })
     ]));
-    expect(output.root).toMatch(/agentfeed-cli-init-hook-/);
+    expect(output.root).toMatch(/agentfeed-cli-init-/);
     expect(stdout).not.toContain('AgentFeed initialized');
     expect(stdout).not.toMatch(/(^|\n)Next(\n|$)/);
   });

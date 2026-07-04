@@ -73,23 +73,4 @@ describe('status local state diagnostics', () => {
     expect(stdout).toContain('Next default collection since: beginning');
   });
 
-  it('status ignores malformed legacy Claude Code hook settings', async () => {
-    execFileSync(process.execPath, [cliPath, 'init', '--no-git-check', '--project-name', 'broken-hook'], {
-      cwd: dir,
-      encoding: 'utf8',
-      env: { ...process.env, HOME: home }
-    });
-    await mkdir(join(dir, '.claude'), { recursive: true });
-    await writeFile(join(dir, '.claude', 'settings.json'), '{not-json');
-
-    const stdout = execFileSync(process.execPath, [cliPath, 'status'], {
-      cwd: dir,
-      encoding: 'utf8',
-      env: { ...process.env, HOME: home, AGENTFEED_TOKEN: '' }
-    });
-
-    expect(stdout).not.toContain('Claude Code hook:');
-    expect(stdout).not.toContain('Warning: Claude Code settings could not be parsed');
-    expect(stdout).not.toContain(join(dir, '.claude', 'settings.json'));
-  });
 });

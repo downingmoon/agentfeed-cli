@@ -970,32 +970,7 @@ For path scan:
 
 ---
 
-## 9.8 agentfeed hook uninstall claude-code
-
-### Status
-
-Deprecated legacy cleanup only. New collection uses explicit `agentfeed collect` / `agentfeed share` commands. Hook installation is not part of the product surface.
-
-### Usage
-
-```bash
-agentfeed hook uninstall claude-code
-agentfeed hook uninstall claude-code --project
-agentfeed hook uninstall claude-code --global
-agentfeed hook uninstall claude-code --settings-path <path>
-```
-
-### Behavior
-
-1. Read existing settings JSON if present.
-2. If a legacy AgentFeed Stop hook is present, back up the settings file.
-3. Remove only the legacy AgentFeed command hook.
-4. Preserve all unrelated settings and hooks.
-5. Never create or install a new hook.
-
----
-
-## 9.9 agentfeed doctor
+## 9.8 agentfeed doctor
 
 ### Purpose
 
@@ -1061,7 +1036,6 @@ interface CollectionContext {
   config: AgentFeedProjectConfig;
   source: AgentType;
   session_file?: string;
-  hook_event?: string;
   started_at?: string;
   ended_at?: string;
 }
@@ -1111,7 +1085,6 @@ The parser should support best-effort parsing of JSON, JSONL, or text-like sessi
 
 ```text
 - session_file path from CLI option
-- stdin JSON payload from hook, if available
 - environment variables, if available
 ```
 
@@ -1322,8 +1295,7 @@ Collect token usage from:
 
 ```text
 1. Parsed Claude Code metadata if present.
-2. Environment variables if hook provides usage.
-3. Unknown otherwise.
+2. Unknown otherwise.
 ```
 
 ## 15.2 Cost Policy
@@ -1644,64 +1616,7 @@ Do not upload:
 
 ---
 
-# 20. Deprecated Claude Code Hook Cleanup
-
-Claude Code hook installation is deprecated and disabled. The only retained behavior is safe cleanup for older AgentFeed Stop hooks.
-
-## 20.1 Settings File Resolution
-
-Project mode:
-
-```text
-<project>/.claude/settings.json
-```
-
-Global mode:
-
-```text
-~/.claude/settings.json
-```
-
-If `--settings-path` is provided, use it exactly.
-
-## 20.2 Cleanup Rules
-
-The cleanup command must:
-
-```text
-- Parse JSON.
-- Preserve unknown keys.
-- Preserve unrelated hooks.
-- Remove only the legacy AgentFeed hook marker.
-- Never add hooks or create hook settings.
-```
-
-## 20.3 Backup
-
-Before modifying settings:
-
-```text
-.agentfeed/backups/claude-settings.<timestamp>.json
-```
-
-If project is not initialized, create backup next to settings:
-
-```text
-settings.json.agentfeed-backup.<timestamp>
-```
-
-## 20.4 Legacy Hook Detection
-
-A hook is considered AgentFeed-owned only when the command contains both:
-
-```text
-agentfeed Claude Code Stop hook
-collect --source claude-code
-```
-
-Unknown or unrelated hook text must be preserved.
-
-# 21. Browser Opening
+# 20. Browser Opening
 
 When opening review URL, support:
 
@@ -1897,18 +1812,6 @@ Mock fetch.
 - publish updates draft upload metadata on success.
 ```
 
-## 25.6 Hook Installer Tests
-
-Use temporary settings file.
-
-```text
-- installs Stop hook into empty settings.
-- preserves existing settings.
-- does not duplicate hook.
-- uninstalls only AgentFeed hook.
-- creates backup.
-```
-
 ---
 
 # 26. Done Criteria
@@ -1925,8 +1828,7 @@ The local CLI MVP is considered complete when:
 7. `agentfeed publish` uploads to backend `/ingest/worklogs`.
 8. Successful upload stores `worklog_id` and `review_url` in draft JSON.
 9. Privacy scanner catches common secrets.
-10. Legacy hook cleanup removes only the AgentFeed-owned Stop hook when present.
-11. Tests pass.
+10. Tests pass.
 ```
 
 ---
@@ -1945,8 +1847,7 @@ src/
 │       ├── preview.ts
 │       ├── publish.ts
 │       ├── scan.ts
-│       ├── doctor.ts
-│       └── hook.ts
+│       └── doctor.ts
 ├── config/
 │   ├── project-config.ts
 │   ├── credentials.ts
@@ -1977,8 +1878,6 @@ src/
 │   └── markdown.ts
 ├── api/
 │   └── client.ts
-├── hooks/
-│   └── claude-code-settings.ts
 ├── utils/
 │   ├── fs.ts
 │   ├── git.ts
@@ -2086,16 +1985,7 @@ Implement in this exact order.
 - update draft upload metadata
 ```
 
-## Step 11: Claude Code hook
-
-```text
-- install
-- uninstall
-- detect existing
-- backup settings
-```
-
-## Step 12: doctor/tests polish
+## Step 11: doctor/tests polish
 
 ```text
 - doctor command

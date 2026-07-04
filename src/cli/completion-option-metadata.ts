@@ -9,7 +9,6 @@ const COMPLETION_OPTION_DESCRIPTIONS: Readonly<Record<string, string>> = {
   '--dry-run': 'Collect or preview without uploading',
   '--explain': 'Show how local work was collected',
   '--force': 'Bypass the local draft reuse guard',
-  '--global': 'Use global Claude Code settings',
   '--help': 'Show command help',
   '-h': 'Show command help',
   '--id': 'Use a specific draft ID',
@@ -26,12 +25,10 @@ const COMPLETION_OPTION_DESCRIPTIONS: Readonly<Record<string, string>> = {
   '--note': 'Attach a public-safe author note',
   '--open-review': 'Open the private review URL after upload',
   '--path': 'Scan a filesystem path',
-  '--project': 'Use project Claude Code settings',
   '--project-name': 'Set the AgentFeed project name',
   '--remote': 'Validate preview through the API',
   '--run-configured-commands': 'Run trusted configured test/build commands',
   '--session-file': 'Read agent session metadata from a file',
-  '--settings-path': 'Override the Claude Code settings path',
   '--since': 'Start the collection window',
   '--source': 'Select agent source',
   '--token': 'Read ingestion token from a value or stdin when value is -',
@@ -79,9 +76,6 @@ const COMMAND_COMPLETION_OPTION_DESCRIPTIONS: Readonly<Record<string, Readonly<R
   scan: {
     '--json': 'Print machine-readable privacy scan output'
   },
-  hook: {
-    '--json': 'Print machine-readable legacy cleanup result'
-  },
   doctor: {
     '--json': 'Print machine-readable diagnostic checks'
   },
@@ -103,14 +97,13 @@ const COMPLETION_VALUE_PLACEHOLDERS: Readonly<Record<string, string>> = {
   '--path': 'path',
   '--project-name': 'project name',
   '--session-file': 'path',
-  '--settings-path': 'path',
   '--since': 'timestamp',
   '--source': 'source',
   '--token': 'token',
   '--until': 'timestamp'
 };
 
-const COMPLETION_FILE_VALUE_OPTIONS: readonly string[] = ['--path', '--session-file', '--settings-path'];
+const COMPLETION_FILE_VALUE_OPTIONS: readonly string[] = ['--path', '--session-file'];
 
 export type CompletionOptionMetadataInput = {
   readonly commandSpecs: Readonly<Record<string, CompletionCommandSpec | undefined>>;

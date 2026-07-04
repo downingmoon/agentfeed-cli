@@ -157,16 +157,6 @@ describe('CLI public command help surfaces', () => {
     }
   });
 
-  it('keeps legacy hook help limited to uninstall cleanup', async () => {
-    const { stdout, stderr } = await runCli(['hook', '--help']);
-
-    expect(stderr).toBe('');
-    expect(stdout).toContain('Usage: agentfeed hook uninstall claude-code');
-    expect(stdout).toContain('Hook install is disabled');
-    expect(stdout).toContain('agentfeed hook uninstall claude-code');
-    expect(stdout).toContain('agentfeed collect --source claude-code --explain');
-    expect(stdout).not.toContain('agentfeed hook install claude-code');
-  });
 
   it('prints login-specific help for login --help', async () => {
     const { stdout, stderr } = await runCli(['login', '--help']);

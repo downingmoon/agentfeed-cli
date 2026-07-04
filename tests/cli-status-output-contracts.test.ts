@@ -75,7 +75,6 @@ describe('status output contracts', () => {
     expect(stdout).toContain('Project initialized: yes');
     expect(stdout).toContain('Project name: status-polish');
     expect(stdout).toContain('Git repository:');
-    expect(stdout).not.toContain('Claude Code hook:');
     expect(stdout).toContain('Local drafts count:');
     expect(stdout).toContain('Pending upload count:');
   });

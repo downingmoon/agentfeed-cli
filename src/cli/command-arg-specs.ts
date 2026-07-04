@@ -6,15 +6,10 @@ import {
   helpTopicError,
   helpUnexpectedArgumentMessage,
   helpUnexpectedTokenArgumentMessage,
-  hookInstallDeprecatedMessage,
-  hookUnexpectedArgumentMessage,
-  hookUsageMessage,
   tokenRotateUnexpectedArgumentMessage,
   tokenUsageMessage,
-  unknownHookActionMessage,
   unknownTokenSubcommandMessage,
-  unsupportedCompletionShellMessage,
-  unsupportedHookTargetMessage
+  unsupportedCompletionShellMessage
 } from './command-recovery.js';
 
 export const SUPPORTED_COMPLETION_SHELLS = ['zsh', 'bash', 'fish'] as const;
@@ -130,22 +125,6 @@ export const COMMAND_ARG_SPECS: Readonly<Record<string, CommandArgSpec>> = {
     valueOptions: ['--id', '--path'],
     conflicts: [['--id', '--latest'], ['--id', '--path'], ['--latest', '--path']],
     validatePositionals: NO_POSITIONALS('scan')
-  },
-  hook: {
-    flags: ['--global', '--project', '--json'],
-    valueOptions: ['--settings-path'],
-    conflicts: [['--global', '--project']],
-    validatePositionals: (positionals) => {
-      if (positionals.length < 2) return hookUsageMessage();
-      if (positionals.length > 2) return hookUnexpectedArgumentMessage(positionals[2]);
-      const [action, target] = positionals;
-      if (action === 'install') return hookInstallDeprecatedMessage();
-      if (action !== 'uninstall') {
-        return unknownHookActionMessage(action, ['uninstall']);
-      }
-      if (target !== 'claude-code') return unsupportedHookTargetMessage(action, target);
-      return null;
-    }
   },
   doctor: {
     flags: ['--json'],

@@ -18,7 +18,6 @@ import { runLogoutCliCommand } from './logout-command.js';
 import { runRotateCommand } from './rotate-command.js';
 import { runStatusCommand } from './status-command.js';
 import { runDoctorCommand } from './doctor-command.js';
-import { runHookCommand } from './hook-command.js';
 import { runPublishCliCommand } from './publish-command.js';
 import { runShareCliCommand } from './share-command.js';
 import { runDiscardCliCommand, runDraftsCliCommand, runOpenCliCommand } from './local-draft-command.js';
@@ -137,13 +136,6 @@ async function cmdScan(args: string[]) {
     : formatPrivacyScanReport(scan.input, scan.result.redacted, scan.result.scan, scan.options));
 }
 
-async function cmdHook(args: string[]) {
-  await runHookCommand(args, {
-    cwd: process.cwd(),
-    print,
-    printLines
-  });
-}
 
 async function cmdDoctor(args: string[] = []) {
   await runDoctorCommand(args, {
@@ -228,7 +220,6 @@ async function main() {
     case 'preview': return cmdPreview(args);
     case 'publish': return cmdPublish(args);
     case 'scan': return cmdScan(args);
-    case 'hook': return cmdHook(args);
     case 'doctor': return cmdDoctor(args);
     case 'commands': return cmdCommands(args);
     case 'version': return cmdVersion(args);

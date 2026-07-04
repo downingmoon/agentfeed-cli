@@ -62,30 +62,6 @@ export function helpUnexpectedTokenArgumentMessage(argument: string): string {
   return commandUsageError(`Unexpected argument for help token: ${argument}`, 'help');
 }
 
-export function hookUsageMessage(): string {
-  return [
-    'Usage: agentfeed hook uninstall claude-code',
-    'Claude Code hook install is deprecated.',
-    'Run: agentfeed hook --help',
-    'Run: agentfeed hook uninstall claude-code --help'
-  ].join('\n');
-}
-
-export function hookInstallDeprecatedMessage(): string {
-  return [
-    'AgentFeed hook install is deprecated.',
-    'Use explicit transcript collection instead:',
-    'Run: agentfeed collect --source claude-code --explain',
-    'Run: agentfeed share --dry',
-    'Clean up an existing legacy hook if needed:',
-    'Run: agentfeed hook uninstall claude-code'
-  ].join('\n');
-}
-
-export function hookUnexpectedArgumentMessage(argument: string): string {
-  return commandUsageError(`Unexpected argument for hook: ${argument}`, 'hook');
-}
-
 export function tokenUsageMessage(): string {
   return commandUsageError('Usage: agentfeed token rotate', 'token');
 }
@@ -96,26 +72,6 @@ export function unknownTokenSubcommandMessage(subcommand: string): string {
 
 export function tokenRotateUnexpectedArgumentMessage(argument: string, suggestions: readonly string[] = []): string {
   return commandUsageError(`Unexpected argument for token rotate: ${argument}`, 'token', suggestions);
-}
-
-export function unknownHookActionMessage(action: string, supportedActions: readonly string[]): string {
-  const suggestion = closestMatch(action, supportedActions);
-  return [
-    `Unknown hook action: ${action}`,
-    ...(suggestion ? [`Did you mean: agentfeed hook ${suggestion} claude-code`] : []),
-    hookUsageMessage()
-  ].join('\n');
-}
-
-export function unsupportedHookTargetMessage(action = 'install', target?: string): string {
-  const suggestion = target && (target === 'claude' || target.startsWith('claude-'))
-    ? `Did you mean: agentfeed hook ${action} claude-code`
-    : null;
-  return [
-    'Only legacy claude-code hook cleanup is supported.',
-    ...(suggestion ? [suggestion] : []),
-    'Run: agentfeed hook uninstall claude-code --help'
-  ].join('\n');
 }
 
 export function unknownCommandErrorMessage(command: string, publicCommands: readonly string[]): string {

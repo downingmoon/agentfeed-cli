@@ -90,7 +90,6 @@ describe('CLI help option validation and recovery', () => {
     expect(output.suggestions).toEqual([]);
   });
 
-
   it('suggests concrete workflows when a global-looking option is missing its command', async () => {
     const dry = await runCliFailure(['--dry']);
     expect(dry.stderr).toContain('Option appears before command: --dry');
@@ -174,20 +173,12 @@ describe('CLI help option validation and recovery', () => {
     expect(failure.stdout).toBe('');
   });
 
-  it('prints hook recovery commands when hook action or target is missing', async () => {
+  it('does not expose removed hook recovery commands', async () => {
     const failure = await runCliFailure(['hook']);
 
-    expect(failure.stderr).toContain('Usage: agentfeed hook uninstall claude-code');
-    expect(failure.stderr).toContain('Claude Code hook install is deprecated.');
-    expect(failure.stderr).toContain('Run: agentfeed hook --help');
+    expect(failure.stderr).toContain('Unknown command: hook');
+    expect(failure.stderr).toContain('Run: agentfeed --help');
     expect(failure.stdout).toBe('');
   });
 
-  it('prints supported hook target guidance for unsupported hook targets', async () => {
-    const failure = await runCliFailure(['hook', 'uninstall', 'cursor']);
-
-    expect(failure.stderr).toContain('Only legacy claude-code hook cleanup is supported.');
-    expect(failure.stderr).toContain('Run: agentfeed hook uninstall claude-code --help');
-    expect(failure.stdout).toBe('');
-  });
 });

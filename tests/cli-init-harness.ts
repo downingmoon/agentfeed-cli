@@ -12,7 +12,7 @@ export type CliRunResult = {
   readonly stderr: string;
 };
 
-export type CliInitHookHarness = {
+export type CliInitHarness = {
   readonly projectDir: () => string;
   readonly runCli: (args: readonly string[]) => Promise<CliRunResult>;
   readonly runCliFailure: (args: readonly string[]) => Promise<CliRunResult>;
@@ -25,7 +25,7 @@ const repoRoot = resolve('.');
 const cliPath = join(repoRoot, 'dist', 'cli', 'index.js');
 const execFileAsync = promisify(execFile);
 
-export function createCliInitHookHarness(): CliInitHookHarness {
+export function createCliInitHarness(): CliInitHarness {
   let dir = '';
   let home = '';
 
@@ -35,7 +35,7 @@ export function createCliInitHookHarness(): CliInitHookHarness {
 
   beforeEach(async () => {
     home = await mkdtemp(join(homedir(), '.agentfeed-test-home-'));
-    dir = await mkdtemp(join(home, 'agentfeed-cli-init-hook-'));
+    dir = await mkdtemp(join(home, 'agentfeed-cli-init-'));
   });
 
   afterEach(async () => {

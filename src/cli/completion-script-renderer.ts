@@ -110,7 +110,7 @@ _agentfeed "$@"
   case "$prev" in
     --source) COMPREPLY=( $(compgen -W "${sourceValues}" -- "$cur") ); return 0 ;;
     --token) COMPREPLY=( $(compgen -W "-" -- "$cur") ); return 0 ;;
-    --path|--session-file|--settings-path) COMPREPLY=( $(compgen -f -- "$cur") ); return 0 ;;
+    --path|--session-file) COMPREPLY=( $(compgen -f -- "$cur") ); return 0 ;;
   esac
 
   case "$command" in

@@ -138,18 +138,12 @@ describe('CLI help argument validation recovery', () => {
     expect(completionTypo.stdout).toBe('');
   });
 
-  it('suggests hook action and target corrections', async () => {
-    const action = await runCliFailure(['hook', 'instal', 'claude-code']);
-    expect(action.stderr).toContain('Unknown hook action: instal');
-    expect(action.stderr).toContain('Did you mean: agentfeed hook uninstall claude-code');
-    expect(action.stderr).toContain('Usage: agentfeed hook uninstall claude-code');
-    expect(action.stdout).toBe('');
+  it('treats removed hook commands as unknown commands', async () => {
+    const failure = await runCliFailure(['hook', 'uninstall', 'claude-code']);
 
-    const target = await runCliFailure(['hook', 'uninstall', 'claude']);
-    expect(target.stderr).toContain('Only legacy claude-code hook cleanup is supported.');
-    expect(target.stderr).toContain('Did you mean: agentfeed hook uninstall claude-code');
-    expect(target.stderr).toContain('Run: agentfeed hook uninstall claude-code --help');
-    expect(target.stdout).toBe('');
+    expect(failure.stderr).toContain('Unknown command: hook');
+    expect(failure.stderr).toContain('Run: agentfeed --help');
+    expect(failure.stdout).toBe('');
   });
 
   it('rejects conflicting flags with command-specific recovery hints', async () => {
@@ -161,7 +155,6 @@ describe('CLI help argument validation recovery', () => {
       [['publish', '--id', 'draft_123', '--latest'], 'Conflicting options for publish: --id and --latest', 'Run: agentfeed publish --help'],
       [['publish', '--open-review', '--no-open-review'], 'Conflicting options for publish: --open-review and --no-open-review', 'Run: agentfeed publish --help'],
       [['scan', '--path', '.', '--latest'], 'Conflicting options for scan: --latest and --path', 'Run: agentfeed scan --help'],
-      [['hook', 'uninstall', 'claude-code', '--global', '--project'], 'Conflicting options for hook: --global and --project', 'Run: agentfeed hook --help'],
       [['discard', '--id', 'draft_123', '--latest'], 'Conflicting options for discard: --id and --latest', 'Run: agentfeed discard --help'],
       [['open', '--id', 'draft_123', '--latest'], 'Conflicting options for open: --id and --latest', 'Run: agentfeed open --help'],
     ] as const;

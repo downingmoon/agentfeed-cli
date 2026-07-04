@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   commandCatalogNextActions,
-  hookNextActions,
   initNextActions,
   privacyScanNextActions
 } from '../src/cli/guidance-actions.js';
@@ -17,10 +16,6 @@ describe('CLI guidance next actions', () => {
     ]);
     expect(privacyScanNextActions({ path: 'README.md' })).toEqual(['agentfeed collect --explain']);
     expect(privacyScanNextActions()).toEqual(['agentfeed status']);
-  });
-
-  it('returns hook lifecycle follow-up actions', () => {
-    expect(hookNextActions()).toEqual(['agentfeed status']);
   });
 
   it('returns initialization follow-up actions by initialization state', () => {

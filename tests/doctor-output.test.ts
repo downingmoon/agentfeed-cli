@@ -82,12 +82,12 @@ describe('doctor output helpers', () => {
 
   it('converts doctor check tuples to JSON rows', () => {
     // Given / When: doctor check tuples are mapped to rows.
-    const rows = doctorCheckRows([['API ready', 'no (ECONNREFUSED)'], ['hook configured', true]] as const);
+    const rows = doctorCheckRows([['API ready', 'no (ECONNREFUSED)'], ['CLI ready', true]] as const);
 
     // Then: row names and values remain machine-readable.
     expect(rows).toEqual([
       { name: 'API ready', value: 'no (ECONNREFUSED)' },
-      { name: 'hook configured', value: true }
+      { name: 'CLI ready', value: true }
     ]);
   });
 });

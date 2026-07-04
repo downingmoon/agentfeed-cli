@@ -14,9 +14,6 @@ export function privacyScanNextActions(options: PrivacyScanNextActionOptions = {
   return ['agentfeed status'];
 }
 
-export function hookNextActions(): string[] {
-  return ['agentfeed status'];
-}
 
 export function initNextActions(alreadyInitialized: boolean): string[] {
   return alreadyInitialized

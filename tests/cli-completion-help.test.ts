@@ -78,7 +78,7 @@ describe('CLI completion help', () => {
     expect(stdout).toContain('complete -F _agentfeed agentfeed');
     expect(stdout).toContain('completion) options="zsh bash fish --help"');
     expect(stdout).toContain('--source) COMPREPLY=( $(compgen -W "claude-code codex cursor gemini-cli antigravity-cli other" -- "$cur") ); return 0 ;;');
-    expect(stdout).toContain('--path|--session-file|--settings-path) COMPREPLY=( $(compgen -f -- "$cur") ); return 0 ;;');
+    expect(stdout).toContain('--path|--session-file) COMPREPLY=( $(compgen -f -- "$cur") ); return 0 ;;');
     expect(stdout).toContain('help) options="help commands init login');
     expect(stdout).toContain('completion token --help"');
     expect(stderr).toBe('');

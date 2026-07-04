@@ -24,13 +24,11 @@ describe('command argument specs', () => {
   it('keeps positional recovery stable for compatibility and nested commands', () => {
     // Given / When: compatibility and nested commands receive invalid positionals.
     const tokenError = validatePositionals('token', ['rotate', 'browser']);
-    const hookError = validatePositionals('hook', ['instal', 'claude-code']);
     const helpError = validatePositionals('help', ['statsu']);
 
     // Then: recovery remains command-aware and suggestion-rich.
     expect(tokenError).toContain('Unexpected argument for token rotate: browser');
     expect(tokenError).toContain('Did you mean: agentfeed token rotate --browser');
-    expect(hookError).toContain('Did you mean: agentfeed hook uninstall claude-code');
     expect(helpError).toContain('Did you mean: agentfeed help status');
   });
 

@@ -31,7 +31,7 @@ describe('command definitions', () => {
     expect(publicCommands).not.toContain('token');
     expect(publicCommands).not.toContain('hook');
     expect(KNOWN_COMMANDS.has('token')).toBe(true);
-    expect(KNOWN_COMMANDS.has('hook')).toBe(true);
+    expect(KNOWN_COMMANDS.has('hook')).toBe(false);
     expect(KNOWN_COMMANDS.has('share')).toBe(true);
   });
 });

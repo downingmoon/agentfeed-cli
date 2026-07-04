@@ -95,7 +95,6 @@ const KNOWN_COMMAND_NAMES = [
   'preview',
   'publish',
   'scan',
-  'hook',
   'doctor',
   'drafts',
   'discard',

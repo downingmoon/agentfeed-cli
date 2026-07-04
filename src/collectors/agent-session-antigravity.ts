@@ -1,6 +1,7 @@
 import type { ChangedFileSummary, CollectionSource, CollectionWindow, CollectionWindowReason } from '../types.js';
 import { basename, dirname } from 'node:path';
-import { asRecord, asString, explicitCostUsd, numeric, relativeProjectPath, safeJsonParse, upsertFile } from './agent-session-core.js';
+import { asRecord, asString, explicitCostUsd, numeric, relativeProjectPath, upsertFile } from './agent-session-core.js';
+import { antigravitySubagentIds, completedAntigravitySubagentId, countAntigravitySubagentSpecs, unquotedAntigravityString } from './agent-session-antigravity-values.js';
 import { finalizeAgentSession, type AgentSessionMetrics } from './agent-session-finalize.js';
 import { applyShellFileEvidence } from './agent-session-shell-files.js';
 import { recordTestCommandResult } from './agent-session-test-metrics.js';
@@ -17,17 +18,6 @@ type OrderedAntigravityRow = {
   readonly row: Record<string, unknown>;
   readonly index: number;
 };
-
-function unquotedAntigravityString(value: unknown): string | null {
-  const text = asString(value);
-  if (!text) return null;
-  if (text.startsWith('"')) {
-    const parsed = safeJsonParse(text);
-    return typeof parsed === 'string' && parsed.length ? parsed : text;
-  }
-  if (text.startsWith("'") && text.endsWith("'")) return text.slice(1, -1);
-  return text;
-}
 
 function antigravityStepIndex(row: Record<string, unknown>): number | null {
   return typeof row.step_index === 'number' && Number.isFinite(row.step_index) ? row.step_index : null;
@@ -47,18 +37,6 @@ function compareOrderedAntigravityRows(left: OrderedAntigravityRow, right: Order
 
 function orderedAntigravityRows(rows: readonly Record<string, unknown>[]): readonly Record<string, unknown>[] {
   return rows.map((row, index) => ({ row, index })).sort(compareOrderedAntigravityRows).map((entry) => entry.row);
-}
-
-
-function countAntigravitySubagentSpecs(value: unknown): number {
-  const text = unquotedAntigravityString(value);
-  if (!text) return 0;
-  const parsed = safeJsonParse(text);
-  return Array.isArray(parsed) ? parsed.length : 0;
-}
-
-function countCreatedAntigravitySubagents(content: string): number {
-  return content.match(/"conversationId"\s*:/g)?.length ?? 0;
 }
 
 function antigravitySessionId(sessionFile: string): string {
@@ -127,7 +105,8 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
   let toolCalls = 0;
   let agentTurns = 0;
   let plannedSubagentsSpawned = 0;
-  let createdSubagentsSpawned = 0;
+  const spawnedSubagentIds = new Set<string>();
+  const completedSubagentIds = new Set<string>();
   let tokensUsed = 0;
   let estimatedCostUsd = 0;
   let startMillis: number | null = null;
@@ -184,8 +163,13 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
     }
     if (rowType === 'INVOKE_SUBAGENT') {
       if (!failedStatus(asString(row.status)) && !toolOutputFailed(content)) {
-        createdSubagentsSpawned += countCreatedAntigravitySubagents(content);
+        for (const id of antigravitySubagentIds(content)) spawnedSubagentIds.add(id);
       }
+      continue;
+    }
+    if (rowType === 'SYSTEM_MESSAGE') {
+      const completedId = completedAntigravitySubagentId(content, spawnedSubagentIds);
+      if (completedId) completedSubagentIds.add(completedId);
       continue;
     }
     if (rowType === 'RUN_COMMAND') {
@@ -207,6 +191,6 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
     { type: 'agent_session', name: 'antigravity_cli', quality: 'high' }
   ];
   const durationSeconds = startMillis != null && endMillis != null && endMillis > startMillis ? (endMillis - startMillis) / 1000 : null;
-  const subagentsSpawned = Math.max(plannedSubagentsSpawned, createdSubagentsSpawned);
-  return finalizeAgentSession({ sessionId: antigravitySessionId(sessionFile), model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun: testMetrics.testsRun, testsPassed: testMetrics.testsPassed, failedCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted: 0, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effectiveReason });
+  const subagentsSpawned = Math.max(plannedSubagentsSpawned, spawnedSubagentIds.size);
+  return finalizeAgentSession({ sessionId: antigravitySessionId(sessionFile), model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun: testMetrics.testsRun, testsPassed: testMetrics.testsPassed, failedCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted: completedSubagentIds.size, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effectiveReason });
 }

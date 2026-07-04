@@ -76,6 +76,27 @@ describe('Antigravity file edit evidence', () => {
     expect(metrics?.subagents_completed).toBeNull();
   });
 
+  it('extracts Antigravity completed subagent counts from child system messages', async () => {
+    const dir = fixture.dir();
+    const sessionFile = join(dir, 'antigravity-completed-subagents.jsonl');
+    await fixture.writeJsonl(sessionFile, [
+      { step_index: 0, source: 'USER_EXPLICIT', type: 'USER_INPUT', status: 'DONE', created_at: '2026-06-25T03:56:15Z', content: '<USER_REQUEST>Use subagents</USER_REQUEST>' },
+      { step_index: 1, source: 'MODEL', type: 'PLANNER_RESPONSE', status: 'DONE', created_at: '2026-06-25T03:56:20Z', tool_calls: [
+        { name: 'invoke_subagent', args: { Subagents: JSON.stringify([{ Role: 'Builder A' }, { Role: 'Builder B' }, { Role: 'Builder C' }]) } }
+      ] },
+      { step_index: 2, source: 'MODEL', type: 'INVOKE_SUBAGENT', status: 'DONE', created_at: '2026-06-25T03:56:21Z', content: 'Created the following subagents:\n{\n  "conversationId": "subagent-a"\n}\n{\n  "conversationId": "subagent-b"\n}\n{\n  "conversationId": "subagent-c"\n}' },
+      { step_index: 3, source: 'SYSTEM', type: 'SYSTEM_MESSAGE', status: 'DONE', created_at: '2026-06-25T03:57:21Z', content: '<SYSTEM_MESSAGE>\n[Message] timestamp=2026-06-25T03:57:42Z sender=subagent-a priority=MESSAGE_PRIORITY_HIGH content=Created the file `/repo/src/generated.ts`.\n</SYSTEM_MESSAGE>' },
+      { step_index: 4, source: 'SYSTEM', type: 'SYSTEM_MESSAGE', status: 'DONE', created_at: '2026-06-25T03:57:22Z', content: '<SYSTEM_MESSAGE>\n[Message] timestamp=2026-06-25T03:57:43Z sender=subagent-b priority=MESSAGE_PRIORITY_HIGH content=I need guidance choosing a file name.\n</SYSTEM_MESSAGE>' },
+      { step_index: 5, source: 'SYSTEM', type: 'SYSTEM_MESSAGE', status: 'DONE', created_at: '2026-06-25T03:57:23Z', content: '<SYSTEM_MESSAGE>\n[Message] timestamp=2026-06-25T03:57:44Z sender=subagent-c priority=MESSAGE_PRIORITY_HIGH content=작업 완료: generated requested scene.\n</SYSTEM_MESSAGE>' },
+      { step_index: 6, source: 'MODEL', type: 'GENERIC', status: 'DONE', created_at: '2026-06-25T03:57:24Z', content: 'Successfully killed 3 subagent(s) and their descendants.' }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile });
+
+    expect(metrics?.subagents_spawned).toBe(3);
+    expect(metrics?.subagents_completed).toBe(2);
+  });
+
 
   it('does not count Antigravity code action rows with error text as changed files', async () => {
     const dir = fixture.dir();

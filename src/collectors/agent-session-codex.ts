@@ -32,6 +32,7 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
   const codexTaskTurnIds = new Set<string>();
   let sessionId: string | null = null;
   let model: string | null = null;
+  let sessionModel: string | null = null;
   let matchedWindowRow = false;
   let tokenBaselineBeforeWindow: number | null = null;
   const patchFallbacks = createCodexPatchFallbacks();
@@ -48,10 +49,7 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
     if (!payload) continue;
     if (row?.type === 'session_meta') {
       sessionId ??= asString(payload.id);
-      model ??= asString(payload.model);
-    }
-    if (row?.type === 'turn_context') {
-      model ??= asString(payload.model);
+      sessionModel ??= asString(payload.model);
     }
     if (payload.type === 'token_count') {
       const info = asRecord(payload.info);
@@ -62,6 +60,9 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
     }
     if (!rowInAgentCollectionWindow(row, effectiveWindow)) continue;
     matchedWindowRow = true;
+    if (row?.type === 'session_meta' || row?.type === 'turn_context') {
+      model ??= asString(payload.model);
+    }
     const rowMillis = rowTimestampMillis(row);
     if (rowMillis != null) {
       const effectiveStart = sinceMillis != null ? Math.max(rowMillis, sinceMillis) : rowMillis;
@@ -155,6 +156,7 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
   if (hasCollectionWindowBoundary(effectiveWindow) && !matchedWindowRow) return null;
   patchFallbacks.applyConfirmed(cwd, files);
   sessionId ??= codexSessionIdFromFilename(sessionFile);
+  model ??= sessionModel;
   if (tokenBaselineBeforeWindow != null && tokensUsed >= tokenBaselineBeforeWindow) {
     tokensUsed -= tokenBaselineBeforeWindow;
   }

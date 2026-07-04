@@ -69,6 +69,21 @@ describe('Codex session collector patch metrics', () => {
     expect(metrics?.changed_files.map((file) => file.path)).toEqual(['src/model.ts']);
   });
 
+  it('uses the first in-window Codex turn_context model for partial collection windows', async () => {
+    const sessionFile = join(dir, 'codex-window-model.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-window-model', cwd: dir, model: 'gpt-5.4-mini' } },
+      { timestamp: '2026-05-20T00:30:00Z', type: 'turn_context', payload: { cwd: dir, model: 'gpt-5.4-mini', effort: 'medium' } },
+      { timestamp: '2026-05-20T01:00:00Z', type: 'turn_context', payload: { cwd: dir, model: 'gpt-5.5', effort: 'high' } },
+      { timestamp: '2026-05-20T01:00:01Z', type: 'event_msg', payload: { type: 'token_count', info: { total_token_usage: { total_tokens: 115 } } } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile, since: '2026-05-20T01:00:00Z' });
+
+    expect(metrics?.model).toBe('gpt-5.5');
+    expect(metrics?.tokens_used).toBe(115);
+  });
+
   it('falls back to Codex apply_patch custom tool input when patch_apply_end is absent', async () => {
     const sessionFile = join(dir, 'codex-apply-patch-only.jsonl');
     await writeJsonl(sessionFile, [

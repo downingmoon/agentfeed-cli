@@ -166,6 +166,7 @@ describe('agent session Gemini metrics', () => {
 
     expect(metrics?.session_id).toBe('antigravity-transcript');
     expect(metrics?.tokens_used).toBe(162);
+    expect(metrics?.duration_seconds).toBe(8);
     expect(metrics?.commands_run).toBe(1);
     expect(metrics?.tool_calls).toBe(2);
     expect(metrics?.changed_files.map((file) => [file.path, file.status]).sort()).toEqual([

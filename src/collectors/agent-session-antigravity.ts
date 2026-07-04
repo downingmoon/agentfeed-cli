@@ -5,7 +5,7 @@ import { finalizeAgentSession, type AgentSessionMetrics } from './agent-session-
 import { applyShellFileEvidence } from './agent-session-shell-files.js';
 import { recordTestCommandResult } from './agent-session-test-metrics.js';
 import { failedStatus, isTestCommand, toolOutputFailed } from './agent-session-tooling.js';
-import { hasCollectionWindowBoundary, rowInAgentCollectionWindow } from './agent-session-window.js';
+import { hasCollectionWindowBoundary, parseBoundaryMillis, rowInAgentCollectionWindow, rowTimestampMillis } from './agent-session-window.js';
 
 type AntigravityCommand = {
   readonly command: string;
@@ -91,7 +91,11 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
   let agentTurns = 0;
   let tokensUsed = 0;
   let estimatedCostUsd = 0;
+  let startMillis: number | null = null;
+  let endMillis: number | null = null;
   let matchedWindowRow = false;
+  const sinceMillis = parseBoundaryMillis(effectiveWindow?.since);
+  const untilMillis = parseBoundaryMillis(effectiveWindow?.until);
 
   for (const row of rows) {
     model ??= asString(row.model);
@@ -104,6 +108,13 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
     if (tokens) {
       tokensUsed += antigravityTokenTotal(tokens);
       estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(tokens) ?? 0);
+    }
+    const rowMillis = rowTimestampMillis(row);
+    if (rowMillis != null) {
+      const effectiveStart = sinceMillis != null ? Math.max(rowMillis, sinceMillis) : rowMillis;
+      const effectiveEnd = untilMillis != null ? Math.min(rowMillis, untilMillis) : rowMillis;
+      startMillis = Math.min(startMillis ?? effectiveStart, effectiveStart);
+      endMillis = Math.max(endMillis ?? effectiveEnd, effectiveEnd);
     }
     if (rowType === 'PLANNER_RESPONSE') {
       agentTurns += 1;
@@ -148,5 +159,6 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
     { type: 'agent_session', name: 'gemini_cli', quality: 'high' },
     { type: 'agent_session', name: 'antigravity_cli', quality: 'high' }
   ];
-  return finalizeAgentSession({ sessionId: antigravitySessionId(sessionFile), model, files, tokensUsed, estimatedCostUsd, durationSeconds: null, testsRun: testMetrics.testsRun, testsPassed: testMetrics.testsPassed, failedCommands, commandsRun, toolCalls, skills, subagentsSpawned: 0, subagentsCompleted: 0, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effectiveReason });
+  const durationSeconds = startMillis != null && endMillis != null && endMillis > startMillis ? (endMillis - startMillis) / 1000 : null;
+  return finalizeAgentSession({ sessionId: antigravitySessionId(sessionFile), model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun: testMetrics.testsRun, testsPassed: testMetrics.testsPassed, failedCommands, commandsRun, toolCalls, skills, subagentsSpawned: 0, subagentsCompleted: 0, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effectiveReason });
 }

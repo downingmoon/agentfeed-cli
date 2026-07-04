@@ -29,3 +29,9 @@ export function codexNestedToolParameters(toolUse: Record<string, unknown>): Rec
   const argsText = asString(toolUse.arguments);
   return argsText ? asRecord(safeJsonParse(argsText)) ?? {} : {};
 }
+
+export function codexPatchTextFromToolInput(args: Record<string, unknown> | null, rawInput: string | null): string | null {
+  const structured = asString(args?.input) ?? asString(args?.patch) ?? asString(args?.content);
+  if (structured) return structured;
+  return rawInput?.startsWith('*** Begin Patch') ? rawInput : null;
+}

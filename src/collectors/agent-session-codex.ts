@@ -3,23 +3,12 @@ import { readSessionJsonlRecords } from './agent-session-files.js';
 import { readOmxMetadata } from './agent-session-codex-omx.js';
 import { applyCodexPatchApplyEnd } from './agent-session-codex-patch-apply.js';
 import { createCodexPatchFallbacks } from './agent-session-codex-patch-fallbacks.js';
-import { codexCallArguments, codexNestedToolName, codexNestedToolParameters, codexTokenTotal } from './agent-session-codex-tools.js';
-import { applyShellFileEvidence } from './agent-session-shell-files.js';
-import { recordTestCommandResult } from './agent-session-test-metrics.js';
-import { commandFailed, failedStatus, isTestCommand, toolOutputFailed } from './agent-session-tooling.js';
+import { createCodexCommandTracker, createCodexSubagentTracker } from './agent-session-codex-call-state.js';
+import { codexCallArguments, codexNestedToolName, codexNestedToolParameters, codexPatchTextFromToolInput, codexTokenTotal } from './agent-session-codex-tools.js';
+import { commandFailed, failedStatus, toolOutputFailed } from './agent-session-tooling.js';
 import { asRecord, asString, explicitCostUsd, inferEffectiveCollectionWindow, pushSource } from './agent-session-core.js';
 import { finalizeAgentSession, type AgentSessionMetrics } from './agent-session-finalize.js';
 import { hasCollectionWindowBoundary, parseBoundaryMillis, rowInAgentCollectionWindow, rowTimestampMillis } from './agent-session-window.js';
-
-type CodexCommandInvocation = {
-  readonly command: string;
-  readonly workdir: string | null;
-};
-
-type CodexCommandRecord = {
-  readonly invocations: CodexCommandInvocation[];
-  readonly test: boolean;
-};
 
 export async function parseCodexSessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null, inferIdleGap = true): Promise<AgentSessionMetrics | null> {
   const rows = await readSessionJsonlRecords(sessionFile);
@@ -27,19 +16,15 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
   const effective = inferEffectiveCollectionWindow(rows, window, { inferIdleGap });
   const effectiveWindow = effective.window;
   const files = new Map<string, ChangedFileSummary>();
-  const commands = new Map<string, CodexCommandRecord>();
+  const commandTracker = createCodexCommandTracker();
+  const subagentTracker = createCodexSubagentTracker();
   let tokensUsed = 0;
   let startMillis: number | null = null;
   let endMillis: number | null = null;
   let estimatedCostUsd = 0;
-  const testMetrics = { testsRun: 0, testsPassed: 0 };
-  let failedCommands = 0;
-  let commandsRun = 0;
   let toolCalls = 0;
   const skills = new Set<string>();
   const agentModes = new Set<string>();
-  const pendingSubagentCalls = new Map<string, { failed: boolean; count: number }>();
-  let subagentsSpawned = 0;
   let subagentsCompleted = 0;
   let agentTurns = 0;
   let sessionId: string | null = null;
@@ -49,35 +34,6 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
   const patchFallbacks = createCodexPatchFallbacks();
   const sinceMillis = parseBoundaryMillis(effectiveWindow?.since);
   const untilMillis = parseBoundaryMillis(effectiveWindow?.until);
-  const registerCommand = (callId: string | null, command: string, workdir: string | null) => {
-    if (!command) return;
-    commandsRun += 1;
-    const test = isTestCommand(command);
-    if (!callId) {
-      if (test) recordTestCommandResult(testMetrics, '', false);
-      return;
-    }
-    const existing = commands.get(callId);
-    commands.set(callId, {
-      invocations: [...(existing?.invocations ?? []), { command, workdir }],
-      test: Boolean(existing?.test || test)
-    });
-  };
-  const trackSubagentCall = (callId: string | null) => {
-    if (!callId) {
-      subagentsSpawned += 1;
-      return;
-    }
-    const existing = pendingSubagentCalls.get(callId);
-    if (existing) existing.count += 1;
-    else pendingSubagentCalls.set(callId, { failed: false, count: 1 });
-  };
-  const patchTextFromToolInput = (args: Record<string, unknown> | null, rawInput: string | null): string | null => {
-    const structured = asString(args?.input) ?? asString(args?.patch) ?? asString(args?.content);
-    if (structured) return structured;
-    return rawInput?.startsWith('*** Begin Patch') ? rawInput : null;
-  };
-
   for (const row of rows) {
     const payload = asRecord(row.payload);
     if (!payload) continue;
@@ -131,53 +87,37 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
           const nestedName = codexNestedToolName(toolUse.recipient_name ?? toolUse.name);
           const parameters = codexNestedToolParameters(toolUse);
           if (nestedName === 'spawn_agent') {
-            trackSubagentCall(callId);
+            subagentTracker.track(callId);
           } else if (nestedName === 'exec_command') {
-            registerCommand(callId, asString(parameters.cmd) ?? asString(parameters.command) ?? '', asString(parameters.workdir));
+            commandTracker.register(callId, asString(parameters.cmd) ?? asString(parameters.command) ?? '', asString(parameters.workdir));
           } else if (nestedName === 'apply_patch') {
-            patchFallbacks.register(callId, patchTextFromToolInput(parameters, asString(toolUse.arguments)), { requiresOutput: Boolean(callId) });
+            patchFallbacks.register(callId, codexPatchTextFromToolInput(parameters, asString(toolUse.arguments)), { requiresOutput: Boolean(callId) });
           }
         }
         continue;
       }
       toolCalls += 1;
       if (name === 'spawn_agent') {
-        trackSubagentCall(callId);
+        subagentTracker.track(callId);
       }
       if (name === 'exec_command') {
         const args = codexCallArguments(payload);
-        registerCommand(callId, asString(args?.cmd) ?? asString(args?.command) ?? '', asString(args?.workdir));
+        commandTracker.register(callId, asString(args?.cmd) ?? asString(args?.command) ?? '', asString(args?.workdir));
       }
       if (name === 'apply_patch' && !failedStatus(payload.status)) {
         const args = codexCallArguments(payload);
-        patchFallbacks.register(callId, patchTextFromToolInput(args, asString(payload.arguments)), { requiresOutput: Boolean(callId) });
+        patchFallbacks.register(callId, codexPatchTextFromToolInput(args, asString(payload.arguments)), { requiresOutput: Boolean(callId) });
       }
     }
     if (payload.type === 'custom_tool_call') toolCalls += 1;
     if (payload.type === 'function_call_output') {
       const callId = asString(payload.call_id);
-      const pendingSubagent = callId ? pendingSubagentCalls.get(callId) : null;
-      if (pendingSubagent && (failedStatus(payload.status) || toolOutputFailed(asString(payload.output) ?? ''))) {
-        pendingSubagent.failed = true;
-      }
-      if (callId && (failedStatus(payload.status) || toolOutputFailed(asString(payload.output) ?? ''))) {
-        patchFallbacks.fail(callId);
-      }
-      if (callId) {
-        patchFallbacks.confirm(callId);
-      }
-      const command = callId ? commands.get(callId) : null;
       const output = asString(payload.output) ?? '';
-      const commandDidFail = failedStatus(payload.status) || commandFailed(output);
-      if (command && commandDidFail) {
-        failedCommands += 1;
-      }
-      if (command?.test) recordTestCommandResult(testMetrics, output, commandDidFail);
-      if (command && !commandDidFail) {
-        for (const invocation of command.invocations) {
-          applyShellFileEvidence(cwd, { command: invocation.command, workdir: invocation.workdir, output }, files);
-        }
-      }
+      const outputFailed = failedStatus(payload.status) || toolOutputFailed(output);
+      subagentTracker.markOutputFailed(callId, outputFailed);
+      if (callId && outputFailed) patchFallbacks.fail(callId);
+      if (callId) patchFallbacks.confirm(callId);
+      commandTracker.recordOutput({ cwd, callId, output, failed: failedStatus(payload.status) || commandFailed(output), files });
     }
     if (payload.type === 'custom_tool_call' && payload.name === 'apply_patch' && !failedStatus(payload.status)) {
       const patchText = asString(payload.input);
@@ -188,9 +128,7 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
       applyCodexPatchApplyEnd(cwd, asRecord(payload.changes), files);
     }
   }
-  for (const subagent of pendingSubagentCalls.values()) {
-    if (!subagent.failed) subagentsSpawned += subagent.count;
-  }
+  let subagentsSpawned = subagentTracker.spawned;
   if (hasCollectionWindowBoundary(effectiveWindow) && !matchedWindowRow) return null;
   patchFallbacks.applyConfirmed(cwd, files);
   if (tokenBaselineBeforeWindow != null && tokensUsed >= tokenBaselineBeforeWindow) {
@@ -206,5 +144,5 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
   agentTurns = Math.max(agentTurns, omx.agentTurns ?? 0);
   for (const mode of omx.agentModes ?? []) agentModes.add(mode);
   const durationSeconds = startMillis != null && endMillis != null && endMillis > startMillis ? (endMillis - startMillis) / 1000 : null;
-  return finalizeAgentSession({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun: testMetrics.testsRun, testsPassed: testMetrics.testsPassed, failedCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
+  return finalizeAgentSession({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun: commandTracker.testsRun, testsPassed: commandTracker.testsPassed, failedCommands: commandTracker.failedCommands, commandsRun: commandTracker.commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
 }

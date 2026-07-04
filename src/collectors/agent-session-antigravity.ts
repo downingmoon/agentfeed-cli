@@ -1,6 +1,6 @@
 import type { ChangedFileSummary, CollectionSource, CollectionWindow, CollectionWindowReason } from '../types.js';
 import { basename, dirname } from 'node:path';
-import { asRecord, asString, relativeProjectPath, safeJsonParse, upsertFile } from './agent-session-core.js';
+import { asRecord, asString, explicitCostUsd, numeric, relativeProjectPath, safeJsonParse, upsertFile } from './agent-session-core.js';
 import { finalizeAgentSession, type AgentSessionMetrics } from './agent-session-finalize.js';
 import { applyShellFileEvidence } from './agent-session-shell-files.js';
 import { recordTestCommandResult } from './agent-session-test-metrics.js';
@@ -36,6 +36,12 @@ export function isAntigravityTranscript(rows: readonly Record<string, unknown>[]
 
 function antigravityCommandFailed(row: Record<string, unknown>, content: string): boolean {
   return failedStatus(asString(row.status)) || /command failed|exited with code [1-9]|permission denied|error:/i.test(content);
+}
+
+function antigravityTokenTotal(tokens: Record<string, unknown>): number {
+  const total = numeric(tokens.total);
+  if (total) return total;
+  return numeric(tokens.input) + numeric(tokens.cached) + numeric(tokens.output) + numeric(tokens.thoughts) + numeric(tokens.tool);
 }
 
 function filePathFromUri(uri: string): string {
@@ -83,6 +89,8 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
   let commandsRun = 0;
   let toolCalls = 0;
   let agentTurns = 0;
+  let tokensUsed = 0;
+  let estimatedCostUsd = 0;
   let matchedWindowRow = false;
 
   for (const row of rows) {
@@ -91,6 +99,12 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
     matchedWindowRow = true;
     const rowType = asString(row.type);
     const content = asString(row.content) ?? '';
+    estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(row) ?? 0);
+    const tokens = asRecord(row.tokens);
+    if (tokens) {
+      tokensUsed += antigravityTokenTotal(tokens);
+      estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(tokens) ?? 0);
+    }
     if (rowType === 'PLANNER_RESPONSE') {
       agentTurns += 1;
       for (const call of antigravityToolCalls(row)) {
@@ -134,5 +148,5 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
     { type: 'agent_session', name: 'gemini_cli', quality: 'high' },
     { type: 'agent_session', name: 'antigravity_cli', quality: 'high' }
   ];
-  return finalizeAgentSession({ sessionId: antigravitySessionId(sessionFile), model, files, tokensUsed: 0, estimatedCostUsd: 0, durationSeconds: null, testsRun: testMetrics.testsRun, testsPassed: testMetrics.testsPassed, failedCommands, commandsRun, toolCalls, skills, subagentsSpawned: 0, subagentsCompleted: 0, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effectiveReason });
+  return finalizeAgentSession({ sessionId: antigravitySessionId(sessionFile), model, files, tokensUsed, estimatedCostUsd, durationSeconds: null, testsRun: testMetrics.testsRun, testsPassed: testMetrics.testsPassed, failedCommands, commandsRun, toolCalls, skills, subagentsSpawned: 0, subagentsCompleted: 0, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effectiveReason });
 }

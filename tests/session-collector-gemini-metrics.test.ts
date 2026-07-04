@@ -155,7 +155,7 @@ describe('agent session Gemini metrics', () => {
     const sessionFile = join(dir, 'antigravity-transcript.jsonl');
     await writeJsonl(sessionFile, [
       { step_index: 0, source: 'USER_EXPLICIT', type: 'USER_INPUT', status: 'DONE', created_at: '2026-06-25T03:56:15Z', content: `<USER_REQUEST>Update ${join(dir, 'src', 'api.ts')}</USER_REQUEST>` },
-      { step_index: 1, source: 'MODEL', type: 'PLANNER_RESPONSE', status: 'DONE', created_at: '2026-06-25T03:56:20Z', tool_calls: [
+      { step_index: 1, source: 'MODEL', type: 'PLANNER_RESPONSE', status: 'DONE', created_at: '2026-06-25T03:56:20Z', tokens: { input: 100, cached: 20, output: 30, thoughts: 5, tool: 7 }, tool_calls: [
         { name: 'run_command', args: { CommandLine: '"git status --short"', Cwd: JSON.stringify(dir) } }
       ] },
       { step_index: 2, source: 'MODEL', type: 'RUN_COMMAND', status: 'DONE', created_at: '2026-06-25T03:56:21Z', content: 'Created At: 2026-06-25T03:56:21Z\nCompleted At: 2026-06-25T03:56:22Z\nThe command completed successfully.\nOutput:\n?? src/agy-created.ts\n M src/api.ts\n' },
@@ -165,6 +165,7 @@ describe('agent session Gemini metrics', () => {
     const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile });
 
     expect(metrics?.session_id).toBe('antigravity-transcript');
+    expect(metrics?.tokens_used).toBe(162);
     expect(metrics?.commands_run).toBe(1);
     expect(metrics?.tool_calls).toBe(2);
     expect(metrics?.changed_files.map((file) => [file.path, file.status]).sort()).toEqual([

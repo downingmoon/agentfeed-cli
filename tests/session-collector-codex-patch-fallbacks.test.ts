@@ -97,4 +97,39 @@ describe('Codex patch fallback evidence', () => {
   });
 
 
+  it('does not count parallel apply_patch fallbacks when the shared output row failed', async () => {
+    const dir = fixture.dir();
+    const sessionFile = join(dir, 'codex-parallel-failed-apply-patch.jsonl');
+    const firstPatch = [
+      '*** Begin Patch',
+      '*** Add File: src/parallel-phantom-first.ts',
+      '+export const first = true;',
+      '*** End Patch'
+    ].join('\n');
+    const secondPatch = [
+      '*** Begin Patch',
+      '*** Add File: src/parallel-phantom-second.ts',
+      '+export const second = true;',
+      '*** End Patch'
+    ].join('\n');
+    await fixture.writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-parallel-failed-apply-patch', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'function_call', name: 'multi_tool_use.parallel', arguments: JSON.stringify({
+        tool_uses: [
+          { recipient_name: 'functions.apply_patch', parameters: { input: firstPatch } },
+          { recipient_name: 'functions.apply_patch', parameters: { input: secondPatch } }
+        ]
+      }), call_id: 'parallel-failed-patches' } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'parallel-failed-patches', status: 'failed', output: 'Patch failed: invalid context' } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.changed_files).toEqual([]);
+    expect(metrics?.files_changed).toBeNull();
+    expect(metrics?.lines_added).toBeNull();
+    expect(metrics?.tool_calls).toBe(2);
+  });
+
+
 });

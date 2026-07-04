@@ -4,16 +4,11 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { open, readdir, readFile, stat } from 'node:fs/promises';
 import type { AgentType } from '../types.js';
 import { asRecord, asString, safeJsonParse } from './agent-session-core.js';
+import { antigravityHistoryTranscriptCandidates, type SessionFileCandidate } from './agent-session-antigravity-history.js';
 
 const DEFAULT_SESSION_FILE_MAX_BYTES = 10 * 1024 * 1024;
 const DEFAULT_SESSION_JSONL_MAX_ROWS = 50_000;
 const DEFAULT_SESSION_JSONL_MAX_LINE_CHARS = 1_000_000;
-
-type SessionFileCandidate = {
-  readonly path: string;
-  readonly allowProjectScopedNoCwd?: boolean;
-  readonly trustedProjectMatch?: boolean;
-};
 
 function boundedPositiveIntegerEnv(name: string, fallback: number): number {
   const raw = process.env[name];
@@ -160,33 +155,8 @@ function claudeProjectDirName(cwd: string): string {
   return resolve(cwd).replace(/\//g, '-');
 }
 
-function pathBelongsToProject(cwd: string, workspace: string): boolean {
-  const projectRoot = canonicalPath(cwd);
-  const absoluteWorkspace = canonicalPath(workspace);
-  return absoluteWorkspace === projectRoot || absoluteWorkspace.startsWith(`${projectRoot}/`);
-}
-
 async function existingFile(path: string): Promise<boolean> {
   return (await stat(path).catch(() => null))?.isFile() === true;
-}
-
-async function antigravityHistoryTranscriptCandidates(home: string, cwd: string): Promise<SessionFileCandidate[]> {
-  const historyFile = join(home, '.gemini', 'antigravity-cli', 'history.jsonl');
-  const text = await readFile(historyFile, 'utf8').catch(() => '');
-  const candidates: SessionFileCandidate[] = [];
-  const seen = new Set<string>();
-  for (const line of text.split('\n').reverse()) {
-    if (!line.trim()) continue;
-    const row = asRecord(safeJsonParse(line));
-    const conversationId = asString(row?.conversationId);
-    const workspace = asString(row?.workspace);
-    if (!conversationId || !workspace || !pathBelongsToProject(cwd, workspace)) continue;
-    const transcript = join(home, '.gemini', 'antigravity-cli', 'brain', conversationId, '.system_generated', 'logs', 'transcript.jsonl');
-    if (seen.has(transcript)) continue;
-    seen.add(transcript);
-    candidates.push({ path: transcript, trustedProjectMatch: true });
-  }
-  return candidates;
 }
 
 async function newestJsonlUnder(dir: string, limit = 80): Promise<string[]> {

@@ -48,6 +48,23 @@ describe('global agent signal warnings', () => {
     expect(result.warnings).toContain('Codex CLI signals were detected, but no Codex session matched this project root. If the agent ran from a parent or workspace directory, run agentfeed from that initialized root or pass a session file that belongs to this project.');
   });
 
+  it('warns when Antigravity transcripts exist but none match the project root', async () => {
+    const conversationDb = join(process.env.HOME ?? '', '.gemini', 'antigravity-cli', 'conversations', 'conversation.db');
+    const transcriptFile = join(process.env.HOME ?? '', '.gemini', 'antigravity-cli', 'brain', 'wrong-project', '.system_generated', 'logs', 'transcript.jsonl');
+    await mkdir(join(conversationDb, '..'), { recursive: true });
+    await mkdir(join(transcriptFile, '..'), { recursive: true });
+    await writeFile(conversationDb, 'sqlite placeholder');
+    await writeJsonl(transcriptFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'USER_INPUT', content: 'not this project' },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'CODE_ACTION', content: 'Modified file /tmp/wrong-project/src/app.ts' }
+    ]);
+
+    const result = await collectDraftWithStatus({ cwd: dir, source: 'gemini_cli', force: true });
+
+    expect(result.draft.worklog.metrics.collection_sources).toBeNull();
+    expect(result.warnings).toContain('Gemini/Antigravity CLI signals were detected, but no Gemini/Antigravity session matched this project root. If the agent ran from a parent or workspace directory, run agentfeed from that initialized root or pass a session file that belongs to this project. Antigravity transcript.jsonl files were detected, but none matched this project root. Antigravity conversation databases were also detected, but AgentFeed currently reads Gemini JSONL chats or Antigravity transcript.jsonl files, not Antigravity protobuf SQLite databases.');
+  });
+
   it('warns when Antigravity conversation databases exist but no JSONL transcript matches the project root', async () => {
     const conversationDb = join(process.env.HOME ?? '', '.gemini', 'antigravity-cli', 'conversations', 'conversation.db');
     await mkdir(join(conversationDb, '..'), { recursive: true });

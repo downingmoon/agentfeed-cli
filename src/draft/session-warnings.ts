@@ -25,6 +25,15 @@ function antigravityConversationDbDetected(): boolean {
   return existsSync(conversationsDir) && readdirSync(conversationsDir).some((entry) => entry.endsWith('.db'));
 }
 
+function antigravityTranscriptDetected(): boolean {
+  const brainDir = join(homedir(), '.gemini', 'antigravity-cli', 'brain');
+  if (!existsSync(brainDir)) return false;
+  return readdirSync(brainDir, { withFileTypes: true }).some((entry) => {
+    if (!entry.isDirectory()) return false;
+    return existsSync(join(brainDir, entry.name, '.system_generated', 'logs', 'transcript.jsonl'));
+  });
+}
+
 export function globalAgentSignalMismatchWarnings(input: GlobalSignalMismatchInput): string[] {
   if (input.sessionFound || input.sessionFileProvided) return [];
   const candidates = input.explicitSource ? [input.explicitSource] : input.enabledSources;
@@ -34,6 +43,10 @@ export function globalAgentSignalMismatchWarnings(input: GlobalSignalMismatchInp
       const label = SOURCE_LABELS[candidate];
       const base = `${label.signal} signals were detected, but no ${label.session} session matched this project root. If the agent ran from a parent or workspace directory, run agentfeed from that initialized root or pass a session file that belongs to this project.`;
       if (candidate !== 'gemini_cli' || !antigravityConversationDbDetected()) return base;
-      return `${base} Antigravity conversation databases were detected, but AgentFeed currently reads Gemini JSONL chats or Antigravity transcript.jsonl files, not Antigravity protobuf SQLite databases.`;
+      const transcriptHint = antigravityTranscriptDetected()
+        ? ' Antigravity transcript.jsonl files were detected, but none matched this project root.'
+        : '';
+      const dbLabel = transcriptHint ? 'Antigravity conversation databases were also detected' : 'Antigravity conversation databases were detected';
+      return `${base}${transcriptHint} ${dbLabel}, but AgentFeed currently reads Gemini JSONL chats or Antigravity transcript.jsonl files, not Antigravity protobuf SQLite databases.`;
     });
 }

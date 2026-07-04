@@ -40,7 +40,7 @@ function literalPathDivision(basePath: string, rawSegments: string): string | nu
   return [basePath, ...segments].join('/').replace(/\/+/g, '/');
 }
 
-function literalJoinPath(basePath: string, rawSegments: string): string | null {
+export function pythonLiteralJoinPath(basePath: string, rawSegments: string): string | null {
   const segments: string[] = [];
   let cursor = 0;
   PYTHON_JOINPATH_SEGMENT.lastIndex = 0;
@@ -83,7 +83,7 @@ export function pythonBoundTargets(command: string): BoundScriptTarget[] {
   for (const match of command.matchAll(PYTHON_JOINPATH_BINDING_TARGET)) {
     const name = match.groups?.name;
     const basePath = match.groups?.baseName ? pathByName.get(match.groups.baseName) : undefined;
-    const path = basePath ? literalJoinPath(basePath, match.groups?.segments ?? '') : null;
+    const path = basePath ? pythonLiteralJoinPath(basePath, match.groups?.segments ?? '') : null;
     if (name && path) {
       targets.push({ name, path });
       pathByName.set(name, path);

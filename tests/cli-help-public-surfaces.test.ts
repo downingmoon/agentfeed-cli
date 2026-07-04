@@ -15,7 +15,7 @@ let home: string;
 
 beforeAll(() => {
   ensureCliBuilt(repoRoot);
-});
+}, 30_000);
 
 beforeEach(async () => {
   dir = await mkdtemp(join(tmpdir(), 'agentfeed-cli-help-surfaces-'));

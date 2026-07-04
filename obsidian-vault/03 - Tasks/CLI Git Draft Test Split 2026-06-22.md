@@ -68,7 +68,7 @@ CLI oversized `tests/git-draft.test.ts`에서 configured command collection cove
 ## 남은 작업
 
 - `tests/git-draft.test.ts` oversized는 해소됨.
-- 현재 CLI 테스트 oversized scan 기준 다음 최대 후보는 `tests/cli-drafts.test.ts` 363 pure LOC이고, 그 다음은 `tests/release-preflight.test.ts` 351 pure LOC, `tests/cli-init-hook.test.ts` 284 pure LOC다.
+- 현재 CLI 테스트 oversized scan 기준 다음 최대 후보는 `tests/cli-drafts.test.ts` 363 pure LOC이고, 그 다음은 `tests/release-preflight.test.ts` 351 pure LOC다.
 
 ## 범위 제한
 

@@ -123,7 +123,7 @@ dist CLI doctor smoke: passed; summary status attention_needed, ready 3, attenti
 ## Follow-up
 
 > [!todo]
-> 후속 hook command split은 [[CLI Hook Command Split 2026-06-21]]에서 처리했다. 후속 command surface split은 [[CLI Command Surface Split 2026-06-21]]에서 처리했다. `src/cli/index.ts` remains above the 250 pure LOC target because collect/share/publish orchestration still lives there.
+> 후속 command surface split은 [[CLI Command Surface Split 2026-06-21]]에서 처리했다. `src/cli/index.ts` remains above the 250 pure LOC target because collect/share/publish orchestration still lives there.
 
 > [!todo]
 > LSP diagnostics currently fail locally with `Transport closed`. This slice used `tsc --noEmit`, focused Vitest, build, and dist CLI smoke as replacement evidence.

@@ -49,10 +49,10 @@ Frontend Settings는 `/me/integrations` status와 `/integrations/{type}/setup-gu
 
 현재 source별 안내 기준:
 
-- Claude Code: `agentfeed login`, `legacy Claude Code hook setup` (deprecated), `agentfeed share --dry`
+- Claude Code: `agentfeed login`, `agentfeed collect --source claude --explain`, `agentfeed share --dry`
 - Codex: `agentfeed collect --source codex --explain`
 - Cursor: `agentfeed collect --source cursor --explain`
-- Gemini CLI: `agentfeed collect --source gemini-cli --explain`
+- Antigravity: `agentfeed collect --source antigravity --explain`
 
 `agentfeed configure ...` 또는 `agentfeed connect ...`처럼 존재하지 않는 onboarding command는 API guide에 다시 넣지 않는다. Backend stale command guard는 [[Backend Integration Guide CLI Contract 2026-06-08]], Frontend 소비 surface는 [[Frontend Integration Setup Guide Surface 2026-06-08]], compatibility probe 확장은 [[Frontend Integration Compatibility Probe 2026-06-08]], runtime payload guard는 [[Frontend Setup Guide Payload Guard 2026-06-08]] 참조.
 

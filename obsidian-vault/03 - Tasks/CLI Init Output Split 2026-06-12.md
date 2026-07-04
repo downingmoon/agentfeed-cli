@@ -31,7 +31,7 @@ tags:
 - Red test 확인: `npx vitest run tests/init-output.test.ts --reporter=verbose` → helper 모듈 부재로 실패.
 - Green/focused:
   - `npm run build`
-  - `npx vitest run tests/init-output.test.ts tests/cli-init-hook.test.ts tests/config.test.ts tests/cli-guidance-actions.test.ts --reporter=verbose` → 57 tests passed.
+  - `npx vitest run tests/init-output.test.ts tests/cli-init-setup-ux.test.ts tests/config.test.ts tests/cli-guidance-actions.test.ts --reporter=verbose` → 57 tests passed.
 - Full suite: `npm test -- --run` → 88 files / 743 tests passed.
 - 실제 CLI smoke:
   - temp project `agentfeed init --no-git-check --project-name smoke-init` human output에서 initialized heading, project name, setup checklist, login next action 확인.

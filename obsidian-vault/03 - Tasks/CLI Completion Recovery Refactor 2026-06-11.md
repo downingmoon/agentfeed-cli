@@ -45,4 +45,4 @@ Extracted unsupported shell recovery message formatting for `agentfeed completio
 ## Remaining Follow-up
 
 - Continue shrinking `src/cli/index.ts` with behavior-locked slices.
-- Candidate: hook action unknown recovery or flagless positional option suggestion extraction.
+- Candidate: flagless positional option suggestion extraction.

@@ -41,4 +41,4 @@ Extracted basic CLI command recovery message formatting from the oversized entry
 ## Remaining Follow-up
 
 - Continue shrinking `src/cli/index.ts` by extracting command validation helpers in smaller verified pieces.
-- Candidate: `helpTopicError`, `hookUsageMessage`, and `unsupportedHookTargetMessage`, because they are pure message helpers but depend on `PUBLIC_COMMANDS`/`closestMatch` only lightly.
+- Candidate: `helpTopicError`, because it is a pure message helper but depends on `PUBLIC_COMMANDS`/`closestMatch` only lightly.

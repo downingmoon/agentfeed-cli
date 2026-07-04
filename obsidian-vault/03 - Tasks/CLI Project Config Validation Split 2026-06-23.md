@@ -49,7 +49,7 @@ Both files are under the 250 pure LOC ceiling.
 - LSP diagnostics attempted on changed TS files.
   - Result: failed with `Transport closed`.
   - Fallback evidence: typecheck, build, targeted tests, full suite, and built CLI smoke.
-- `npm test -- --run tests/config.test.ts tests/cli-init-setup-ux.test.ts tests/cli-hook-setup-ux.test.ts`
+- `npm test -- --run tests/config.test.ts tests/cli-init-setup-ux.test.ts`
   - First attempt: init/hook UX `beforeAll` build hook exceeded 10s before a fresh build.
   - After `npm run build`: passed, 3 files / 17 tests.
 - `npm run build`: passed.

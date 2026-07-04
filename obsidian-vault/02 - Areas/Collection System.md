@@ -19,9 +19,9 @@ updated: 2026-06-04
 ## 수집 소스
 
 - Git diff/status/log, staged/untracked text file stats.
-- Claude Code session/hook/task/subagent/tool evidence.
+- Claude Code session/task/subagent/tool evidence.
 - Codex CLI session/tool/subagent/turn context evidence.
-- Gemini CLI session/skill/tool evidence.
+- Antigravity session/skill/tool evidence.
 - Cursor/generic metadata evidence.
 - OMC/OMX/Superpowers 같은 plugin/runtime signal은 known adapter로 자동 감지하되, unknown plugin은 generic metadata로 보수 처리.
 - configured test/build commands는 명시 flag가 있을 때만 실행.
@@ -53,7 +53,7 @@ Local draft는 다음 축을 포함한다.
 ```bash
 agentfeed collect --explain
 agentfeed collect --source codex
-agentfeed collect --source gemini-cli --session-file ./session.jsonl
+agentfeed collect --source antigravity --session-file ./session.jsonl
 agentfeed share --yes --open-review
 agentfeed share --run-configured-commands
 ```

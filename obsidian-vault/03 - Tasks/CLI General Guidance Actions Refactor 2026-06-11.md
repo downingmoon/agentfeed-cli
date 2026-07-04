@@ -17,18 +17,18 @@ Extracted remaining general-purpose CLI next-action guidance from the oversized 
 ## Changed
 
 - `src/cli/guidance-actions.ts`
-  - Owns privacy scan, hook lifecycle, initialization, and command catalog follow-up action calculations.
-  - Exposes narrow readonly option types for privacy scan and hook lifecycle guidance.
+  - Owns privacy scan, initialization, and command catalog follow-up action calculations.
+  - Exposes narrow readonly option types for privacy scan guidance.
 - `src/cli/index.ts`
   - Imports the extracted pure guidance helpers while keeping command orchestration and rendering local.
 - `tests/cli-guidance-actions.test.ts`
-  - Adds focused coverage for privacy scan targets/modes, legacy hook setup/uninstall, init existing/new states, and command catalog onboarding actions.
+  - Adds focused coverage for privacy scan targets/modes, init existing/new states, and command catalog onboarding actions.
 
 ## Verification
 
 - Red check: `npx vitest run tests/cli-guidance-actions.test.ts --reporter=verbose` failed first because `src/cli/guidance-actions.js` did not exist.
 - `npm run build` passed.
-- `npx vitest run tests/cli-guidance-actions.test.ts tests/cli-init-hook.test.ts tests/cli-scan.test.ts tests/cli-help.test.ts --reporter=verbose` passed: 4 files, 62 tests.
+- `npx vitest run tests/cli-guidance-actions.test.ts tests/cli-init-setup-ux.test.ts tests/cli-scan.test.ts tests/cli-help.test.ts --reporter=verbose` passed: 4 files, 62 tests.
 - `npm test -- --run` passed: 45 files, 634 tests.
 - `git diff --check` passed.
 - Escape-hatch grep passed for changed TS files: no `as any`, `as unknown`, `@ts-ignore`, `@ts-expect-error`, empty catch, `: any`, enum, or non-null assertion.

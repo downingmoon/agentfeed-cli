@@ -15,7 +15,7 @@ aliases:
 # CLI Status Command Split 2026-06-21
 
 > [!success]
-> `agentfeed status` orchestration을 `src/cli/index.ts`에서 `src/cli/status-command.ts`로 분리했다. 기존 human/json status output, project detection, pending upload count, Claude Code hook diagnostics, readiness/next-action behavior는 유지했다.
+> `agentfeed status` orchestration을 `src/cli/index.ts`에서 `src/cli/status-command.ts`로 분리했다. 기존 human/json status output, project detection, pending upload count, readiness/next-action behavior는 유지했다.
 
 ## Scope
 
@@ -28,14 +28,14 @@ aliases:
 ## Cleanup Plan
 
 1. 기존 status behavior를 `tests/cli-status-doctor.test.ts -t "status"`와 `tsc --noEmit`으로 baseline 고정한다.
-2. status pending draft 판정, Claude hook status check, readiness/output assembly를 전용 command module로 이동한다.
+2. status pending draft 판정과 readiness/output assembly를 전용 command module로 이동한다.
 3. `src/cli/index.ts`는 process cwd와 output dependency만 전달하는 dispatcher로 축소한다.
 4. focused tests, typecheck/build, dist CLI status human/json smoke, diff/no-excuse audit로 회귀를 확인한다.
 
 ## Actions
 
 1. `src/cli/status-command.ts`를 추가했다.
-2. `draftUploadPendingForStatus`, Claude Code hook status read, status output assembly를 새 module로 이동했다.
+2. `draftUploadPendingForStatus`와 status output assembly를 새 module로 이동했다.
 3. `src/cli/index.ts`에서 status 전용 imports와 orchestration을 제거했다.
 4. `cmdStatus`는 `runStatusCommand(args, { cwd, print, printLines })` 호출만 남겼다.
 5. 새 module의 draft upload JSON boundary는 `isRecord()` narrowing으로 처리해 type assertion을 추가하지 않았다.
@@ -95,7 +95,7 @@ Smoke assertions:
 ## Follow-up
 
 > [!success]
-> 후속 doctor command split은 [[CLI Doctor Command Split 2026-06-21]]에서 처리했다. 후속 hook command split은 [[CLI Hook Command Split 2026-06-21]]에서 처리했다. 후속 command surface split은 [[CLI Command Surface Split 2026-06-21]]에서 처리했다. 남은 구조 정리 후보는 collect/share/publish다.
+> 후속 doctor command split은 [[CLI Doctor Command Split 2026-06-21]]에서 처리했다. 후속 command surface split은 [[CLI Command Surface Split 2026-06-21]]에서 처리했다. 남은 구조 정리 후보는 collect/share/publish다.
 
 > [!todo]
 > LSP diagnostics currently fail locally with `Transport closed`. This slice used `tsc --noEmit`, focused Vitest, build, and dist CLI smoke as replacement evidence.

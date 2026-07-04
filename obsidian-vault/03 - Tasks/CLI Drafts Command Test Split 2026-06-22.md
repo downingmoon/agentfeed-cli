@@ -65,7 +65,7 @@ CLI oversized `tests/cli-drafts.test.ts`에서 discard command coverage와 open 
 ## 남은 작업
 
 - `tests/cli-drafts.test.ts` oversized는 해소됨.
-- 현재 CLI 테스트 oversized scan 기준 다음 최대 후보는 `tests/release-preflight.test.ts` 351 pure LOC이고, 그 다음은 `tests/cli-init-hook.test.ts` 284 pure LOC, `tests/cli-share-json-upload-output.test.ts` 245 pure LOC다.
+- 현재 CLI 테스트 oversized scan 기준 다음 최대 후보는 `tests/release-preflight.test.ts` 351 pure LOC이고, `tests/cli-share-json-upload-output.test.ts` 245 pure LOC다.
 
 ## 범위 제한
 

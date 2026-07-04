@@ -40,7 +40,7 @@ aliases:
   - Collection cursor가 status output에 표시되고 next default collection boundary로 쓰이는 계약을 보존했다.
   - Cursor가 설정된 상태에서 pending local drafts가 있으면 다음 collect가 비어 보일 수 있다는 warning과 publish suggestion이 표시되는 계약을 보존했다.
   - Malformed `.agentfeed/state.json`이 explicit warning으로 표시되고 cursor fallback이 `none` / `beginning`으로 렌더링되는 계약을 보존했다.
-  - Malformed `.claude/settings.json` 상태에서도 status command가 살아남고 Claude Code hook state가 `unknown`으로 표시되는 계약을 보존했다.
+  - Malformed `.claude/settings.json` 상태에서도 status command가 살아남는 계약을 보존했다.
 - `tests/cli-status-doctor.test.ts`에서 local state diagnostics test cases를 제거했다.
 - Production/runtime code는 변경하지 않았다.
 

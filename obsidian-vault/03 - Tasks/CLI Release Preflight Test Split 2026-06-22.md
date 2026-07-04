@@ -64,7 +64,7 @@ CLI oversized `tests/release-preflight.test.ts`에서 trusted publishing workflo
 ## 남은 작업
 
 - `tests/release-preflight.test.ts` oversized는 해소됨.
-- 현재 CLI 테스트 oversized scan 기준 다음 최대 후보는 `tests/cli-init-hook.test.ts` 284 pure LOC이고, 그 다음은 `tests/cli-share-json-upload-output.test.ts` 245 pure LOC, `tests/upload-preflight.test.ts` 244 pure LOC다.
+- 현재 CLI 테스트 oversized scan 기준 다음 최대 후보는 `tests/cli-share-json-upload-output.test.ts` 245 pure LOC, `tests/upload-preflight.test.ts` 244 pure LOC다.
 
 ## 범위 제한
 

@@ -672,11 +672,6 @@ updated: 2026-07-02
 
 
 
-> [!success] 2026-06-22 CLI init hook test split
-> CLI oversized `tests/cli-init-hook.test.ts`를 init setup UX, hook setup UX, shared built-CLI harness로 `tests/cli-init-setup-ux.test.ts`, `tests/cli-hook-setup-ux.test.ts`, `tests/cli-init-hook-harness.ts`에 분리했다. Baseline 1 file / 13 tests, targeted split 2 files / 13 tests, typecheck/build, full CLI suite 196 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 신규 suites/helper는 모두 250 pure LOC ceiling 아래다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
-> - [[CLI Init Hook Test Split 2026-06-22]]
-
-
 
 > [!success] 2026-06-22 CLI release preflight test split
 > CLI oversized `tests/release-preflight.test.ts`에서 trusted publishing workflow guardrails와 installed package smoke/platform guardrails를 `tests/release-preflight-trusted-workflow.test.ts`, `tests/release-preflight-installed-smoke.test.ts`로 분리했다. Baseline filters 1 test + 5 tests, targeted split 3 files / 15 tests, typecheck/build, full CLI suite 195 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했고 원본 및 신규 suites는 모두 250 pure LOC ceiling 아래다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
@@ -962,10 +957,6 @@ updated: 2026-07-02
 
 
 
-> [!success] 2026-06-22 CLI Claude legacy hook setuper test split
-> CLI oversized `tests/api-hook.test.ts`에서 Claude Code legacy hook setuper 계약을 `cli-claude-code-hook-installer` suite로 분리했다. Baseline 1 file / 133 tests, targeted split 2 files / 133 tests, typecheck/build, full CLI suite 133 files / 848 tests, git diff --check, changed-file LOC/no-excuse audit를 통과했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
-> - [[CLI Claude Hook Installer Test Split 2026-06-22]]
-
 
 
 > [!success] 2026-06-22 CLI share command residual test split
@@ -1090,10 +1081,6 @@ updated: 2026-07-02
 > - [[CLI Publish Credential Context Diagnostics 2026-06-21]]
 
 
-
-> [!success] 2026-06-21 CLI hook command split
-> `legacy Claude Code hook lifecycle cleanup` orchestration을 `src/cli/index.ts`에서 `src/cli/hook-command.ts`로 분리했다. Baseline/focused hook/recovery tests, full CLI suite, typecheck/build, dist CLI hook smoke를 통과했다. 신규 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
-> - [[CLI Hook Command Split 2026-06-21]]
 
 
 > [!success] 2026-06-21 CLI doctor command split
@@ -2153,10 +2140,6 @@ updated: 2026-07-02
 
 
 
-> [!success] 2026-06-12 CLI hook output split
-> `legacy Claude Code hook lifecycle cleanup`의 JSON payload 및 human-readable lifecycle rendering을 `hook-output` helper로 분리해 hook 출력 계약을 테스트로 고정했다. Red test 확인 후 `npm run build`, focused Vitest 153 tests, full `npm test -- --run` 747 tests, 실제 temp project CLI smoke(`legacy hook dry-run`, `legacy hook setup`, `hook uninstall`, JSON variants) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
-> - [[CLI Hook Output Split 2026-06-12]]
-
 
 
 > [!success] 2026-06-12 CLI init output split
@@ -2414,11 +2397,6 @@ updated: 2026-07-02
 > - [[CLI Bare Double Dash Recovery Refactor 2026-06-11]]
 
 
-> [!success] 2026-06-11 CLI hook unexpected recovery refactor
-> `legacy hook extra-argument case (deprecated)` unexpected positional recovery를 `hookUnexpectedArgumentMessage`로 분리해 hook validation의 inline message assembly를 줄였다. Red test 확인 후 `npm run build`, focused Vitest 49 tests, full `npm test -- --run` 659 tests, CLI surface smoke(`legacy hook setup claude-code extra`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
-> - [[CLI Hook Unexpected Recovery Refactor 2026-06-11]]
-
-
 > [!success] 2026-06-11 CLI token rotate recovery refactor
 > `agentfeed token rotate <extra>` unexpected positional recovery를 `tokenRotateUnexpectedArgumentMessage`로 분리해 token alias validation의 inline message assembly를 줄였다. Red test 확인 후 `npm run build`, focused Vitest 48 tests, full `npm test -- --run` 658 tests, CLI surface smoke(`token rotate browser`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가. 서버/배포/infra/CICD 작업 없음.
 > - [[CLI Token Rotate Recovery Refactor 2026-06-11]]
@@ -2443,10 +2421,6 @@ updated: 2026-07-02
 > bare positional option name(`yes`, `open-review`)을 dashed flags로 제안하는 로직을 `flaglessOptionSuggestionLines`로 분리해 `src/cli/index.ts` inline Map/formatting 책임을 줄였다. `npm run build`, focused Vitest 6 tests, CLI help 38 tests, full `npm test -- --run` 654 tests, CLI surface smoke(`share yes open-review`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가.
 > - [[CLI Flagless Option Recovery Refactor 2026-06-11]]
 
-
-> [!success] 2026-06-11 CLI hook action recovery refactor
-> `hook` action typo 복구 메시지를 `unknownHookActionMessage`로 분리해 `src/cli/index.ts` inline recovery 조합을 줄였다. `npm run build`, focused Vitest 43 tests, full `npm test -- --run` 653 tests, CLI surface smoke(`hook instal claude-code`) 통과. LSP는 `typescript-language-server` 미설치로 실행 불가.
-> - [[CLI Hook Action Recovery Refactor 2026-06-11]]
 
 현재 active goal은 “잘 만든 MVP”가 아니라 **Enterprise급 완성도 검증과 보완**이다. 2026-06-04~06 사이의 로컬/CI/contract/UI/UX evidence는 중요한 historical baseline으로 유지하되, 지금은 CLI-Backend-Frontend contract drift, fail-closed error visibility, 문서 최신성, 그리고 각 repo 내부 품질을 계속 검증하는 단계다.
 
@@ -2522,7 +2496,6 @@ updated: 2026-07-02
 - [x] [[CLI Completion Recovery Refactor 2026-06-11]] — completion shell recovery message formatting을 `src/cli/command-recovery.ts`로 분리하고 focused + full CLI suite 통과 확인.
 - [x] [[CLI Unknown Recovery Refactor 2026-06-11]] — unknown command/option recovery message formatting을 `src/cli/command-recovery.ts`로 분리하고 focused + full CLI suite 통과 확인.
 - [x] [[CLI Leading Option Recovery Refactor 2026-06-11]] — leading option command-first recovery message formatting을 `src/cli/leading-option-recovery.ts`로 분리하고 focused + full CLI suite 통과 확인.
-- [x] [[CLI Hook Help Recovery Refactor 2026-06-11]] — help topic/hook usage/unsupported hook target recovery message formatting을 `src/cli/command-recovery.ts`로 분리하고 focused + full CLI suite 통과 확인.
 - [x] [[CLI Review Handoff Refactor 2026-06-11]] — CLI review URL handoff human formatting을 `src/cli/review-handoff.ts`로 분리하고, `index.ts`의 URL trust policy/side-effect 순서는 source contract test로 유지. CLI build, focused handoff/share tests, full vitest 624 tests 통과.
 - [x] [[CLI Upload Guidance Refactor 2026-06-11]] — CLI upload success next-action과 API compatibility/token preflight 실패 detail, `Fix first`/`Then retry` recovery message 계산을 `src/cli/upload-guidance.ts`로 분리. CLI build, focused share/collect/publish tests, full vitest 623 tests 통과.
 - [x] [[CLI Auth Result Refactor 2026-06-11]] — CLI `login`/`rotate` 완료 메시지, JSON credential payload, saved/no-save next-action 계산을 `src/cli/auth-result.ts`로 분리하고 entrypoint는 출력/orchestration만 담당하도록 축소. CLI build, focused auth/status/doctor tests, full vitest 623 tests 통과.

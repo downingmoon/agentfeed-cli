@@ -138,7 +138,7 @@ describe('CLI help argument validation recovery', () => {
     expect(completionTypo.stdout).toBe('');
   });
 
-  it('treats removed hook commands as unknown commands', async () => {
+  it('treats removed automation commands as unknown commands', async () => {
     const failure = await runCliFailure(['hook', 'uninstall', 'claude-code']);
 
     expect(failure.stderr).toContain('Unknown command: hook');

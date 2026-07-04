@@ -1,30 +1,17 @@
-import { hostname } from 'node:os';
-import { isAbsolute, relative, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import type { AgentType, CollectionWindow, LocalDraft, WorklogMetrics } from '../types.js';
 import { loadProjectConfig, resolveProjectRoot } from '../config/project-config.js';
 import { collectGitMetrics } from '../collectors/git.js';
 import { collectAgentSessionMetrics } from '../collectors/agent-session.js';
 import { collectConfiguredCommandMetricsWithStatus } from '../collectors/test-command.js';
 import { changedAreas } from '../summary/changed-areas.js';
-import { generateOutcome, generateSummary, generateTimeline } from '../summary/rule-based.js';
-import { generateRicherSummaryFields } from '../summary/richer-summary.js';
-import { scanAndRedactFields } from '../privacy/scan.js';
-import { parseRequiredRedactedDraftFields } from './redacted-draft-fields.js';
-import { randomSuffix, shortHash } from '../utils/hash.js';
-import { AGENTFEED_TOOL_VERSION } from '../version.js';
 import { writeDraft } from './write.js';
-import { pathExists } from '../utils/fs.js';
 import { collectionFingerprint, collectionPolicyForFingerprint, findDraftByFingerprint, redactedUserNoteForFingerprint } from './collection-fingerprint.js';
 import { autoAgentSources, explicitSessionProbeSources } from './agent-source-detection.js';
 import { globalAgentSignalMismatchWarnings } from './session-warnings.js';
 import { addOptionalCounts, agentMetricsForSession, configFilteredAgentMetrics, mergeAgentSessions, mergeChangedFiles, sessionModelsUsed, sumChangedFileLines, type AgentSessionCandidate } from './session-aggregation.js';
-
-function draftId(date = new Date()): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const stamp = `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}_${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
-  return `draft_${stamp}_${randomSuffix(4)}`;
-}
-
+import { buildCollectedDraft, buildEmptyDraft } from './draft-builders.js';
+import { assertExplicitSessionFileUsable, excludeSessionFileChange, relativeDraftProjectPath } from './session-file-diagnostics.js';
 
 function normalizeBoundary(value?: string | null): string | null {
   if (!value) return null;
@@ -39,14 +26,6 @@ function normalizeUserNote(note?: string | null): string | null {
   return trimmed.slice(0, 500);
 }
 
-function relativeProjectPath(cwd: string, filePath?: string | null): string | null {
-  if (!filePath) return null;
-  const absolute = isAbsolute(filePath) ? resolve(filePath) : resolve(cwd, filePath);
-  const rel = relative(resolve(cwd), absolute);
-  if (!rel || rel.startsWith('..') || isAbsolute(rel)) return null;
-  return rel.split('\\').join('/');
-}
-
 function collectionWindow(options: { since?: string | null; until?: string | null }): CollectionWindow | null {
   const since = normalizeBoundary(options.since);
   const until = normalizeBoundary(options.until);
@@ -54,24 +33,7 @@ function collectionWindow(options: { since?: string | null; until?: string | nul
   return { since, until };
 }
 
-export function createEmptyDraft(input: { projectName: string; projectRoot: string; source: AgentType }): LocalDraft {
-  const areas = ['Application code'];
-  const metrics: WorklogMetrics = { files_changed: 0, lines_added: 0, lines_removed: 0, tokens_used: null, estimated_cost_usd: null, tests_run: null, tests_passed: null, failed_commands: null };
-  const title = 'Explored project with AI agent';
-  const summary = generateSummary(areas, metrics);
-  const publicFields = { title, summary, user_note: null, outcome: generateOutcome(areas), timeline: generateTimeline(), changed_areas: areas, tags: [], project: { name: input.projectName, repository_url: null } };
-  const { redacted, scan } = scanAndRedactFields(publicFields);
-  const fields = parseRequiredRedactedDraftFields(redacted);
-  return {
-    schema_version: '0.2',
-    id: draftId(),
-    project: { name: fields.project.name, repository_url: null, local_path_hash: shortHash(input.projectRoot, 16) },
-    worklog: { title: fields.title, summary: fields.summary, user_note: fields.user_note, agent: input.source, model: null, category: 'ai_tool', tags: fields.tags, visibility: 'private', metrics, changed_areas: fields.changed_areas, public_prompt: null, outcome: fields.outcome, timeline: fields.timeline },
-    privacy_scan: scan,
-    source: { agent: input.source, tool_version: AGENTFEED_TOOL_VERSION, host_label: hostname(), created_at: new Date().toISOString() },
-    upload: { uploaded: false }
-  };
-}
+export const createEmptyDraft = buildEmptyDraft;
 
 
 export interface CollectDraftStatus {
@@ -137,14 +99,8 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
       session = genericSession;
     }
   }
-  const sessionFileRel = relativeProjectPath(root, sessionFile);
-  if (sessionFile && !session) {
-    const displayPath = sessionFileRel ?? sessionFile;
-    const exists = await pathExists(sessionFile);
-    throw new Error(exists
-      ? `Agent session file did not produce usable metrics: ${displayPath}. The file may be unreadable, outside the collection window, unrelated to this project, or unsupported for the selected source. Retry with --source <source> and --all, or run agentfeed doctor.`
-      : `Agent session file was not found: ${displayPath}. Check the path or rerun without --session-file to use auto-discovery.`);
-  }
+  const sessionFileRel = relativeDraftProjectPath(root, sessionFile);
+  await assertExplicitSessionFileUsable({ sessionFile, sessionFileRel, sessionFound: Boolean(session) });
   warnings.push(...globalAgentSignalMismatchWarnings({
     autoSources,
     enabledSources,
@@ -152,7 +108,7 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
     sessionFound: Boolean(session),
     sessionFileProvided: Boolean(sessionFile)
   }));
-  const gitChangedFiles = sessionFileRel ? git.changed_files.filter((file) => file.path !== sessionFileRel) : git.changed_files;
+  const gitChangedFiles = excludeSessionFileChange({ changedFiles: git.changed_files, sessionFileRel });
   const changedFiles = mergeChangedFiles(gitChangedFiles, session?.changed_files ?? []);
   const linesAdded = sumChangedFileLines(changedFiles, 'lines_added');
   const linesRemoved = sumChangedFileLines(changedFiles, 'lines_removed');
@@ -211,43 +167,20 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
     collection_quality: session?.collection_quality ?? null,
     collection_sources: session?.collection_sources ?? null
   };
-  const generatedPublicFields = generateRicherSummaryFields({
-    areas: safeAreas,
-    metrics,
+  const draft = buildCollectedDraft({
+    root,
+    config,
     git: mergedGit,
-    tags: config.project.tags,
-    publicPrompt: null,
+    source,
+    sessionId: session?.session_id ?? null,
+    sessionModel: session?.model ?? null,
+    metrics,
+    safeAreas,
+    normalizedNote,
+    actualWindow,
+    actualWindowReason,
+    fingerprint
   });
-  const publicFields = {
-    ...generatedPublicFields,
-    user_note: normalizedNote,
-    project: { name: config.project.name, repository_url: git.repository_url ?? config.project.repository_url ?? null }
-  };
-  const { redacted, scan } = scanAndRedactFields(publicFields);
-  const fields = parseRequiredRedactedDraftFields(redacted);
-  const draft: LocalDraft = {
-    schema_version: '0.2',
-    id: draftId(),
-    project: { name: fields.project.name, repository_url: fields.project.repository_url ?? null, local_path_hash: shortHash(root, 16) },
-    worklog: {
-      title: fields.title.slice(0, 120) || 'Explored project with AI agent',
-      summary: fields.summary.slice(0, 2000) || 'The AI agent worked on the project.',
-      user_note: fields.user_note?.slice(0, 500) ?? null,
-      agent: source,
-      model: session?.model ?? null,
-      category: 'ai_tool',
-      tags: fields.tags.slice(0, 10),
-      visibility: 'private',
-      metrics,
-      changed_areas: fields.changed_areas.slice(0, 8),
-      public_prompt: config.collection.include_public_prompt ? fields.public_prompt : null,
-      outcome: fields.outcome.slice(0, 10),
-      timeline: fields.timeline.slice(0, 8)
-    },
-    privacy_scan: scan,
-    source: { agent: source, tool_version: AGENTFEED_TOOL_VERSION, host_label: hostname(), session_id: session?.session_id ?? null, created_at: new Date().toISOString(), collection_window: actualWindow, collection_window_reason: actualWindowReason, collection_fingerprint: fingerprint },
-    upload: { uploaded: false }
-  };
   await writeDraft(root, draft);
   return { draft, reusedExisting: false, warnings };
 }

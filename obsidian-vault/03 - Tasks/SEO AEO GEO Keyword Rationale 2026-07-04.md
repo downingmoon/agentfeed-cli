@@ -67,7 +67,7 @@ aliases:
 - `AI tool`, `productivity app`, `developer tool`: 너무 넓고 AgentFeed의 공개 worklog/portfolio 가치가 흐려진다.
 - `prompt library`: prompts는 보조 자산일 수 있으나 AgentFeed의 primary object는 worklog다.
 - `Gemini CLI worklog`: current public primary SEO에서 제외. 사용자 기준으로 Gemini CLI는 종료/전환 맥락이고 AgentFeed는 Antigravity 중심으로 표기한다.
-- `agent hooks`: deprecated surface. 수집 정확도/현재 제품 전략과 무관하므로 public/docs SEO에서 제외한다.
+- Legacy automatic agent integration keywords: deprecated surface. 수집 정확도/현재 제품 전략과 무관하므로 public/docs SEO에서 제외한다.
 
 ## Implemented surfaces mapped to keywords
 

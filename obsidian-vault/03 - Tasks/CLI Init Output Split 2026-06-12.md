@@ -52,4 +52,4 @@ tags:
 ## 다음 후보
 
 - `src/cli/index.ts`가 여전히 oversized(1437 pure LOC)이므로 다음 slice에서도 command-specific output/helper 경계를 추가 분리한다.
-- 후보: `hook` install/uninstall 출력 경계 분리.
+- 후보: 남은 command-specific output/helper 경계를 실제 public command 기준으로만 분리.

@@ -31,4 +31,31 @@ describe('Codex patch fallback evidence', () => {
     expect(metrics?.changed_files.map((file) => file.path)).not.toContain('src/unconfirmed-function-patch.ts');
     expect(metrics?.files_changed).toBe(1);
   });
+
+  it('counts confirmed Codex function_call apply_patch fallback changes when patch_apply_end is absent', async () => {
+    const dir = fixture.dir();
+    const sessionFile = join(dir, 'codex-confirmed-function-apply-patch.jsonl');
+    const confirmedPatch = [
+      '*** Begin Patch',
+      '*** Add File: src/confirmed-function-patch.ts',
+      '+export const confirmed = true;',
+      '+export const lineCount = 2;',
+      '*** End Patch'
+    ].join('\n');
+    await fixture.writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-confirmed-function-apply-patch', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'response_item', payload: { type: 'function_call', name: 'functions.apply_patch', arguments: JSON.stringify({ input: confirmedPatch }), call_id: 'patch-confirmed' } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'response_item', payload: { type: 'function_call_output', call_id: 'patch-confirmed', output: 'Success. Updated the following files:\nA src/confirmed-function-patch.ts' } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.changed_files).toMatchObject([
+      { path: 'src/confirmed-function-patch.ts', status: 'added', lines_added: 2, lines_removed: 0 }
+    ]);
+    expect(metrics?.files_changed).toBe(1);
+    expect(metrics?.lines_added).toBe(2);
+    expect(metrics?.tool_calls).toBe(1);
+  });
+
 });

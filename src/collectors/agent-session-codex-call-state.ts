@@ -27,6 +27,7 @@ export type CodexCommandTracker = {
   readonly testsRun: number;
   readonly testsPassed: number;
   readonly register: (callId: string | null, command: string, workdir: string | null) => void;
+  readonly registerTerminalPoll: (callId: string | null, sessionId: string | null) => void;
   readonly recordOutput: (input: CodexCommandOutput) => void;
 };
 
@@ -38,6 +39,9 @@ export type CodexSubagentTracker = {
 
 export function createCodexCommandTracker(): CodexCommandTracker {
   const commands = new Map<string, CodexCommandRecord>();
+  const terminalSessionOwners = new Map<string, string>();
+  const terminalPollCallSessions = new Map<string, string>();
+  const failedCommandCallIds = new Set<string>();
   const testMetrics: AgentSessionTestMetricsAccumulator = { testsRun: 0, testsPassed: 0 };
   let commandsRun = 0;
   let failedCommands = 0;
@@ -57,15 +61,44 @@ export function createCodexCommandTracker(): CodexCommandTracker {
     });
   }
 
+  function registerTerminalPoll(callId: string | null, sessionId: string | null): void {
+    if (!callId || !sessionId) return;
+    terminalPollCallSessions.set(callId, sessionId);
+  }
+
   function recordOutput(input: CodexCommandOutput): void {
-    const command = input.callId ? commands.get(input.callId) : null;
-    if (command && input.failed) failedCommands += 1;
-    if (command?.test) recordTestCommandResult(testMetrics, input.output, input.failed);
+    const outputCommand = commandForOutput(input.callId);
+    const command = outputCommand?.command ?? null;
+    const runningSessionId = runningTerminalSessionId(input.output);
+    if (runningSessionId && outputCommand) terminalSessionOwners.set(runningSessionId, outputCommand.callId);
+    if (command && input.failed && outputCommand && !failedCommandCallIds.has(outputCommand.callId)) {
+      failedCommands += 1;
+      failedCommandCallIds.add(outputCommand.callId);
+    }
+    if (command?.test) {
+      recordTestCommandResult(testMetrics, input.output, input.failed, { skipFallback: Boolean(runningSessionId && !input.failed) });
+    }
     if (command && !input.failed) {
       for (const invocation of command.invocations) {
         applyShellFileEvidence(input.cwd, { command: invocation.command, workdir: invocation.workdir, output: input.output }, input.files);
       }
     }
+  }
+
+  function commandForOutput(callId: string | null): { readonly callId: string; readonly command: CodexCommandRecord } | null {
+    if (!callId) return null;
+    const direct = commands.get(callId);
+    if (direct) return { callId, command: direct };
+    const terminalSessionId = terminalPollCallSessions.get(callId);
+    const ownerCallId = terminalSessionId ? terminalSessionOwners.get(terminalSessionId) : null;
+    if (!ownerCallId) return null;
+    const command = commands.get(ownerCallId);
+    return command ? { callId: ownerCallId, command } : null;
+  }
+
+  function runningTerminalSessionId(output: string): string | null {
+    const match = /Process running with session ID (\d+)/.exec(output);
+    return match?.[1] ?? null;
   }
 
   return {
@@ -74,6 +107,7 @@ export function createCodexCommandTracker(): CodexCommandTracker {
     get testsRun() { return testMetrics.testsRun; },
     get testsPassed() { return testMetrics.testsPassed; },
     register,
+    registerTerminalPoll,
     recordOutput
   };
 }

@@ -102,6 +102,8 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
             subagentTracker.track(callId);
           } else if (nestedName === 'exec_command') {
             commandTracker.register(callId, asString(parameters.cmd) ?? asString(parameters.command) ?? '', asString(parameters.workdir));
+          } else if (nestedName === 'write_stdin') {
+            commandTracker.registerTerminalPoll(callId, codexTerminalSessionId(parameters.session_id));
           } else if (nestedName === 'apply_patch') {
             patchFallbacks.register(callId, codexPatchTextFromToolInput(parameters, asString(toolUse.arguments)), { requiresOutput: Boolean(callId) });
           }
@@ -115,6 +117,10 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
       if (name === 'exec_command') {
         const args = codexCallArguments(payload);
         commandTracker.register(callId, asString(args?.cmd) ?? asString(args?.command) ?? '', asString(args?.workdir));
+      }
+      if (name === 'write_stdin') {
+        const args = codexCallArguments(payload);
+        commandTracker.registerTerminalPoll(callId, codexTerminalSessionId(args?.session_id));
       }
       if (name === 'apply_patch' && !failedStatus(payload.status)) {
         const args = codexCallArguments(payload);
@@ -163,4 +169,10 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
 function codexSessionIdFromFilename(sessionFile: string): string | null {
   const match = /^rollout-.+-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.jsonl$/i.exec(basename(sessionFile));
   return match?.[1] ?? null;
+}
+
+function codexTerminalSessionId(value: unknown): string | null {
+  const text = asString(value);
+  if (text) return text;
+  return typeof value === 'number' && Number.isFinite(value) ? String(Math.trunc(value)) : null;
 }

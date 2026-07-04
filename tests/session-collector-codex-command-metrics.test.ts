@@ -33,6 +33,20 @@ describe('Codex session collector command metrics', () => {
     expect(metrics?.failed_commands).toBe(1);
   });
 
+  it('uses Codex write_stdin poll output for long-running test summaries', async () => {
+    const sessionFile = join(dir, 'codex-test-poll-output-counts.jsonl');
+    await writeJsonl(sessionFile, codexSessionRows({ id: 'codex-test-poll-output-counts', cwd: dir,
+      steps: [
+        { kind: 'shell', callId: 'test-start', cmd: 'npm test -- --run', output: 'Chunk ID: 27765a\nWall time: 30.0004 seconds\nProcess running with session ID 31426\nOutput:\n> agentfeed-cli@0.2.0 test\n> vitest run --run\n\n RUN  v4.1.8 /home/ubuntu/dev/agentfeed/agentfeed-cli' },
+        { kind: 'tool', callId: 'test-poll', name: 'write_stdin', arguments: { session_id: 31426, chars: '', yield_time_ms: 90000, max_output_tokens: 10000 }, output: 'Chunk ID: 12ab34\nWall time: 67.111 seconds\nProcess exited with code 0\nOutput:\n Test Files  249 passed (249)\n      Tests  978 passed (978)\n   Duration  97.11s' }
+      ]
+    }));
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect({ commands: metrics?.commands_run, failed: metrics?.failed_commands, passed: metrics?.tests_passed, run: metrics?.tests_run }).toEqual({ commands: 1, failed: null, passed: 978, run: 978 });
+  });
+
   it('does not treat non-test command failures as failed tests', async () => {
     const sessionFile = join(dir, 'codex-failed-shell.jsonl');
     await writeJsonl(sessionFile, codexSessionRows({

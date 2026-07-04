@@ -22,6 +22,19 @@ describe('configured test command output parser', () => {
     });
   });
 
+  it('parses all-passed vitest test summary lines', () => {
+    const output = [
+      ' Test Files  249 passed (249)',
+      '      Tests  978 passed (978)',
+      '   Duration  97.11s'
+    ].join('\n');
+
+    expect(parseTestCommandOutput(output, '')).toEqual({
+      testsRun: 978,
+      testsPassed: 978
+    });
+  });
+
   it('aggregates multiple test summaries from combined command output', () => {
     const output = [
       '$ npm test',

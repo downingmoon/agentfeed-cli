@@ -82,4 +82,20 @@ describe('Codex collection window filtering', () => {
     expect(metrics?.tokens_used).toBe(65);
     expect(metrics?.collection_sources).toContainEqual({ type: 'plugin_metadata', name: 'omx', quality: 'medium' });
   });
+
+  it('recovers Codex session identity from rollout filenames when bounded reads omit session metadata', async () => {
+    const dir = fixture.dir();
+    const sessionFile = join(dir, 'rollout-2026-06-16T06-36-52-019ecf25-a82b-7da3-9b56-dd2e47c2ef75.jsonl');
+    await fixture.writeJsonl(sessionFile, [
+      { timestamp: '2026-07-04T06:30:00Z', type: 'event_msg', payload: { type: 'token_count', info: { total_token_usage: { total_tokens: 10 } } } },
+      { timestamp: '2026-07-04T06:31:00Z', type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: {
+        [join(dir, 'src', 'tail-read.ts')]: { type: 'add', content: 'export const tailRead = true;\n' }
+      } } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile, since: '2026-07-04T06:00:00Z' });
+
+    expect(metrics?.session_id).toBe('019ecf25-a82b-7da3-9b56-dd2e47c2ef75');
+    expect(metrics?.changed_files.map((file) => file.path)).toEqual(['src/tail-read.ts']);
+  });
 });

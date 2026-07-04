@@ -1,3 +1,4 @@
+import { basename } from 'node:path';
 import type { ChangedFileSummary, CollectionSource, CollectionWindow } from '../types.js';
 import { readSessionJsonlRecords } from './agent-session-files.js';
 import { readOmxMetadata } from './agent-session-codex-omx.js';
@@ -142,6 +143,7 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
   let subagentsSpawned = subagentTracker.spawned;
   if (hasCollectionWindowBoundary(effectiveWindow) && !matchedWindowRow) return null;
   patchFallbacks.applyConfirmed(cwd, files);
+  sessionId ??= codexSessionIdFromFilename(sessionFile);
   if (tokenBaselineBeforeWindow != null && tokensUsed >= tokenBaselineBeforeWindow) {
     tokensUsed -= tokenBaselineBeforeWindow;
   }
@@ -156,4 +158,9 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
   for (const mode of omx.agentModes ?? []) agentModes.add(mode);
   const durationSeconds = startMillis != null && endMillis != null && endMillis > startMillis ? (endMillis - startMillis) / 1000 : null;
   return finalizeAgentSession({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun: commandTracker.testsRun, testsPassed: commandTracker.testsPassed, failedCommands: commandTracker.failedCommands, commandsRun: commandTracker.commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
+}
+
+function codexSessionIdFromFilename(sessionFile: string): string | null {
+  const match = /^rollout-.+-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.jsonl$/i.exec(basename(sessionFile));
+  return match?.[1] ?? null;
 }

@@ -5,6 +5,10 @@ function changedFile(projectRoot: string, workdir: string | null, rawPath: strin
   return fileEvidence({ projectRoot, workdir }, rawPath, 'modified');
 }
 
+function isShellControlWord(word: string): boolean {
+  return word === '&&' || word === '||' || word === ';' || word === '|';
+}
+
 function sedTargetWords(words: readonly string[]): readonly string[] {
   const editIndex = words.findIndex((word) => word === '-i' || /^-i[^-\s]+/.test(word));
   if (editIndex < 0) return [];
@@ -13,6 +17,7 @@ function sedTargetWords(words: readonly string[]): readonly string[] {
   for (let index = editIndex + 1; index < words.length; index += 1) {
     const word = words[index];
     if (!word) continue;
+    if (isShellControlWord(word)) break;
     if (word === '-e' || word === '-f') {
       index += 1;
       scriptConsumed = true;
@@ -35,6 +40,7 @@ function perlTargetWords(words: readonly string[]): readonly string[] {
   for (let index = editIndex + 1; index < words.length; index += 1) {
     const word = words[index];
     if (!word) continue;
+    if (isShellControlWord(word)) break;
     if (word === '-e' || word === '-E') {
       index += 1;
       continue;

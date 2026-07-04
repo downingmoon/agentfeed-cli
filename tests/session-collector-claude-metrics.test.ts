@@ -44,6 +44,7 @@ describe('Claude session collector metrics', () => {
     expect(metrics?.session_id).toBe('claude-session-1');
     expect(metrics?.model).toBe('claude-sonnet-4-5');
     expect(metrics?.tokens_used).toBe(220);
+    expect(metrics?.duration_seconds).toBe(20);
     expect(metrics?.tests_run).toBe(1);
     expect(metrics?.tests_passed).toBe(1);
     expect(metrics?.changed_files.map((file) => file.path).sort()).toEqual(['src/api.test.ts', 'src/api.ts']);

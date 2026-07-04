@@ -6,7 +6,7 @@ import { readOmcMetadata } from './agent-session-claude-omc.js';
 import { commandFailed, isTestCommand, toolOutputFailed, toolResultOutput } from './agent-session-tooling.js';
 import { applyShellFileEvidence } from './agent-session-shell-files.js';
 import { recordTestCommandResult } from './agent-session-test-metrics.js';
-import { hasCollectionWindowBoundary, rowInAgentCollectionWindow } from './agent-session-window.js';
+import { hasCollectionWindowBoundary, parseBoundaryMillis, rowInAgentCollectionWindow, rowTimestampMillis } from './agent-session-window.js';
 
 export async function parseClaudeSessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null, inferIdleGap = true): Promise<AgentSessionMetrics | null> {
   const rows = await readSessionJsonlRecords(sessionFile);
@@ -17,7 +17,8 @@ export async function parseClaudeSessionFile(cwd: string, sessionFile: string, w
   const commands = new Map<string, { command: string; test: boolean; workdir: string | null }>();
   const pendingFileEdits = new Map<string, { path: string; status: ChangedFileSummary['status']; added: number; removed: number; confirmed: boolean; failed: boolean }>();
   let tokensUsed = 0;
-  let durationSeconds: number | null = null;
+  let startMillis: number | null = null;
+  let endMillis: number | null = null;
   let estimatedCostUsd = 0;
   const testMetrics = { testsRun: 0, testsPassed: 0 };
   let failedCommands = 0;
@@ -31,6 +32,8 @@ export async function parseClaudeSessionFile(cwd: string, sessionFile: string, w
   let sessionId: string | null = null;
   let model: string | null = null;
   let matchedWindowRow = false;
+  const sinceMillis = parseBoundaryMillis(effectiveWindow?.since);
+  const untilMillis = parseBoundaryMillis(effectiveWindow?.until);
 
   for (const row of rows) {
     const message = asRecord(row.message);
@@ -40,6 +43,13 @@ export async function parseClaudeSessionFile(cwd: string, sessionFile: string, w
     if (!rowInAgentCollectionWindow(row, effectiveWindow)) continue;
     matchedWindowRow = true;
     if (row.type === 'assistant') agentTurns += 1;
+    const rowMillis = rowTimestampMillis(row);
+    if (rowMillis != null) {
+      const effectiveStart = sinceMillis != null ? Math.max(rowMillis, sinceMillis) : rowMillis;
+      const effectiveEnd = untilMillis != null ? Math.min(rowMillis, untilMillis) : rowMillis;
+      startMillis = Math.min(startMillis ?? effectiveStart, effectiveStart);
+      endMillis = Math.max(endMillis ?? effectiveEnd, effectiveEnd);
+    }
     estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(row) ?? 0, explicitCostUsd(message) ?? 0);
     const usage = asRecord(message.usage);
     if (usage) {
@@ -122,5 +132,6 @@ export async function parseClaudeSessionFile(cwd: string, sessionFile: string, w
   subagentsSpawned = Math.max(subagentsSpawned, omc.subagentsSpawned ?? 0);
   subagentsCompleted = Math.max(subagentsCompleted, omc.subagentsCompleted ?? 0);
   for (const mode of omc.agentModes ?? []) agentModes.add(mode);
+  const durationSeconds = startMillis != null && endMillis != null && endMillis > startMillis ? (endMillis - startMillis) / 1000 : null;
   return finalizeAgentSession({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun: testMetrics.testsRun, testsPassed: testMetrics.testsPassed, failedCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
 }

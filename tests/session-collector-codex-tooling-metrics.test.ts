@@ -106,6 +106,24 @@ describe('Codex session collector tooling metrics', () => {
     expect(metrics?.agent_turns).toBe(2);
   });
 
+  it('uses Codex task turn ids instead of streaming agent message chunks for turns', async () => {
+    const sessionFile = join(dir, 'codex-task-turn-events.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-task-turn-events', cwd: dir } },
+      { timestamp: '2026-05-20T00:00:01Z', type: 'event_msg', payload: { type: 'task_started', turn_id: 'turn-1', started_at: 1, collaboration_mode_kind: 'default' } },
+      { timestamp: '2026-05-20T00:00:02Z', type: 'event_msg', payload: { type: 'agent_message', phase: 'commentary' } },
+      { timestamp: '2026-05-20T00:00:03Z', type: 'event_msg', payload: { type: 'agent_message', phase: 'commentary' } },
+      { timestamp: '2026-05-20T00:00:04Z', type: 'event_msg', payload: { type: 'task_complete', turn_id: 'turn-1', completed_at: 4 } },
+      { timestamp: '2026-05-20T00:00:05Z', type: 'event_msg', payload: { type: 'task_started', turn_id: 'turn-2', started_at: 5, collaboration_mode_kind: 'default' } },
+      { timestamp: '2026-05-20T00:00:06Z', type: 'event_msg', payload: { type: 'agent_message', phase: 'final' } },
+      { timestamp: '2026-05-20T00:00:07Z', type: 'event_msg', payload: { type: 'task_complete', turn_id: 'turn-2', completed_at: 7 } }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
+
+    expect(metrics?.agent_turns).toBe(2);
+  });
+
   it('does not count failed Codex spawn_agent calls as spawned subagents', async () => {
     const sessionFile = join(dir, 'codex-failed-spawn-agent.jsonl');
     await writeJsonl(sessionFile, codexSessionRows({

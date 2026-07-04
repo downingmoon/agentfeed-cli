@@ -28,7 +28,8 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
   const skills = new Set<string>();
   const agentModes = new Set<string>();
   let subagentsCompleted = 0;
-  let agentTurns = 0;
+  let agentMessageTurns = 0;
+  const codexTaskTurnIds = new Set<string>();
   let sessionId: string | null = null;
   let model: string | null = null;
   let matchedWindowRow = false;
@@ -69,7 +70,11 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
       endMillis = Math.max(endMillis ?? effectiveEnd, effectiveEnd);
     }
     estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(row) ?? 0, explicitCostUsd(payload) ?? 0);
-    if (payload.type === 'agent_message') agentTurns += 1;
+    if (payload.type === 'agent_message') agentMessageTurns += 1;
+    if (payload.type === 'task_started' || payload.type === 'task_complete') {
+      const turnId = asString(payload.turn_id);
+      if (turnId) codexTaskTurnIds.add(turnId);
+    }
     if (payload.type === 'mcp_tool_call_end') {
       const callId = asString(payload.call_id);
       if (!callId || !countedToolCallIds.has(callId)) recordToolCall(callId);
@@ -160,7 +165,7 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
   estimatedCostUsd = Math.max(estimatedCostUsd, omx.estimatedCostUsd ?? 0);
   subagentsSpawned = Math.max(subagentsSpawned, omx.subagentsSpawned ?? 0);
   subagentsCompleted = Math.max(subagentsCompleted, omx.subagentsCompleted ?? 0);
-  agentTurns = Math.max(agentTurns, omx.agentTurns ?? 0);
+  const agentTurns = Math.max(codexTaskTurnIds.size || agentMessageTurns, omx.agentTurns ?? 0);
   for (const mode of omx.agentModes ?? []) agentModes.add(mode);
   const durationSeconds = startMillis != null && endMillis != null && endMillis > startMillis ? (endMillis - startMillis) / 1000 : null;
   return finalizeAgentSession({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun: commandTracker.testsRun, testsPassed: commandTracker.testsPassed, failedCommands: commandTracker.failedCommands, commandsRun: commandTracker.commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });

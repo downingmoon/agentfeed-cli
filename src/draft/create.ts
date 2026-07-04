@@ -65,7 +65,7 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
   let source = options.source ?? autoSources.attributable[0] ?? 'other';
   const git = await collectGitMetrics(root);
   const window = collectionWindow(options);
-  const inferIdleGap = options.inferIdleGap ?? (!options.force && !window?.since);
+  const inferIdleGap = options.inferIdleGap ?? !window?.since;
   const warnings: string[] = [...autoSources.warnings];
   let sessionFingerprintIdentity: string | null = null;
   let session = options.source

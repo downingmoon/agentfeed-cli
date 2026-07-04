@@ -146,4 +146,26 @@ describe('agent session collector', () => {
     expect(draft.worklog.changed_areas).toContain('Application code');
   });
 
+  it('keeps force recollection scoped to the inferred Codex idle-gap window', async () => {
+    await initProject({ cwd: dir, noGitCheck: false });
+    execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });
+    execFileSync('git', ['commit', '-m', 'agentfeed config'], { cwd: dir, stdio: 'ignore' });
+    const sessionFile = join(dir, 'codex-force-idle-gap.jsonl');
+    await writeJsonl(sessionFile, [
+      { timestamp: '2026-05-20T00:00:00Z', type: 'session_meta', payload: { id: 'codex-force-idle-gap', cwd: dir } },
+      { timestamp: '2026-05-20T00:01:00Z', type: 'event_msg', payload: { type: 'token_count', info: { total_token_usage: { total_tokens: 1000 } } } },
+      { timestamp: '2026-05-20T01:10:00Z', type: 'event_msg', payload: { type: 'token_count', info: { total_token_usage: { total_tokens: 1040 } } } },
+      { timestamp: '2026-05-20T01:11:00Z', type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: {
+        [join(dir, 'src', 'force-window.ts')]: { type: 'add', content: 'export const forceWindow = true;\n' }
+      } } }
+    ]);
+
+    const draft = await collectDraft({ cwd: dir, source: 'codex', sessionFile, force: true });
+
+    expect(draft.source.collection_window).toEqual({ since: '2026-05-20T01:10:00.000Z', until: null });
+    expect(draft.source.collection_window_reason).toBe('idle_gap');
+    expect(draft.worklog.metrics.tokens_used).toBe(40);
+    expect(draft.worklog.metrics.files_changed).toBe(1);
+  });
+
 });

@@ -39,6 +39,17 @@ describe('collection state', () => {
     });
   });
 
+  it('keeps the saved cursor when --force only bypasses draft reuse', async () => {
+    await writeCollectionState(dir, { last_collected_at: '2026-05-20T01:00:00.000Z' });
+
+    const window = await resolveCollectionWindow({ cwd: dir, args: ['--force'], now: new Date('2026-05-20T05:00:00Z') });
+
+    expect(window).toEqual({
+      since: '2026-05-20T01:00:00.000Z',
+      until: '2026-05-20T05:00:00.000Z'
+    });
+  });
+
   it('persists the latest successful collection timestamp', async () => {
     await writeCollectionState(dir, { last_collected_at: '2026-05-20T02:00:00.000Z' });
 

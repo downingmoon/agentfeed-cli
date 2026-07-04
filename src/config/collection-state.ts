@@ -55,7 +55,7 @@ export async function resolveCollectionWindowWithDiagnostics(options: { cwd: str
   const state = collectionState.state;
   const sinceOption = option(options.args, '--since');
   const untilOption = option(options.args, '--until');
-  const ignoreCursor = flag(options.args, '--all') || flag(options.args, '--force');
+  const ignoreCursor = flag(options.args, '--all');
   const stateSince = ignoreCursor ? null : state.last_collected_at ?? null;
   const since = sinceOption === 'last-collect' ? state.last_collected_at ?? null : normalizeBoundary(sinceOption ?? stateSince);
   const until = normalizeBoundary(untilOption ?? (options.now ?? new Date()).toISOString());

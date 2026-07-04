@@ -84,6 +84,7 @@ describe('share collection execution', () => {
       since: '2026-06-12T00:00:00.000Z',
       until: '2026-06-12T01:00:00.000Z',
       force: true,
+      inferIdleGap: false,
       note: 'public note',
       runConfiguredCommands: true,
       skipConfiguredCommands: true
@@ -132,6 +133,7 @@ describe('share collection execution', () => {
       since: null,
       until: '2026-06-12T02:00:00.000Z',
       force: true,
+      inferIdleGap: true,
       note: null,
       runConfiguredCommands: true,
       skipConfiguredCommands: false

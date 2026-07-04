@@ -54,6 +54,7 @@ export async function runShareCollectionCommand(options: ShareCollectionOptions)
 
   await loadProjectConfig(options.cwd);
   const args = mutableArgs(options.args);
+  const collectAll = flag(args, '--all');
   const collectionWindow = await resolveCollectionWindowWithDiagnostics({ cwd: options.cwd, args });
   const credentials = options.share.dryRun ? null : await loadCredentials();
   const collection = await collectDraftWithStatus({
@@ -62,7 +63,8 @@ export async function runShareCollectionCommand(options: ShareCollectionOptions)
     sessionFile: options.share.sessionFile ?? null,
     since: collectionWindow.window.since,
     until: collectionWindow.window.until,
-    force: flag(args, '--force') || flag(args, '--all'),
+    force: flag(args, '--force') || collectAll,
+    inferIdleGap: !collectAll,
     note: options.share.note ?? null,
     runConfiguredCommands: options.share.runConfiguredCommands,
     skipConfiguredCommands: options.share.dryRun

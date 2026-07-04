@@ -69,13 +69,15 @@ export async function runCollectCliCommand(args: string[], io: CollectCliCommand
   const collectionWindow = await resolveCollectionWindowWithDiagnostics({ cwd: io.cwd, args });
   const window = collectionWindow.window;
   const uploadCredentials = await collectUploadCredentials(args, loadCredentials);
+  const collectAll = flag(args, '--all');
   const collection = await collectDraftWithStatus({
     cwd: io.cwd,
     source,
     sessionFile: option(args, '--session-file') ?? null,
     since: window.since,
     until: window.until,
-    force: flag(args, '--force') || flag(args, '--all'),
+    force: flag(args, '--force') || collectAll,
+    inferIdleGap: !collectAll,
     runConfiguredCommands: flag(args, '--run-configured-commands')
   });
   let draft = await sanitizeDraftForOutput(io.cwd, collection.draft);

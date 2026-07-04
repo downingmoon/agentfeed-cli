@@ -100,4 +100,33 @@ describe('collect command wrapper', () => {
     })).rejects.toThrow('AgentFeed token is missing.');
     expect(collected).toEqual([]);
   });
+
+  it('keeps idle-gap inference for --force but disables it for --all', async () => {
+    // Given: the wrapper delegates to the draft collector.
+    const inferIdleGapValues: Array<boolean | undefined> = [];
+
+    // When: force recollection and all recollection run through the command wrapper.
+    for (const args of [['--force'], ['--all']]) {
+      await runCollectCliCommand(args, {
+        cwd: '/tmp/agentfeed-collect-command',
+        print: () => undefined,
+        printLines: () => undefined,
+        publish: async () => undefined,
+        dependencies: {
+          loadProjectConfig: async () => ({ ...projectConfig, collection: { ...projectConfig.collection, auto_upload: false } }),
+          resolveCollectionWindowWithDiagnostics: async () => ({ window: { since: null, until: '2026-05-20T05:00:00.000Z' }, warnings: [] }),
+          loadCredentials: async () => null,
+          collectDraftWithStatus: async (options) => {
+            inferIdleGapValues.push(options.inferIdleGap);
+            return { draft: draftWithId(`draft_${args[0].slice(2)}`), reusedExisting: false, warnings: [] };
+          },
+          sanitizeDraftForOutput: async (_cwd, value) => value,
+          markCollectionComplete: async () => undefined
+        }
+      });
+    }
+
+    // Then: --force still lets long Codex sessions be split by idle gap, while --all preserves full-session intent.
+    expect(inferIdleGapValues).toEqual([true, false]);
+  });
 });

@@ -23,6 +23,7 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
   let endMillis: number | null = null;
   let estimatedCostUsd = 0;
   let toolCalls = 0;
+  const countedToolCallIds = new Set<string>();
   const skills = new Set<string>();
   const agentModes = new Set<string>();
   let subagentsCompleted = 0;
@@ -34,6 +35,12 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
   const patchFallbacks = createCodexPatchFallbacks();
   const sinceMillis = parseBoundaryMillis(effectiveWindow?.since);
   const untilMillis = parseBoundaryMillis(effectiveWindow?.until);
+
+  function recordToolCall(callId: string | null, count = 1): void {
+    toolCalls += count;
+    if (callId) countedToolCallIds.add(callId);
+  }
+
   for (const row of rows) {
     const payload = asRecord(row.payload);
     if (!payload) continue;
@@ -62,7 +69,11 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
     }
     estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(row) ?? 0, explicitCostUsd(payload) ?? 0);
     if (payload.type === 'agent_message') agentTurns += 1;
-    if (payload.type === 'mcp_tool_call_end') toolCalls += 1;
+    if (payload.type === 'mcp_tool_call_end') {
+      const callId = asString(payload.call_id);
+      if (!callId || !countedToolCallIds.has(callId)) recordToolCall(callId);
+    }
+    if (payload.type === 'tool_search_call') recordToolCall(asString(payload.call_id));
     if (payload.type === 'token_count') {
       const info = asRecord(payload.info);
       if (info) {
@@ -77,10 +88,10 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
         const args = codexCallArguments(payload);
         const toolUses = Array.isArray(args?.tool_uses) ? args.tool_uses : [];
         if (!toolUses.length) {
-          toolCalls += 1;
+          recordToolCall(callId);
           continue;
         }
-        toolCalls += toolUses.length;
+        recordToolCall(callId, toolUses.length);
         for (const toolUseRaw of toolUses) {
           const toolUse = asRecord(toolUseRaw);
           if (!toolUse) continue;
@@ -96,7 +107,7 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
         }
         continue;
       }
-      toolCalls += 1;
+      recordToolCall(callId);
       if (name === 'spawn_agent') {
         subagentTracker.track(callId);
       }
@@ -109,7 +120,7 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
         patchFallbacks.register(callId, codexPatchTextFromToolInput(args, asString(payload.arguments)), { requiresOutput: Boolean(callId) });
       }
     }
-    if (payload.type === 'custom_tool_call') toolCalls += 1;
+    if (payload.type === 'custom_tool_call') recordToolCall(asString(payload.call_id));
     if (payload.type === 'function_call_output') {
       const callId = asString(payload.call_id);
       const output = asString(payload.output) ?? '';

@@ -13,6 +13,11 @@ type AntigravityCommand = {
   readonly test: boolean;
 };
 
+type OrderedAntigravityRow = {
+  readonly row: Record<string, unknown>;
+  readonly index: number;
+};
+
 function unquotedAntigravityString(value: unknown): string | null {
   const text = asString(value);
   if (!text) return null;
@@ -22,6 +27,26 @@ function unquotedAntigravityString(value: unknown): string | null {
   }
   if (text.startsWith("'") && text.endsWith("'")) return text.slice(1, -1);
   return text;
+}
+
+function antigravityStepIndex(row: Record<string, unknown>): number | null {
+  return typeof row.step_index === 'number' && Number.isFinite(row.step_index) ? row.step_index : null;
+}
+
+function compareOrderedAntigravityRows(left: OrderedAntigravityRow, right: OrderedAntigravityRow): number {
+  const leftStep = antigravityStepIndex(left.row);
+  const rightStep = antigravityStepIndex(right.row);
+  if (leftStep != null && rightStep != null && leftStep !== rightStep) return leftStep - rightStep;
+  if (leftStep != null && rightStep == null) return -1;
+  if (leftStep == null && rightStep != null) return 1;
+  const leftMillis = rowTimestampMillis(left.row);
+  const rightMillis = rowTimestampMillis(right.row);
+  if (leftMillis != null && rightMillis != null && leftMillis !== rightMillis) return leftMillis - rightMillis;
+  return left.index - right.index;
+}
+
+function orderedAntigravityRows(rows: readonly Record<string, unknown>[]): readonly Record<string, unknown>[] {
+  return rows.map((row, index) => ({ row, index })).sort(compareOrderedAntigravityRows).map((entry) => entry.row);
 }
 
 function antigravitySessionId(sessionFile: string): string {
@@ -97,7 +122,7 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
   const sinceMillis = parseBoundaryMillis(effectiveWindow?.since);
   const untilMillis = parseBoundaryMillis(effectiveWindow?.until);
 
-  for (const row of rows) {
+  for (const row of orderedAntigravityRows(rows)) {
     model ??= asString(row.model);
     if (!rowInAgentCollectionWindow(row, effectiveWindow)) continue;
     matchedWindowRow = true;

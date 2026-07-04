@@ -38,6 +38,25 @@ describe('Antigravity file edit evidence', () => {
     }
   });
 
+  it('pairs Antigravity command results by transcript step order instead of file order', async () => {
+    const dir = fixture.dir();
+    const sessionFile = join(dir, 'antigravity-out-of-order-command.jsonl');
+    await fixture.writeJsonl(sessionFile, [
+      { step_index: 0, source: 'USER_EXPLICIT', type: 'USER_INPUT', status: 'DONE', created_at: '2026-06-25T03:56:15Z', content: '<USER_REQUEST>Check changed files</USER_REQUEST>' },
+      { step_index: 2, source: 'MODEL', type: 'RUN_COMMAND', status: 'DONE', created_at: '2026-06-25T03:56:21Z', content: 'Created At: 2026-06-25T03:56:21Z\nCompleted At: 2026-06-25T03:56:22Z\nThe command completed successfully.\nOutput:\n?? src/out-of-order.ts\n' },
+      { step_index: 1, source: 'MODEL', type: 'PLANNER_RESPONSE', status: 'DONE', created_at: '2026-06-25T03:56:20Z', tool_calls: [
+        { name: 'run_command', args: { CommandLine: '"git status --short"', Cwd: JSON.stringify(dir) } }
+      ] }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile });
+
+    expect(metrics?.commands_run).toBe(1);
+    expect(metrics?.changed_files.map((file) => [file.path, file.status])).toEqual([
+      ['src/out-of-order.ts', 'added']
+    ]);
+  });
+
   it('does not count Antigravity code action rows with error text as changed files', async () => {
     const dir = fixture.dir();
     const sessionFile = join(dir, 'antigravity-error-text-code-action.jsonl');

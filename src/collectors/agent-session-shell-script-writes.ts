@@ -29,13 +29,58 @@ function contentBindings(command: string): ReadonlyMap<string, string> {
   return new Map([...pythonContentBindings(command), ...nodeContentBindings(command)]);
 }
 
-function shellQuotedArguments(value: string): string[] {
-  const args: string[] = [];
-  const pattern = /'(?<single>[^']*)'|"(?<double>(?:\\"|[^"])*)"/g;
-  for (const match of value.matchAll(pattern)) {
-    const content = match.groups?.single ?? match.groups?.double;
-    if (content !== undefined) args.push(content.replace(/\\"/g, '"'));
+function unsafeUnquotedShellArgument(value: string): boolean {
+  return /[$`\\*?\[\]{}()<>|&;]/.test(value);
+}
+
+function doubleQuotedShellArgument(value: string, start: number): { readonly value: string; readonly nextIndex: number } | null {
+  let content = '';
+  for (let index = start + 1; index < value.length; index += 1) {
+    const character = value[index];
+    if (character === '\"') return { value: content, nextIndex: index + 1 };
+    if (character === '\\' && index + 1 < value.length) {
+      content += value[index + 1];
+      index += 1;
+      continue;
+    }
+    content += character;
   }
+  return null;
+}
+
+function shellPrintfArguments(value: string): string[] | null {
+  const args: string[] = [];
+  let index = 0;
+
+  while (index < value.length) {
+    while (/\s/.test(value[index] ?? '')) index += 1;
+    if (index >= value.length) break;
+
+    const character = value[index];
+    if (character === "'") {
+      const end = value.indexOf("'", index + 1);
+      if (end === -1) return null;
+      args.push(value.slice(index + 1, end));
+      index = end + 1;
+      continue;
+    }
+
+    if (character === '\"') {
+      const argument = doubleQuotedShellArgument(value, index);
+      if (!argument) return null;
+      args.push(argument.value);
+      index = argument.nextIndex;
+      continue;
+    }
+
+    let end = index;
+    while (end < value.length && !/\s/.test(value[end] ?? '')) end += 1;
+    const argument = value.slice(index, end);
+    if (unsafeUnquotedShellArgument(argument)) return null;
+    args.push(argument);
+    index = end;
+  }
+
   return args;
 }
 
@@ -43,8 +88,8 @@ function printfFormatRedirectEvidence(projectRoot: string, workdir: string | nul
   const printf = SHELL_PRINTF_FORMAT_SINGLE_REDIRECT.exec(line) ?? SHELL_PRINTF_FORMAT_DOUBLE_REDIRECT.exec(line);
   const format = unescapeScriptText(printf?.groups?.format ?? '');
   if (!printf || format !== '%s\n') return null;
-  const args = shellQuotedArguments(printf.groups?.args ?? '');
-  if (!args.length) return null;
+  const args = shellPrintfArguments(printf.groups?.args ?? '');
+  if (!args?.length) return null;
   const path = projectRelativeShellPath(projectRoot, workdir, printf.groups?.path ?? '');
   if (!path) return null;
   return { path, status: 'modified', added: countTextLines(args.join('\n')) };

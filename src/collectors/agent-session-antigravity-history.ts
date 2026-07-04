@@ -32,6 +32,14 @@ function pathBelongsToProject(cwd: string, workspace: string): boolean {
   return absoluteWorkspace === projectRoot || absoluteWorkspace.startsWith(`${projectRoot}/`);
 }
 
+function antigravityTranscriptCandidates(home: string, conversationId: string): readonly string[] {
+  const logsDir = join(home, '.gemini', 'antigravity-cli', 'brain', conversationId, '.system_generated', 'logs');
+  return [
+    join(logsDir, 'transcript_full.jsonl'),
+    join(logsDir, 'transcript.jsonl')
+  ];
+}
+
 export async function antigravityHistoryTranscriptCandidates(home: string, cwd: string): Promise<SessionFileCandidate[]> {
   const historyFile = join(home, '.gemini', 'antigravity-cli', 'history.jsonl');
   const text = await readFile(historyFile, 'utf8').catch(() => '');
@@ -43,10 +51,11 @@ export async function antigravityHistoryTranscriptCandidates(home: string, cwd: 
     const conversationId = asString(row?.conversationId);
     const workspace = asString(row?.workspace);
     if (!conversationId || !workspace || !pathBelongsToProject(cwd, workspace)) continue;
-    const transcript = join(home, '.gemini', 'antigravity-cli', 'brain', conversationId, '.system_generated', 'logs', 'transcript.jsonl');
-    if (seen.has(transcript)) continue;
-    seen.add(transcript);
-    candidates.push({ path: transcript, trustedProjectMatch: true });
+    for (const transcript of antigravityTranscriptCandidates(home, conversationId)) {
+      if (seen.has(transcript)) continue;
+      seen.add(transcript);
+      candidates.push({ path: transcript, trustedProjectMatch: true });
+    }
   }
   return candidates;
 }

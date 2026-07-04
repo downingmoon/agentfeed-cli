@@ -138,7 +138,7 @@ describe('project config', () => {
       { name: 'non-boolean collection flag', mutate: (config) => ({ ...config, collection: { ...(config.collection as Record<string, unknown>), include_test_results: 'yes' } }), expected: /collection\.include_test_results must be a boolean/i },
       { name: 'malformed commands', mutate: (config) => ({ ...config, commands: { ...(config.commands as Record<string, unknown>), test: ['npm', 'test'] } }), expected: /commands\.test must be a string or null/i },
       { name: 'malformed agent block', mutate: (config) => ({ ...config, agents: { ...(config.agents as Record<string, unknown>), codex: true } }), expected: /agents\.codex must be an object/i },
-      { name: 'malformed claude hook scope', mutate: (config) => ({ ...config, agents: { ...(config.agents as Record<string, unknown>), claude_code: { enabled: true, hook_scope: 'workspace' } } }), expected: /agents\.claude_code\.hook_scope must be "project" or "global"/i },
+      { name: 'malformed claude enabled flag', mutate: (config) => ({ ...config, agents: { ...(config.agents as Record<string, unknown>), claude_code: { enabled: 'yes' } } }), expected: /agents\.claude_code\.enabled must be a boolean/i },
     ];
 
     for (const testCase of malformedCases) {

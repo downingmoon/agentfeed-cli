@@ -27,7 +27,7 @@ export function defaultProjectConfig(input: { name: string; slug: string; reposi
       raw_diff_upload: false
     },
     agents: {
-      claude_code: { enabled: true, hook_scope: 'project' },
+      claude_code: { enabled: true },
       codex: { enabled: false },
       cursor: { enabled: false },
       gemini_cli: { enabled: false }

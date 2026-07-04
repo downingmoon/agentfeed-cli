@@ -30,7 +30,7 @@ function configWithCommands(commands: AgentFeedProjectConfig['commands']): Agent
       raw_diff_upload: false
     },
     agents: {
-      claude_code: { enabled: true, hook_scope: 'project' },
+      claude_code: { enabled: true },
       codex: { enabled: true },
       cursor: { enabled: false },
       gemini_cli: { enabled: true }

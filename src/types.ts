@@ -66,7 +66,7 @@ export interface AgentFeedProjectConfig {
     raw_diff_upload: boolean;
   };
   agents: {
-    claude_code: { enabled: boolean; hook_scope: 'project' | 'global' };
+    claude_code: { enabled: boolean };
     codex: { enabled: boolean };
     cursor: { enabled: boolean };
     gemini_cli: { enabled: boolean };

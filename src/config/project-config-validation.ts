@@ -1,7 +1,6 @@
 import type { AgentFeedProjectConfig } from '../types.js';
 
 const PROJECT_VISIBILITIES = new Set(['private', 'unlisted', 'public']);
-const CLAUDE_HOOK_SCOPES = new Set(['project', 'global']);
 
 function configError(path: string, message: string): Error {
   return new Error(`AgentFeed config is invalid at ${path}: ${message}. Re-run agentfeed init or restore the file from backup.`);
@@ -60,10 +59,6 @@ export function validateProjectConfig(value: unknown, path: string): AgentFeedPr
   const privacy = requireRecord(root.privacy, 'privacy', path);
   const agents = requireRecord(root.agents, 'agents', path);
   const claudeCode = requireRecord(agents.claude_code, 'agents.claude_code', path);
-  const claudeHookScope = requireString(claudeCode.hook_scope, 'agents.claude_code.hook_scope', path);
-  if (!CLAUDE_HOOK_SCOPES.has(claudeHookScope)) {
-    throw configError(path, 'agents.claude_code.hook_scope must be "project" or "global"');
-  }
   const codex = requireRecord(agents.codex, 'agents.codex', path);
   const cursor = requireRecord(agents.cursor, 'agents.cursor', path);
   const geminiCli = requireRecord(agents.gemini_cli, 'agents.gemini_cli', path);
@@ -99,10 +94,7 @@ export function validateProjectConfig(value: unknown, path: string): AgentFeedPr
       raw_diff_upload: requireBoolean(privacy.raw_diff_upload, 'privacy.raw_diff_upload', path)
     },
     agents: {
-      claude_code: {
-        enabled: requireBoolean(claudeCode.enabled, 'agents.claude_code.enabled', path),
-        hook_scope: claudeHookScope as AgentFeedProjectConfig['agents']['claude_code']['hook_scope']
-      },
+      claude_code: { enabled: requireBoolean(claudeCode.enabled, 'agents.claude_code.enabled', path) },
       codex: { enabled: requireBoolean(codex.enabled, 'agents.codex.enabled', path) },
       cursor: { enabled: requireBoolean(cursor.enabled, 'agents.cursor.enabled', path) },
       gemini_cli: { enabled: requireBoolean(geminiCli.enabled, 'agents.gemini_cli.enabled', path) }

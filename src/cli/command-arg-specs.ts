@@ -132,7 +132,7 @@ export const COMMAND_ARG_SPECS: Readonly<Record<string, CommandArgSpec>> = {
     validatePositionals: NO_POSITIONALS('scan')
   },
   hook: {
-    flags: ['--global', '--project', '--dry-run', '--json'],
+    flags: ['--global', '--project', '--json'],
     valueOptions: ['--settings-path'],
     conflicts: [['--global', '--project']],
     validatePositionals: (positionals) => {

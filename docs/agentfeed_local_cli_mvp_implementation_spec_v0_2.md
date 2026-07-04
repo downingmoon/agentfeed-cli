@@ -44,7 +44,7 @@ It must:
 2. Connect to the AgentFeed API using an ingestion token.
 3. Collect local session information.
 4. Collect Git-based code change metrics.
-5. Optionally parse Claude Code hook/session metadata.
+5. Parse Claude Code session metadata when explicitly requested.
 6. Scan generated public fields for privacy risks.
 7. Create a local draft JSON file.
 8. Preview the draft locally.
@@ -84,7 +84,6 @@ agentfeed status
 agentfeed collect
 agentfeed preview
 agentfeed publish
-agentfeed hook uninstall claude-code
 agentfeed scan
 agentfeed doctor
 ```
@@ -261,7 +260,6 @@ interface AgentFeedProjectConfig {
   agents: {
     claude_code: {
       enabled: boolean;
-      hook_scope: "project" | "global";
     };
     codex: {
       enabled: boolean;
@@ -314,8 +312,7 @@ Default config:
   },
   "agents": {
     "claude_code": {
-      "enabled": true,
-      "hook_scope": "project"
+      "enabled": true
     },
     "codex": {
       "enabled": false
@@ -975,87 +972,9 @@ For path scan:
 
 ## 9.8 agentfeed hook uninstall claude-code
 
-### Purpose
+### Status
 
-Remove a legacy AgentFeed Claude Code Stop hook from Claude settings. New collection uses explicit `agentfeed collect` / `agentfeed share` commands instead.
-
-### Usage
-
-```bash
-agentfeed hook uninstall claude-code
-agentfeed hook uninstall claude-code --project
-agentfeed hook uninstall claude-code --global
-agentfeed hook uninstall claude-code --settings-path <path>
-```
-
-### Project Scope Default
-
-Default is project scope.
-
-Expected project settings path:
-
-```text
-.claude/settings.json
-```
-
-If missing, create it.
-
-### Hook Command
-
-The installed hook should execute:
-
-```bash
-agentfeed collect --source claude-code
-```
-
-If the hook environment can provide a session file path, the command may include:
-
-```bash
-agentfeed collect --source claude-code --session-file "$CLAUDE_SESSION_FILE"
-```
-
-But the implementation must not depend on this environment variable existing.
-
-### Claude Settings Conceptual Shape
-
-Claude Code hook schema can change. The CLI must preserve unknown fields.
-
-The conceptual target is:
-
-```json
-{
-  "hooks": {
-    "Stop": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "agentfeed collect --source claude-code"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-### Installation Rules
-
-1. Read existing settings JSON if present.
-2. Backup existing file to `.agentfeed/backups/claude-settings.{timestamp}.json`.
-3. Add AgentFeed hook only if not already present.
-4. Preserve other hooks.
-5. Write JSON with stable formatting.
-6. On dry run, print proposed JSON diff or target path.
-
----
-
-## 9.9 agentfeed hook uninstall claude-code
-
-### Purpose
-
-Remove AgentFeed's Claude Code hook.
+Deprecated legacy cleanup only. New collection uses explicit `agentfeed collect` / `agentfeed share` commands. Hook installation is not part of the product surface.
 
 ### Usage
 
@@ -1068,14 +987,15 @@ agentfeed hook uninstall claude-code --settings-path <path>
 
 ### Behavior
 
-1. Read settings file.
-2. Remove only hooks whose command contains `agentfeed collect`.
-3. Preserve all other hooks.
-4. Backup before writing.
+1. Read existing settings JSON if present.
+2. If a legacy AgentFeed Stop hook is present, back up the settings file.
+3. Remove only the legacy AgentFeed command hook.
+4. Preserve all unrelated settings and hooks.
+5. Never create or install a new hook.
 
 ---
 
-## 9.10 agentfeed doctor
+## 9.9 agentfeed doctor
 
 ### Purpose
 
@@ -1100,7 +1020,6 @@ agentfeed doctor
 - git command available
 - current directory is git repository
 - .agentfeed directories writable
-- Claude Code hook installed
 - API preview endpoint reachable
 ```
 
@@ -1725,14 +1644,16 @@ Do not upload:
 
 ---
 
-# 20. Claude Code Hook Implementation
+# 20. Deprecated Claude Code Hook Cleanup
+
+Claude Code hook installation is deprecated and disabled. The only retained behavior is safe cleanup for older AgentFeed Stop hooks.
 
 ## 20.1 Settings File Resolution
 
 Project mode:
 
 ```text
-{project_root}/.claude/settings.json
+<project>/.claude/settings.json
 ```
 
 Global mode:
@@ -1743,15 +1664,16 @@ Global mode:
 
 If `--settings-path` is provided, use it exactly.
 
-## 20.2 Preserve Unknown Settings
+## 20.2 Cleanup Rules
 
-The hook installer must:
+The cleanup command must:
 
 ```text
 - Parse JSON.
 - Preserve unknown keys.
 - Preserve unrelated hooks.
-- Only add/remove AgentFeed hook.
+- Remove only the legacy AgentFeed hook marker.
+- Never add hooks or create hook settings.
 ```
 
 ## 20.3 Backup
@@ -1768,33 +1690,16 @@ If project is not initialized, create backup next to settings:
 settings.json.agentfeed-backup.<timestamp>
 ```
 
-## 20.4 Installed Hook Detection
+## 20.4 Legacy Hook Detection
 
-A hook is considered installed if any Stop hook command contains:
-
-```text
-agentfeed collect
-```
-
-## 20.5 Fallback If Hook Schema Unknown
-
-If existing settings shape is unrecognized:
-
-1. Print warning.
-2. Save backup.
-3. Create minimal `hooks.Stop` structure only if it will not destroy existing data.
-4. Otherwise abort with instructions.
-
-Abort message:
+A hook is considered AgentFeed-owned only when the command contains both:
 
 ```text
-Could not safely modify Claude Code settings.
-
-Please add this Stop hook manually:
-agentfeed collect --source claude-code
+agentfeed Claude Code Stop hook
+collect --source claude-code
 ```
 
----
+Unknown or unrelated hook text must be preserved.
 
 # 21. Browser Opening
 
@@ -2019,10 +1924,9 @@ The local CLI MVP is considered complete when:
 6. `agentfeed preview` displays the latest draft.
 7. `agentfeed publish` uploads to backend `/ingest/worklogs`.
 8. Successful upload stores `worklog_id` and `review_url` in draft JSON.
-9. `agentfeed hook uninstall claude-code` removes legacy AgentFeed Claude Code settings safely.
-10. `agentfeed hook uninstall claude-code` removes only the AgentFeed hook.
-11. Privacy scanner catches common secrets.
-12. Tests pass.
+9. Privacy scanner catches common secrets.
+10. Legacy hook cleanup removes only the AgentFeed-owned Stop hook when present.
+11. Tests pass.
 ```
 
 ---
@@ -2215,7 +2119,7 @@ agentfeed login --token af_live_xxxxxxxxx
 
 ## 29.2 After AI Coding Session
 
-Claude Code Stop hook runs:
+Run explicit collection after the session:
 
 ```bash
 agentfeed collect --source claude-code

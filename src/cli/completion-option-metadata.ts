@@ -80,8 +80,7 @@ const COMMAND_COMPLETION_OPTION_DESCRIPTIONS: Readonly<Record<string, Readonly<R
     '--json': 'Print machine-readable privacy scan output'
   },
   hook: {
-    '--dry-run': 'Preview hook changes without writing files',
-    '--json': 'Print machine-readable hook result'
+    '--json': 'Print machine-readable legacy cleanup result'
   },
   doctor: {
     '--json': 'Print machine-readable diagnostic checks'

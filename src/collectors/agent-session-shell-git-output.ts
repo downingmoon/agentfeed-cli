@@ -15,6 +15,7 @@ export function parseGitStatusOutput(projectRoot: string, workdir: string | null
     const match = /^(?<code>[ MADRCU?!]{2})\s+(?<path>.+)$/.exec(line);
     const groups = match?.groups;
     if (!groups) continue;
+    if (!/[MADRCU?!]/.test(groups.code)) continue;
     const rawPath = groups.path.includes(' -> ') ? groups.path.split(' -> ').at(-1) ?? groups.path : groups.path;
     const path = projectRelativeShellPath(projectRoot, workdir, rawPath);
     if (!path) continue;

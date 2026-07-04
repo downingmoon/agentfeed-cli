@@ -1,6 +1,6 @@
-export const AGENT_METADATA_ROOTS = ['.agentfeed', '.claude', '.codex', '.cursor', '.gemini', '.omc', '.omx', '.ai', '.agent', '.agents', '.aider'];
-const LOCAL_RUNTIME_DIR_NAMES = new Set(['.obsidian']);
-const LOCAL_RUNTIME_FILE_NAMES = new Set(['.DS_Store', 'Thumbs.db']);
+export const AGENT_METADATA_ROOTS = ['.agentfeed', '.claude', '.codex', '.cursor', '.gemini', '.omc', '.omx', '.ai', '.agent', '.agents', '.aider', '.git'];
+const LOCAL_RUNTIME_DIR_NAMES = new Set(['.git', '.obsidian']);
+const LOCAL_RUNTIME_FILE_NAMES = new Set(['.DS_Store', 'Thumbs.db', '.debug-journal.md']);
 
 export function shouldIgnoreEvidencePath(path: string): boolean {
   const normalized = path.split('\\').join('/').replace(/\/+$/, '');

@@ -2,6 +2,7 @@ import type { ChangedFileSummary } from '../types.js';
 import type { FileEvidence } from './agent-session-shell-file-evidence.js';
 import { parseGitNumstatOutput, parseGitStatusOutput } from './agent-session-shell-git-output.js';
 import { parseShellWriteCommands } from './agent-session-shell-script-writes.js';
+import { shouldIgnoreEvidencePath } from './path-filter.js';
 
 function changedFile(path: string, status: ChangedFileSummary['status'], added?: number | null, removed?: number | null): ChangedFileSummary {
   return {
@@ -16,6 +17,7 @@ function changedFile(path: string, status: ChangedFileSummary['status'], added?:
 }
 
 function mergeEvidence(files: Map<string, ChangedFileSummary>, evidence: FileEvidence): void {
+  if (shouldIgnoreEvidencePath(evidence.path)) return;
   const current = files.get(evidence.path);
   if (!current) {
     files.set(evidence.path, changedFile(evidence.path, evidence.status, evidence.added, evidence.removed));

@@ -1,3 +1,6 @@
+import { existsSync, readdirSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import type { AgentType } from '../types.js';
 import type { AutoAgentSources } from './agent-source-detection.js';
 
@@ -17,6 +20,11 @@ const SOURCE_LABELS = {
   other: { signal: 'Agent', session: 'Agent' }
 } as const satisfies Record<AgentType, { readonly signal: string; readonly session: string }>;
 
+function antigravityConversationDbDetected(): boolean {
+  const conversationsDir = join(homedir(), '.gemini', 'antigravity-cli', 'conversations');
+  return existsSync(conversationsDir) && readdirSync(conversationsDir).some((entry) => entry.endsWith('.db'));
+}
+
 export function globalAgentSignalMismatchWarnings(input: GlobalSignalMismatchInput): string[] {
   if (input.sessionFound || input.sessionFileProvided) return [];
   const candidates = input.explicitSource ? [input.explicitSource] : input.enabledSources;
@@ -24,6 +32,8 @@ export function globalAgentSignalMismatchWarnings(input: GlobalSignalMismatchInp
     .filter((candidate) => input.autoSources.globalOnly.includes(candidate))
     .map((candidate) => {
       const label = SOURCE_LABELS[candidate];
-      return `${label.signal} signals were detected, but no ${label.session} session matched this project root. If the agent ran from a parent or workspace directory, run agentfeed from that initialized root or pass a session file that belongs to this project.`;
+      const base = `${label.signal} signals were detected, but no ${label.session} session matched this project root. If the agent ran from a parent or workspace directory, run agentfeed from that initialized root or pass a session file that belongs to this project.`;
+      if (candidate !== 'gemini_cli' || !antigravityConversationDbDetected()) return base;
+      return `${base} Antigravity conversation databases were detected, but AgentFeed currently reads Gemini JSONL chats or Antigravity transcript.jsonl files, not Antigravity protobuf SQLite databases.`;
     });
 }

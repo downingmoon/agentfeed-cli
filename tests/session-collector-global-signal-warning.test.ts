@@ -47,4 +47,15 @@ describe('global agent signal warnings', () => {
     expect(result.draft.worklog.metrics.collection_sources).toBeNull();
     expect(result.warnings).toContain('Codex CLI signals were detected, but no Codex session matched this project root. If the agent ran from a parent or workspace directory, run agentfeed from that initialized root or pass a session file that belongs to this project.');
   });
+
+  it('warns when Antigravity conversation databases exist but no JSONL transcript matches the project root', async () => {
+    const conversationDb = join(process.env.HOME ?? '', '.gemini', 'antigravity-cli', 'conversations', 'conversation.db');
+    await mkdir(join(conversationDb, '..'), { recursive: true });
+    await writeFile(conversationDb, 'sqlite placeholder');
+
+    const result = await collectDraftWithStatus({ cwd: dir, source: 'gemini_cli', force: true });
+
+    expect(result.draft.worklog.metrics.collection_sources).toBeNull();
+    expect(result.warnings).toContain('Gemini/Antigravity CLI signals were detected, but no Gemini/Antigravity session matched this project root. If the agent ran from a parent or workspace directory, run agentfeed from that initialized root or pass a session file that belongs to this project. Antigravity conversation databases were detected, but AgentFeed currently reads Gemini JSONL chats or Antigravity transcript.jsonl files, not Antigravity protobuf SQLite databases.');
+  });
 });

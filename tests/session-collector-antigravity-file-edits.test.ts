@@ -115,4 +115,36 @@ describe('Antigravity file edit evidence', () => {
     expect(metrics?.changed_files.map((file) => file.path)).not.toContain('src/error-text.ts');
     expect(metrics?.files_changed).toBe(1);
   });
+
+  it('does not double count planned Antigravity code action result rows as tool calls', async () => {
+    const dir = fixture.dir();
+    const sessionFile = join(dir, 'antigravity-planned-code-action.jsonl');
+    await fixture.writeJsonl(sessionFile, [
+      { step_index: 0, source: 'USER_EXPLICIT', type: 'USER_INPUT', status: 'DONE', created_at: '2026-06-25T03:56:15Z', content: '<USER_REQUEST>Create a file</USER_REQUEST>' },
+      { step_index: 1, source: 'MODEL', type: 'PLANNER_RESPONSE', status: 'DONE', created_at: '2026-06-25T03:56:20Z', tool_calls: [
+        { name: 'write_to_file', args: { TargetFile: JSON.stringify(join(dir, 'src', 'planned.ts')) } }
+      ] },
+      { step_index: 2, source: 'MODEL', type: 'CODE_ACTION', status: 'DONE', created_at: '2026-06-25T03:56:21Z', content: `Created file file://${join(dir, 'src', 'planned.ts')} with requested content.` }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(1);
+    expect(metrics?.changed_files).toMatchObject([
+      { path: 'src/planned.ts', status: 'added' }
+    ]);
+  });
+
+  it('counts direct Antigravity view rows when no planner tool call is present', async () => {
+    const dir = fixture.dir();
+    const sessionFile = join(dir, 'antigravity-direct-view.jsonl');
+    await fixture.writeJsonl(sessionFile, [
+      { step_index: 0, source: 'MODEL', type: 'VIEW_FILE', status: 'DONE', created_at: '2026-06-25T03:56:20Z', content: `File Path: \`file://${join(dir, 'src', 'api.ts')}\`` }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(1);
+    expect(metrics?.files_changed).toBeNull();
+  });
 });

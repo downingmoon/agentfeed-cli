@@ -1,6 +1,7 @@
 import type { ChangedFileSummary, CollectionSource, CollectionWindow, CollectionWindowReason } from '../types.js';
 import { basename, dirname } from 'node:path';
 import { asRecord, asString, explicitCostUsd, numeric, relativeProjectPath, upsertFile } from './agent-session-core.js';
+import { createAntigravityToolResultTracker, isAntigravityToolResultRowType } from './agent-session-antigravity-tool-results.js';
 import { antigravitySubagentIds, completedAntigravitySubagentId, countAntigravitySubagentSpecs, unquotedAntigravityString } from './agent-session-antigravity-values.js';
 import { finalizeAgentSession, type AgentSessionMetrics } from './agent-session-finalize.js';
 import { applyShellFileEvidence } from './agent-session-shell-files.js';
@@ -46,7 +47,10 @@ function antigravitySessionId(sessionFile: string): string {
 }
 
 export function isAntigravityTranscript(rows: readonly Record<string, unknown>[]): boolean {
-  return rows.some((row) => ['PLANNER_RESPONSE', 'CODE_ACTION', 'RUN_COMMAND', 'USER_INPUT'].includes(asString(row.type) ?? ''));
+  return rows.some((row) => {
+    const rowType = asString(row.type);
+    return isAntigravityToolResultRowType(rowType) || ['PLANNER_RESPONSE', 'RUN_COMMAND', 'USER_INPUT'].includes(rowType ?? '');
+  });
 }
 
 function antigravityCommandFailed(row: Record<string, unknown>, content: string): boolean {
@@ -114,6 +118,7 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
   let matchedWindowRow = false;
   const sinceMillis = parseBoundaryMillis(effectiveWindow?.since);
   const untilMillis = parseBoundaryMillis(effectiveWindow?.until);
+  const toolResults = createAntigravityToolResultTracker();
 
   for (const row of orderedAntigravityRows(rows)) {
     model ??= asString(row.model);
@@ -139,6 +144,7 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
       for (const call of antigravityToolCalls(row)) {
         toolCalls += 1;
         const name = asString(call.name);
+        toolResults.plan(name);
         const args = asRecord(call.args) ?? {};
         if (name === 'run_command') {
           const command = unquotedAntigravityString(args.CommandLine) ?? unquotedAntigravityString(args.command) ?? '';
@@ -155,13 +161,18 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
       continue;
     }
     if (rowType === 'CODE_ACTION') {
+      if (toolResults.countResult(rowType)) toolCalls += 1;
       if (!failedStatus(asString(row.status)) && !toolOutputFailed(content)) {
-        toolCalls += 1;
         applyAntigravityCodeAction(cwd, content, files);
       }
       continue;
     }
+    if (rowType !== 'CODE_ACTION' && rowType !== 'INVOKE_SUBAGENT' && isAntigravityToolResultRowType(rowType)) {
+      if (toolResults.countResult(rowType)) toolCalls += 1;
+      continue;
+    }
     if (rowType === 'INVOKE_SUBAGENT') {
+      if (toolResults.countResult(rowType)) toolCalls += 1;
       if (!failedStatus(asString(row.status)) && !toolOutputFailed(content)) {
         for (const id of antigravitySubagentIds(content)) spawnedSubagentIds.add(id);
       }

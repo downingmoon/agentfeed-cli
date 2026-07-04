@@ -216,6 +216,35 @@ describe('Antigravity file edit evidence', () => {
     expect(metrics?.files_changed).toBeNull();
   });
 
+  it('counts direct Antigravity ask question rows when no planner tool call is present', async () => {
+    const dir = fixture.dir();
+    const sessionFile = join(dir, 'antigravity-direct-ask-question.jsonl');
+    await fixture.writeJsonl(sessionFile, [
+      { step_index: 0, source: 'MODEL', type: 'ASK_QUESTION', status: 'DONE', created_at: '2026-06-25T04:17:35Z', content: 'Created At: 2026-06-25T04:17:35Z\nCompleted At: 2026-06-25T04:52:41Z\nA1: Add realistic 3D model assets' }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(1);
+    expect(metrics?.files_changed).toBeNull();
+  });
+
+  it('does not double count planned Antigravity ask question result rows as tool calls', async () => {
+    const dir = fixture.dir();
+    const sessionFile = join(dir, 'antigravity-planned-ask-question.jsonl');
+    await fixture.writeJsonl(sessionFile, [
+      { step_index: 0, source: 'MODEL', type: 'PLANNER_RESPONSE', status: 'DONE', created_at: '2026-06-25T04:17:34Z', tool_calls: [
+        { name: 'ask_question', args: { Question: '"Choose implementation direction"' } }
+      ] },
+      { step_index: 1, source: 'MODEL', type: 'ASK_QUESTION', status: 'DONE', created_at: '2026-06-25T04:17:35Z', content: 'Created At: 2026-06-25T04:17:35Z\nCompleted At: 2026-06-25T04:52:41Z\nA1: Add realistic 3D model assets' }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(1);
+    expect(metrics?.files_changed).toBeNull();
+  });
+
   it('uses Antigravity manage_subagents list results as spawned subagent evidence', async () => {
     const dir = fixture.dir();
     const sessionFile = join(dir, 'antigravity-manage-subagents-list.jsonl');

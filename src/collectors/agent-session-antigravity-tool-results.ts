@@ -1,4 +1,5 @@
 const DIRECT_RESULT_ROW_TYPES = new Set([
+  'ASK_QUESTION',
   'CODE_ACTION',
   'GENERATE_IMAGE',
   'INVOKE_SUBAGENT',
@@ -23,6 +24,8 @@ type PendingAntigravityResult = {
 
 function resultTypeForPlannerTool(toolName: string | null): string | null {
   switch (toolName) {
+    case 'ask_question':
+      return 'ASK_QUESTION';
     case 'generate_image':
       return 'GENERATE_IMAGE';
     case 'invoke_subagent':

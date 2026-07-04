@@ -124,4 +124,49 @@ describe('shell script Python path composition bindings', () => {
     }
   });
 
+  it('captures direct Python Path division writes with literal segments', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-path-direct-division-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'from pathlib import Path',
+          '(Path(\'src\') / \'generated\' / \'direct-division.ts\').write_text("""export const first = true;\\nexport const second = true;\\n""")',
+          'PY'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added])).toEqual([
+        ['src/generated/direct-division.ts', 2]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('captures direct Python Path division writes with bound content', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agentfeed-shell-python-path-direct-division-content-'));
+    try {
+      const files = new Map<string, ChangedFileSummary>();
+
+      applyShellFileEvidence(dir, {
+        command: [
+          "python3 - <<'PY'",
+          'from pathlib import Path',
+          'content = """export const first = true;\\nexport const second = true;\\n"""',
+          "(Path('src') / 'generated' / 'division-content.ts').write_text(content)",
+          'PY'
+        ].join('\n')
+      }, files);
+
+      expect([...files.values()].map((file) => [file.path, file.lines_added])).toEqual([
+        ['src/generated/division-content.ts', 2]
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
 });

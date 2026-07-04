@@ -2,7 +2,7 @@ import { literalDumpLineCount, PYTHON_LITERAL_COLLECTION } from './agent-session
 import { countTextLines } from './agent-session-core.js';
 import type { FileEvidence } from './agent-session-shell-file-evidence.js';
 import { projectRelativeShellPath } from './agent-session-shell-paths.js';
-import { pythonBoundTargets, pythonLiteralJoinPath, pythonStringPathTargets, type BoundScriptTarget } from './agent-session-shell-script-python-path-bindings.js';
+import { pythonBoundTargets, pythonLiteralJoinPath, pythonLiteralPathDivision, pythonStringPathTargets, type BoundScriptTarget } from './agent-session-shell-script-python-path-bindings.js';
 import { contentBindingsFromPatterns, escapeRegExp, mergeAddedEvidence, scriptWriteEvidence, unescapeScriptText, variableContentWriteEvidence, type ScriptWriteEvidenceContext } from './agent-session-shell-script-write-shared.js';
 
 const PYTHON_TRIPLE_PATH_WRITE_TARGET = /\bPath\(\s*(['"])(?<path>[^'"]+)\1\s*\)\.write(?:_text)?\(\s*('''|""")(?<content>[\s\S]*?)\3/g;
@@ -14,6 +14,9 @@ const PYTHON_CHANGED_OPEN_WRITE_TARGET = /\bopen\(\s*(['"])(?<path>[^'"]+)\1[\s\
 const PYTHON_TRIPLE_PATH_JOINPATH_WRITE_TARGET = /\bPath\(\s*(?<baseQuote>['"])(?<basePath>[^'"]+)\k<baseQuote>\s*\)\.joinpath\((?<segments>[^)]*)\)\.write(?:_text)?\(\s*(?<contentQuote>'''|""")(?<content>[\s\S]*?)\k<contentQuote>/g;
 const PYTHON_PATH_JOINPATH_WRITE_TARGET = /\bPath\(\s*(?<baseQuote>['"])(?<basePath>[^'"]+)\k<baseQuote>\s*\)\.joinpath\((?<segments>[^)]*)\)\.write(?:_text)?\(\s*(?<contentQuote>['"])(?<content>[\s\S]*?)\k<contentQuote>/g;
 const PYTHON_CHANGED_PATH_JOINPATH_WRITE_TARGET = /\bPath\(\s*(?<baseQuote>['"])(?<basePath>[^'"]+)\k<baseQuote>\s*\)\.joinpath\((?<segments>[^)]*)\)\.write(?:_text|_bytes)?\(/g;
+const PYTHON_TRIPLE_PATH_DIVISION_WRITE_TARGET = /\(\s*Path\(\s*(?<baseQuote>['"])(?<basePath>[^'"]+)\k<baseQuote>\s*\)(?<segments>(?:\s*\/\s*(['"])[^'"]+\4)+)\s*\)\.write(?:_text)?\(\s*(?<contentQuote>'''|""")(?<content>[\s\S]*?)\k<contentQuote>/g;
+const PYTHON_PATH_DIVISION_VARIABLE_WRITE_TARGET = /\(\s*Path\(\s*(?<baseQuote>['"])(?<basePath>[^'"]+)\k<baseQuote>\s*\)(?<segments>(?:\s*\/\s*(['"])[^'"]+\4)+)\s*\)\.write(?:_text)?\(\s*(?<contentName>[A-Za-z_]\w*)\s*(?:,[^\n)]*)?\)/g;
+const PYTHON_CHANGED_PATH_DIVISION_WRITE_TARGET = /\(\s*Path\(\s*(?<baseQuote>['"])(?<basePath>[^'"]+)\k<baseQuote>\s*\)(?<segments>(?:\s*\/\s*(['"])[^'"]+\4)+)\s*\)\.write(?:_text|_bytes)?\(/g;
 const PYTHON_TRIPLE_CONTENT_BINDING = /\b(?<name>[A-Za-z_]\w*)\s*=\s*('''|""")(?<content>[\s\S]*?)\2/g;
 const PYTHON_CONTENT_VARIABLE_PATH_WRITE_TARGET = /\bPath\(\s*(['"])(?<path>[^'"]+)\1\s*\)\.write(?:_text)?\(\s*(?<contentName>[A-Za-z_]\w*)\s*(?:,[^\n)]*)?\)/g;
 const PYTHON_CONTENT_VARIABLE_OPEN_WRITE_TARGET = /\bopen\(\s*(['"])(?<path>[^'"]+)\1[\s\S]*?\)\.write(?:_text)?\(\s*(?<contentName>[A-Za-z_]\w*)\s*(?:,[^\n)]*)?\)/g;
@@ -147,6 +150,36 @@ function directJoinPathWriteEvidence(input: ScriptWriteEvidenceContext & { reado
   return [...files.values()];
 }
 
+function directDivisionWriteEvidence(input: ScriptWriteEvidenceContext & { readonly command: string; readonly contentBindings: ReadonlyMap<string, string> }): FileEvidence[] {
+  const files = new Map<string, FileEvidence>();
+  PYTHON_TRIPLE_PATH_DIVISION_WRITE_TARGET.lastIndex = 0;
+  for (const match of input.command.matchAll(PYTHON_TRIPLE_PATH_DIVISION_WRITE_TARGET)) {
+    const path = directDivisionPath(input, match);
+    if (path) mergeAddedEvidence(files, path, countTextLines(unescapeScriptText(match.groups?.content ?? '')));
+  }
+  PYTHON_PATH_DIVISION_VARIABLE_WRITE_TARGET.lastIndex = 0;
+  for (const match of input.command.matchAll(PYTHON_PATH_DIVISION_VARIABLE_WRITE_TARGET)) {
+    const path = directDivisionPath(input, match);
+    if (!path) continue;
+    const contentName = match.groups?.contentName;
+    const content = contentName ? input.contentBindings.get(contentName) : undefined;
+    if (content === undefined) mergeChangedEvidence(files, path);
+    else mergeAddedEvidence(files, path, countTextLines(unescapeScriptText(content)));
+  }
+  PYTHON_CHANGED_PATH_DIVISION_WRITE_TARGET.lastIndex = 0;
+  for (const match of input.command.matchAll(PYTHON_CHANGED_PATH_DIVISION_WRITE_TARGET)) {
+    const path = directDivisionPath(input, match);
+    if (path) mergeChangedEvidence(files, path);
+  }
+  return [...files.values()];
+}
+
+function directDivisionPath(context: ScriptWriteEvidenceContext, match: RegExpMatchArray): string | null {
+  const basePath = match.groups?.basePath;
+  const dividedPath = basePath ? pythonLiteralPathDivision(basePath, match.groups?.segments ?? '') : null;
+  return dividedPath ? projectRelativeShellPath(context.projectRoot, context.workdir, dividedPath) : null;
+}
+
 function pythonDumpTargetEvidence(context: ScriptWriteEvidenceContext, command: string): FileEvidence[] {
   const files = new Map<string, FileEvidence>();
   for (const pattern of [PYTHON_DUMP_OPEN_TARGET, PYTHON_DUMP_PATH_OPEN_TARGET]) {
@@ -176,6 +209,7 @@ export function pythonScriptWriteEvidence(context: ScriptWriteEvidenceContext, c
     ...scriptWriteEvidence({ ...context, pattern: PYTHON_WRITE_PATH_TARGET, command }),
     ...scriptWriteEvidence({ ...context, pattern: PYTHON_WRITE_OPEN_TARGET, command }),
     ...directJoinPathWriteEvidence({ ...context, command, contentBindings }),
+    ...directDivisionWriteEvidence({ ...context, command, contentBindings }),
     ...pythonChangedWriteTargetEvidence(context, command),
     ...variableContentWriteEvidence({ ...context, pattern: PYTHON_CONTENT_VARIABLE_PATH_WRITE_TARGET, command, contentBindings }),
     ...variableContentWriteEvidence({ ...context, pattern: PYTHON_CONTENT_VARIABLE_OPEN_WRITE_TARGET, command, contentBindings }),

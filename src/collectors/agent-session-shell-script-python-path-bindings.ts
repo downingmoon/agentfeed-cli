@@ -25,7 +25,7 @@ export function pythonStringPathTargets(command: string): BoundScriptTarget[] {
   return targets;
 }
 
-function literalPathDivision(basePath: string, rawSegments: string): string | null {
+export function pythonLiteralPathDivision(basePath: string, rawSegments: string): string | null {
   const segments: string[] = [];
   let cursor = 0;
   PYTHON_PATH_DIVISION_SEGMENT.lastIndex = 0;
@@ -73,7 +73,7 @@ export function pythonBoundTargets(command: string): BoundScriptTarget[] {
   for (const match of command.matchAll(PYTHON_PATH_DIVISION_BINDING_TARGET)) {
     const name = match.groups?.name;
     const basePath = match.groups?.baseName ? pathByName.get(match.groups.baseName) : undefined;
-    const path = basePath ? literalPathDivision(basePath, match.groups?.segments ?? '') : null;
+    const path = basePath ? pythonLiteralPathDivision(basePath, match.groups?.segments ?? '') : null;
     if (name && path) {
       targets.push({ name, path });
       pathByName.set(name, path);

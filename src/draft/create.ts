@@ -141,7 +141,7 @@ export async function collectDraftWithStatus(options: CollectDraftOptions): Prom
   if (sessionFile && !session) {
     const displayPath = sessionFileRel ?? sessionFile;
     const exists = await pathExists(sessionFile);
-    warnings.push(exists
+    throw new Error(exists
       ? `Agent session file did not produce usable metrics: ${displayPath}. The file may be unreadable, outside the collection window, unrelated to this project, or unsupported for the selected source. Retry with --source <source> and --all, or run agentfeed doctor.`
       : `Agent session file was not found: ${displayPath}. Check the path or rerun without --session-file to use auto-discovery.`);
   }

@@ -1,17 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
   parseJsonObject,
-  stringArrayField,
   useCollectCommandUxFixture
 } from './cli-collect-command-ux-helpers.js';
 
 const fixture = useCollectCommandUxFixture();
 
 describe('collect command session-file diagnostics', () => {
-  it('surfaces explicit session-file misses in human collect output', async () => {
+  it('rejects explicit session-file misses before creating a draft', async () => {
     await fixture.writeSource('export const ok = "missing-session-warning";\n');
 
-    const { stdout, stderr } = await fixture.runCollect([
+    const failure = await fixture.runCollectExpectingFailure([
       '--source',
       'codex',
       '--session-file',
@@ -20,16 +19,15 @@ describe('collect command session-file diagnostics', () => {
       '--no-save-cursor'
     ]);
 
-    expect(stderr).toBe('');
-    expect(stdout).toContain('Warnings');
-    expect(stdout).toContain('Agent session file was not found: missing-codex-session.jsonl');
-    expect(stdout).toContain('without --session-file to use auto-discovery');
+    expect(failure.stderr ?? '').toContain('Agent session file was not found: missing-codex-session.jsonl');
+    expect(failure.stderr ?? '').toContain('without --session-file to use auto-discovery');
+    await fixture.expectDraftsEmpty();
   });
 
-  it('surfaces explicit session-file parse misses in JSON collect output', async () => {
+  it('rejects explicit session-file parse misses before creating a draft', async () => {
     await fixture.writeProjectFile('codex-session.jsonl', 'not-json\n');
 
-    const { stdout, stderr } = await fixture.runCollect([
+    const failure = await fixture.runCollectExpectingFailure([
       '--source',
       'codex',
       '--session-file',
@@ -39,10 +37,13 @@ describe('collect command session-file diagnostics', () => {
       '--no-save-cursor'
     ]);
 
-    expect(stderr).toBe('');
-    const output = parseJsonObject(stdout);
-    const warnings = stringArrayField(output.warnings).join('\n');
-    expect(warnings).toContain('Agent session file did not produce usable metrics: codex-session.jsonl');
-    expect(warnings).toContain('outside the collection window, unrelated to this project, or unsupported for the selected source');
+    const output = parseJsonObject(failure.stdout ?? '{}');
+    expect(output.error).toEqual(expect.objectContaining({
+      message: expect.stringContaining('Agent session file did not produce usable metrics: codex-session.jsonl')
+    }));
+    expect(output.error).toEqual(expect.objectContaining({
+      message: expect.stringContaining('outside the collection window, unrelated to this project, or unsupported for the selected source')
+    }));
+    await fixture.expectDraftsEmpty();
   });
 });

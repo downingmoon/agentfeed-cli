@@ -36,12 +36,10 @@ CLI oversized `tests/cli-help.test.ts`에서 option validation/recovery coverage
   - Leading/global-looking option command-first guidance.
   - Unknown command/help-topic typo suggestions.
   - Close option typo suggestions.
-  - Hook missing/unsupported target recovery.
 - `tests/cli-help-argument-validation.test.ts`
   - Positional argument to dashed-flag suggestions.
   - Missing option value guidance.
   - Token alias/completion subcommand recovery.
-  - Hook action/target corrections.
   - Command-specific conflicting flag hints.
 - 새 helper는 rejected `execFile` errors를 `unknown`에서 `Error`로 narrow하고 stdout/stderr를 text guard로 추출한다.
 

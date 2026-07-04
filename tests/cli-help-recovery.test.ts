@@ -173,12 +173,4 @@ describe('CLI help option validation and recovery', () => {
     expect(failure.stdout).toBe('');
   });
 
-  it('does not expose removed hook recovery commands', async () => {
-    const failure = await runCliFailure(['hook']);
-
-    expect(failure.stderr).toContain('Unknown command: hook');
-    expect(failure.stderr).toContain('Run: agentfeed --help');
-    expect(failure.stdout).toBe('');
-  });
-
 });

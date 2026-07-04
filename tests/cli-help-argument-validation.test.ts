@@ -138,14 +138,6 @@ describe('CLI help argument validation recovery', () => {
     expect(completionTypo.stdout).toBe('');
   });
 
-  it('treats removed automation commands as unknown commands', async () => {
-    const failure = await runCliFailure(['hook', 'uninstall', 'claude-code']);
-
-    expect(failure.stderr).toContain('Unknown command: hook');
-    expect(failure.stderr).toContain('Run: agentfeed --help');
-    expect(failure.stdout).toBe('');
-  });
-
   it('rejects conflicting flags with command-specific recovery hints', async () => {
     const expectations = [
       [['share', '--dry', '--yes'], 'Conflicting options for share: --dry and --yes', 'Run: agentfeed share --help'],

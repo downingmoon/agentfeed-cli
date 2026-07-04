@@ -27,6 +27,7 @@ describe('Codex session collector command metrics', () => {
     const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'codex', sessionFile });
 
     expect(metrics?.commands_run).toBe(1);
+    expect(metrics?.duration_seconds).toBe(2);
     expect(metrics?.tests_run).toBe(13);
     expect(metrics?.tests_passed).toBe(10);
     expect(metrics?.failed_commands).toBe(1);

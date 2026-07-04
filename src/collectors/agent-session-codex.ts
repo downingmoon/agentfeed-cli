@@ -29,7 +29,8 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
   const files = new Map<string, ChangedFileSummary>();
   const commands = new Map<string, CodexCommandRecord>();
   let tokensUsed = 0;
-  let durationSeconds: number | null = null;
+  let startMillis: number | null = null;
+  let endMillis: number | null = null;
   let estimatedCostUsd = 0;
   const testMetrics = { testsRun: 0, testsPassed: 0 };
   let failedCommands = 0;
@@ -47,6 +48,7 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
   let tokenBaselineBeforeWindow: number | null = null;
   const patchFallbacks = createCodexPatchFallbacks();
   const sinceMillis = parseBoundaryMillis(effectiveWindow?.since);
+  const untilMillis = parseBoundaryMillis(effectiveWindow?.until);
   const registerCommand = (callId: string | null, command: string, workdir: string | null) => {
     if (!command) return;
     commandsRun += 1;
@@ -95,6 +97,13 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
     }
     if (!rowInAgentCollectionWindow(row, effectiveWindow)) continue;
     matchedWindowRow = true;
+    const rowMillis = rowTimestampMillis(row);
+    if (rowMillis != null) {
+      const effectiveStart = sinceMillis != null ? Math.max(rowMillis, sinceMillis) : rowMillis;
+      const effectiveEnd = untilMillis != null ? Math.min(rowMillis, untilMillis) : rowMillis;
+      startMillis = Math.min(startMillis ?? effectiveStart, effectiveStart);
+      endMillis = Math.max(endMillis ?? effectiveEnd, effectiveEnd);
+    }
     estimatedCostUsd = Math.max(estimatedCostUsd, explicitCostUsd(row) ?? 0, explicitCostUsd(payload) ?? 0);
     if (payload.type === 'agent_message') agentTurns += 1;
     if (payload.type === 'mcp_tool_call_end') toolCalls += 1;
@@ -196,5 +205,6 @@ export async function parseCodexSessionFile(cwd: string, sessionFile: string, wi
   subagentsCompleted = Math.max(subagentsCompleted, omx.subagentsCompleted ?? 0);
   agentTurns = Math.max(agentTurns, omx.agentTurns ?? 0);
   for (const mode of omx.agentModes ?? []) agentModes.add(mode);
+  const durationSeconds = startMillis != null && endMillis != null && endMillis > startMillis ? (endMillis - startMillis) / 1000 : null;
   return finalizeAgentSession({ sessionId, model, files, tokensUsed, estimatedCostUsd, durationSeconds, testsRun: testMetrics.testsRun, testsPassed: testMetrics.testsPassed, failedCommands, commandsRun, toolCalls, skills, subagentsSpawned, subagentsCompleted, agentTurns, agentModes, collectionSources, collectionWindow: effectiveWindow, collectionWindowReason: effective.reason });
 }

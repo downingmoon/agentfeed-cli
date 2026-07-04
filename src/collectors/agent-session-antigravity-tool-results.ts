@@ -12,8 +12,13 @@ export function isAntigravityToolResultRowType(rowType: string | null): boolean 
 }
 
 export type AntigravityToolResultTracker = {
-  readonly plan: (toolName: string | null) => void;
-  readonly countResult: (rowType: string | null) => boolean;
+  readonly plan: (toolName: string | null, expectedPath?: string | null) => void;
+  readonly countResult: (rowType: string | null, observedPaths?: readonly string[]) => boolean;
+};
+
+type PendingAntigravityResult = {
+  readonly rowType: string;
+  readonly expectedPath: string | null;
 };
 
 function resultTypeForPlannerTool(toolName: string | null): string | null {
@@ -36,22 +41,26 @@ function resultTypeForPlannerTool(toolName: string | null): string | null {
 }
 
 export function createAntigravityToolResultTracker(): AntigravityToolResultTracker {
-  const pendingResults = new Map<string, number>();
+  const pendingResults: PendingAntigravityResult[] = [];
 
-  function plan(toolName: string | null): void {
+  function plan(toolName: string | null, expectedPath: string | null = null): void {
     const resultType = resultTypeForPlannerTool(toolName);
     if (!resultType) return;
-    pendingResults.set(resultType, (pendingResults.get(resultType) ?? 0) + 1);
+    pendingResults.push({ rowType: resultType, expectedPath });
   }
 
-  function countResult(rowType: string | null): boolean {
+  function pendingResultMatches(pending: PendingAntigravityResult, rowType: string, observedPaths: readonly string[]): boolean {
+    if (pending.rowType !== rowType) return false;
+    if (pending.expectedPath == null) return true;
+    return observedPaths.includes(pending.expectedPath);
+  }
+
+  function countResult(rowType: string | null, observedPaths: readonly string[] = []): boolean {
     if (!rowType) return false;
     if (!isAntigravityToolResultRowType(rowType)) return false;
-    const resultType = rowType;
-    const pendingCount = pendingResults.get(resultType) ?? 0;
-    if (pendingCount <= 0) return true;
-    if (pendingCount === 1) pendingResults.delete(resultType);
-    else pendingResults.set(resultType, pendingCount - 1);
+    const pendingIndex = pendingResults.findIndex((pending) => pendingResultMatches(pending, rowType, observedPaths));
+    if (pendingIndex < 0) return true;
+    pendingResults.splice(pendingIndex, 1);
     return false;
   }
 

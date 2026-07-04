@@ -135,6 +135,25 @@ describe('Antigravity file edit evidence', () => {
     ]);
   });
 
+  it('counts unrelated direct Antigravity code action rows while a planned result is pending', async () => {
+    const dir = fixture.dir();
+    const sessionFile = join(dir, 'antigravity-unrelated-direct-code-action.jsonl');
+    await fixture.writeJsonl(sessionFile, [
+      { step_index: 0, source: 'USER_EXPLICIT', type: 'USER_INPUT', status: 'DONE', created_at: '2026-06-25T03:56:15Z', content: '<USER_REQUEST>Create one file, then patch another manually</USER_REQUEST>' },
+      { step_index: 1, source: 'MODEL', type: 'PLANNER_RESPONSE', status: 'DONE', created_at: '2026-06-25T03:56:20Z', tool_calls: [
+        { name: 'write_to_file', args: { TargetFile: JSON.stringify(join(dir, 'src', 'planned.ts')) } }
+      ] },
+      { step_index: 2, source: 'MODEL', type: 'CODE_ACTION', status: 'DONE', created_at: '2026-06-25T03:56:21Z', content: `Modified file file://${join(dir, 'src', 'direct.ts')} with manual content.` }
+    ]);
+
+    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli', sessionFile });
+
+    expect(metrics?.tool_calls).toBe(2);
+    expect(metrics?.changed_files).toMatchObject([
+      { path: 'src/direct.ts', status: 'modified' }
+    ]);
+  });
+
   it('counts direct Antigravity view rows when no planner tool call is present', async () => {
     const dir = fixture.dir();
     const sessionFile = join(dir, 'antigravity-direct-view.jsonl');

@@ -1,7 +1,7 @@
 import type { ChangedFileSummary, CollectionSource, CollectionWindow, CollectionWindowReason } from '../types.js';
 import { basename, dirname } from 'node:path';
-import { asRecord, asString, explicitCostUsd, numeric } from './agent-session-core.js';
-import { applyAntigravityCodeAction } from './agent-session-antigravity-code-action.js';
+import { asRecord, asString, explicitCostUsd, numeric, relativeProjectPath } from './agent-session-core.js';
+import { antigravityCodeActionPaths, antigravityFilePathFromUri, applyAntigravityCodeAction } from './agent-session-antigravity-code-action.js';
 import { createAntigravityToolResultTracker, isAntigravityToolResultRowType } from './agent-session-antigravity-tool-results.js';
 import { antigravitySubagentIds, completedAntigravitySubagentId, countAntigravitySubagentSpecs, unquotedAntigravityString } from './agent-session-antigravity-values.js';
 import { finalizeAgentSession, type AgentSessionMetrics } from './agent-session-finalize.js';
@@ -71,6 +71,26 @@ function antigravityToolCalls(row: Record<string, unknown>): readonly Record<str
   }) : [];
 }
 
+function antigravityPlannedResultPath(cwd: string, toolName: string | null, args: Record<string, unknown>): string | null {
+  let rawPath: string | null = null;
+  switch (toolName) {
+    case 'multi_replace_file_content':
+    case 'replace_file_content':
+    case 'write_to_file':
+      rawPath = unquotedAntigravityString(args.TargetFile) ?? unquotedAntigravityString(args.targetFile) ?? unquotedAntigravityString(args.path);
+      break;
+    case 'view_file':
+      rawPath = unquotedAntigravityString(args.AbsolutePath) ?? unquotedAntigravityString(args.path);
+      break;
+    case 'list_dir':
+      rawPath = unquotedAntigravityString(args.Path) ?? unquotedAntigravityString(args.path);
+      break;
+    default:
+      return null;
+  }
+  return rawPath ? relativeProjectPath(cwd, antigravityFilePathFromUri(rawPath)) : null;
+}
+
 export function parseAntigravityTranscript(cwd: string, sessionFile: string, rows: readonly Record<string, unknown>[], effectiveWindow: CollectionWindow | null, effectiveReason: CollectionWindowReason | null): AgentSessionMetrics | null {
   const files = new Map<string, ChangedFileSummary>();
   const skills = new Set<string>();
@@ -118,8 +138,8 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
       for (const call of antigravityToolCalls(row)) {
         toolCalls += 1;
         const name = asString(call.name);
-        toolResults.plan(name);
         const args = asRecord(call.args) ?? {};
+        toolResults.plan(name, antigravityPlannedResultPath(cwd, name, args));
         if (name === 'run_command') {
           const command = unquotedAntigravityString(args.CommandLine) ?? unquotedAntigravityString(args.command) ?? '';
           const workdir = unquotedAntigravityString(args.Cwd) ?? unquotedAntigravityString(args.cwd);
@@ -135,7 +155,8 @@ export function parseAntigravityTranscript(cwd: string, sessionFile: string, row
       continue;
     }
     if (rowType === 'CODE_ACTION') {
-      if (toolResults.countResult(rowType)) toolCalls += 1;
+      const changedPaths = antigravityCodeActionPaths(cwd, content);
+      if (toolResults.countResult(rowType, changedPaths)) toolCalls += 1;
       if (!failedStatus(asString(row.status)) && !toolOutputFailed(content)) {
         applyAntigravityCodeAction(cwd, content, files);
       }

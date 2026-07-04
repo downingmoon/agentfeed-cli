@@ -1,6 +1,7 @@
 import type { ChangedFileSummary, CollectionSource, CollectionWindow, CollectionWindowReason } from '../types.js';
 import { basename, dirname } from 'node:path';
-import { asRecord, asString, explicitCostUsd, numeric, relativeProjectPath, upsertFile } from './agent-session-core.js';
+import { asRecord, asString, explicitCostUsd, numeric } from './agent-session-core.js';
+import { applyAntigravityCodeAction } from './agent-session-antigravity-code-action.js';
 import { createAntigravityToolResultTracker, isAntigravityToolResultRowType } from './agent-session-antigravity-tool-results.js';
 import { antigravitySubagentIds, completedAntigravitySubagentId, countAntigravitySubagentSpecs, unquotedAntigravityString } from './agent-session-antigravity-values.js';
 import { finalizeAgentSession, type AgentSessionMetrics } from './agent-session-finalize.js';
@@ -61,33 +62,6 @@ function antigravityTokenTotal(tokens: Record<string, unknown>): number {
   const total = numeric(tokens.total);
   if (total) return total;
   return numeric(tokens.input) + numeric(tokens.cached) + numeric(tokens.output) + numeric(tokens.thoughts) + numeric(tokens.tool);
-}
-
-function filePathFromUri(uri: string): string {
-  if (!uri.startsWith('file://')) return uri;
-  try {
-    return decodeURIComponent(new URL(uri).pathname);
-  } catch {
-    return uri.replace(/^file:\/\//, '');
-  }
-}
-
-function antigravityCodeActionStatus(content: string): ChangedFileSummary['status'] {
-  if (/\bdeleted file\b/i.test(content)) return 'deleted';
-  if (/\brenamed file\b/i.test(content)) return 'renamed';
-  if (/\bcreated file\b/i.test(content)) return 'added';
-  return 'modified';
-}
-
-function applyAntigravityCodeAction(cwd: string, content: string, files: Map<string, ChangedFileSummary>): void {
-  const status = antigravityCodeActionStatus(content);
-  const pattern = /\b(?:Created|Modified|Updated|Edited|Deleted|Renamed) file\s+(?<uri>file:\/\/[^\s]+|\/[^\s]+|[^\s]+)\b/gi;
-  for (const match of content.matchAll(pattern)) {
-    const rawPath = match.groups?.uri;
-    if (!rawPath) continue;
-    const rel = relativeProjectPath(cwd, filePathFromUri(rawPath));
-    if (rel) upsertFile(files, rel, { status, added: 0, removed: 0 });
-  }
 }
 
 function antigravityToolCalls(row: Record<string, unknown>): readonly Record<string, unknown>[] {

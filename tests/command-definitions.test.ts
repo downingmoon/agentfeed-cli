@@ -15,7 +15,7 @@ describe('command definitions', () => {
       ['Start', ['help', 'commands', 'init', 'login', 'status']],
       ['Share work', ['share', 'collect', 'preview', 'publish', 'open']],
       ['Privacy and drafts', ['scan', 'drafts', 'discard']],
-      ['Automation', ['completion']],
+      ['Shell integration', ['completion']],
       ['Account and diagnostics', ['doctor', 'version', 'rotate', 'logout']]
     ]);
     expect(COMMAND_DESCRIPTIONS.share).toBe('Collect, preview, and optionally upload in one workflow');

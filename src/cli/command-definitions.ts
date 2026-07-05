@@ -76,7 +76,7 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
   { title: 'Start', commands: ['help', 'commands', 'init', 'login', 'status'] },
   { title: 'Share work', commands: ['share', 'collect', 'preview', 'publish', 'open'] },
   { title: 'Privacy and drafts', commands: ['scan', 'drafts', 'discard'] },
-  { title: 'Automation', commands: ['completion'] },
+  { title: 'Shell integration', commands: ['completion'] },
   { title: 'Account and diagnostics', commands: ['doctor', 'version', 'rotate', 'logout'] }
 ];
 

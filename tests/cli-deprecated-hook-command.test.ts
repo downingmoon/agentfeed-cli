@@ -49,11 +49,11 @@ describe('deprecated hook command', () => {
     // Given / When: a legacy hook invocation reaches the current CLI.
     const result = await runCli(['hook', '--help']);
 
-    // Then: the CLI does not restore hook help, install hooks, or advertise automation.
+    // Then: the CLI does not restore the removed command help surface.
     expect(result.code).toBe(1);
     expect(result.stdout).toBe('');
     expect(result.stderr).toContain('Deprecated command: agentfeed hook');
-    expect(result.stderr).toContain('AgentFeed no longer installs AI-agent hooks or automatic draft collection.');
+    expect(result.stderr).toContain('This legacy command was removed.');
     expect(result.stderr).toContain('Run: agentfeed share --dry');
     expect(result.stderr).toContain('Run: agentfeed collect --explain');
     expect(result.stderr).not.toContain('Usage: agentfeed hook');

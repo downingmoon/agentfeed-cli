@@ -33,8 +33,8 @@ describe('CLI command recovery messages', () => {
   it('formats the deprecated hook command without restoring hook help surfaces', () => {
     expect(deprecatedHookCommandMessage()).toBe([
       'Deprecated command: agentfeed hook',
-      'AgentFeed no longer installs AI-agent hooks or automatic draft collection.',
-      'Use explicit review workflows instead:',
+      'This legacy command was removed.',
+      'AgentFeed only uses explicit CLI workflows now:',
       'Run: agentfeed share --dry',
       'Run: agentfeed collect --explain',
       'Run: agentfeed publish --latest --yes'

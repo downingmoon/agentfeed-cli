@@ -86,8 +86,8 @@ export function unknownCommandErrorMessage(command: string, publicCommands: read
 export function deprecatedHookCommandMessage(): string {
   return [
     'Deprecated command: agentfeed hook',
-    'AgentFeed no longer installs AI-agent hooks or automatic draft collection.',
-    'Use explicit review workflows instead:',
+    'This legacy command was removed.',
+    'AgentFeed only uses explicit CLI workflows now:',
     'Run: agentfeed share --dry',
     'Run: agentfeed collect --explain',
     'Run: agentfeed publish --latest --yes'

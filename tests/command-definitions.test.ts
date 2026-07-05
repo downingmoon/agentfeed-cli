@@ -27,9 +27,11 @@ describe('command definitions', () => {
     // Given / When: token is a compatibility alias accepted by the parser.
     const publicCommands = [...PUBLIC_COMMANDS];
 
-    // Then: token stays known for parsing/recovery but remains absent from public command catalogs.
+    // Then: token stays known for parsing/recovery, while retired hook surfaces stay absent.
     expect(publicCommands).not.toContain('token');
+    expect(publicCommands).not.toContain('hook');
     expect(KNOWN_COMMANDS.has('token')).toBe(true);
+    expect(KNOWN_COMMANDS.has('hook')).toBe(false);
     expect(KNOWN_COMMANDS.has('share')).toBe(true);
   });
 });

@@ -30,6 +30,14 @@ describe('CLI command recovery messages', () => {
     ].join('\n'));
   });
 
+  it('formats legacy hook commands as deprecated explicit-collection guidance', () => {
+    expect(unknownCommandErrorMessage('hook', ['share', 'collect', 'status'])).toBe([
+      'Deprecated command: agentfeed hook',
+      'AgentFeed no longer supports agent hooks or background draft collection.',
+      'Use explicit collection instead: agentfeed share --dry or agentfeed collect --explain'
+    ].join('\n'));
+  });
+
   it('formats unknown option recovery with closest option suggestions', () => {
     expect(unknownOptionErrorMessage('share', '--opne-review', ['--open-review', '--no-open-review', '--json'])).toBe([
       'Unknown option: --opne-review',

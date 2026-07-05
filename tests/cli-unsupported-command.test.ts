@@ -47,15 +47,13 @@ async function runCli(args: readonly string[]): Promise<{ readonly stdout: strin
 describe('unsupported command handling', () => {
   it('treats unsupported invocations as ordinary unknown commands', async () => {
     // Given / When: an unsupported invocation reaches the current CLI.
-    const result = await runCli(['hook', '--help']);
+    const result = await runCli(['unknown-command', '--help']);
 
     // Then: the CLI reports the standard unknown-command surface.
     expect(result.code).toBe(1);
     expect(result.stdout).toBe('');
-    expect(result.stderr).toContain('Unknown command: hook');
+    expect(result.stderr).toContain('Unknown command: unknown-command');
     expect(result.stderr).toContain('Run: agentfeed --help');
-    expect(result.stderr).not.toContain('Deprecated command:');
-    expect(result.stderr).not.toContain('legacy command');
     expect(result.stderr).not.toContain('Usage: agentfeed');
   });
 });

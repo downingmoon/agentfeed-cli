@@ -46,4 +46,4 @@ status: done
 ## Remaining Follow-up
 
 - Continue extracting command recovery presentation from `src/cli/index.ts` with behavior-locked tests.
-- Candidate: hook unexpected-extra recovery or bare `--` command argument recovery.
+- Candidate: bare `--` command argument recovery.

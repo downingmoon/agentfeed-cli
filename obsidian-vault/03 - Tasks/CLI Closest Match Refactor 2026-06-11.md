@@ -19,7 +19,7 @@ Extracted CLI typo matching from the oversized entrypoint into `src/cli/closest-
 - `src/cli/closest-match.ts`
   - Owns edit-distance calculation, shared-prefix tie breaking, and `closestMatch` thresholding.
 - `src/cli/index.ts`
-  - Imports `closestMatch` for command, help topic, option, hook, and completion suggestions.
+  - Imports `closestMatch` for command, help topic, option, and completion suggestions.
 - `tests/cli-closest-match.test.ts`
   - Adds focused coverage for close command typos, shared-prefix tie breaking, distant candidates, and empty candidate lists.
 

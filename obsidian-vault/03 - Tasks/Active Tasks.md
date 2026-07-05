@@ -495,7 +495,7 @@ updated: 2026-07-05
 
 
 > [!success] 2026-06-23 CLI project config validation split
-> CLI `src/config/project-config.ts`에서 config shape validation helpers와 `validateProjectConfig`를 `src/config/project-config-validation.ts`로 분리했다. `project-config.ts`는 222 → 122 pure LOC, 신규 validation module은 102 pure LOC다. Targeted config/init/hook UX suite 3 files / 17 tests, typecheck/build, full CLI suite 226 files / 848 tests, built CLI `init --no-git-check --json` + `status --json` smoke, git diff --check를 통과했다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test/smoke로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
+> CLI `src/config/project-config.ts`에서 config shape validation helpers와 `validateProjectConfig`를 `src/config/project-config-validation.ts`로 분리했다. `project-config.ts`는 222 → 122 pure LOC, 신규 validation module은 102 pure LOC다. Targeted config/init CLI UX suite 3 files / 17 tests, typecheck/build, full CLI suite 226 files / 848 tests, built CLI `init --no-git-check --json` + `status --json` smoke, git diff --check를 통과했다. LSP diagnostics는 `Transport closed`로 실패해 typecheck/build/test/smoke로 대체 검증했다. 신규 앱 기능 없음, 서버/인프라/CI/CD 변경 및 배포 없음.
 > - [[CLI Project Config Validation Split 2026-06-23]]
 
 
@@ -2696,7 +2696,7 @@ updated: 2026-07-05
 - [x] [[CLI Command Recovery Refactor 2026-06-11]] — command help/usage/conflict recovery message formatting을 `src/cli/command-recovery.ts`로 분리하고 focused + full CLI suite 통과 확인.
 - [x] [[CLI Closest Match Refactor 2026-06-11]] — command/help/option suggestion typo matching을 `src/cli/closest-match.ts`로 분리하고 focused + full CLI suite 통과 확인.
 - [x] [[CLI Error Output Refactor 2026-06-11]] — JSON error shaping을 `src/cli/error-output.ts`로 분리하고 focused + full CLI suite 통과 확인.
-- [x] [[CLI General Guidance Actions Refactor 2026-06-11]] — privacy scan/hook/init/command catalog follow-up guidance를 `src/cli/guidance-actions.ts`로 분리하고 focused + full CLI suite 통과 확인.
+- [x] [[CLI General Guidance Actions Refactor 2026-06-11]] — privacy scan/init/command catalog follow-up guidance를 `src/cli/guidance-actions.ts`로 분리하고 focused + full CLI suite 통과 확인.
 - [x] [[CLI Draft Navigation Actions Refactor 2026-06-11]] — share dry-run/drafts/discard/open follow-up command guidance를 `src/cli/draft-navigation-actions.ts`로 분리하고 focused + full CLI suite 통과 확인.
 - [x] [[CLI Draft Next Actions Refactor 2026-06-11]] — preview/collect/remote preview next-action 계산을 `src/cli/draft-next-actions.ts`로 분리하고 focused + full CLI suite 통과 확인.
 - [x] [[Integration Type Contract Guard 2026-06-08]] — Backend/Frontend integration type을 `github|claude_code|codex|cursor|gemini_cli|tokscale` contract로 축소하고 setup-guide type mismatch를 fail-closed 처리 완료.

@@ -17,7 +17,7 @@ updated: 2026-06-12
 `src/cli/index.ts` 내부에 있던 command-specific help text map을 dedicated help text boundary로 분리했다.
 
 - `src/cli/command-help-core-text.ts`: token/help/commands/version/init/login/logout/status/rotate help text
-- `src/cli/command-help-workflow-text.ts`: collect/share/preview/publish/scan/hook/doctor/drafts/discard/open/completion help text
+- `src/cli/command-help-workflow-text.ts`: collect/share/preview/publish/scan/doctor/drafts/discard/open/completion help text
 - `src/cli/command-help-text.ts`: `commandHelpText(command)` facade
 
 `index.ts`는 이제 `printCommandHelp(command)`에서 help text를 lookup한 뒤 출력만 수행한다. 모든 새 source/test 파일은 250 pure LOC 아래로 유지했다.

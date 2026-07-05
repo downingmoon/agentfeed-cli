@@ -50,7 +50,7 @@ Both files are under the 250 pure LOC ceiling.
   - Result: failed with `Transport closed`.
   - Fallback evidence: typecheck, build, targeted tests, full suite, and built CLI smoke.
 - `npm test -- --run tests/config.test.ts tests/cli-init-setup-ux.test.ts`
-  - First attempt: init/hook UX `beforeAll` build hook exceeded 10s before a fresh build.
+  - First attempt: init CLI UX `beforeAll` build hook exceeded 10s before a fresh build.
   - After `npm run build`: passed, 3 files / 17 tests.
 - `npm run build`: passed.
 - `npm run typecheck`: passed.

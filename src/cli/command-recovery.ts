@@ -83,20 +83,6 @@ export function unknownCommandErrorMessage(command: string, publicCommands: read
   ].join('\n');
 }
 
-export type RemovedCommandRecovery = {
-  readonly command: string;
-  readonly replacements: readonly string[];
-};
-
-export function removedCommandMessage(input: RemovedCommandRecovery): string {
-  return [
-    `Deprecated command: agentfeed ${input.command}`,
-    'This legacy command was removed.',
-    'AgentFeed only uses explicit CLI workflows now:',
-    ...input.replacements.map((replacement) => `Run: ${replacement}`)
-  ].join('\n');
-}
-
 export function unknownOptionErrorMessage(command: string, optionName: string, candidates: readonly string[]): string {
   const suggestion = closestMatch(optionName, candidates);
   return [

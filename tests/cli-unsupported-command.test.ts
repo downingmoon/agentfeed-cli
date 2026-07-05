@@ -18,7 +18,7 @@ beforeAll(() => {
 }, 30_000);
 
 beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), 'agentfeed-cli-removed-command-'));
+  dir = await mkdtemp(join(tmpdir(), 'agentfeed-cli-unsupported-command-'));
   home = await mkdtemp(join(tmpdir(), 'agentfeed-home-'));
 });
 
@@ -44,18 +44,18 @@ async function runCli(args: readonly string[]): Promise<{ readonly stdout: strin
   }
 }
 
-describe('removed command tombstone', () => {
-  it('fails closed with explicit share and collect replacements', async () => {
-    // Given / When: a removed legacy invocation reaches the current CLI.
+describe('unsupported command handling', () => {
+  it('treats unsupported invocations as ordinary unknown commands', async () => {
+    // Given / When: an unsupported invocation reaches the current CLI.
     const result = await runCli(['hook', '--help']);
 
-    // Then: the CLI does not restore the removed command help surface.
+    // Then: the CLI reports the standard unknown-command surface.
     expect(result.code).toBe(1);
     expect(result.stdout).toBe('');
-    expect(result.stderr).toContain('Deprecated command: agentfeed hook');
-    expect(result.stderr).toContain('This legacy command was removed.');
-    expect(result.stderr).toContain('Run: agentfeed share --dry');
-    expect(result.stderr).toContain('Run: agentfeed collect --explain');
-    expect(result.stderr).not.toContain('Usage: agentfeed hook');
+    expect(result.stderr).toContain('Unknown command: hook');
+    expect(result.stderr).toContain('Run: agentfeed --help');
+    expect(result.stderr).not.toContain('Deprecated command:');
+    expect(result.stderr).not.toContain('legacy command');
+    expect(result.stderr).not.toContain('Usage: agentfeed');
   });
 });

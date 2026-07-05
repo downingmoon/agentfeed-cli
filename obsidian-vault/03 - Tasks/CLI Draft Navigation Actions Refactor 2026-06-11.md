@@ -41,4 +41,4 @@ Extracted share dry-run, draft list, discard, and open follow-up command guidanc
 ## Remaining Follow-up
 
 - Continue shrinking `src/cli/index.ts` by extracting another cohesive pure cluster.
-- Candidate: privacy scan/hook/init next-action helpers, since they are still local to `index.ts` and covered by existing CLI tests.
+- Candidate: privacy scan/init next-action helpers, since they are still local to `index.ts` and covered by existing CLI tests.

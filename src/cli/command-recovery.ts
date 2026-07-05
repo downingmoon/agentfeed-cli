@@ -83,14 +83,17 @@ export function unknownCommandErrorMessage(command: string, publicCommands: read
   ].join('\n');
 }
 
-export function deprecatedHookCommandMessage(): string {
+export type RemovedCommandRecovery = {
+  readonly command: string;
+  readonly replacements: readonly string[];
+};
+
+export function removedCommandMessage(input: RemovedCommandRecovery): string {
   return [
-    'Deprecated command: agentfeed hook',
+    `Deprecated command: agentfeed ${input.command}`,
     'This legacy command was removed.',
     'AgentFeed only uses explicit CLI workflows now:',
-    'Run: agentfeed share --dry',
-    'Run: agentfeed collect --explain',
-    'Run: agentfeed publish --latest --yes'
+    ...input.replacements.map((replacement) => `Run: ${replacement}`)
   ].join('\n');
 }
 

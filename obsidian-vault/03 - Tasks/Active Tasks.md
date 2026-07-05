@@ -13,10 +13,6 @@ updated: 2026-07-05
 # Active Tasks
 
 
-> [!success] 2026-07-05 CLI hook deprecation surface removal
-> Legacy `agentfeed hook`는 deprecated fail-closed 경로로 처리하고, public help/catalog/completion에는 복귀하지 않도록 regression을 추가했다. 자동 draft collection roadmap 흔적은 명시적 `share` / `collect` UX 중심으로 정리했다. Build/typecheck, targeted CLI tests, full CLI suite, diff check 통과.
-> - [[CLI Hook Deprecation Surface Removal 2026-07-05]]
-
 
 > [!success] 2026-07-02 CLI Python triple-quoted shell write evidence
 > CLI shell evidence collector가 Python heredoc 안의 direct/bound triple-quoted writes(`Path(...).write_text("""...""")`, `target.write_text("""...""")`)에서 `lines_added=0`으로 떨어지던 gap을 regression으로 잠갔다. Targeted/full CLI tests, build/typecheck, static scans, manual `agentfeed collect` smoke 통과. Smoke evidence: `/tmp/agentfeed-triple-collect.json`, `files_changed=2`, `lines_added=4`.

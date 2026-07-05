@@ -85,7 +85,7 @@ describe('CLI help and option validation', () => {
     expect(stdout).toContain('List available AgentFeed commands');
     expect(stdout).toContain('Share work:');
     expect(stdout).toContain('Privacy and drafts:');
-    expect(stdout).toContain('Automation:');
+    expect(stdout).toContain('Shell integration:');
     expect(stdout).toContain('Account and diagnostics:');
     expect(stdout).toContain('agentfeed <command> --help');
     expect(stdout).toContain('collect');

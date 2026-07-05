@@ -18,7 +18,7 @@ beforeAll(() => {
 }, 30_000);
 
 beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), 'agentfeed-cli-hook-deprecated-'));
+  dir = await mkdtemp(join(tmpdir(), 'agentfeed-cli-removed-command-'));
   home = await mkdtemp(join(tmpdir(), 'agentfeed-home-'));
 });
 
@@ -44,9 +44,9 @@ async function runCli(args: readonly string[]): Promise<{ readonly stdout: strin
   }
 }
 
-describe('deprecated hook command', () => {
+describe('removed command tombstone', () => {
   it('fails closed with explicit share and collect replacements', async () => {
-    // Given / When: a legacy hook invocation reaches the current CLI.
+    // Given / When: a removed legacy invocation reaches the current CLI.
     const result = await runCli(['hook', '--help']);
 
     // Then: the CLI does not restore the removed command help surface.

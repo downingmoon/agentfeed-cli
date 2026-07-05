@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { commandHelpHint, commandUsageError, conflictingOptionsError, deprecatedHookCommandMessage, unknownCommandErrorMessage, unknownOptionErrorMessage } from '../src/cli/command-recovery.js';
+import { commandHelpHint, commandUsageError, conflictingOptionsError, removedCommandMessage, unknownCommandErrorMessage, unknownOptionErrorMessage } from '../src/cli/command-recovery.js';
 
 describe('CLI command recovery messages', () => {
   it('returns command-specific help hints', () => {
@@ -30,8 +30,11 @@ describe('CLI command recovery messages', () => {
     ].join('\n'));
   });
 
-  it('formats the deprecated hook command without restoring hook help surfaces', () => {
-    expect(deprecatedHookCommandMessage()).toBe([
+  it('formats removed command recovery without restoring public help surfaces', () => {
+    expect(removedCommandMessage({
+      command: 'hook',
+      replacements: ['agentfeed share --dry', 'agentfeed collect --explain', 'agentfeed publish --latest --yes']
+    })).toBe([
       'Deprecated command: agentfeed hook',
       'This legacy command was removed.',
       'AgentFeed only uses explicit CLI workflows now:',

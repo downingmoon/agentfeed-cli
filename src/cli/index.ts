@@ -27,12 +27,16 @@ import { validateCommandArgs } from './command-argument-validator.js';
 import { printCommandHelp as printSurfaceCommandHelp, printHelp as printSurfaceHelp, printHelpTopic as printSurfaceHelpTopic, runCommandsCommand, runCompletionCommand } from './command-surface-command.js';
 import { runCollectCliCommand } from './collect-command.js';
 import { AGENTFEED_CLI_VERSION } from '../version.js';
-import { deprecatedHookCommandMessage } from './command-recovery.js';
+import { removedCommandMessage } from './command-recovery.js';
 import * as ui from './ui.js';
 
 function print(text = '') { process.stdout.write(`${text}\n`); }
 function printLines(lines: readonly string[]): void { for (const line of lines) print(line); }
 function err(text = '') { process.stderr.write(`${text}\n`); }
+
+const REMOVED_COMMAND_REPLACEMENTS: ReadonlyMap<string, readonly string[]> = new Map([
+  ['hook', ['agentfeed share --dry', 'agentfeed collect --explain', 'agentfeed publish --latest --yes']]
+]);
 
 function jsonModeRequested(argv = process.argv.slice(2)): boolean {
   return argv.some((arg) => arg === '--json');
@@ -191,7 +195,10 @@ async function main() {
   if (command.startsWith('-') && command !== '--version' && command !== '-v') {
     throw leadingOptionError({ option: command, args, knownCommands: KNOWN_COMMANDS, commandSpecs: COMMAND_ARG_SPECS });
   }
-  if (command === 'hook') throw new Error(deprecatedHookCommandMessage());
+  const removedCommandReplacements = REMOVED_COMMAND_REPLACEMENTS.get(command);
+  if (removedCommandReplacements) {
+    throw new Error(removedCommandMessage({ command, replacements: removedCommandReplacements }));
+  }
   if (hasHelpFlag(args)) {
     if (!KNOWN_COMMANDS.has(command)) throw unknownCommandError({ command, knownCommands: PUBLIC_COMMANDS });
     printCommandHelp(command);

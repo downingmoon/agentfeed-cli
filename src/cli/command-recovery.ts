@@ -75,6 +75,15 @@ export function tokenRotateUnexpectedArgumentMessage(argument: string, suggestio
 }
 
 export function unknownCommandErrorMessage(command: string, publicCommands: readonly string[]): string {
+  if (command === 'hook' || command === 'hooks') {
+    return [
+      'Deprecated command: agentfeed hook',
+      'AgentFeed no longer installs local agent hooks.',
+      'Use explicit collection from existing agent logs instead:',
+      'Run: agentfeed collect --explain',
+      'Run: agentfeed share --dry'
+    ].join('\n');
+  }
   const suggestion = closestMatch(command, publicCommands);
   return [
     `Unknown command: ${command}`,

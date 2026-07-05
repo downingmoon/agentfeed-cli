@@ -29,7 +29,9 @@ describe('command definitions', () => {
 
     // Then: token stays known for parsing/recovery without becoming a public command.
     expect(publicCommands).not.toContain('token');
+    expect(publicCommands).not.toContain('hook');
     expect(KNOWN_COMMANDS.has('token')).toBe(true);
+    expect(KNOWN_COMMANDS.has('hook')).toBe(false);
     expect(KNOWN_COMMANDS.has('share')).toBe(true);
   });
 });

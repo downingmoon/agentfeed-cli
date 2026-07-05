@@ -122,6 +122,17 @@ describe('CLI help and option validation', () => {
     expect(failure.stdout).not.toMatch(ANSI_ESCAPE_PATTERN);
   });
 
+  it('keeps legacy hook commands deprecated without surfacing them in help', async () => {
+    const failure = await runCliFailureWithEnv(['hook', '--help'], { NO_COLOR: '1' });
+    const help = await runCli(['--help']);
+
+    expect(failure.stderr).toContain('Deprecated command: agentfeed hook');
+    expect(failure.stderr).toContain('Run: agentfeed collect --explain');
+    expect(failure.stderr).toContain('Run: agentfeed share --dry');
+    expect(failure.stdout).toBe('');
+    expect(help.stdout).not.toContain('agentfeed hook');
+  });
+
   it('prints unknown-command errors without ANSI escapes when stderr is not a TTY', async () => {
     const failure = await runCliFailureWithEnv(['statsu'], { NO_COLOR: '' });
 

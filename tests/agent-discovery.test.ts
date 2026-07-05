@@ -25,7 +25,7 @@ describe('agent discovery', () => {
   it('detects multiple local agent and plugin signals', async () => {
     await mkdir(join(home, '.claude', 'projects'), { recursive: true });
     await mkdir(join(home, '.codex', 'sessions'), { recursive: true });
-    await mkdir(join(home, '.gemini', 'tmp', 'project', 'chats'), { recursive: true });
+    await mkdir(join(home, '.gemini', 'antigravity-cli', 'brain'), { recursive: true });
     await mkdir(join(dir, '.cursor'), { recursive: true });
     await mkdir(join(dir, '.omc', 'sessions'), { recursive: true });
     await mkdir(join(dir, '.omx', 'state'), { recursive: true });
@@ -54,9 +54,8 @@ describe('agent discovery', () => {
     expect(lines).toContain('    agentfeed collect --source codex --session-file <path> --explain');
     expect(lines).toContain('  Plugin role: enriches Codex evidence with tokens, subagents, turns, and modes.');
     expect(lines).toContain('  Detected paths:');
-    expect(lines.some((line) => line.includes('Run Gemini or Antigravity CLI in this project.'))).toBe(true);
-    expect(lines.some((line) => line.includes('Try Gemini: agentfeed collect --source gemini-cli --explain'))).toBe(true);
-    expect(lines.some((line) => line.includes('Try Antigravity: agentfeed collect --source antigravity-cli --explain'))).toBe(true);
+    expect(lines.some((line) => line.includes('Run Antigravity CLI in this project.'))).toBe(true);
+    expect(lines.some((line) => line.includes('Try: agentfeed collect --source antigravity-cli --explain'))).toBe(true);
     expect(lines.filter((line) => line.length > 80)).toEqual([]);
   });
 
@@ -90,7 +89,7 @@ describe('agent discovery', () => {
   it('auto-enables detected agents during init', async () => {
     await mkdir(join(home, '.codex', 'sessions'), { recursive: true });
     await mkdir(join(dir, '.cursor'), { recursive: true });
-    await mkdir(join(home, '.gemini', 'tmp', 'project', 'chats'), { recursive: true });
+    await mkdir(join(home, '.gemini', 'antigravity-cli', 'brain'), { recursive: true });
 
     await initProject({ cwd: dir, noGitCheck: true });
 
@@ -106,8 +105,8 @@ describe('agent discovery', () => {
     const signals = await detectAgentSignals({ cwd: dir, home });
 
     expect(signals.gemini_cli.detected).toBe(true);
-    expect(signals.gemini_cli.label).toBe('Gemini/Antigravity CLI');
-    expect(signals.gemini_cli.guidance).toBe('Gemini/Antigravity CLI signals found.');
+    expect(signals.gemini_cli.label).toBe('Antigravity CLI');
+    expect(signals.gemini_cli.guidance).toBe('Antigravity CLI signals found.');
 
     const summary = summarizeAgentSignals(signals);
     const row = summary.signals.find((signal) => signal.key === 'gemini_cli');

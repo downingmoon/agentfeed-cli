@@ -138,7 +138,7 @@ describe('agent session auto source config', () => {
     expect(draft.worklog.metrics.files_changed).toBe(1);
   });
 
-  it('auto-detects Gemini CLI when collect receives a Gemini session file without an explicit source', async () => {
+  it('auto-detects the Gemini-family parser when collect receives a compatible session file without an explicit source', async () => {
     await initProject({ cwd: dir, noGitCheck: false });
     execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });
     execFileSync('git', ['commit', '-m', 'agentfeed config'], { cwd: dir, stdio: 'ignore' });

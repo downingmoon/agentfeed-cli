@@ -121,7 +121,7 @@ describe('share command helpers', () => {
     expect(output).toContain('Collection quality: unknown');
     expect(output).toContain('Collection sources: none');
     expect(output).toContain('Collection guidance:');
-    expect(output).toContain('Run `agentfeed doctor` to verify Claude/Codex/Cursor/Gemini/Antigravity log detection.');
+    expect(output).toContain('Run `agentfeed doctor` to verify Claude/Codex/Cursor/Antigravity log detection.');
     expect(output).toContain('Retry with `agentfeed collect --explain --session-file <path>` if your agent log is stored outside the default locations.');
     expect(output).toContain('Agent evidence is incomplete; tokens, tool calls, commands, models, and per-agent attribution may be missing.');
     expect(output).toContain('Without agent evidence, this draft may be mostly git-diff based instead of full agent-session based.');

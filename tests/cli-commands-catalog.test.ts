@@ -126,7 +126,7 @@ describe('CLI commands catalog help', () => {
       flags: expect.arrayContaining(['--dry', '--yes', '--json', '--clipboard', '--open-review', '--no-save-cursor']),
       value_options: expect.arrayContaining(['--source', '--session-file', '--note']),
       option_details: expect.arrayContaining([
-        expect.objectContaining({ name: '--source', description: 'Select agent source', requires_value: true, value_hint: 'source', value_choices: ['claude-code', 'codex', 'cursor', 'gemini-cli', 'antigravity-cli', 'other'] }),
+        expect.objectContaining({ name: '--source', description: 'Select agent source', requires_value: true, value_hint: 'source', value_choices: ['claude-code', 'codex', 'cursor', 'antigravity-cli', 'other'] }),
         expect.objectContaining({ name: '--no-save-cursor', description: 'Do not advance the collection cursor', requires_value: false })
       ]),
       conflicts: expect.arrayContaining([['--dry', '--yes'], ['--clipboard', '--no-clipboard']]),

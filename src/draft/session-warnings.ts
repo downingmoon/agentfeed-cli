@@ -16,7 +16,7 @@ const SOURCE_LABELS = {
   claude_code: { signal: 'Claude Code', session: 'Claude Code' },
   codex: { signal: 'Codex CLI', session: 'Codex' },
   cursor: { signal: 'Cursor', session: 'Cursor' },
-  gemini_cli: { signal: 'Gemini/Antigravity CLI', session: 'Gemini/Antigravity' },
+  gemini_cli: { signal: 'Antigravity CLI', session: 'Antigravity' },
   other: { signal: 'Agent', session: 'Agent' }
 } as const satisfies Record<AgentType, { readonly signal: string; readonly session: string }>;
 
@@ -47,6 +47,6 @@ export function globalAgentSignalMismatchWarnings(input: GlobalSignalMismatchInp
         ? ' Antigravity transcript.jsonl files were detected, but none matched this project root.'
         : '';
       const dbLabel = transcriptHint ? 'Antigravity conversation databases were also detected' : 'Antigravity conversation databases were detected';
-      return `${base}${transcriptHint} ${dbLabel}, but AgentFeed currently reads Gemini JSONL chats or Antigravity transcript.jsonl files, not Antigravity protobuf SQLite databases.`;
+      return `${base}${transcriptHint} ${dbLabel}, but AgentFeed currently reads Antigravity transcript.jsonl files or compatible legacy JSONL chats, not Antigravity protobuf SQLite databases.`;
     });
 }

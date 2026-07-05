@@ -62,7 +62,6 @@ describe('CLI version metadata', () => {
       'cli',
       'codex',
       'claude-code',
-      'gemini-cli',
       'antigravity-cli',
       'cursor'
     ]));

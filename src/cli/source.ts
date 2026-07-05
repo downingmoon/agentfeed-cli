@@ -7,16 +7,16 @@ const SOURCE_ALIASES: Record<string, AgentType> = {
   claude_code_sdk: 'claude_code',
   codex: 'codex',
   cursor: 'cursor',
-  gemini: 'gemini_cli',
-  gemini_cli: 'gemini_cli',
   antigravity: 'gemini_cli',
   antigravity_cli: 'gemini_cli',
   agy: 'gemini_cli',
   other: 'other'
 };
 
-export const SUPPORTED_SOURCES = ['claude-code', 'codex', 'cursor', 'gemini-cli', 'antigravity-cli', 'other'] as const;
+export const SUPPORTED_SOURCES = ['claude-code', 'codex', 'cursor', 'antigravity-cli', 'other'] as const;
 type SourceCommand = 'collect' | 'share';
+
+const DEPRECATED_GEMINI_SOURCE_ALIASES = new Set(['gemini', 'gemini_cli']);
 
 function editDistance(a: string, b: string): number {
   const previous = Array.from({ length: b.length + 1 }, (_, i) => i);
@@ -41,6 +41,7 @@ function commonPrefixLength(a: string, b: string): number {
 
 function closestSource(input: string): string | null {
   const normalized = input.trim().toLowerCase();
+  if (normalized.replace(/-/g, '_').startsWith('gem')) return 'antigravity-cli';
   let best: { source: string; distance: number; prefix: number } | null = null;
   for (const source of SUPPORTED_SOURCES) {
     const distance = editDistance(normalized, source);
@@ -59,7 +60,7 @@ function unsupportedSourceMessage(value: string, command?: SourceCommand): strin
   const lines = [
     `Unsupported agent source: ${value}`,
     `Supported sources: ${SUPPORTED_SOURCES.join(', ')}`,
-    'Tip: omit --source to let AgentFeed auto-detect Claude/Codex/Cursor/Gemini/Antigravity sessions.'
+    'Tip: omit --source to let AgentFeed auto-detect Claude/Codex/Cursor/Antigravity sessions.'
   ];
   if (suggestion) lines.push(`Did you mean: --source ${suggestion}`);
   if (command === 'share') {
@@ -74,9 +75,26 @@ function unsupportedSourceMessage(value: string, command?: SourceCommand): strin
   return lines.join('\n');
 }
 
+function deprecatedSourceMessage(value: string, command?: SourceCommand): string {
+  const lines = [
+    `Deprecated agent source: ${value}`,
+    'Standalone Gemini CLI collection is deprecated. Use Antigravity CLI for Gemini-family sessions.',
+    'Use: --source antigravity-cli'
+  ];
+  if (command === 'share') {
+    lines.push('Run: agentfeed share --source antigravity-cli --dry');
+    lines.push('Run: agentfeed share --help');
+  } else {
+    lines.push('Run: agentfeed collect --source antigravity-cli --explain');
+    lines.push('Run: agentfeed collect --help');
+  }
+  return lines.join('\n');
+}
+
 export function parseAgentSource(value?: string | null, command?: SourceCommand): AgentType | undefined {
   if (!value) return undefined;
   const normalized = value.trim().toLowerCase().replace(/-/g, '_');
+  if (DEPRECATED_GEMINI_SOURCE_ALIASES.has(normalized)) throw new Error(deprecatedSourceMessage(value, command));
   const source = SOURCE_ALIASES[normalized];
   if (!source) {
     throw new Error(unsupportedSourceMessage(value, command));

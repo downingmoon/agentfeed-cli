@@ -3,14 +3,14 @@ export const WORKFLOW_COMMAND_HELP_TEXT: Readonly<Record<string, string>> = {
 
 Collect local agent work into a private review draft.
 By default, collect saves locally and does not upload.
-Omit --source to auto-detect Claude/Codex/Cursor/Gemini/Antigravity logs.
+Omit --source to auto-detect Claude/Codex/Cursor/Antigravity logs.
 
 When to use:
   Use for advanced collection control before previewing or publishing.
 
 Common options:
   --source <source>         Override source (auto-detect is default)
-      Values: claude-code, codex, cursor, gemini-cli, antigravity-cli, other
+      Values: claude-code, codex, cursor, antigravity-cli, other
   --session-file <path>     Read an explicit agent session file
   --since <timestamp>       Start window (ISO timestamp or last-collect)
   --until <timestamp>       End collection window (ISO timestamp)
@@ -38,7 +38,7 @@ Examples:
 
 Collect, preview, and optionally upload a private review draft.
 Use this as the daily one-command workflow.
-Omit --source to auto-detect Claude/Codex/Cursor/Gemini/Antigravity logs.
+Omit --source to auto-detect Claude/Codex/Cursor/Antigravity logs.
 
 When to use:
   Use after an AI coding session to make a reviewable worklog.
@@ -47,7 +47,7 @@ Options:
   --yes, -y                 Upload without interactive confirmation
   --dry, --dry-run          Collect and preview only; do not upload
   --source <source>         Override source (auto-detect is default)
-      Values: claude-code, codex, cursor, gemini-cli, antigravity-cli, other
+      Values: claude-code, codex, cursor, antigravity-cli, other
   --session-file <path>     Read an explicit agent session file
   --since <timestamp>       Start window (ISO timestamp or last-collect)
   --until <timestamp>       End collection window (ISO timestamp)

@@ -27,7 +27,7 @@ afterEach(async () => {
 });
 
 describe('agent session Gemini metrics', () => {
-  it('extracts Gemini CLI tool calls, Superpowers skill use, tokens, and file edits', async () => {
+  it('extracts Gemini-family JSONL tool calls, Superpowers skill use, tokens, and file edits', async () => {
     const sessionFile = join(dir, 'gemini-session.jsonl');
     await writeJsonl(sessionFile, [
       { sessionId: 'gemini-session-1', projectHash: 'hash', startTime: '2026-05-20T00:00:00Z', lastUpdated: '2026-05-20T00:02:00Z', kind: 'main' },

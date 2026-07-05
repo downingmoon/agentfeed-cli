@@ -4,7 +4,7 @@ import { parseShareArgs } from '../src/cli/share.js';
 
 describe('share command argument parsing', () => {
   it('parses share-specific options and preserves collect source options', () => {
-    expect(parseShareArgs(['--dry', '--open-review', '--source', 'gemini-cli', '--session-file=/tmp/session.jsonl', '--since', '2026-05-20T01:00:00Z', '--until=2026-05-20T02:00:00Z', '--note', 'Refined login flow', '--no-clipboard', '--no-save-cursor', '--run-configured-commands'])).toEqual({
+    expect(parseShareArgs(['--dry', '--open-review', '--source', 'antigravity-cli', '--session-file=/tmp/session.jsonl', '--since', '2026-05-20T01:00:00Z', '--until=2026-05-20T02:00:00Z', '--note', 'Refined login flow', '--no-clipboard', '--no-save-cursor', '--run-configured-commands'])).toEqual({
       dryRun: true,
       openReview: true,
       noOpenReview: false,
@@ -25,7 +25,7 @@ describe('share command argument parsing', () => {
     expect(parseShareArgs(['--no-open-review']).noOpenReview).toBe(true);
   });
 
-  it('accepts Antigravity CLI aliases as Gemini-compatible source values', () => {
+  it('accepts Antigravity CLI aliases as the supported Gemini-family source values', () => {
     expect(parseShareArgs(['--source', 'antigravity-cli']).source).toBe('gemini_cli');
     expect(parseShareArgs(['--source', 'agy']).source).toBe('gemini_cli');
   });
@@ -37,6 +37,6 @@ describe('share command argument parsing', () => {
   });
 
   it('rejects unsupported share source values before creating drafts', () => {
-    expect(() => parseShareArgs(['--source', 'gemni-cli'])).toThrow(/Unsupported agent source: gemni-cli[\s\S]*Tip: omit --source to let AgentFeed auto-detect Claude\/Codex\/Cursor\/Gemini\/Antigravity sessions\.[\s\S]*Did you mean: --source gemini-cli[\s\S]*Run: agentfeed share --dry[\s\S]*Run: agentfeed share --source gemini-cli --dry[\s\S]*Run: agentfeed share --help/i);
+    expect(() => parseShareArgs(['--source', 'gemni-cli'])).toThrow(/Unsupported agent source: gemni-cli[\s\S]*Tip: omit --source to let AgentFeed auto-detect Claude\/Codex\/Cursor\/Antigravity sessions\.[\s\S]*Did you mean: --source antigravity-cli[\s\S]*Run: agentfeed share --dry[\s\S]*Run: agentfeed share --source antigravity-cli --dry[\s\S]*Run: agentfeed share --help/i);
   });
 });

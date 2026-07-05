@@ -30,11 +30,10 @@ describe('CLI command recovery messages', () => {
     ].join('\n'));
   });
 
-  it('formats legacy hook commands as deprecated explicit-collection guidance', () => {
-    expect(unknownCommandErrorMessage('hook', ['share', 'collect', 'status'])).toBe([
-      'Deprecated command: agentfeed hook',
-      'AgentFeed no longer supports agent hooks or background draft collection.',
-      'Use explicit collection instead: agentfeed share --dry or agentfeed collect --explain'
+  it('formats removed command names as ordinary unknown commands', () => {
+    expect(unknownCommandErrorMessage('automate', ['share', 'collect', 'status'])).toBe([
+      'Unknown command: automate',
+      'Run: agentfeed --help'
     ].join('\n'));
   });
 

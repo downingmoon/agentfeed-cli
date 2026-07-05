@@ -1,18 +1,5 @@
 import { closestMatch } from './closest-match.js';
 
-const DEPRECATED_COMMAND_MESSAGES: Readonly<Record<string, readonly string[]>> = {
-  hook: [
-    'Deprecated command: agentfeed hook',
-    'AgentFeed no longer supports agent hooks or background draft collection.',
-    'Use explicit collection instead: agentfeed share --dry or agentfeed collect --explain'
-  ],
-  hooks: [
-    'Deprecated command: agentfeed hooks',
-    'AgentFeed no longer supports agent hooks or background draft collection.',
-    'Use explicit collection instead: agentfeed share --dry or agentfeed collect --explain'
-  ]
-} as const;
-
 export function commandHelpHint(command: string): string {
   if (command === 'token') return 'Run: agentfeed token rotate --help';
   if (command === 'help') return 'Run: agentfeed help --help';
@@ -88,8 +75,6 @@ export function tokenRotateUnexpectedArgumentMessage(argument: string, suggestio
 }
 
 export function unknownCommandErrorMessage(command: string, publicCommands: readonly string[]): string {
-  const deprecatedMessage = DEPRECATED_COMMAND_MESSAGES[command];
-  if (deprecatedMessage) return deprecatedMessage.join('\n');
   const suggestion = closestMatch(command, publicCommands);
   return [
     `Unknown command: ${command}`,

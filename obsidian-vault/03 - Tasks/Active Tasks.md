@@ -7,10 +7,15 @@ status: active
 tags:
   - agentfeed/todo
   - project/tasks
-updated: 2026-07-02
+updated: 2026-07-05
 ---
 
 # Active Tasks
+
+
+> [!success] 2026-07-05 CLI hook deprecation surface removal
+> Legacy `agentfeed hook`는 deprecated fail-closed 경로로 처리하고, public help/catalog/completion에는 복귀하지 않도록 regression을 추가했다. 자동 draft collection roadmap 흔적은 명시적 `share` / `collect` UX 중심으로 정리했다. Build/typecheck, targeted CLI tests, full CLI suite, diff check 통과.
+> - [[CLI Hook Deprecation Surface Removal 2026-07-05]]
 
 
 > [!success] 2026-07-02 CLI Python triple-quoted shell write evidence

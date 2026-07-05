@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { commandHelpHint, commandUsageError, conflictingOptionsError, unknownCommandErrorMessage, unknownOptionErrorMessage } from '../src/cli/command-recovery.js';
+import { commandHelpHint, commandUsageError, conflictingOptionsError, deprecatedHookCommandMessage, unknownCommandErrorMessage, unknownOptionErrorMessage } from '../src/cli/command-recovery.js';
 
 describe('CLI command recovery messages', () => {
   it('returns command-specific help hints', () => {
@@ -27,6 +27,17 @@ describe('CLI command recovery messages', () => {
     expect(unknownCommandErrorMessage('xyz', ['status', 'share', 'scan'])).toBe([
       'Unknown command: xyz',
       'Run: agentfeed --help'
+    ].join('\n'));
+  });
+
+  it('formats the deprecated hook command without restoring hook help surfaces', () => {
+    expect(deprecatedHookCommandMessage()).toBe([
+      'Deprecated command: agentfeed hook',
+      'AgentFeed no longer installs AI-agent hooks or automatic draft collection.',
+      'Use explicit review workflows instead:',
+      'Run: agentfeed share --dry',
+      'Run: agentfeed collect --explain',
+      'Run: agentfeed publish --latest --yes'
     ].join('\n'));
   });
 

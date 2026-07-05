@@ -83,6 +83,17 @@ export function unknownCommandErrorMessage(command: string, publicCommands: read
   ].join('\n');
 }
 
+export function deprecatedHookCommandMessage(): string {
+  return [
+    'Deprecated command: agentfeed hook',
+    'AgentFeed no longer installs AI-agent hooks or automatic draft collection.',
+    'Use explicit review workflows instead:',
+    'Run: agentfeed share --dry',
+    'Run: agentfeed collect --explain',
+    'Run: agentfeed publish --latest --yes'
+  ].join('\n');
+}
+
 export function unknownOptionErrorMessage(command: string, optionName: string, candidates: readonly string[]): string {
   const suggestion = closestMatch(optionName, candidates);
   return [

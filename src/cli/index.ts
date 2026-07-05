@@ -27,6 +27,7 @@ import { validateCommandArgs } from './command-argument-validator.js';
 import { printCommandHelp as printSurfaceCommandHelp, printHelp as printSurfaceHelp, printHelpTopic as printSurfaceHelpTopic, runCommandsCommand, runCompletionCommand } from './command-surface-command.js';
 import { runCollectCliCommand } from './collect-command.js';
 import { AGENTFEED_CLI_VERSION } from '../version.js';
+import { deprecatedHookCommandMessage } from './command-recovery.js';
 import * as ui from './ui.js';
 
 function print(text = '') { process.stdout.write(`${text}\n`); }
@@ -190,6 +191,7 @@ async function main() {
   if (command.startsWith('-') && command !== '--version' && command !== '-v') {
     throw leadingOptionError({ option: command, args, knownCommands: KNOWN_COMMANDS, commandSpecs: COMMAND_ARG_SPECS });
   }
+  if (command === 'hook') throw new Error(deprecatedHookCommandMessage());
   if (hasHelpFlag(args)) {
     if (!KNOWN_COMMANDS.has(command)) throw unknownCommandError({ command, knownCommands: PUBLIC_COMMANDS });
     printCommandHelp(command);

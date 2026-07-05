@@ -138,25 +138,4 @@ describe('agent session auto source config', () => {
     expect(draft.worklog.metrics.files_changed).toBe(1);
   });
 
-  it('auto-detects the Gemini-family parser when collect receives a compatible session file without an explicit source', async () => {
-    await initProject({ cwd: dir, noGitCheck: false });
-    execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });
-    execFileSync('git', ['commit', '-m', 'agentfeed config'], { cwd: dir, stdio: 'ignore' });
-    const sessionFile = join(dir, 'gemini-session.jsonl');
-    await writeJsonl(sessionFile, [
-      { sessionId: 'gemini-auto-source', startTime: '2026-05-20T00:00:00Z', lastUpdated: '2026-05-20T00:00:01Z', kind: 'main' },
-      { id: 'g1', timestamp: '2026-05-20T00:00:01Z', type: 'gemini', model: 'gemini-3-flash-preview', tokens: { total: 10 }, toolCalls: [
-        { id: 'tool-1', name: 'write_file', status: 'success', args: { file_path: join(dir, 'src', 'gemini.ts'), content: 'export const gemini = true;\\n' } }
-      ] }
-    ]);
-
-    const draft = await collectDraft({ cwd: dir, sessionFile });
-
-    expect(draft.worklog.agent).toBe('gemini_cli');
-    expect(draft.source.agent).toBe('gemini_cli');
-    expect(draft.source.session_id).toBe('gemini-auto-source');
-    expect(draft.worklog.metrics.tool_calls).toBe(1);
-    expect(draft.worklog.metrics.tokens_used).toBe(10);
-  });
-
 });

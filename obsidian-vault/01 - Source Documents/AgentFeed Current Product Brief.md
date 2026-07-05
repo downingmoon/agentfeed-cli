@@ -14,7 +14,7 @@ updated: 2026-06-04
 
 ## 한 줄 정의
 
-AgentFeed는 Claude Code, Codex CLI, Gemini CLI, Cursor 등으로 수행한 개발 작업을 안전하게 수집해 **검토 가능한 worklog**로 만들고, 사용자가 직접 게시해 portfolio/feed로 공유하는 서비스다.
+AgentFeed는 Claude Code, Codex CLI, Antigravity CLI, Cursor 등으로 수행한 개발 작업을 안전하게 수집해 **검토 가능한 worklog**로 만들고, 사용자가 직접 게시해 portfolio/feed로 공유하는 서비스다.
 
 ## 현재 사용 흐름
 

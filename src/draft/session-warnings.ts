@@ -47,6 +47,6 @@ export function globalAgentSignalMismatchWarnings(input: GlobalSignalMismatchInp
         ? ' Antigravity transcript.jsonl files were detected, but none matched this project root.'
         : '';
       const dbLabel = transcriptHint ? 'Antigravity conversation databases were also detected' : 'Antigravity conversation databases were detected';
-      return `${base}${transcriptHint} ${dbLabel}, but AgentFeed currently reads Antigravity transcript.jsonl files or compatible legacy JSONL chats, not Antigravity protobuf SQLite databases.`;
+      return `${base}${transcriptHint} ${dbLabel}, but AgentFeed currently reads Antigravity transcript.jsonl files, not Antigravity protobuf SQLite databases.`;
     });
 }

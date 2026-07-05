@@ -16,7 +16,7 @@ const SOURCE_ALIASES: Record<string, AgentType> = {
 export const SUPPORTED_SOURCES = ['claude-code', 'codex', 'cursor', 'antigravity-cli', 'other'] as const;
 type SourceCommand = 'collect' | 'share';
 
-const DEPRECATED_GEMINI_SOURCE_ALIASES = new Set(['gemini', 'gemini_cli']);
+const DEPRECATED_SOURCE_ALIASES = new Set(['gemini', 'gemini_cli']);
 
 function editDistance(a: string, b: string): number {
   const previous = Array.from({ length: b.length + 1 }, (_, i) => i);
@@ -78,7 +78,7 @@ function unsupportedSourceMessage(value: string, command?: SourceCommand): strin
 function deprecatedSourceMessage(value: string, command?: SourceCommand): string {
   const lines = [
     `Deprecated agent source: ${value}`,
-    'Standalone Gemini CLI collection is deprecated. Use Antigravity CLI for Gemini-family sessions.',
+    'This source is deprecated. Use Antigravity CLI for supported collection.',
     'Use: --source antigravity-cli'
   ];
   if (command === 'share') {
@@ -94,7 +94,7 @@ function deprecatedSourceMessage(value: string, command?: SourceCommand): string
 export function parseAgentSource(value?: string | null, command?: SourceCommand): AgentType | undefined {
   if (!value) return undefined;
   const normalized = value.trim().toLowerCase().replace(/-/g, '_');
-  if (DEPRECATED_GEMINI_SOURCE_ALIASES.has(normalized)) throw new Error(deprecatedSourceMessage(value, command));
+  if (DEPRECATED_SOURCE_ALIASES.has(normalized)) throw new Error(deprecatedSourceMessage(value, command));
   const source = SOURCE_ALIASES[normalized];
   if (!source) {
     throw new Error(unsupportedSourceMessage(value, command));

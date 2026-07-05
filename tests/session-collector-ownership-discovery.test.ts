@@ -101,27 +101,6 @@ describe('agent session ownership and discovery', () => {
     expect(metrics?.changed_files.map((file) => file.path)).toEqual(['src/codex-explicit-no-cwd.ts']);
   });
 
-  it('keeps Gemini auto-discovery bound to .project_root for cwd-less session rows', async () => {
-    const home = join(dir, 'home');
-    process.env.HOME = home;
-    const projectTmpDir = join(home, '.gemini', 'tmp', 'project-hash');
-    const sessionFile = join(projectTmpDir, 'chats', 'gemini-project-root-session.jsonl');
-    await mkdir(join(projectTmpDir, 'chats'), { recursive: true });
-    await writeFile(join(projectTmpDir, '.project_root'), `${dir}\n`);
-    await writeJsonl(sessionFile, [
-      { sessionId: 'gemini-project-root-session', startTime: '2026-05-20T00:00:00Z', lastUpdated: '2026-05-20T00:01:00Z', kind: 'main' },
-      { id: 'g1', timestamp: '2026-05-20T00:00:10Z', type: 'gemini', model: 'gemini-3-flash-preview', tokens: { total: 12 }, toolCalls: [
-        { id: 'tool-1', name: 'write_file', status: 'success', args: { file_path: join(dir, 'src', 'gemini-project-root.ts'), content: 'export const geminiProjectRoot = true;\n' } }
-      ] }
-    ]);
-
-    const metrics = await collectAgentSessionMetrics({ cwd: dir, source: 'gemini_cli' });
-
-    expect(metrics?.session_id).toBe('gemini-project-root-session');
-    expect(metrics?.tokens_used).toBe(12);
-    expect(metrics?.changed_files.map((file) => file.path)).toEqual(['src/gemini-project-root.ts']);
-  });
-
   it('auto-discovers cwd-less Antigravity transcripts from history workspace mapping', async () => {
     const home = join(dir, 'home');
     process.env.HOME = home;

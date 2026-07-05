@@ -105,7 +105,7 @@ agentfeed open
 - Browser extension
 - Cursor integration
 - Codex integration
-- Gemini CLI integration
+- Antigravity CLI integration
 - Raw transcript upload
 - Raw diff upload
 - Automatic test execution by default

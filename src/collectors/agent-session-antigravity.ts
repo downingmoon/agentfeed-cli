@@ -1,12 +1,13 @@
 import type { ChangedFileSummary, CollectionSource, CollectionWindow, CollectionWindowReason } from '../types.js';
 import { basename, dirname } from 'node:path';
-import { asRecord, asString, explicitCostUsd, numeric, relativeProjectPath } from './agent-session-core.js';
+import { asRecord, asString, explicitCostUsd, inferEffectiveCollectionWindow, numeric, relativeProjectPath } from './agent-session-core.js';
 import { antigravityCodeActionPaths, antigravityFilePathFromUri, applyAntigravityCodeAction } from './agent-session-antigravity-code-action.js';
 import { createAntigravityToolResultTracker, isAntigravityToolResultRowType } from './agent-session-antigravity-tool-results.js';
 import { antigravitySubagentIds, completedAntigravitySubagentId, countAntigravitySubagentSpecs, unquotedAntigravityString } from './agent-session-antigravity-values.js';
 import { finalizeAgentSession, type AgentSessionMetrics } from './agent-session-finalize.js';
 import { applyShellFileEvidence } from './agent-session-shell-files.js';
 import { recordTestCommandResult } from './agent-session-test-metrics.js';
+import { readSessionJsonlRecords } from './agent-session-files.js';
 import { failedStatus, isTestCommand, toolOutputFailed } from './agent-session-tooling.js';
 import { hasCollectionWindowBoundary, parseBoundaryMillis, rowInAgentCollectionWindow, rowTimestampMillis } from './agent-session-window.js';
 
@@ -103,6 +104,14 @@ function antigravityPlannedResultPath(cwd: string, toolName: string | null, args
       return null;
   }
   return rawPath ? relativeProjectPath(cwd, antigravityFilePathFromUri(rawPath)) : null;
+}
+
+
+export async function parseAntigravitySessionFile(cwd: string, sessionFile: string, window?: CollectionWindow | null, inferIdleGap = true): Promise<AgentSessionMetrics | null> {
+  const rows = await readSessionJsonlRecords(sessionFile);
+  if (!rows || !isAntigravityTranscript(rows)) return null;
+  const effective = inferEffectiveCollectionWindow(rows, window, { inferIdleGap });
+  return parseAntigravityTranscript(cwd, sessionFile, rows, effective.window, effective.reason);
 }
 
 export function parseAntigravityTranscript(cwd: string, sessionFile: string, rows: readonly Record<string, unknown>[], effectiveWindow: CollectionWindow | null, effectiveReason: CollectionWindowReason | null): AgentSessionMetrics | null {

@@ -62,7 +62,7 @@ describe('global agent signal warnings', () => {
     const result = await collectDraftWithStatus({ cwd: dir, source: 'gemini_cli', force: true });
 
     expect(result.draft.worklog.metrics.collection_sources).toBeNull();
-    expect(result.warnings).toContain('Antigravity CLI signals were detected, but no Antigravity session matched this project root. If the agent ran from a parent or workspace directory, run agentfeed from that initialized root or pass a session file that belongs to this project. Antigravity transcript.jsonl files were detected, but none matched this project root. Antigravity conversation databases were also detected, but AgentFeed currently reads Antigravity transcript.jsonl files or compatible legacy JSONL chats, not Antigravity protobuf SQLite databases.');
+    expect(result.warnings).toContain('Antigravity CLI signals were detected, but no Antigravity session matched this project root. If the agent ran from a parent or workspace directory, run agentfeed from that initialized root or pass a session file that belongs to this project. Antigravity transcript.jsonl files were detected, but none matched this project root. Antigravity conversation databases were also detected, but AgentFeed currently reads Antigravity transcript.jsonl files, not Antigravity protobuf SQLite databases.');
   });
 
   it('warns when Antigravity conversation databases exist but no JSONL transcript matches the project root', async () => {
@@ -73,6 +73,6 @@ describe('global agent signal warnings', () => {
     const result = await collectDraftWithStatus({ cwd: dir, source: 'gemini_cli', force: true });
 
     expect(result.draft.worklog.metrics.collection_sources).toBeNull();
-    expect(result.warnings).toContain('Antigravity CLI signals were detected, but no Antigravity session matched this project root. If the agent ran from a parent or workspace directory, run agentfeed from that initialized root or pass a session file that belongs to this project. Antigravity conversation databases were detected, but AgentFeed currently reads Antigravity transcript.jsonl files or compatible legacy JSONL chats, not Antigravity protobuf SQLite databases.');
+    expect(result.warnings).toContain('Antigravity CLI signals were detected, but no Antigravity session matched this project root. If the agent ran from a parent or workspace directory, run agentfeed from that initialized root or pass a session file that belongs to this project. Antigravity conversation databases were detected, but AgentFeed currently reads Antigravity transcript.jsonl files, not Antigravity protobuf SQLite databases.');
   });
 });

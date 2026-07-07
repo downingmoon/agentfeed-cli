@@ -20,7 +20,8 @@ const patterns: PatternRule[] = [
   { type: 'api_key_pattern', severity: 'high', regex: /\bsk-ant-[A-Za-z0-9_-]{20,}\b/gi, replacement: '[REDACTED_SECRET]', message: 'Possible Anthropic API key detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\bsk-[A-Za-z0-9_-]{20,}\b/gi, replacement: '[REDACTED_SECRET]', message: 'Possible API key detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\baf_(?:live|test|dev)_[A-Za-z0-9_-]{8,}\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible AgentFeed token detected.' },
-  { type: 'api_key_pattern', severity: 'high', regex: /\b(?:(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|glpat-[A-Za-z0-9_-]{20,}|hf_[A-Za-z0-9]{20,}|(?:sk|rk)_(?:live|test)_[A-Za-z0-9]{16,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{20,})\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible token detected.' },
+  { type: 'api_key_pattern', severity: 'critical', regex: /\b(?:AKIA|ASIA)[A-Z0-9]{16}\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible cloud access key detected.' },
+  { type: 'api_key_pattern', severity: 'high', regex: /\b(?:(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|glpat-[A-Za-z0-9_-]{20,}|hf_[A-Za-z0-9]{20,}|(?:sk|rk)_(?:live|test)_[A-Za-z0-9]{16,}|AIza[0-9A-Za-z_-]{20,})\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible token detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\bnpm_[A-Za-z0-9]{36,}\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible npm token detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\bxox[baprs]-[A-Za-z0-9-]{20,}\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible Slack token detected.' },
   { type: 'api_key_pattern', severity: 'high', regex: /\b[MN][A-Za-z0-9_-]{23}\.[A-Za-z0-9_-]{6}\.[A-Za-z0-9_-]{27,}\b/g, replacement: '[REDACTED_SECRET]', message: 'Possible Discord bot token detected.' },
@@ -32,7 +33,7 @@ const patterns: PatternRule[] = [
   { type: 'sensitive_path', severity: 'medium', regex: /(?<!\S)[A-Za-z]:\\(?:[^\\\r\n/:*?"<>|]+\\){1,}[^\\\s\r\n/:*?"<>|]+/g, replacement: '[REDACTED_PATH]', message: 'Windows absolute local path detected.' },
   { type: 'sensitive_path', severity: 'medium', regex: /(?<!\S)\\\\(?:[^\\\r\n/:*?"<>|]+\\){2,}[^\\\s\r\n/:*?"<>|]+/g, replacement: '[REDACTED_PATH]', message: 'UNC local path detected.' },
   { type: 'sensitive_path', severity: 'medium', regex: /(?<!\S)(?:~|\/)(?:[^/\r\n'"<>]+\/){1,}[^/\s\r\n'"<>]+/gu, replacement: '[REDACTED_PATH]', message: 'Absolute local path detected.' },
-  { type: 'env_file_reference', severity: 'low', regex: /(?:^|\b)(?:\.env|id_rsa|credentials\.json)(?:\b|$)/gi, replacement: '[REDACTED_PATH]', message: 'Sensitive filename reference detected.' }
+  { type: 'env_file_reference', severity: 'high', regex: /(^|[\s/])(?:\.env(?:\.[A-Za-z0-9_-]+)?|\.npmrc|\.pypirc|\.netrc|\.aws\/credentials|\.ssh\/(?:config|id_[A-Za-z0-9_]+)|id_rsa|credentials\.json)(?:\b|$)/gi, replacement: '$1[REDACTED_PATH]', message: 'Sensitive configuration file reference detected.' }
 ];
 
 function isScanInput(value: unknown): value is ScanInput {
@@ -131,6 +132,6 @@ export function scanAndRedactFields<T extends ScanInput>(input: T): { scan: Priv
     }
     if (replaced !== value) setDeep(redacted, field, replaced);
   }
-  const status = findings.some((f) => f.severity === 'high') ? 'danger' : findings.length ? 'warning' : 'safe';
+  const status = findings.some((f) => f.severity === 'high' || f.severity === 'critical') ? 'danger' : findings.length ? 'warning' : 'safe';
   return { redacted, scan: { status, findings } };
 }

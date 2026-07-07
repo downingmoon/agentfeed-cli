@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { createEmptyDraft } from '../src/draft/create.js';
 import { applyRedactedPublicFields } from '../src/privacy/draft-sanitizer.js';
 import { scanAndRedactFields } from '../src/privacy/scan.js';
+import { loadPrivacyScannerParityCases } from './privacy-parity-fixture.js';
+
+const privacyScannerParityCases = loadPrivacyScannerParityCases();
 
 describe('privacy scanner', () => {
 
@@ -70,6 +73,18 @@ describe('privacy scanner', () => {
   ])('detects %s', (_label, value, type) => {
     const result = scanAndRedactFields({ summary: `contains ${value}` });
     expect(result.scan.findings.some((f) => f.type === type)).toBe(true);
+  });
+
+  it.each(privacyScannerParityCases)('matches shared scanner parity fixture: $label', (testCase) => {
+    // Given: a public field contains a sensitive sample from the shared CLI/Backend parity fixture.
+    const result = scanAndRedactFields({ summary: `contains ${testCase.value}` });
+
+    // Then: the CLI classifies it with the fixture's expected type, severity, and CLI status.
+    expect(result.scan.status).toBe(testCase.cliStatus);
+    expect(result.scan.findings).toContainEqual(expect.objectContaining({
+      type: testCase.type,
+      severity: testCase.severity
+    }));
   });
 
   it.each([

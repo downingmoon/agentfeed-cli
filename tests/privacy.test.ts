@@ -42,6 +42,16 @@ describe('privacy scanner', () => {
     expect(result.scan.status).toBe('danger');
   });
 
+  it('classifies email addresses as high severity because public fields can expose third-party personal data', () => {
+    // Given: a public worklog field contains an email address.
+    const result = scanAndRedactFields({ summary: 'Contact dev@example.com before launch' });
+
+    // Then: CLI publish safety matches the backend server-side publish gate.
+    expect(result.scan.status).toBe('danger');
+    expect(result.scan.findings).toEqual([expect.objectContaining({ type: 'email_address', severity: 'high' })]);
+    expect(result.redacted.summary).toBe('Contact [REDACTED_EMAIL] before launch');
+  });
+
   it.each([
     ['OpenAI key', 'sk-abcdefghijklmnopqrstuvwxyz1234567890', 'api_key_pattern'],
     ['Anthropic key', 'sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890', 'api_key_pattern'],

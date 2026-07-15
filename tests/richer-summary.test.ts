@@ -89,8 +89,8 @@ describe('richer summary public contract', () => {
     expect(serialized).not.toContain(rawDiffSnippet);
   });
 
-  it('keeps the rule-based summary as fallback when richer evidence is missing', () => {
-    // Given: only the existing low-information rule-based inputs are available.
+  it('keeps a narrative fallback summary when richer evidence is missing', () => {
+    // Given: only low-information safe area labels are available.
     const areas = ['Application code'];
 
     // When: richer generation cannot improve the public draft safely.
@@ -102,12 +102,36 @@ describe('richer summary public contract', () => {
       publicPrompt: null,
     });
 
-    // Then: the current rule-based summary path remains the fallback contract.
+    // Then: the fallback still reads as a public build story, not a raw metric sentence.
     expect(fields.title).toBe('Explored project with AI agent');
     expect(fields.summary).toBe(generateSummary(areas, fallbackMetrics));
+    expect(fields.summary).toContain('reviewable build story');
+    expect(fields.summary).toContain('Application code');
+    expect(fields.summary).not.toContain('changed 0 files with 0 additions and 0 deletions');
     expect(fields.changed_areas).toEqual(areas);
     expect(fields.public_prompt).toBeNull();
     expect(fields.outcome).toContain('Generated a reviewable AI worklog draft');
     expect(fields.timeline[0]?.title).toBe('Collected AI agent session metadata');
+  });
+
+  it('keeps metrics as supporting evidence in fallback summaries', () => {
+    // Given: aggregate metrics are available but no richer session evidence is present.
+    const metrics: WorklogMetrics = {
+      files_changed: 3,
+      lines_added: 42,
+      lines_removed: 8,
+      tests_run: 5,
+      tests_passed: 4,
+      failed_commands: null,
+    };
+
+    // When: a fallback summary is generated.
+    const summary = generateSummary(['API layer', 'Review flow'], metrics);
+
+    // Then: the text leads with outcome/context and makes aggregate counts secondary.
+    expect(summary).toContain('API layer and Review flow');
+    expect(summary).toContain('Supporting evidence: 3 files touched');
+    expect(summary).toContain('4/5 tests passing');
+    expect(summary).not.toMatch(/^The AI agent worked on/);
   });
 });

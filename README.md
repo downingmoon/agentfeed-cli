@@ -1,18 +1,29 @@
 # AgentFeed CLI
 
-AgentFeed CLI turns local AI-agent work into reviewable, public-safe worklog drafts. It is designed for the same terminal-first feel as modern agent CLIs: command-first help, browser login, local draft review, explicit upload, copyable review URLs, JSON automation contracts, and clear recovery hints when something is missing.
+**Share what you built with AI agents — never your code.**
+
+AgentFeed CLI turns local AI-agent work into privacy-reviewed worklog drafts for AgentFeed public feeds, projects, profiles, and the Builder Leaderboard. Raw transcripts, raw diffs, private code, secrets, credentials, and private URLs are not public by default; the CLI collects locally first, creates a review draft, and uploads only after explicit user intent.
+
+It is designed for the same terminal-first feel as modern agent CLIs: command-first help, browser login, local draft review, explicit upload, copyable review URLs, JSON automation contracts, and clear recovery hints when something is missing.
+
+## What is AgentFeed?
+
+AgentFeed is a privacy-safe AI worklog platform. The CLI summarizes local agent sessions into reviewed cards that explain outcome, agent/model, project context, changed areas, metrics, and collection quality without publishing private source code. Use it when you want proof of AI-assisted work that can be shared on a feed, profile, project portfolio, or leaderboard.
+
+Supported launch-scope agents and tools include Claude Code, Codex, Cursor, Antigravity, OMC, OMX, and Superpowers. Standalone Gemini CLI is not a launch-scope collector; Gemini-family collection is represented through Antigravity.
 
 What it collects locally:
 
 - Git change metrics and changed areas
-- Claude Code, Codex CLI, Antigravity CLI, Cursor, OMC, OMX, and Superpowers aggregate session signals
+- Claude Code, Codex, Antigravity, Cursor, OMC, OMX, and Superpowers aggregate session signals
 - Safe metrics such as models, tokens, tool calls, commands, tests, subagents, skills, and collection quality
 
-What it does **not** upload:
+What it does **not** upload or publish by default:
 
 - Raw transcripts
 - Raw diffs or file contents
-- `.env` files, credentials, private keys, or local secret values
+- Private source code
+- `.env` files, credentials, private keys, private URLs, or local secret values
 
 ## Install
 
@@ -33,6 +44,8 @@ agentfeed login             # browser approval or token stdin setup
 agentfeed share --dry       # collect + preview without uploading
 agentfeed share --yes --open-review
 ```
+
+The default staging/production API is `https://agentfeed.api.downingmoon.dev/v1`, and successful uploads open review URLs on `https://agentfeed.downingmoon.dev`.
 
 If you are not logged in yet, `agentfeed share` still creates a local preview and tells you the exact `agentfeed login` / `agentfeed publish` next actions. Uploading to AgentFeed always requires a token and explicit upload intent.
 

@@ -1,7 +1,7 @@
 {
   "name": "agentfeed-cli",
   "version": "0.2.0",
-  "description": "AgentFeed CLI for collecting, reviewing, and publishing AI agent worklogs",
+  "description": "Share what you built with AI agents — never your code.",
   "keywords": [
     "agentfeed",
     "ai-agent",
@@ -10,7 +10,11 @@
     "codex",
     "claude-code",
     "antigravity-cli",
-    "cursor"
+    "cursor",
+    "privacy-safe",
+    "ai-worklog",
+    "ai-agents",
+    "worklog-sharing"
   ],
   "homepage": "https://github.com/downingmoon/agentfeed-cli#readme",
   "repository": {

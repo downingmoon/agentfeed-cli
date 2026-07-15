@@ -71,31 +71,35 @@ function boundedPublicPrompt(value?: string | null): string | null {
   return trimmed ? trimmed.slice(0, 12000) : null;
 }
 
-function fileMetricSentence(input: RicherSummaryInput): string | null {
+function fileMetricEvidence(input: RicherSummaryInput): string | null {
   if (!positive(input.metrics.files_changed) && input.metrics.files_changed !== 0) return null;
   const files = input.metrics.files_changed ?? 0;
   if (input.metrics.lines_added == null && input.metrics.lines_removed == null) {
-    return `It changed ${files} files; aggregate line totals were not available from the collected evidence.`;
+    return `${files} files touched; aggregate line totals unavailable`;
   }
   const additions = input.metrics.lines_added ?? 0;
   const deletions = input.metrics.lines_removed ?? 0;
-  return `It changed ${files} files with ${additions} additions and ${deletions} deletions captured as aggregate metrics.`;
+  return `${files} files touched, +${additions}/-${deletions} lines`;
 }
 
-function testMetricSentence(metrics: WorklogMetrics): string | null {
+function testMetricEvidence(metrics: WorklogMetrics): string | null {
   if (!positive(metrics.tests_run)) return null;
   const testsRun = metrics.tests_run ?? 0;
   const testsPassed = metrics.tests_passed ?? 0;
-  const commandText = positive(metrics.commands_run) ? ` from ${metrics.commands_run} local commands` : '';
-  if (testsRun === testsPassed) return `Verification evidence includes ${testsPassed} passing tests${commandText}.`;
-  return `Verification evidence includes ${testsPassed} passing tests out of ${testsRun}${commandText}.`;
+  const commandText = positive(metrics.commands_run) ? ` across ${metrics.commands_run} local commands` : '';
+  if (testsRun === testsPassed) return `${testsPassed} tests passing${commandText}`;
+  return `${testsPassed}/${testsRun} tests passing${commandText}`;
+}
+
+function supportingEvidenceSentence(input: RicherSummaryInput): string | null {
+  const evidence = [fileMetricEvidence(input), testMetricEvidence(input.metrics)].filter((item): item is string => Boolean(item));
+  return evidence.length > 0 ? `Supporting evidence: ${evidence.join('; ')}.` : null;
 }
 
 function richerSummary(input: RicherSummaryInput, areas: string[]): string {
   const sentences = [
-    `This work focused on ${areaText(areas)}.`,
-    fileMetricSentence(input),
-    testMetricSentence(input.metrics),
+    `Prepared a public-safe build narrative around ${areaText(areas)} so readers can understand what changed before scanning metrics.`,
+    supportingEvidenceSentence(input),
     'The upload-ready draft keeps raw transcripts, diffs, and source text local; only public-safe labels, metrics, outcomes, and timeline entries are prepared for review.',
   ].filter((sentence): sentence is string => typeof sentence === 'string' && sentence.length > 0);
   return sentences.join(' ').slice(0, 2000);

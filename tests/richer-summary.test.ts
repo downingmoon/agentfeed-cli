@@ -69,8 +69,8 @@ describe('richer summary public contract', () => {
     expect(fields.title.length).toBeLessThanOrEqual(120);
     expect(fields.summary.length).toBeLessThanOrEqual(2000);
     expect(fields.title).toBe('Verified API layer and Test coverage changes');
-    expect(fields.summary).toContain('This work focused on API layer and Test coverage.');
-    expect(fields.summary).toContain('8 passing tests');
+    expect(fields.summary).toContain('Prepared a public-safe build narrative around API layer and Test coverage');
+    expect(fields.summary).toContain('Supporting evidence: 2 files touched, +24/-6 lines; 8 tests passing across 2 local commands.');
     expect(fields.summary).toContain('public-safe labels, metrics, outcomes, and timeline entries');
     expect(fields.changed_areas).toEqual(['API layer', 'Test coverage']);
     expect(fields.public_prompt).toBeNull();

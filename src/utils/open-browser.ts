@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { platform, release } from 'node:os';
 import { createScrubbedCommandEnv } from './subprocess-env.js';
+import { trustedHelperPathEnv, trustedLinuxCommand, trustedMacosCommand, trustedWindowsCommand, trustedWslCommand } from './trusted-command.js';
 
 function realBrowserOpenDisabledForTests(): boolean {
   const testHarnessRequestedNoBrowser = process.env.AGENTFEED_TEST_DISABLE_REAL_BROWSER === '1'
@@ -15,10 +16,11 @@ function containsBrowserUnsafeControl(url: string): boolean {
 }
 
 function browserOpenCommand(currentPlatform: NodeJS.Platform, isWsl: boolean, url: string): { cmd: string; args: string[] } {
-  if (currentPlatform === 'darwin') return { cmd: 'open', args: [url] };
-  if (currentPlatform === 'win32') return { cmd: 'explorer.exe', args: [url] };
-  if (isWsl) return { cmd: 'wslview', args: [url] };
-  return { cmd: 'xdg-open', args: [url] };
+  const useHarnessPath = Boolean(process.env.AGENTFEED_TEST_BROWSER_LOG);
+  if (currentPlatform === 'darwin') return { cmd: useHarnessPath ? 'open' : trustedMacosCommand('open'), args: [url] };
+  if (currentPlatform === 'win32') return { cmd: trustedWindowsCommand('explorer.exe'), args: [url] };
+  if (isWsl) return { cmd: useHarnessPath ? 'wslview' : trustedWslCommand('wslview'), args: [url] };
+  return { cmd: useHarnessPath ? 'xdg-open' : trustedLinuxCommand('xdg-open'), args: [url] };
 }
 
 export async function openBrowser(url: string, options: { timeoutMs?: number } = {}): Promise<boolean> {
@@ -36,7 +38,9 @@ export async function openBrowser(url: string, options: { timeoutMs?: number } =
       resolve(opened);
     };
     const timer = setTimeout(() => finish(false), options.timeoutMs ?? 5000);
-    const child = spawn(cmd, args, { stdio: 'ignore', env: createScrubbedCommandEnv(process.env, { respectAllowlist: false }) });
+    const env = createScrubbedCommandEnv(process.env, { respectAllowlist: false });
+    if (!process.env.AGENTFEED_TEST_BROWSER_LOG) env.PATH = trustedHelperPathEnv([cmd], env);
+    const child = spawn(cmd, args, { stdio: 'ignore', env });
     child.unref?.();
     child.on('error', () => finish(false));
     child.on('close', (code) => finish(code === 0));

@@ -1,21 +1,26 @@
 import { spawn } from 'node:child_process';
 import { platform, release } from 'node:os';
 import { createScrubbedCommandEnv } from './subprocess-env.js';
+import { trustedHelperPathEnv, trustedLinuxCommand, trustedMacosCommand, trustedWindowsCommand, trustedWslCommand } from './trusted-command.js';
 
 function clipboardCommands(): Array<{ cmd: string; args: string[] }> {
-  if (platform() === 'darwin') return [{ cmd: 'pbcopy', args: [] }];
-  if (release().toLowerCase().includes('microsoft')) return [{ cmd: 'clip.exe', args: [] }];
+  const useHarnessPath = Boolean(process.env.AGENTFEED_TEST_CLIPBOARD_LOG);
+  if (platform() === 'darwin') return [{ cmd: useHarnessPath ? 'pbcopy' : trustedMacosCommand('pbcopy'), args: [] }];
+  if (platform() === 'win32') return [{ cmd: trustedWindowsCommand('clip.exe'), args: [] }];
+  if (release().toLowerCase().includes('microsoft')) return [{ cmd: useHarnessPath ? 'clip.exe' : trustedWslCommand('clip.exe'), args: [] }];
   return [
-    { cmd: 'xclip', args: ['-selection', 'clipboard'] },
-    { cmd: 'wl-copy', args: [] },
-    { cmd: 'xsel', args: ['--clipboard', '--input'] }
+    { cmd: useHarnessPath ? 'xclip' : trustedLinuxCommand('xclip'), args: ['-selection', 'clipboard'] },
+    { cmd: useHarnessPath ? 'wl-copy' : trustedLinuxCommand('wl-copy'), args: [] },
+    { cmd: useHarnessPath ? 'xsel' : trustedLinuxCommand('xsel'), args: ['--clipboard', '--input'] }
   ];
 }
 
 async function tryCopyWithCommand(text: string, cmd: string, args: string[]): Promise<boolean> {
   return await new Promise((resolve) => {
     let settled = false;
-    const child = spawn(cmd, args, { stdio: ['pipe', 'ignore', 'ignore'], env: createScrubbedCommandEnv(process.env, { respectAllowlist: false }) });
+    const env = createScrubbedCommandEnv(process.env, { respectAllowlist: false });
+    if (!process.env.AGENTFEED_TEST_CLIPBOARD_LOG) env.PATH = trustedHelperPathEnv([cmd], env);
+    const child = spawn(cmd, args, { stdio: ['pipe', 'ignore', 'ignore'], env });
     const finish = (value: boolean) => {
       if (settled) return;
       settled = true;

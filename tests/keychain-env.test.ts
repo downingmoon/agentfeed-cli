@@ -24,12 +24,12 @@ describe('native keychain helper environments', () => {
 
     expect(deleted.keychain_deleted).toBe(true);
     expect(childProcessMock.execFileCalls.map((call) => [call.command, call.args[0]])).toEqual([
-      ['security', '-h'],
-      ['security', '-h'],
-      ['security', 'delete-generic-password'],
+      ['/usr/bin/security', '-h'],
+      ['/usr/bin/security', '-h'],
+      ['/usr/bin/security', 'delete-generic-password'],
     ]);
     expect(childProcessMock.spawnCalls.map((call) => [call.command, call.args[0]])).toEqual([
-      ['security', 'add-generic-password'],
+      ['/usr/bin/security', 'add-generic-password'],
     ]);
     expect(childProcessMock.spawnCalls[0].input).toBe('');
     expect(childProcessMock.spawnCalls[0].args.at(-2)).toBe('-w');
@@ -41,6 +41,7 @@ describe('native keychain helper environments', () => {
   it('scrubs sensitive environment variables from Linux secret-tool execs and stdin store spawns', async () => {
     platformMock.mockReturnValue('linux');
     setSensitiveEnvironment();
+    process.env.PATH = `/tmp/agentfeed-malicious-bin:${process.env.PATH ?? ''}`;
 
     await saveCredentials('af_live_saved_to_secret_tool', {
       apiBaseUrl: 'http://localhost:8001/v1',
@@ -54,17 +55,17 @@ describe('native keychain helper environments', () => {
     expect(loaded.token_source).toBe('keychain');
     expect(deleted.keychain_deleted).toBe(true);
     expect(childProcessMock.spawnCalls.map((call) => [call.command, call.args[0]])).toEqual([
-      ['secret-tool', 'store'],
+      ['/usr/bin/secret-tool', 'store'],
     ]);
     expect(childProcessMock.spawnCalls[0].input).toBe('af_live_saved_to_secret_tool');
     for (const call of childProcessMock.spawnCalls) expectScrubbed(call.options?.env);
     for (const call of childProcessMock.execFileCalls) expectScrubbed(call.options?.env);
     expect(childProcessMock.execFileCalls.map((call) => [call.command, call.args[0]])).toEqual([
-      ['secret-tool', '--version'],
-      ['secret-tool', '--version'],
-      ['secret-tool', 'lookup'],
-      ['secret-tool', '--version'],
-      ['secret-tool', 'clear'],
+      ['/usr/bin/secret-tool', '--version'],
+      ['/usr/bin/secret-tool', '--version'],
+      ['/usr/bin/secret-tool', 'lookup'],
+      ['/usr/bin/secret-tool', '--version'],
+      ['/usr/bin/secret-tool', 'clear'],
     ]);
   });
 });

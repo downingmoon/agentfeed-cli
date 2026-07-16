@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { chmod, readFile, rm } from 'node:fs/promises';
 import { platform } from 'node:os';
 import { join } from 'node:path';
+import { trustedHelperPathEnv, trustedLinuxCommand, trustedMacosCommand, trustedWindowsCommand } from '../utils/trusted-command.js';
 import { promisify } from 'node:util';
 import { writeTextFileAtomic } from '../utils/fs.js';
 import { createScrubbedCommandEnv } from '../utils/subprocess-env.js';
@@ -17,12 +18,14 @@ function keychainAccount(agentFeedDir: string): string {
   return `agentfeed-${digest}`;
 }
 
-function keychainCommandEnv(): NodeJS.ProcessEnv {
-  return createScrubbedCommandEnv(process.env, { respectAllowlist: false });
+function keychainCommandEnv(commandPaths: readonly string[] = []): NodeJS.ProcessEnv {
+  const env = createScrubbedCommandEnv(process.env, { respectAllowlist: false });
+  env.PATH = trustedHelperPathEnv(commandPaths, env);
+  return env;
 }
 
 async function commandAvailable(command: string, args: string[] = ['--version']): Promise<boolean> {
-  return execFileAsync(command, args, { timeout: 2_000, env: keychainCommandEnv() }).then(
+  return execFileAsync(command, args, { timeout: 2_000, env: keychainCommandEnv([command]) }).then(
     () => true,
     () => false,
   );
@@ -30,7 +33,7 @@ async function commandAvailable(command: string, args: string[] = ['--version'])
 
 function spawnWithInput(command: string, args: string[], input: string, timeoutMs = KEYCHAIN_TIMEOUT_MS): Promise<{ readonly stdout: string; readonly stderr: string }> {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { stdio: ['pipe', 'pipe', 'pipe'], env: keychainCommandEnv() });
+    const child = spawn(command, args, { stdio: ['pipe', 'pipe', 'pipe'], env: keychainCommandEnv([command]) });
     let stdout = '';
     let stderr = '';
     let settled = false;
@@ -67,7 +70,7 @@ function trimOneTrailingNewline(value: string): string {
 }
 
 async function windowsPowerShellCommand(): Promise<string | null> {
-  for (const command of ['powershell.exe', 'powershell', 'pwsh']) {
+  for (const command of [trustedWindowsCommand('powershell.exe'), trustedWindowsCommand('powershell'), trustedWindowsCommand('pwsh')]) {
     if (await commandAvailable(command, ['-NoProfile', '-NonInteractive', '-Command', '$PSVersionTable.PSVersion.Major'])) return command;
   }
   return null;
@@ -82,19 +85,22 @@ function macosKeychainStore(service: string, account: string): SecretStore {
     service,
     account,
     async isAvailable() {
-      return commandAvailable('security', ['-h']);
+      const command = trustedMacosCommand('security');
+      return commandAvailable(command, ['-h']);
     },
     async read() {
-      return execFileAsync('security', ['find-generic-password', '-a', account, '-s', service, '-w'], { timeout: KEYCHAIN_TIMEOUT_MS, env: keychainCommandEnv() }).then(
+      const command = trustedMacosCommand('security');
+      return execFileAsync(command, ['find-generic-password', '-a', account, '-s', service, '-w'], { timeout: KEYCHAIN_TIMEOUT_MS, env: keychainCommandEnv([command]) }).then(
         ({ stdout }) => trimOneTrailingNewline(stdout),
         () => null,
       );
     },
     async write(secret: string) {
-      await spawnWithInput('security', ['add-generic-password', '-a', account, '-s', service, '-U', '-w', secret], '');
+      await spawnWithInput(trustedMacosCommand('security'), ['add-generic-password', '-a', account, '-s', service, '-U', '-w', secret], '');
     },
     async delete() {
-      await execFileAsync('security', ['delete-generic-password', '-a', account, '-s', service], { timeout: KEYCHAIN_TIMEOUT_MS, env: keychainCommandEnv() }).catch(() => undefined);
+      const command = trustedMacosCommand('security');
+      await execFileAsync(command, ['delete-generic-password', '-a', account, '-s', service], { timeout: KEYCHAIN_TIMEOUT_MS, env: keychainCommandEnv([command]) }).catch(() => undefined);
     },
   };
 }
@@ -104,10 +110,12 @@ function linuxSecretToolStore(service: string, account: string): SecretStore {
     service,
     account,
     async isAvailable() {
-      return commandAvailable('secret-tool', ['--version']);
+      const command = trustedLinuxCommand('secret-tool');
+      return commandAvailable(command, ['--version']);
     },
     async read() {
-      return execFileAsync('secret-tool', ['lookup', 'service', service, 'account', account], { timeout: KEYCHAIN_TIMEOUT_MS, env: keychainCommandEnv() }).then(
+      const command = trustedLinuxCommand('secret-tool');
+      return execFileAsync(command, ['lookup', 'service', service, 'account', account], { timeout: KEYCHAIN_TIMEOUT_MS, env: keychainCommandEnv([command]) }).then(
         ({ stdout }) => {
           const secret = trimOneTrailingNewline(stdout);
           return secret || null;
@@ -116,10 +124,11 @@ function linuxSecretToolStore(service: string, account: string): SecretStore {
       );
     },
     async write(secret: string) {
-      await spawnWithInput('secret-tool', ['store', '--label', 'AgentFeed CLI token', 'service', service, 'account', account], secret);
+      await spawnWithInput(trustedLinuxCommand('secret-tool'), ['store', '--label', 'AgentFeed CLI token', 'service', service, 'account', account], secret);
     },
     async delete() {
-      await execFileAsync('secret-tool', ['clear', 'service', service, 'account', account], { timeout: KEYCHAIN_TIMEOUT_MS, env: keychainCommandEnv() }).catch(() => undefined);
+      const command = trustedLinuxCommand('secret-tool');
+      await execFileAsync(command, ['clear', 'service', service, 'account', account], { timeout: KEYCHAIN_TIMEOUT_MS, env: keychainCommandEnv([command]) }).catch(() => undefined);
     },
   };
 }

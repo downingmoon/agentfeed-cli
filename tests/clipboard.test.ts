@@ -31,7 +31,7 @@ describe('clipboard', () => {
     child.emit('close', 0);
 
     await expect(copied).resolves.toBe(true);
-    expect(spawnMock).toHaveBeenCalledWith('pbcopy', [], expect.objectContaining({ stdio: ['pipe', 'ignore', 'ignore'] }));
+    expect(spawnMock).toHaveBeenCalledWith('/usr/bin/pbcopy', [], expect.objectContaining({ stdio: ['pipe', 'ignore', 'ignore'] }));
     expect(child.stdin.end).toHaveBeenCalledWith('https://agentfeed.downingmoon.dev/review/1');
   });
 
@@ -41,6 +41,7 @@ describe('clipboard', () => {
     const oldNpmToken = process.env.NPM_TOKEN;
     process.env.AGENTFEED_TOKEN = 'af_live_secret_should_not_reach_clipboard';
     process.env.NPM_TOKEN = 'npm_secret_should_not_reach_clipboard';
+    process.env.PATH = `/tmp/agentfeed-malicious-bin:${process.env.PATH ?? ''}`;
     try {
       const child = fakeChild();
       spawnMock.mockReturnValue(child);
@@ -49,7 +50,7 @@ describe('clipboard', () => {
       const options = spawnMock.mock.calls[0][2] as { env?: NodeJS.ProcessEnv };
       expect(options.env?.AGENTFEED_TOKEN).toBeUndefined();
       expect(options.env?.NPM_TOKEN).toBeUndefined();
-      expect(options.env?.PATH).toBe(process.env.PATH);
+      expect(options.env?.PATH).not.toContain('/tmp/agentfeed-malicious-bin');
       child.emit('close', 0);
       await expect(copied).resolves.toBe(true);
     } finally {
@@ -96,8 +97,8 @@ describe('clipboard', () => {
     wlCopy.emit('close', 0);
 
     await expect(copied).resolves.toBe(true);
-    expect(spawnMock).toHaveBeenNthCalledWith(1, 'xclip', ['-selection', 'clipboard'], expect.objectContaining({ stdio: ['pipe', 'ignore', 'ignore'] }));
-    expect(spawnMock).toHaveBeenNthCalledWith(2, 'wl-copy', [], expect.objectContaining({ stdio: ['pipe', 'ignore', 'ignore'] }));
+    expect(spawnMock).toHaveBeenNthCalledWith(1, '/usr/bin/xclip', ['-selection', 'clipboard'], expect.objectContaining({ stdio: ['pipe', 'ignore', 'ignore'] }));
+    expect(spawnMock).toHaveBeenNthCalledWith(2, '/usr/bin/wl-copy', [], expect.objectContaining({ stdio: ['pipe', 'ignore', 'ignore'] }));
     expect(xclip.stdin.end).toHaveBeenCalledWith('https://agentfeed.downingmoon.dev/review/1');
     expect(wlCopy.stdin.end).toHaveBeenCalledWith('https://agentfeed.downingmoon.dev/review/1');
   });
@@ -117,6 +118,6 @@ describe('clipboard', () => {
     wlCopy.emit('close', 0);
 
     await expect(copied).resolves.toBe(true);
-    expect(spawnMock).toHaveBeenNthCalledWith(2, 'wl-copy', [], expect.objectContaining({ stdio: ['pipe', 'ignore', 'ignore'] }));
+    expect(spawnMock).toHaveBeenNthCalledWith(2, '/usr/bin/wl-copy', [], expect.objectContaining({ stdio: ['pipe', 'ignore', 'ignore'] }));
   });
 });

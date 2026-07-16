@@ -11,12 +11,14 @@ const childProcessMock = vi.hoisted(() => {
   const execFileMock = vi.fn() as unknown as ReturnType<typeof vi.fn> & {
     [key: symbol]: ReturnType<typeof vi.fn>;
   };
+  const commandName = (command: string): string => command.split(/[\\/]/).at(-1) ?? command;
   execFileMock[Symbol.for('nodejs.util.promisify.custom')] = vi.fn(async (command: string, args: string[], options?: { env?: NodeJS.ProcessEnv }) => {
     execFileCalls.push({ command, args, options });
-    if (command === 'security' && args[0] === 'find-generic-password') {
+    const name = commandName(command);
+    if (name === 'security' && args[0] === 'find-generic-password') {
       return { stdout: 'af_live_from_security\n', stderr: '' };
     }
-    if (command === 'secret-tool' && args[0] === 'lookup') {
+    if (name === 'secret-tool' && args[0] === 'lookup') {
       return { stdout: 'af_live_from_secret_tool\n', stderr: '' };
     }
     return { stdout: '', stderr: '' };
@@ -38,10 +40,11 @@ const childProcessMock = vi.hoisted(() => {
         call.input = input;
         setImmediate(() => {
           const commandText = args.join(' ');
-          if ((command === 'powershell.exe' || command === 'powershell' || command === 'pwsh') && commandText.includes('ProtectedData]::Protect')) {
+          const name = commandName(command);
+          if ((name === 'powershell.exe' || name === 'powershell' || name === 'pwsh.exe' || name === 'pwsh') && commandText.includes('ProtectedData]::Protect')) {
             child.stdout.emit('data', 'base64-dpapi-protected-secret\n');
           }
-          if ((command === 'powershell.exe' || command === 'powershell' || command === 'pwsh') && commandText.includes('ProtectedData]::Unprotect')) {
+          if ((name === 'powershell.exe' || name === 'powershell' || name === 'pwsh.exe' || name === 'pwsh') && commandText.includes('ProtectedData]::Unprotect')) {
             child.stdout.emit('data', 'af_live_from_windows_dpapi\r\n');
           }
           child.emit('close', 0);
@@ -131,7 +134,7 @@ export function expectScrubbed(env: NodeJS.ProcessEnv | undefined): void {
   expect(env?.NPM_TOKEN).toBeUndefined();
   expect(env?.MY_CUSTOM_SECRET).toBeUndefined();
   expect(env?.SSH_AUTH_SOCK).toBeUndefined();
-  expect(env?.PATH).toBe(process.env.PATH);
+  expect(env?.PATH).not.toContain('/tmp/agentfeed-malicious-bin');
 }
 
 export { childProcessMock, deleteSavedCredentials, loadCredentialsWithMetadata, platformMock, saveCredentials };

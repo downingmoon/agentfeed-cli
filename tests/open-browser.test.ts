@@ -84,6 +84,7 @@ describe('openBrowser', () => {
     const oldNpmToken = process.env.NPM_TOKEN;
     process.env.AGENTFEED_TOKEN = 'af_live_secret_should_not_reach_browser';
     process.env.NPM_TOKEN = 'npm_secret_should_not_reach_browser';
+    process.env.PATH = `/tmp/agentfeed-malicious-bin:${process.env.PATH ?? ''}`;
     try {
       const child = mockChild();
 
@@ -110,7 +111,7 @@ describe('openBrowser', () => {
 
     const opened = openBrowser(url);
 
-    expect(spawnMock).toHaveBeenCalledWith('explorer.exe', [url], expect.objectContaining({ stdio: 'ignore' }));
+    expect(spawnMock).toHaveBeenCalledWith('C:\\Windows\\explorer.exe', [url], expect.objectContaining({ stdio: 'ignore' }));
     expect(spawnMock.mock.calls[0][0]).not.toBe('cmd');
     expect(spawnMock.mock.calls[0][1]).not.toContain('/c');
     expect(child.unref).toHaveBeenCalled();

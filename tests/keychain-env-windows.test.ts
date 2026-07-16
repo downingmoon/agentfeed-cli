@@ -44,8 +44,8 @@ describe('native keychain Windows DPAPI environments', () => {
     expect(deleted.keychain_deleted).toBe(true);
     await expect(readFile(encryptedSecretPath, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
     expect(childProcessMock.spawnCalls.map((call) => call.command)).toEqual([
-      'powershell.exe',
-      'powershell.exe',
+      'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe',
+      'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe',
     ]);
     expect(childProcessMock.spawnCalls[0].input).toBe('af_live_saved_to_windows_dpapi');
     expect(childProcessMock.spawnCalls[1].input).toContain('base64-dpapi-protected-secret');
@@ -58,11 +58,11 @@ describe('native keychain Windows DPAPI environments', () => {
     }
     for (const call of childProcessMock.execFileCalls) expectScrubbed(call.options?.env);
     expect(childProcessMock.execFileCalls.map((call) => [call.command, call.args[0]])).toEqual([
-      ['powershell.exe', '-NoProfile'],
-      ['powershell.exe', '-NoProfile'],
-      ['powershell.exe', '-NoProfile'],
-      ['powershell.exe', '-NoProfile'],
-      ['powershell.exe', '-NoProfile'],
+      ['C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe', '-NoProfile'],
+      ['C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe', '-NoProfile'],
+      ['C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe', '-NoProfile'],
+      ['C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe', '-NoProfile'],
+      ['C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe', '-NoProfile'],
     ]);
   });
 });

@@ -48,7 +48,7 @@ describe('CLI version metadata', () => {
   it('builds dist before npm packaging', () => {
     expect(packageJson.name).toBe('agentfeed-cli');
     expect(packageJson.bin?.agentfeed).toBe('./dist/cli/index.js');
-    expect(packageJson.files).toEqual(['dist', 'README.md']);
+    expect(packageJson.files).toEqual(['dist', 'README.md', 'LICENSE']);
     expect(packageJson.scripts?.postbuild).toBe('node scripts/ensure-bin-executable.mjs');
     expect(packageJson.scripts?.prepack).toBe('npm run clean && npm run build && npm run typecheck && npm test -- --run');
     expect(packageJson.scripts?.['release:preflight']).toBe('npm run prepack && node scripts/release-preflight.mjs');
@@ -74,7 +74,7 @@ describe('CLI version metadata', () => {
     expect(packageJson.packageManager).toBe('npm@11.6.0');
     expect(packageJson.publishConfig?.access).toBe('public');
     expect(packageJson.publishConfig?.provenance).toBe(true);
-    expect(packageJson.license).toBe('UNLICENSED');
+    expect(packageJson.license).toBe('MIT');
   });
 
   it('keeps the release preflight tarball and provenance guardrails documented', () => {
@@ -96,6 +96,7 @@ describe('CLI version metadata', () => {
     expect(readme).toContain('Run this before direct pushes to `main`');
     expect(readme).toContain('GitHub CI is intentionally PR/manual scoped');
     expect(readme).toContain('installs that tarball into a temporary project');
+    expect(readme).toContain('licensed under MIT');
     expect(readme).toContain('first-run');
     expect(readme).toContain('share --dry');
     expect(readme).toContain('npm publish --access public');

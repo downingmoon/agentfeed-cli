@@ -49,7 +49,7 @@ describe('release preflight guardrails', () => {
 
     expect(() => validatePackageMetadata({
       ...validPackageJson,
-      files: ['dist', 'README.md', 'obsidian-vault']
+      files: ['dist', 'README.md', 'LICENSE', 'obsidian-vault']
     })).toThrow('exactly');
 
     expect(() => validatePackageMetadata({

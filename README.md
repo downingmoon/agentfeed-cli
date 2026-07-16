@@ -78,11 +78,9 @@ CI also runs this installed-package smoke on Windows so the npm-generated
 ## Release and provenance
 
 The package is configured for public npm publishing (`publishConfig.access:
-public`) with provenance enabled (`publishConfig.provenance: true`), but keeps
-`"license": "UNLICENSED"` until the project owner chooses an open-source or
-commercial license. Treat that as all rights reserved / no usage grant for
-consumers; do not replace it with an SPDX license without an explicit owner
-decision.
+public`) with provenance enabled (`publishConfig.provenance: true`) and is
+licensed under MIT. The npm tarball includes `LICENSE`; keep `package.json`
+`"license": "MIT"` aligned with that file before publishing.
 
 Recommended release gate:
 

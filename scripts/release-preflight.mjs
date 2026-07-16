@@ -75,13 +75,13 @@ export function validatePackageMetadata(pkg) {
   assert(pkg.name === 'agentfeed-cli', 'package name must stay agentfeed-cli.');
   assert(isSemver(pkg.version), 'package version must be valid semver.');
   assert(pkg.description && pkg.description.includes('AgentFeed CLI'), 'package description must describe the AgentFeed CLI.');
-  assert(typeof pkg.license === 'string' && pkg.license.trim(), 'package must declare license terms before release; use UNLICENSED for proprietary distribution or an SPDX license after owner approval.');
+  assert(pkg.license === 'MIT', 'package license must stay MIT for the public npm release.');
   assert(pkg.engines?.node === '>=20', 'package engines.node must stay >=20.');
   assert(pkg.packageManager?.startsWith('npm@'), 'packageManager must pin npm for reproducible release commands.');
   assert(pkg.bin?.agentfeed === './dist/cli/index.js', 'agentfeed bin must point at ./dist/cli/index.js.');
   assert(
-    Array.isArray(pkg.files) && JSON.stringify(pkg.files) === JSON.stringify(['dist', 'README.md']),
-    'package files must be exactly ["dist", "README.md"] so local docs/state never ship in the npm tarball.'
+    Array.isArray(pkg.files) && JSON.stringify(pkg.files) === JSON.stringify(['dist', 'README.md', 'LICENSE']),
+    'package files must be exactly ["dist", "README.md", "LICENSE"] so local docs/state never ship in the npm tarball.'
   );
   assert(pkg.scripts?.prepack === 'npm run clean && npm run build && npm run typecheck && npm test -- --run', 'prepack must keep build, typecheck, and test gates.');
   assert(pkg.scripts?.['release:preflight'] === 'npm run prepack && node scripts/release-preflight.mjs', 'release:preflight must run prepack before tarball smoke so local release gates cannot use stale dist.');
@@ -145,6 +145,7 @@ export function validatePackResult(packResult, pkg) {
   const files = (result.files ?? []).map(file => normalizeTarballPath(file.path ?? '')).filter(Boolean);
   const fileSet = new Set(files);
   assert(fileSet.has('README.md'), 'npm tarball must include README.md.');
+  assert(fileSet.has('LICENSE'), 'npm tarball must include LICENSE.');
   assert(fileSet.has('package.json'), 'npm tarball must include package.json.');
   assert(fileSet.has('dist/cli/index.js'), 'npm tarball must include built CLI entrypoint.');
   assert(fileSet.has('dist/version.js'), 'npm tarball must include built version metadata at dist/version.js.');
@@ -153,8 +154,8 @@ export function validatePackResult(packResult, pkg) {
   }
   for (const file of files) {
     assert(
-      file === 'README.md' || file === 'package.json' || file.startsWith('dist/'),
-      `npm tarball must contain only built dist files plus README.md/package.json, found ${file}.`
+      file === 'README.md' || file === 'LICENSE' || file === 'package.json' || file.startsWith('dist/'),
+      `npm tarball must contain only built dist files plus README.md/LICENSE/package.json, found ${file}.`
     );
   }
   assert(Number(result.entryCount ?? files.length) >= 1, 'npm dry-run must report at least one packed file.');
@@ -363,7 +364,7 @@ function main() {
   console.log('- Tarball: npm pack --dry-run --json --ignore-scripts validated');
   console.log('- CLI smoke: built agentfeed --help and --version validated');
   console.log('- Installed package smoke: npm tarball installs and runs help/version plus first-run init/status/share/drafts workflow');
-  if (pkg.license === 'UNLICENSED') console.log('- License: UNLICENSED (proprietary/no open-source grant; change only after owner approval).');
+  console.log('- License: MIT (open-source grant included in LICENSE).');
   console.log('- Next: configure npm trusted publishing for the Release workflow from a public GitHub repository before production publish.');
 }
 

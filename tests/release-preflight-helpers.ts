@@ -4,7 +4,7 @@ export const validPackageJson = {
   name: 'agentfeed-cli',
   version: '0.2.0',
   description: 'AgentFeed CLI for publishing safe AI worklogs',
-  license: 'UNLICENSED',
+  license: 'MIT',
   engines: {
     node: '>=20'
   },
@@ -12,7 +12,7 @@ export const validPackageJson = {
   bin: {
     agentfeed: './dist/cli/index.js'
   },
-  files: ['dist', 'README.md'],
+  files: ['dist', 'README.md', 'LICENSE'],
   scripts: {
     prepack: 'npm run clean && npm run build && npm run typecheck && npm test -- --run',
     'release:preflight': 'npm run prepack && node scripts/release-preflight.mjs'
@@ -36,11 +36,12 @@ export const validPackResult = [{
   version: '0.2.0',
   files: [
     { path: 'package/README.md' },
+    { path: 'package/LICENSE' },
     { path: 'package/package.json' },
     { path: 'package/dist/cli/index.js' },
     { path: 'package/dist/version.js' }
   ],
-  entryCount: 4,
+  entryCount: 5,
   unpackedSize: 1234
 }];
 

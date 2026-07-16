@@ -44,14 +44,15 @@
   "packageManager": "npm@11.6.0",
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "devDependencies": {
     "@types/node": "^20.17.24",
     "typescript": "^5.8.2",
     "vitest": "^4.1.8"
   },
-  "license": "UNLICENSED",
+  "license": "MIT",
   "publishConfig": {
     "access": "public",
     "provenance": true

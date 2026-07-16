@@ -62,23 +62,27 @@ describe('richer summary public contract', () => {
       metrics: richerMetrics,
       git: gitWithPrivatePath,
       tags: ['api', 'src/private/payment-token.ts', 'sk_live_raw_diff_secret_123456789', 'richer-summary'],
+      agent: 'codex',
+      model: 'gpt-5.5',
       publicPrompt: null,
     });
 
     // Then: the output is useful, bounded, and contains only public-safe labels/metrics.
     expect(fields.title.length).toBeLessThanOrEqual(120);
     expect(fields.summary.length).toBeLessThanOrEqual(2000);
-    expect(fields.title).toBe('Verified API layer and Test coverage changes');
-    expect(fields.summary).toContain('Prepared a public-safe build narrative around API layer and Test coverage');
-    expect(fields.summary).toContain('Supporting evidence: 2 files touched, +24/-6 lines; 8 tests passing across 2 local commands.');
+    expect(fields.title).toBe('Verified API layer and Test coverage with Codex');
+    expect(fields.summary).toContain('Codex prepared a review-ready API layer and Test coverage update');
+    expect(fields.summary).toContain('Supporting evidence: 2 files touched, +24/-6 lines; 8 tests passing; model gpt-5.5, high-quality local collection, 2 local commands, 11 agent tool calls.');
+    expect(fields.summary).toContain('raw transcripts, diffs, source text, and file paths stay local');
     expect(fields.summary).toContain('public-safe labels, metrics, outcomes, and timeline entries');
     expect(fields.changed_areas).toEqual(['API layer', 'Test coverage']);
     expect(fields.public_prompt).toBeNull();
     expect(fields.tags).toEqual(['api', 'richer-summary']);
-    expect(fields.outcome).toHaveLength(5);
+    expect(fields.outcome).toHaveLength(6);
     expect(fields.outcome).toContain('Captured 8 passing tests as verification evidence');
+    expect(fields.outcome).toContain('Captured 11 agent tool calls as local workflow evidence');
     expect(fields.timeline.map((item) => item.title)).toEqual([
-      'Collected local evidence',
+      'Collected Codex evidence',
       'Classified public-safe changed areas',
       'Generated richer public summary',
       'Ran privacy scan before upload',
@@ -112,6 +116,26 @@ describe('richer summary public contract', () => {
     expect(fields.public_prompt).toBeNull();
     expect(fields.outcome).toContain('Generated a reviewable AI worklog draft');
     expect(fields.timeline[0]?.title).toBe('Collected AI agent session metadata');
+  });
+
+  it('filters unsafe model labels before adding workflow evidence', () => {
+    // Given: a model-like value contains a private path and secret-shaped token.
+    const fields = generateRicherSummaryFields({
+      areas: ['API layer'],
+      metrics: { ...richerMetrics, collection_quality: 'medium', tool_calls: 3, commands_run: 1 },
+      git: gitWithPrivatePath,
+      tags: [],
+      agent: 'gemini_cli',
+      model: 'private/model/sk_live_raw_diff_secret_123456789',
+      publicPrompt: null,
+    });
+
+    // Then: agent context is still useful, but the unsafe model label is omitted.
+    expect(fields.title).toBe('Verified API layer with Antigravity');
+    expect(fields.summary).toContain('Antigravity prepared a review-ready API layer update');
+    expect(fields.summary).toContain('medium-quality local collection, 1 local commands, 3 agent tool calls');
+    expect(JSON.stringify(fields)).not.toContain('sk_live_raw_diff_secret_123456789');
+    expect(JSON.stringify(fields)).not.toContain('private/model');
   });
 
   it('keeps metrics as supporting evidence in fallback summaries', () => {

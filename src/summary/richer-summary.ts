@@ -1,23 +1,33 @@
-import type { GitMetrics, WorklogMetrics, WorklogTimelineItem } from '../types.js';
+import type { AgentType, GitMetrics, WorklogMetrics, WorklogTimelineItem } from '../types.js';
 import { generateOutcome, generateSummary, generateTimeline, generateTitle } from './rule-based.js';
 
 export interface RicherSummaryInput {
-  areas: string[];
-  metrics: WorklogMetrics;
-  git: GitMetrics;
-  tags: string[];
-  publicPrompt?: string | null;
+  readonly areas: string[];
+  readonly metrics: WorklogMetrics;
+  readonly git: GitMetrics;
+  readonly tags: string[];
+  readonly agent?: AgentType | null;
+  readonly model?: string | null;
+  readonly publicPrompt?: string | null;
 }
 
 export interface RicherSummaryFields {
-  title: string;
-  summary: string;
-  changed_areas: string[];
-  outcome: string[];
-  timeline: WorklogTimelineItem[];
-  public_prompt: string | null;
-  tags: string[];
+  readonly title: string;
+  readonly summary: string;
+  readonly changed_areas: string[];
+  readonly outcome: string[];
+  readonly timeline: WorklogTimelineItem[];
+  readonly public_prompt: string | null;
+  readonly tags: string[];
 }
+
+const AGENT_LABELS: Readonly<Record<AgentType, string>> = {
+  claude_code: 'Claude Code',
+  codex: 'Codex',
+  cursor: 'Cursor',
+  gemini_cli: 'Antigravity',
+  other: 'AI agent',
+} as const;
 
 function positive(value?: number | null): boolean {
   return typeof value === 'number' && value > 0;
@@ -71,6 +81,18 @@ function boundedPublicPrompt(value?: string | null): string | null {
   return trimmed ? trimmed.slice(0, 12000) : null;
 }
 
+function publicAgentLabel(agent?: AgentType | null): string {
+  return agent ? AGENT_LABELS[agent] : AGENT_LABELS.other;
+}
+
+function publicModelLabel(model?: string | null): string | null {
+  const trimmed = model?.replace(/\s+/g, ' ').trim();
+  if (!trimmed || trimmed.length > 80) return null;
+  if (trimmed.includes('/') || trimmed.includes('\\') || trimmed.includes('@') || trimmed.includes('://')) return null;
+  if (/(api[_-]?key|credential|password|secret|sk_live|token)/i.test(trimmed)) return null;
+  return trimmed;
+}
+
 function fileMetricEvidence(input: RicherSummaryInput): string | null {
   if (!positive(input.metrics.files_changed) && input.metrics.files_changed !== 0) return null;
   const files = input.metrics.files_changed ?? 0;
@@ -86,28 +108,39 @@ function testMetricEvidence(metrics: WorklogMetrics): string | null {
   if (!positive(metrics.tests_run)) return null;
   const testsRun = metrics.tests_run ?? 0;
   const testsPassed = metrics.tests_passed ?? 0;
-  const commandText = positive(metrics.commands_run) ? ` across ${metrics.commands_run} local commands` : '';
-  if (testsRun === testsPassed) return `${testsPassed} tests passing${commandText}`;
-  return `${testsPassed}/${testsRun} tests passing${commandText}`;
+  if (testsRun === testsPassed) return `${testsPassed} tests passing`;
+  return `${testsPassed}/${testsRun} tests passing`;
+}
+
+function workflowEvidence(input: RicherSummaryInput): string | null {
+  const model = publicModelLabel(input.model);
+  const evidence = [
+    model ? `model ${model}` : null,
+    input.metrics.collection_quality ? `${input.metrics.collection_quality}-quality local collection` : null,
+    positive(input.metrics.commands_run) ? `${input.metrics.commands_run} local commands` : null,
+    positive(input.metrics.tool_calls) ? `${input.metrics.tool_calls} agent tool calls` : null,
+  ].filter((item): item is string => Boolean(item));
+  return evidence.length > 0 ? evidence.join(', ') : null;
 }
 
 function supportingEvidenceSentence(input: RicherSummaryInput): string | null {
-  const evidence = [fileMetricEvidence(input), testMetricEvidence(input.metrics)].filter((item): item is string => Boolean(item));
+  const evidence = [fileMetricEvidence(input), testMetricEvidence(input.metrics), workflowEvidence(input)].filter((item): item is string => Boolean(item));
   return evidence.length > 0 ? `Supporting evidence: ${evidence.join('; ')}.` : null;
 }
 
 function richerSummary(input: RicherSummaryInput, areas: string[]): string {
+  const agentLabel = publicAgentLabel(input.agent);
   const sentences = [
-    `Prepared a public-safe build narrative around ${areaText(areas)} so readers can understand what changed before scanning metrics.`,
+    `${agentLabel} prepared a review-ready ${areaText(areas)} update that explains the change before readers inspect the metrics.`,
     supportingEvidenceSentence(input),
-    'The upload-ready draft keeps raw transcripts, diffs, and source text local; only public-safe labels, metrics, outcomes, and timeline entries are prepared for review.',
+    'AgentFeed converts local evidence into public-safe labels, metrics, outcomes, and timeline entries for review; raw transcripts, diffs, source text, and file paths stay local.',
   ].filter((sentence): sentence is string => typeof sentence === 'string' && sentence.length > 0);
   return sentences.join(' ').slice(0, 2000);
 }
 
-function richerTitle(areas: string[], metrics: WorklogMetrics): string {
-  const prefix = positive(metrics.tests_passed) ? 'Verified' : 'Summarized';
-  return `${prefix} ${areaText(areas)} changes`.slice(0, 120);
+function richerTitle(input: RicherSummaryInput, areas: string[]): string {
+  const prefix = positive(input.metrics.tests_passed) ? 'Verified' : 'Summarized';
+  return `${prefix} ${areaText(areas)} with ${publicAgentLabel(input.agent)}`.slice(0, 120);
 }
 
 function richerOutcome(input: RicherSummaryInput, areas: string[]): string[] {
@@ -115,13 +148,15 @@ function richerOutcome(input: RicherSummaryInput, areas: string[]): string[] {
   if (positive(input.metrics.files_changed)) outcome.push(`Captured ${input.metrics.files_changed} changed files as aggregate metrics`);
   if (positive(input.metrics.lines_added) || positive(input.metrics.lines_removed)) outcome.push(`Recorded ${input.metrics.lines_added ?? 0} additions and ${input.metrics.lines_removed ?? 0} deletions without file paths`);
   if (positive(input.metrics.tests_run)) outcome.push(`Captured ${input.metrics.tests_passed ?? 0} passing tests as verification evidence`);
+  if (positive(input.metrics.tool_calls)) outcome.push(`Captured ${input.metrics.tool_calls} agent tool calls as local workflow evidence`);
   outcome.push('Prepared a public-safe review draft without raw transcript or diff upload');
   return outcome.slice(0, 10);
 }
 
-function richerTimeline(): WorklogTimelineItem[] {
+function richerTimeline(input: RicherSummaryInput): WorklogTimelineItem[] {
+  const agentLabel = publicAgentLabel(input.agent);
   return [
-    { order: 1, title: 'Collected local evidence', description: 'Summarized local agent and git metrics without uploading raw transcript or diff content.', status: 'info' },
+    { order: 1, title: `Collected ${agentLabel} evidence`, description: 'Summarized local agent and git metrics without uploading raw transcript or diff content.', status: 'info' },
     { order: 2, title: 'Classified public-safe changed areas', description: 'Converted file-level evidence into product-level area labels.', status: 'success' },
     { order: 3, title: 'Generated richer public summary', description: 'Prepared bounded title, summary, outcome, tags, and timeline fields for user review.', status: 'success' },
     { order: 4, title: 'Ran privacy scan before upload', description: 'Scanned uploadable public fields before constructing the ingest payload.', status: 'success' },
@@ -142,11 +177,11 @@ export function generateRicherSummaryFields(input: RicherSummaryInput): RicherSu
     };
   }
   return {
-    title: richerTitle(areas, input.metrics),
+    title: richerTitle(input, areas),
     summary: richerSummary(input, areas),
     changed_areas: areas,
     outcome: richerOutcome(input, areas),
-    timeline: richerTimeline(),
+    timeline: richerTimeline(input),
     public_prompt: boundedPublicPrompt(input.publicPrompt),
     tags: publicTags(input.tags),
   };

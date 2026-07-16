@@ -51,6 +51,8 @@ export function buildCollectedDraft(input: {
     metrics: input.metrics,
     git: input.git,
     tags: input.config.project.tags,
+    agent: input.source,
+    model: input.sessionModel,
     publicPrompt: null,
   });
   const publicFields = {

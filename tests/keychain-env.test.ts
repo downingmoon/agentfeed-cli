@@ -13,10 +13,10 @@ import {
 const fixture = useKeychainEnvFixture();
 
 describe('native keychain helper environments', () => {
-  it('passes macOS security password with -w argument because security does not read it from stdin', async () => {
+  it('passes macOS security password through interactive stdin instead of argv', async () => {
     setSensitiveEnvironment();
 
-    await saveCredentials('af_live_saved_to_security', {
+    await saveCredentials("af_live_saved_to_security'\\value", {
       apiBaseUrl: 'http://localhost:8001/v1',
       credentialStore: 'keychain',
     });
@@ -29,11 +29,12 @@ describe('native keychain helper environments', () => {
       ['/usr/bin/security', 'delete-generic-password'],
     ]);
     expect(childProcessMock.spawnCalls.map((call) => [call.command, call.args[0]])).toEqual([
-      ['/usr/bin/security', 'add-generic-password'],
+      ['/usr/bin/security', '-i'],
     ]);
-    expect(childProcessMock.spawnCalls[0].input).toBe('');
-    expect(childProcessMock.spawnCalls[0].args.at(-2)).toBe('-w');
-    expect(childProcessMock.spawnCalls[0].args.at(-1)).toBe('af_live_saved_to_security');
+    expect(childProcessMock.spawnCalls[0].args).toEqual(['-i']);
+    expect(childProcessMock.spawnCalls[0].args.join(' ')).not.toContain('af_live_saved_to_security');
+    expect(childProcessMock.spawnCalls[0].input).not.toContain('af_live_saved_to_security');
+    expect(childProcessMock.spawnCalls[0].input).toContain("'-X' '61665f6c6976655f73617665645f746f5f7365637572697479275c76616c7565'");
     for (const call of childProcessMock.spawnCalls) expectScrubbed(call.options?.env);
     for (const call of childProcessMock.execFileCalls) expectScrubbed(call.options?.env);
   });

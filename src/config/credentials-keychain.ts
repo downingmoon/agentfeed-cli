@@ -69,6 +69,26 @@ function trimOneTrailingNewline(value: string): string {
   return value.replace(/\r?\n$/, '');
 }
 
+function securityInteractiveArgument(value: string): string {
+  if (/[\x00\r\n]/u.test(value)) throw new Error('macOS security keychain fields cannot contain line breaks.');
+  return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+}
+
+function macosAddGenericPasswordInput(service: string, account: string, secret: string): string {
+  const passwordHex = Buffer.from(secret, 'utf8').toString('hex');
+  return [
+    'add-generic-password',
+    '-a',
+    account,
+    '-s',
+    service,
+    '-U',
+    '-X',
+    passwordHex,
+  ].map(securityInteractiveArgument).join(' ') + '\n';
+}
+
+
 async function windowsPowerShellCommand(): Promise<string | null> {
   for (const command of [trustedWindowsCommand('powershell.exe'), trustedWindowsCommand('powershell'), trustedWindowsCommand('pwsh')]) {
     if (await commandAvailable(command, ['-NoProfile', '-NonInteractive', '-Command', '$PSVersionTable.PSVersion.Major'])) return command;
@@ -96,7 +116,7 @@ function macosKeychainStore(service: string, account: string): SecretStore {
       );
     },
     async write(secret: string) {
-      await spawnWithInput(trustedMacosCommand('security'), ['add-generic-password', '-a', account, '-s', service, '-U', '-w', secret], '');
+      await spawnWithInput(trustedMacosCommand('security'), ['-i'], macosAddGenericPasswordInput(service, account, secret));
     },
     async delete() {
       const command = trustedMacosCommand('security');

@@ -70,14 +70,15 @@ function extractJsonObject(text: string): string {
 export function parseAiWorklogPatch(text: string): AiWorklogPatch {
   const parsed: unknown = JSON.parse(extractJsonObject(text));
   if (!isRecord(parsed)) throw new Error('Local AI worklog response JSON must be an object.');
-  const publicPrompt = parsed.public_prompt === null ? null : optionalString(parsed.public_prompt);
+  const payload = isRecord(parsed.worklog) ? { ...parsed, ...parsed.worklog } : parsed;
+  const publicPrompt = payload.public_prompt === null ? null : optionalString(payload.public_prompt);
   return {
-    title: optionalString(parsed.title),
-    summary: optionalString(parsed.summary),
-    changed_areas: optionalStringArray(parsed.changed_areas, 8),
-    outcome: optionalStringArray(parsed.outcome, 10),
-    timeline: optionalTimeline(parsed.timeline),
-    tags: optionalStringArray(parsed.tags, 10),
+    title: optionalString(payload.title),
+    summary: optionalString(payload.summary),
+    changed_areas: optionalStringArray(payload.changed_areas, 8),
+    outcome: optionalStringArray(payload.outcome, 10),
+    timeline: optionalTimeline(payload.timeline),
+    tags: optionalStringArray(payload.tags, 10),
     ...(publicPrompt !== undefined ? { public_prompt: publicPrompt } : {})
   };
 }

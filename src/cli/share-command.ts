@@ -53,7 +53,7 @@ export async function runShareCliCommand(args: string[], io: ShareCliCommandIo):
   const runShareCollectionCommand = io.dependencies?.runShareCollectionCommand ?? defaultRunShareCollectionCommand;
   const runShareUploadCommand = io.dependencies?.runShareUploadCommand ?? defaultRunShareUploadCommand;
   const confirmUploadFromTerminal = io.dependencies?.confirmUploadFromTerminal ?? defaultConfirmUploadFromTerminal;
-  const collection = await runShareCollectionCommand({ cwd: io.cwd, args, share: opts, interactive: io.interactive, printLines: io.printLines });
+  const collection = await runShareCollectionCommand({ cwd: io.cwd, args, share: opts, interactive: io.interactive, printLines: io.printLines, prompt: io.prompt });
   const draft = collection.draft;
   const creds = collection.credentials;
   const warnings = collection.warnings;

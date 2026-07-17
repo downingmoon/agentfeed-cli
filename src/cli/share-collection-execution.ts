@@ -5,7 +5,7 @@ import { collectDraftWithStatus as defaultCollectDraftWithStatus, type CollectDr
 import type { AgentFeedCredentials, AgentType, LocalDraft } from '../types.js';
 import { flag } from './args.js';
 import { sanitizeDraftForCliOutput as defaultSanitizeDraftForOutput } from './draft-output-sanitizer.js';
-import { runLocalAiWorklogFlow as defaultRunLocalAiWorklogFlow, type LocalAiWorklogFlow } from './local-ai-worklog-flow.js';
+import { runLocalAiWorklogFlow as defaultRunLocalAiWorklogFlow, type LocalAiWorklogFlow, type LocalAiWorklogPrompt } from './local-ai-worklog-flow.js';
 
 type LoadProjectConfig = (cwd: string) => Promise<unknown>;
 type LoadCredentials = () => Promise<AgentFeedCredentials | null>;
@@ -38,6 +38,7 @@ export type ShareCollectionOptions = {
   readonly dependencies?: ShareCollectionDependencies;
   readonly interactive?: boolean;
   readonly printLines?: (lines: readonly string[]) => void;
+  readonly prompt?: LocalAiWorklogPrompt;
 };
 
 export type ShareCollectionResult = {
@@ -84,7 +85,8 @@ export async function runShareCollectionCommand(options: ShareCollectionOptions)
     uploadRequested: Boolean(credentials),
     json: options.share.json ?? false,
     interactive: options.interactive ?? Boolean(process.stdin.isTTY && process.stdout.isTTY),
-    printLines: options.printLines ?? (() => undefined)
+    printLines: options.printLines ?? (() => undefined),
+    prompt: options.prompt
   });
   draft = aiWorklog.draft;
   warnings.push(...aiWorklog.warnings);

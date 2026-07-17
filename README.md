@@ -261,9 +261,17 @@ agentfeed share --source codex
 agentfeed share --source antigravity-cli --session-file ./session.jsonl
 agentfeed share --source antigravity-cli --session-file ./transcript.jsonl
 agentfeed share --run-configured-commands
+agentfeed share --ai-worklog
+agentfeed share --ai-worklog-tool antigravity --yes --open-review
 ```
 
 `--note` is stored as a separate public-safe author note, not folded into the generated worklog summary.
+
+### Local AI worklog drafting and prompt sharing
+
+`agentfeed share` can ask a local non-interactive AI CLI to improve the public worklog before upload. In an interactive upload flow it asks `Use a local AI CLI to improve this worklog before upload?`; `--ai-worklog` forces that step, and `--ai-worklog-tool claude|codex|gemini|antigravity` selects a specific installed tool. The AI-generated draft is written back to the local draft and is the draft uploaded by the same `share` command.
+
+Prompt sharing is opt-in and public-safe. AgentFeed does not upload raw transcripts or full prompts by default. A public prompt appears only when the local AI draft returns `public_prompt` or you later edit the review fields in AgentFeed. Use it for a short reusable prompt/workflow excerpt, not secrets, customer data, file paths, private URLs, or raw source.
 
 Use `--json` for automation. Dry-run output is shaped as `{ dry_run, reused_existing_draft, draft, privacy_policy }`; upload output is shaped as `{ dry_run, reused_existing_draft, draft_id, draft, upload, privacy_policy, handoff }` so scripts can verify the exact public-safe draft that was uploaded alongside the review URL. JSON mode has no clipboard/browser side effects unless `--clipboard` or `--open-review` is passed explicitly; when either handoff is requested, `handoff.clipboard` / `handoff.browser` reports `{ requested, ok, warning? }` without adding non-JSON text to stdout.
 

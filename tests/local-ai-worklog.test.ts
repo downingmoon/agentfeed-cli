@@ -66,6 +66,22 @@ describe('local AI worklog helpers', () => {
     expect(calls).toEqual([{ args: ['--print', 'write worklog'], stdin: '' }]);
   });
 
+
+  it('accepts draft-shaped local AI JSON with nested worklog fields', () => {
+    // Given: a local AI CLI returns a draft-like JSON object instead of the flat patch shape.
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: '/tmp/agentfeed-local-ai', source: 'codex' });
+
+    // When: the parser reads the nested worklog payload and applies it.
+    const patch = parseAiWorklogPatch('{"worklog":{"title":"Nested AI title","summary":"Nested AI summary","changed_areas":["CLI share"],"public_prompt":"agentfeed share --ai-worklog"}}');
+    const next = applyAiWorklogPatch(draft, patch);
+
+    // Then: a model response that looks like an AgentFeed draft still replaces the default rule-based worklog.
+    expect(next.worklog.title).toBe('Nested AI title');
+    expect(next.worklog.summary).toBe('Nested AI summary');
+    expect(next.worklog.changed_areas).toEqual(['CLI share']);
+    expect(next.worklog.public_prompt).toBe('agentfeed share --ai-worklog');
+  });
+
   it('applies parsed AI worklog JSON through privacy redaction', () => {
     // Given: a local AI response includes richer text and sensitive content.
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: '/tmp/agentfeed-local-ai', source: 'codex' });

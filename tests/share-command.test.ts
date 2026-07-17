@@ -135,6 +135,41 @@ describe('share command wrapper', () => {
     expect(output).toContain('AgentFeed upload complete');
   });
 
+
+  it('forwards the terminal prompt into share collection so local AI selection can affect upload', async () => {
+    // Given: share runs through the real wrapper and the injected prompt opts into local AI worklog generation.
+    const draft = draftWithId('draft_share_command_ai_prompt');
+    const prompts: string[] = [];
+    const uploadedTitles: string[] = [];
+
+    // When: the wrapper starts collection and upload in one interactive command.
+    await runShareCliCommand(['--yes', '--no-open-review'], {
+      cwd: '/tmp/agentfeed-share-command',
+      print: () => undefined,
+      printLines: () => undefined,
+      interactive: true,
+      prompt: async (question) => {
+        prompts.push(question);
+        return 'y';
+      },
+      dependencies: {
+        runShareCollectionCommand: async (options) => {
+          const answer = await options.prompt?.('Use a local AI CLI to improve this worklog before upload? [y/N] ');
+          const nextDraft = answer === 'y' ? { ...draft, worklog: { ...draft.worklog, title: 'AI generated share title' } } : draft;
+          return { draft: nextDraft, credentials, reusedExistingDraft: false, warnings: [] };
+        },
+        runShareUploadCommand: async (options) => {
+          uploadedTitles.push(options.draft.worklog.title);
+          return { kind: 'uploaded', draft: options.draft, upload, handoff };
+        }
+      }
+    });
+
+    // Then: the same prompt seam reaches collection and the AI-improved draft is uploaded.
+    expect(prompts).toEqual(['Use a local AI CLI to improve this worklog before upload? [y/N] ']);
+    expect(uploadedTitles).toEqual(['AI generated share title']);
+  });
+
   it('prints human confirmation guidance when upload pauses', async () => {
     // Given: share collection returns credentials but upload execution requires confirmation.
     const draft = draftWithId('draft_share_command_confirm');

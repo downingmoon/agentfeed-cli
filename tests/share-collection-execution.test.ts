@@ -139,6 +139,43 @@ describe('share collection execution', () => {
       skipConfiguredCommands: false
     }]);
   });
+
+  it('passes injected prompts into the local AI worklog flow', async () => {
+    // Given: share collection receives a terminal prompt seam from the wrapper.
+    const draft = draftWithId('draft_share_ai_prompt_original');
+    const prompts: string[] = [];
+
+    // When: local AI flow is invoked during uploadable share collection.
+    await runShareCollectionCommand({
+      cwd: '/tmp/agentfeed-share-collection-execution',
+      args: [],
+      share: { ...defaultShareOptions(), json: false },
+      interactive: true,
+      prompt: async (question) => {
+        prompts.push(question);
+        return 'y';
+      },
+      dependencies: {
+        loadProjectConfig: async () => undefined,
+        resolveCollectionWindowWithDiagnostics: async () => ({
+          window: { since: null, until: null },
+          warnings: [],
+          collection_state: { state: {}, path: '/tmp/state.json', warnings: [], valid: true }
+        }),
+        loadCredentials: async () => credentials,
+        collectDraftWithStatus: async () => ({ draft, reusedExisting: false, warnings: [] }),
+        sanitizeDraftForOutput: async (_cwd, nextDraft) => nextDraft,
+        runLocalAiWorklogFlow: async (input) => {
+          await input.prompt?.('Use a local AI CLI to improve this worklog before upload? [y/N] ');
+          return { draft: input.draft, warnings: [] };
+        }
+      }
+    });
+
+    // Then: tests and embedding callers can drive the local AI prompt instead of falling back to stdin.
+    expect(prompts).toEqual(['Use a local AI CLI to improve this worklog before upload? [y/N] ']);
+  });
+
 });
 
 describe('share collection local AI worklog flow', () => {

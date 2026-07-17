@@ -54,7 +54,8 @@ describe('release preflight CI and README guardrails', () => {
     expect(readme).toContain('Upload skipped: AgentFeed token is missing');
     expect(readme).toContain('agentfeed collect --explain');
     expect(readme).toContain('agentfeed preview --latest');
-    expect(readme).toContain('agentfeed publish --latest --yes');
+    expect(readme).toContain('agentfeed publish --latest');
+    expect(readme).toContain('publish --latest --yes');
     expect(readme).toContain('https://agentfeed.api.downingmoon.dev/v1');
     expect(readme).toContain('AGENTFEED_ALLOW_INSECURE_API=1');
     expect(readme).toContain('AGENTFEED_API_BASE_URL=http://161.33.171.81:18080/v1');

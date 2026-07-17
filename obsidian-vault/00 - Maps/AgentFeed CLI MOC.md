@@ -47,7 +47,7 @@ graph LR
 
 ## 현재 가장 중요한 정책
 
-1. `agentfeed share --yes` 또는 `agentfeed publish --yes` 전에는 서버 업로드가 일어나지 않는다.
+1. `agentfeed share` / `agentfeed collect --upload` / `agentfeed publish`는 terminal review 후 `yes` 입력 또는 명시적 `--yes` 전에는 서버 업로드가 일어나지 않는다.
 2. Browser login은 URL에 token을 노출하지 않고, CLI가 approval session을 exchange한다.
 3. Private review URL은 Backend metadata `review_base_url` 또는 명시 allowlist와 일치해야 열린다.
 4. 개발 단계에서는 개인 서버 IP-only로 server smoke를 할 수 있다.

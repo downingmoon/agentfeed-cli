@@ -820,7 +820,8 @@ Collect local metrics and create a local worklog draft.
 agentfeed collect
 agentfeed collect --source claude-code
 agentfeed collect --source claude-code --session-file <path>
-agentfeed collect --upload
+agentfeed collect --upload          # terminal review, then prompt before upload
+agentfeed collect --upload --yes    # non-interactive upload after collection
 agentfeed collect --open-review
 agentfeed collect --json
 ```

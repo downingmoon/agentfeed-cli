@@ -90,6 +90,7 @@ describe('CLI commands catalog help', () => {
     expect(human.stdout).toContain('agentfeed init');
     expect(human.stdout).toContain('Daily share:');
     expect(human.stdout).toContain('agentfeed share --yes --open-review');
+    expect(human.stdout).toContain('agentfeed share');
     expect(human.stdout).toContain('Draft review: Inspect pending drafts and publish the one you trust.');
     expect(human.stdout).toContain('Power user: Control source, window, and evidence before publishing.');
     expect(human.stdout).toContain('Recovery: Diagnose setup, token, API, or agent-detection problems.');
@@ -111,8 +112,8 @@ describe('CLI commands catalog help', () => {
     expect(parsed.next_actions).toEqual(['agentfeed init', 'agentfeed login', 'agentfeed share --dry']);
     expect(parsed.workflows).toEqual(expect.arrayContaining([
       expect.objectContaining({ name: 'Beginner setup', description: 'Connect one project and confirm the CLI is ready.', commands: ['agentfeed init', 'agentfeed login', 'agentfeed status'] }),
-      expect.objectContaining({ name: 'Daily share', description: 'Preview work first, then upload and open the private review.', commands: expect.arrayContaining(['agentfeed share --dry', 'agentfeed share --yes --open-review']) }),
-      expect.objectContaining({ name: 'Power user', commands: expect.arrayContaining(['agentfeed collect --source codex --all']) }),
+      expect.objectContaining({ name: 'Daily share', description: 'Preview work first, then confirm or automate the private review upload.', commands: expect.arrayContaining(['agentfeed share --dry', 'agentfeed share', 'agentfeed share --yes --open-review']) }),
+      expect.objectContaining({ name: 'Power user', commands: expect.arrayContaining(['agentfeed collect --upload']) }),
       expect.objectContaining({ name: 'Recovery', commands: expect.arrayContaining(['agentfeed doctor', 'agentfeed status']) })
     ]));
     expect(parsed.commands.some((group) => group.group === 'Start')).toBe(true);

@@ -21,7 +21,7 @@ describe('root help renderer', () => {
       '\n{Quickstart}:\n  agentfeed init\n  agentfeed login\n  agentfeed share --dry\n  agentfeed share --yes --open-review',
       '\n{Headless login}:\n  printf %s "$TOKEN" | agentfeed login --token-stdin\n  printf %s "$TOKEN" | agentfeed login --token - --no-save',
       '\n{Daily workflow}:\n  agentfeed share\n  agentfeed share --yes\n  agentfeed share --dry\n  agentfeed share --note "Fixed auth flow"\n  agentfeed status',
-      '\n{Draft review}:\n  agentfeed collect --explain\n  agentfeed preview --latest\n  agentfeed publish --latest --yes\n  agentfeed open --latest',
+      '\n{Draft review}:\n  agentfeed collect --explain\n  agentfeed preview --latest\n  agentfeed publish --latest\n  agentfeed open --latest',
       '\n{Advanced and diagnostics}:\n  agentfeed doctor\n  agentfeed scan --id <draft_id> --dry-run\n  agentfeed drafts\n  agentfeed discard --id <draft_id>\n  agentfeed rotate\n  agentfeed logout',
       '\n{Shell completion}:\n  agentfeed completion zsh\n  agentfeed completion bash\n  agentfeed completion fish',
       '\n{Commands}:',

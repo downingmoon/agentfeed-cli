@@ -120,11 +120,11 @@ Frontend 최소 env 후보:
 
 - Package name: `agentfeed-cli`
 - Binary name: `agentfeed`
-- Version: `0.2.0`
+- Version: `0.2.1`
 - Runtime: Node.js `>=20`
 - Repository: `github.com/downingmoon/agentfeed-cli`
 - Current homepage: `https://github.com/downingmoon/agentfeed-cli#readme`로 정리 완료. Production domain이 준비되기 전까지 GitHub README를 canonical docs URL로 사용한다.
-- Current license: `UNLICENSED`
+- Current license: `MIT`
 - Current publish config: public access + provenance enabled
 
 ### owner가 결정해야 할 것

@@ -26,18 +26,18 @@ export const COMMAND_WORKFLOWS: readonly RenderCommandWorkflow[] = [
   },
   {
     name: 'Daily share',
-    description: 'Preview work first, then upload and open the private review.',
-    commands: ['agentfeed share --dry', 'agentfeed share --yes --open-review']
+    description: 'Preview work first, then confirm or automate the private review upload.',
+    commands: ['agentfeed share --dry', 'agentfeed share', 'agentfeed share --yes --open-review']
   },
   {
     name: 'Draft review',
     description: 'Inspect pending drafts and publish the one you trust.',
-    commands: ['agentfeed drafts', 'agentfeed preview --latest', 'agentfeed publish --latest --yes']
+    commands: ['agentfeed drafts', 'agentfeed preview --latest', 'agentfeed publish --latest']
   },
   {
     name: 'Power user',
     description: 'Control source, window, and evidence before publishing.',
-    commands: ['agentfeed collect --explain', 'agentfeed collect --source codex --all', 'agentfeed publish --latest --yes']
+    commands: ['agentfeed collect --explain', 'agentfeed collect --upload', 'agentfeed publish --latest --yes']
   },
   {
     name: 'Recovery',

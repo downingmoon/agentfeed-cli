@@ -42,7 +42,8 @@ agentfeed commands          # see guided workflows and when to use each command
 agentfeed init              # create .agentfeed/config.json for this repo
 agentfeed login             # browser approval or token stdin setup
 agentfeed share --dry       # collect + preview without uploading
-agentfeed share --yes --open-review
+agentfeed share              # collect + terminal review, then confirm upload
+agentfeed share --yes --open-review  # automation-friendly one-shot upload
 ```
 
 The default staging/production API is `https://agentfeed.api.downingmoon.dev/v1`, and successful uploads open review URLs on `https://agentfeed.downingmoon.dev`.
@@ -119,25 +120,26 @@ agentfeed status
 
 `agentfeed commands` shows guided workflows. `agentfeed status` summarizes setup progress, and `agentfeed doctor` lists the first fix to try when setup is incomplete.
 
-Daily one-command workflow:
+Daily workflow:
 
 ```bash
 agentfeed share --dry
+agentfeed share
 agentfeed share --yes --open-review
 ```
 
-`share --dry` collects and previews locally. `share --yes --open-review` collects, previews, uploads a private review draft, then opens the review URL.
+`share --dry` collects and previews locally. `share` collects, prints the terminal review, and uploads only after you answer yes. `share --yes --open-review` keeps the same preview-first flow but skips the prompt for automation and then opens the review URL.
 
 Draft-by-draft review workflow:
 
 ```bash
 agentfeed collect --explain
 agentfeed preview --latest
-agentfeed publish --latest --yes
+agentfeed publish --latest
 agentfeed open --latest
 ```
 
-Use the draft-by-draft flow when you want to inspect collection diagnostics or run `agentfeed scan` before uploading.
+Use the draft-by-draft flow when you want to inspect collection diagnostics or run `agentfeed scan` before uploading. `publish --latest` prints the terminal review and asks before upload; use `publish --latest --yes` only when you intentionally want a non-interactive upload.
 
 Discovery and troubleshooting:
 
@@ -152,7 +154,7 @@ agentfeed collect --source claude-code --session-file "$CLAUDE_SESSION_FILE" --e
 
 If `doctor` detects global agent logs but `collect --explain` says no session matched this project root, run `agentfeed` from the same initialized repository root where the agent worked. For parent-workspace or monorepo sessions, initialize and collect from that parent root, or pass a session file that belongs to the current project.
 
-The CLI creates `.agentfeed/drafts/*.json` first and uploads only reviewable private drafts. It does not upload raw diffs, raw transcripts, `.env` contents, or secrets.
+The CLI creates `.agentfeed/drafts/*.json` first and uploads only reviewable private drafts. `share`, `collect --upload`, and `publish` all show the terminal review before upload unless `--yes` is passed. It does not upload raw diffs, raw transcripts, `.env` contents, or secrets.
 
 
 ## Login and token rotation
@@ -241,13 +243,13 @@ Zsh and fish completions include human-readable option descriptions and value hi
 
 `agentfeed commands --json` exposes the same command catalog for tools: each command includes description, usage, help/example commands, flags, value-taking options, conflicting option pairs, and completion words. Use it when another agent or script needs to discover the CLI safely instead of hard-coding command syntax.
 
-## One-command sharing
+## Terminal-reviewed sharing
 
-`agentfeed share` is the recommended daily command. It creates a local draft, prints the public-safe preview that will be uploaded, and requires explicit upload intent before creating a private AgentFeed review draft. If no token is configured, it does **not** throw away the collection result: it keeps the local draft, prints `Upload skipped: AgentFeed token is missing`, and shows the login/publish commands needed to finish. Use `--yes` for human-readable uploads, or `--json` when a machine will inspect the returned upload/handoff object; CI/non-interactive runs are not exempt from this private-review upload gate.
+`agentfeed share` is the recommended daily command. It creates a local draft, prints the public-safe preview that will be uploaded, then asks for terminal confirmation before creating a private AgentFeed review draft. If no token is configured, it does **not** throw away the collection result: it keeps the local draft, prints `Upload skipped: AgentFeed token is missing`, and shows the login/publish commands needed to finish. Use `--yes` for non-interactive human-readable uploads, or `--json` when a machine will inspect the returned upload/handoff object; CI/non-interactive runs are not exempt from this private-review upload gate.
 
 ```bash
-agentfeed share              # collect -> preview, then print the exact --yes command for interactive upload
-agentfeed share --yes        # collect -> preview -> upload private review draft
+agentfeed share              # collect -> terminal review -> prompt -> upload private review draft
+agentfeed share --yes        # collect -> terminal review -> upload without prompt
 agentfeed share --dry        # collect + preview only, keep the local draft
 agentfeed share --open-review     # force browser handoff after upload
 agentfeed share --no-open-review  # suppress project-configured browser handoff
@@ -296,6 +298,8 @@ lines. Non-JSON failures continue to use human-readable stderr.
 
 ## `collect --json` automation contract
 
+Human `agentfeed collect --upload` follows the same terminal-review confirmation flow as `publish`; add `--yes` only for intentional one-shot automation.
+
 `agentfeed collect --json` prints the local draft object as the JSON root and adds `next_actions`. Automation should read draft fields such as `id`, `source`, `worklog`, `privacy_policy`, and `upload` directly from the root object. Pending drafts point at `preview` and `publish`; when `--upload` is also passed, the same draft-root shape is preserved, `draft.upload` is updated with the upload result (`uploaded`, `worklog_id`, `review_url`, `uploaded_at`), and `next_actions` points at `open` and `preview`. If `--open-review` is requested, `draft.upload.handoff.browser` reports whether the browser handoff succeeded. Unlike `share --json`, `collect --json` is intentionally **not** wrapped in a `{ draft, upload }` envelope; this keeps existing scripts compatible.
 
 ## `preview --json` automation contract
@@ -311,7 +315,7 @@ agentfeed collect --explain       # shows the collection window
 agentfeed collect --since 2026-05-20T01:00:00Z
 agentfeed collect --until 2026-05-20T02:00:00Z
 agentfeed collect --all           # ignore the saved cursor for a full rescan
-agentfeed share --all             # same for one-command sharing
+agentfeed share --all             # same for terminal-reviewed sharing
 ```
 
 

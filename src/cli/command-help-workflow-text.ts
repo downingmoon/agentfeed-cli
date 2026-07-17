@@ -43,7 +43,7 @@ Examples:
   share: `Usage: agentfeed share [options]
 
 Collect, preview, and optionally upload a private review draft.
-Use this as the daily one-command workflow.
+Use this as the daily terminal-reviewed workflow.
 Omit --source to auto-detect Claude/Codex/Cursor/Antigravity logs.
 
 When to use:
@@ -111,6 +111,7 @@ Options:
   --help, -h                Show this help
 
 Examples:
+  agentfeed publish --latest
   agentfeed publish --latest --yes
   agentfeed publish --id draft_20260606_120000_abcd --yes --open-review
   agentfeed publish --latest --json --clipboard`,

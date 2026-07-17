@@ -21,12 +21,12 @@ AgentFeed는 Claude Code, Codex CLI, Antigravity CLI, Cursor 등으로 수행한
 ```bash
 agentfeed init
 agentfeed login
-agentfeed share --yes --open-review
+agentfeed share
 ```
 
 - `login`: 브라우저 승인 기반 CLI token 발급. 기존 token은 stdin 입력 권장.
 - `collect`: 로컬 draft 생성. 기본적으로 서버 업로드 없음.
-- `share`: collect + preview + 명시 승인 후 private review 업로드.
+- `share`: collect + terminal review + yes 확인 후 private review 업로드. `--yes`는 자동화용 확인 생략.
 - `publish`: 기존 draft/review worklog를 게시.
 - `open`: 저장된 review URL 재오픈. trust policy 통과 URL만 허용.
 - `doctor`: API, token, AI tool/plugin signal 진단.
@@ -35,7 +35,7 @@ agentfeed share --yes --open-review
 ## CLI
 
 - Package: `agentfeed-cli`
-- Version: `0.2.0`
+- Version: `0.2.1`
 - Runtime: Node.js `>=20`
 - Package manager: `npm@11.6.0`
 - Bin: `agentfeed`

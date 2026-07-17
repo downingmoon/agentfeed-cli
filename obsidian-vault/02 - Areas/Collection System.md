@@ -29,7 +29,7 @@ updated: 2026-06-04
 ## 안전 정책
 
 - `collect` 기본 동작은 서버 업로드 없음.
-- `share`/`publish` upload는 `--yes` 또는 machine-readable JSON intent가 필요.
+- `share`/`collect --upload`/`publish` human upload는 terminal review 후 `yes` 입력 또는 명시적 `--yes`가 필요. JSON upload는 machine-readable intent로 취급한다.
 - Shell wrapper command는 configured command로 거부한다.
 - sensitive env는 configured command 실행 시 scrub한다.
 - explicit `--session-file`은 project-bound/cwd 기준으로 해석한다.
@@ -54,6 +54,7 @@ Local draft는 다음 축을 포함한다.
 agentfeed collect --explain
 agentfeed collect --source codex
 agentfeed collect --source antigravity --session-file ./session.jsonl
+agentfeed share
 agentfeed share --yes --open-review
 agentfeed share --run-configured-commands
 ```

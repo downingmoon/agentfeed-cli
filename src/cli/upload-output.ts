@@ -95,7 +95,7 @@ export function renderUploadConfirmationRequiredLines(
     `Preview: ${ui.command(`agentfeed preview --id ${draft.id}`)}`,
     `Privacy: ${draft.privacy_scan.findings.length ? 'review findings before public sharing' : 'no findings detected'}`,
     'Target: private AgentFeed review draft',
-    'Safety: no upload happens until you rerun with --yes.',
+    'Safety: upload happens only after you answer yes or rerun with --yes.',
     '',
     ui.section('Next'),
     'Upload after reviewing this draft:',

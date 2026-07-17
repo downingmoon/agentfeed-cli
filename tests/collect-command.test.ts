@@ -51,7 +51,7 @@ describe('collect command wrapper', () => {
     expect(marked).toEqual([draft.source.created_at]);
   });
 
-  it('delegates human upload to publish after rendering the collected draft', async () => {
+  it('delegates human upload to terminal-reviewed publish after rendering the collected draft', async () => {
     // Given: upload is requested and credentials are available.
     const draft = draftWithId('draft_collect_command_upload');
     const printed: string[] = [];
@@ -73,9 +73,34 @@ describe('collect command wrapper', () => {
       }
     });
 
-    // Then: the collected draft summary is printed and upload delegates to publish with the collected id.
+    // Then: the collected draft summary is printed and upload delegates to publish without bypassing review.
     expect(printed.join('\n')).toContain('AgentFeed draft ready');
-    expect(publishArgs).toEqual([['--id', 'draft_collect_command_upload', '--yes', '--open-review']]);
+    expect(publishArgs).toEqual([['--id', 'draft_collect_command_upload', '--open-review']]);
+  });
+
+  it('passes explicit yes through collect upload for one-command upload automation', async () => {
+    // Given: upload is requested with explicit confirmation bypass.
+    const draft = draftWithId('draft_collect_command_upload_yes');
+    const publishArgs: string[][] = [];
+
+    // When: collect runs with --upload --yes.
+    await runCollectCliCommand(['--upload', '--yes'], {
+      cwd: '/tmp/agentfeed-collect-command',
+      print: () => undefined,
+      printLines: () => undefined,
+      publish: async (args) => { publishArgs.push(args); },
+      dependencies: {
+        loadProjectConfig: async () => ({ ...projectConfig, collection: { ...projectConfig.collection, auto_upload: false } }),
+        resolveCollectionWindowWithDiagnostics: async () => ({ window: { since: null, until: null }, warnings: [] }),
+        loadCredentials: async () => credentials,
+        collectDraftWithStatus: async () => ({ draft, reusedExisting: false, warnings: [] }),
+        sanitizeDraftForOutput: async (_cwd, value) => value,
+        markCollectionComplete: async () => undefined
+      }
+    });
+
+    // Then: the delegated publish command receives --yes only when explicitly requested.
+    expect(publishArgs).toEqual([['--id', 'draft_collect_command_upload_yes', '--yes']]);
   });
 
   it('fails before collection when upload is requested without credentials', async () => {
@@ -132,7 +157,7 @@ describe('collect command wrapper', () => {
 });
 
 describe('collect command local AI worklog flow', () => {
-  it('improves the draft before human upload when explicitly requested', async () => {
+  it('improves the draft before terminal-reviewed upload when explicitly requested', async () => {
     // Given: upload is requested with the local AI worklog flag.
     const draft = draftWithId('draft_collect_ai_before_upload');
     const improved = draftWithId('draft_collect_ai_improved');
@@ -157,8 +182,8 @@ describe('collect command local AI worklog flow', () => {
       }
     });
 
-    // Then: publish receives the improved draft id.
-    expect(publishArgs).toEqual([['--id', 'draft_collect_ai_improved', '--yes']]);
+    // Then: publish receives the improved draft id and still controls upload confirmation.
+    expect(publishArgs).toEqual([['--id', 'draft_collect_ai_improved']]);
   });
 
   it('skips local AI worklog flow in JSON mode', async () => {

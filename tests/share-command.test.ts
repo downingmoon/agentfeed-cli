@@ -97,6 +97,44 @@ describe('share command wrapper', () => {
     });
   });
 
+  it('uploads after terminal confirmation when share upload pauses', async () => {
+    // Given: share collection returns credentials and the terminal prompt accepts upload.
+    const draft = draftWithId('draft_share_command_prompt');
+    const printed: string[] = [];
+    const yesValues: boolean[] = [];
+
+    // When: the share CLI command wrapper runs in an interactive terminal.
+    await runShareCliCommand([], {
+      cwd: '/tmp/agentfeed-share-command',
+      print: (text = '') => { printed.push(text); },
+      printLines: (lines) => { printed.push(...lines); },
+      interactive: true,
+      prompt: async () => 'y',
+      dependencies: {
+        runShareCollectionCommand: async () => ({ draft, credentials, reusedExistingDraft: false, warnings: [] }),
+        runShareUploadCommand: async (options) => {
+          yesValues.push(options.flags.yes);
+          if (!options.flags.yes) {
+            return {
+              kind: 'confirmation_required',
+              draft,
+              command: 'agentfeed publish --id draft_share_command_prompt --yes',
+              extraCommand: 'agentfeed share --yes'
+            };
+          }
+          return { kind: 'uploaded', draft, upload, handoff };
+        }
+      }
+    });
+
+    // Then: share shows the terminal review, then uploads in the same command after confirmation.
+    const output = printed.join('\n');
+    expect(yesValues).toEqual([false, true]);
+    expect(output).toContain('AgentFeed share preview');
+    expect(output).toContain('Upload confirmation required.');
+    expect(output).toContain('AgentFeed upload complete');
+  });
+
   it('prints human confirmation guidance when upload pauses', async () => {
     // Given: share collection returns credentials but upload execution requires confirmation.
     const draft = draftWithId('draft_share_command_confirm');

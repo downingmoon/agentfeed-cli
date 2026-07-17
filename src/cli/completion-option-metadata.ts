@@ -61,7 +61,9 @@ const COMMAND_COMPLETION_OPTION_DESCRIPTIONS: Readonly<Record<string, Readonly<R
   },
   collect: {
     '--json': 'Print machine-readable draft output',
-    '--upload': 'Upload immediately after collecting'
+    '--upload': 'Review in terminal, then upload after confirmation',
+    '--yes': 'Upload without an interactive confirmation',
+    '-y': 'Upload without an interactive confirmation'
   },
   share: {
     '--json': 'Print machine-readable share output',

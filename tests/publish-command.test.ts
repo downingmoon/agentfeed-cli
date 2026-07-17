@@ -53,6 +53,40 @@ describe('publish command wrapper', () => {
     });
   });
 
+  it('uploads after terminal confirmation when publish pauses', async () => {
+    // Given: the first publish execution requires confirmation and the terminal prompt accepts it.
+    const draft = draftWithId('draft_publish_command_prompt');
+    const printed: string[] = [];
+    const yesValues: boolean[] = [];
+
+    // When: the publish CLI command wrapper runs in an interactive terminal.
+    await runPublishCliCommand(['--id', draft.id], {
+      cwd: '/tmp/agentfeed-publish-command',
+      print: (text = '') => { printed.push(text); },
+      printLines: (lines) => { printed.push(...lines); },
+      resolveDraftId: async () => draft.id,
+      interactive: true,
+      prompt: async () => 'yes',
+      runPublishCommand: async (options) => {
+        yesValues.push(options.flags.yes);
+        if (!options.flags.yes) {
+          return {
+            kind: 'confirmation_required',
+            draft,
+            command: 'agentfeed publish --id draft_publish_command_prompt --yes'
+          };
+        }
+        return { kind: 'published', draft, upload, handoff };
+      }
+    });
+
+    // Then: the preview is shown first, then the confirmed upload result is printed.
+    const output = printed.join('\n');
+    expect(yesValues).toEqual([false, true]);
+    expect(output).toContain('Upload confirmation required.');
+    expect(output).toContain('AgentFeed upload complete');
+  });
+
   it('prints confirmation guidance without uploading when publish pauses', async () => {
     // Given: publish execution returns a confirmation-required result.
     const draft = draftWithId('draft_publish_command_confirm');

@@ -94,7 +94,7 @@ async function cmdCollect(args: string[]) {
     cwd: process.cwd(),
     print,
     printLines,
-    publish: cmdPublish
+    publish: (publishArgs, options) => cmdPublish(publishArgs, options)
   });
 }
 
@@ -117,12 +117,13 @@ async function cmdPreview(args: string[]) {
   printLines(renderLocalPreviewHumanLines(preview.draft));
 }
 
-async function cmdPublish(args: string[]) {
+async function cmdPublish(args: string[], options: { readonly interactive?: boolean } = {}) {
   await runPublishCliCommand(args, {
     cwd: process.cwd(),
     print,
     printLines,
-    resolveDraftId
+    resolveDraftId,
+    interactive: options.interactive
   });
 }
 

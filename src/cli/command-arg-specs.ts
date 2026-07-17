@@ -89,9 +89,9 @@ export const COMMAND_ARG_SPECS: Readonly<Record<string, CommandArgSpec>> = {
     }
   },
   collect: {
-    flags: ['--dry', '--dry-run', '--all', '--force', '--run-configured-commands', '--explain', '--json', '--upload', '--open-review', '--no-open-review', '--no-save-cursor', '--no-upload', '--ai-worklog', '--no-ai-worklog'],
+    flags: ['--dry', '--dry-run', '--all', '--force', '--run-configured-commands', '--explain', '--json', '--upload', '--yes', '-y', '--open-review', '--no-open-review', '--no-save-cursor', '--no-upload', '--ai-worklog', '--no-ai-worklog'],
     valueOptions: ['--source', '--session-file', '--since', '--until', '--ai-worklog-tool'],
-    conflicts: [['--upload', '--no-upload'], ['--dry', '--upload'], ['--dry-run', '--upload'], ['--open-review', '--no-open-review'], ['--ai-worklog', '--no-ai-worklog']],
+    conflicts: [['--upload', '--no-upload'], ['--dry', '--upload'], ['--dry-run', '--upload'], ['--dry', '--yes'], ['--dry', '-y'], ['--dry-run', '--yes'], ['--dry-run', '-y'], ['--open-review', '--no-open-review'], ['--ai-worklog', '--no-ai-worklog']],
     validatePositionals: NO_POSITIONALS('collect')
   },
   share: {

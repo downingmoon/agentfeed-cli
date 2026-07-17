@@ -25,7 +25,8 @@ Common options:
 
 Advanced options:
   --json                    Print the draft JSON
-  --upload                  Upload after collecting
+  --upload                  Review in terminal, then upload after confirmation
+  --yes, -y                 Upload without interactive confirmation
   --open-review             Open uploaded private review URL
   --no-open-review          Suppress browser handoff
   --no-save-cursor          Do not advance the collection cursor
@@ -36,7 +37,9 @@ Examples:
   agentfeed collect --explain
   agentfeed collect --dry-run --explain
   agentfeed collect --source codex --session-file ~/.codex/session.jsonl --all
-  agentfeed collect --json --no-save-cursor`,
+  agentfeed collect --json --no-save-cursor
+  agentfeed collect --upload
+  agentfeed collect --upload --yes`,
   share: `Usage: agentfeed share [options]
 
 Collect, preview, and optionally upload a private review draft.

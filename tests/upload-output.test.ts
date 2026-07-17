@@ -67,7 +67,7 @@ describe('upload output helpers', () => {
     expect(lines.join('\n')).toContain('Project: proj');
     expect(lines.join('\n')).toContain('Title: Confirm upload');
     expect(lines.join('\n')).toContain('Preview: agentfeed preview --id draft_confirm');
-    expect(lines.join('\n')).toContain('Safety: no upload happens until you rerun with --yes.');
+    expect(lines.join('\n')).toContain('Safety: upload happens only after you answer yes or rerun with --yes.');
     expect(lines.join('\n')).toContain('agentfeed publish --id draft_confirm --yes');
     expect(lines.join('\n')).toContain('agentfeed share --yes');
   });

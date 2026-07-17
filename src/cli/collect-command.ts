@@ -13,7 +13,7 @@ import { runLocalAiWorklogFlow as defaultRunLocalAiWorklogFlow, type LocalAiWork
 
 type Print = (text?: string) => void;
 type PrintLines = (lines: readonly string[]) => void;
-type Publish = (args: string[]) => Promise<void>;
+type Publish = (args: string[], options?: { readonly interactive?: boolean }) => Promise<void>;
 type LoadProjectConfig = typeof defaultLoadProjectConfig;
 type ResolveCollectionWindowWithDiagnostics = typeof defaultResolveCollectionWindowWithDiagnostics;
 type LoadCredentials = typeof defaultLoadCredentials;
@@ -46,7 +46,7 @@ function collectPublishArgs(args: string[], draft: LocalDraft): string[] {
   return [
     '--id',
     draft.id,
-    '--yes',
+    ...(flag(args, '--yes') || flag(args, '-y') ? ['--yes'] : []),
     ...(flag(args, '--open-review') ? ['--open-review'] : []),
     ...(flag(args, '--no-open-review') ? ['--no-open-review'] : [])
   ];
@@ -123,7 +123,7 @@ export async function runCollectCliCommand(args: string[], io: CollectCliCommand
     explain: flag(args, '--explain')
   }));
   if (flag(args, '--upload')) {
-    await io.publish(collectPublishArgs(args, draft));
+    await io.publish(collectPublishArgs(args, draft), { interactive });
   } else if (!flag(args, '--no-upload') && config.collection.auto_upload) {
     io.printLines(renderCollectAutoUploadIgnoredWarningLines());
   }

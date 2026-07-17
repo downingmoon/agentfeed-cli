@@ -6,11 +6,13 @@ import { renderShareLocalNextLines, shareLocalJsonPayload, shareUploadedJsonPayl
 import { runShareCollectionCommand as defaultRunShareCollectionCommand } from './share-collection-execution.js';
 import { runShareUploadCommand as defaultRunShareUploadCommand } from './share-upload-execution.js';
 import { formatSharePreview, parseShareArgs } from './share.js';
+import { confirmUploadFromTerminal as defaultConfirmUploadFromTerminal, type UploadConfirmationPrompt } from './upload-confirmation-prompt.js';
 import { renderUploadConfirmationRequiredLines, renderUploadResultLines } from './upload-output.js';
 import * as ui from './ui.js';
 
 type Print = (text?: string) => void;
 type PrintLines = (lines: readonly string[]) => void;
+type ConfirmUploadFromTerminal = typeof defaultConfirmUploadFromTerminal;
 type LoadCredentialsWithMetadata = typeof defaultLoadCredentialsWithMetadata;
 type RunShareCollectionCommand = typeof defaultRunShareCollectionCommand;
 type RunShareUploadCommand = typeof defaultRunShareUploadCommand;
@@ -19,6 +21,7 @@ export type ShareCliCommandDependencies = {
   readonly loadCredentialsWithMetadata?: LoadCredentialsWithMetadata;
   readonly runShareCollectionCommand?: RunShareCollectionCommand;
   readonly runShareUploadCommand?: RunShareUploadCommand;
+  readonly confirmUploadFromTerminal?: ConfirmUploadFromTerminal;
 };
 
 export type ShareCliCommandIo = {
@@ -27,6 +30,7 @@ export type ShareCliCommandIo = {
   readonly printLines: PrintLines;
   readonly dependencies?: ShareCliCommandDependencies;
   readonly interactive?: boolean;
+  readonly prompt?: UploadConfirmationPrompt;
 };
 
 async function hasCredentialsForPublishGuidance(io: ShareCliCommandIo): Promise<boolean> {
@@ -48,6 +52,7 @@ export async function runShareCliCommand(args: string[], io: ShareCliCommandIo):
   const opts = parseShareArgs(args);
   const runShareCollectionCommand = io.dependencies?.runShareCollectionCommand ?? defaultRunShareCollectionCommand;
   const runShareUploadCommand = io.dependencies?.runShareUploadCommand ?? defaultRunShareUploadCommand;
+  const confirmUploadFromTerminal = io.dependencies?.confirmUploadFromTerminal ?? defaultConfirmUploadFromTerminal;
   const collection = await runShareCollectionCommand({ cwd: io.cwd, args, share: opts, interactive: io.interactive, printLines: io.printLines });
   const draft = collection.draft;
   const creds = collection.credentials;
@@ -112,7 +117,7 @@ export async function runShareCliCommand(args: string[], io: ShareCliCommandIo):
     return;
   }
 
-  const upload = await runShareUploadCommand({
+  let upload = await runShareUploadCommand({
     cwd: io.cwd,
     draft,
     credentials: creds,
@@ -128,7 +133,22 @@ export async function runShareCliCommand(args: string[], io: ShareCliCommandIo):
   });
   if (upload.kind === 'confirmation_required') {
     io.printLines(renderUploadConfirmationRequiredLines(upload.draft, upload.command, upload.extraCommand));
-    return;
+    if (!await confirmUploadFromTerminal({ interactive: io.interactive, prompt: io.prompt })) return;
+    upload = await runShareUploadCommand({
+      cwd: io.cwd,
+      draft: upload.draft,
+      credentials: creds,
+      flags: {
+        json: false,
+        yes: true,
+        clipboard: flag(args, '--clipboard'),
+        noClipboard: opts.noClipboard,
+        openReview: opts.openReview,
+        noOpenReview: opts.noOpenReview,
+        noSaveCursor: opts.noSaveCursor
+      }
+    });
+    if (upload.kind === 'confirmation_required') throw new Error('Internal error: confirmed share upload should not require confirmation.');
   }
   io.printLines(renderUploadResultLines({
     heading: upload.upload.reused_existing ? 'AgentFeed upload reused' : 'AgentFeed upload complete',

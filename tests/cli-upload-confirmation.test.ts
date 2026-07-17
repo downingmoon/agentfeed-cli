@@ -45,7 +45,7 @@ describe('CLI upload confirmation gates', () => {
       expect(share.stdout).toContain('Review before upload');
       expect(share.stdout).toContain('Preview: agentfeed preview --id');
       expect(share.stdout).toContain('Target: private AgentFeed review draft');
-      expect(share.stdout).toContain('Safety: no upload happens until you rerun with --yes.');
+      expect(share.stdout).toContain('Safety: upload happens only after you answer yes or rerun with --yes.');
       expect(share.stdout).toContain('Next');
       expect(share.stdout).toContain('Upload after reviewing this draft:');
       expect(share.stdout).toContain('agentfeed publish --id');

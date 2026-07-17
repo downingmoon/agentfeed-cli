@@ -46,7 +46,7 @@ agentfeed share              # collect + terminal review, then confirm upload
 agentfeed share --yes --open-review  # automation-friendly one-shot upload
 ```
 
-The default staging/production API is `https://agentfeed.api.downingmoon.dev/v1`, and successful uploads open review URLs on `https://agentfeed.downingmoon.dev`.
+The default AgentFeed API is `https://agentfeed.api.downingmoon.dev/v1`, and successful uploads open review URLs on `https://agentfeed.downingmoon.dev`.
 
 If you are not logged in yet, `agentfeed share` still creates a local preview and tells you the exact `agentfeed login` / `agentfeed publish` next actions. Uploading to AgentFeed always requires a token and explicit upload intent.
 
@@ -190,7 +190,7 @@ For a private server reachable by IP over plain HTTP, make the development-only 
 
 ```bash
 AGENTFEED_ALLOW_INSECURE_API=1 \
-AGENTFEED_API_BASE_URL=http://161.33.171.81:18080/v1 \
+AGENTFEED_API_BASE_URL=http://your-dev-host.example:18080/v1 \
 agentfeed login
 ```
 

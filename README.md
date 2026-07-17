@@ -180,13 +180,13 @@ For localhost development, set the API base URL before login or any upload comma
 AGENTFEED_API_BASE_URL=http://localhost:8001/v1 agentfeed login
 ```
 
-For the current AgentFeed staging/production domain, the default CLI API is already `https://agentfeed.api.downingmoon.dev/v1`. To pin it explicitly:
+For the current AgentFeed production domain, the default CLI API is already `https://agentfeed.api.downingmoon.dev/v1`. To pin it explicitly:
 
 ```bash
 AGENTFEED_API_BASE_URL=https://agentfeed.api.downingmoon.dev/v1 agentfeed login
 ```
 
-For a private server reachable by IP over plain HTTP, make the development-only override explicit:
+For a private development server reachable over plain HTTP, make the development-only override explicit:
 
 ```bash
 AGENTFEED_ALLOW_INSECURE_API=1 \

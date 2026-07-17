@@ -58,7 +58,7 @@ describe('release preflight CI and README guardrails', () => {
     expect(readme).toContain('publish --latest --yes');
     expect(readme).toContain('https://agentfeed.api.downingmoon.dev/v1');
     expect(readme).toContain('AGENTFEED_ALLOW_INSECURE_API=1');
-    expect(readme).toContain('AGENTFEED_API_BASE_URL=http://161.33.171.81:18080/v1');
+    expect(readme).toContain('AGENTFEED_API_BASE_URL=http://your-dev-host.example:18080/v1');
     expect(readme).toContain('agentfeed completion zsh > _agentfeed');
     expect(readme).toContain('Move the generated file into your shell completion directory');
     expect(readme).not.toContain('Local CLI MVP');

@@ -59,7 +59,7 @@ npm link
 agentfeed --version
 ```
 
-For release verification, build and inspect the npm tarball from this repository. Run this before direct pushes to `main`; GitHub CI is intentionally PR/manual scoped while this private repository is under Actions usage limits.
+For release verification, build and inspect the npm tarball from this repository. Run this before direct pushes to `main`; GitHub CI is intentionally PR/manual scoped while the project keeps CI usage conservative.
 
 ```bash
 npm ci
@@ -98,10 +98,11 @@ Trusted publishing automatically generates provenance through OIDC; do not add
 `--provenance` to that trusted publishing command.
 
 npm's current provenance requirements include a public source repository whose
-`package.json.repository` matches the publishing repository. If this GitHub repo
-stays private, provenance will not be generated. A temporary non-provenance
-manual publish is an explicit owner exception and must document that lower trust
-posture before overriding the package-level provenance setting. See:
+`package.json.repository` matches the publishing repository. Keep this GitHub
+repository public and use the trusted publishing workflow for provenance-backed
+releases. A temporary non-provenance manual publish is an explicit owner
+exception and must document that lower trust posture before overriding the
+package-level provenance setting. See:
 
 - https://docs.npmjs.com/generating-provenance-statements
 - https://docs.npmjs.com/trusted-publishers

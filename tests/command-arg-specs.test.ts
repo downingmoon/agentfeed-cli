@@ -17,7 +17,10 @@ describe('command argument specs', () => {
     expect(shareSpec?.flags).toContain('--open-review');
     expect(shareSpec?.flags).toContain('--no-clip');
     expect(shareSpec?.valueOptions).toContain('--note');
+    expect(shareSpec?.flags).toContain('--ai-worklog');
+    expect(shareSpec?.valueOptions).toContain('--ai-worklog-tool');
     expect(shareSpec?.conflicts).toContainEqual(['--clipboard', '--no-clip']);
+    expect(shareSpec?.conflicts).toContainEqual(['--ai-worklog', '--no-ai-worklog']);
     expect(publishSpec?.conflicts).toContainEqual(['--open-review', '--no-open-review']);
   });
 

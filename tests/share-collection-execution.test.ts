@@ -140,3 +140,36 @@ describe('share collection execution', () => {
     }]);
   });
 });
+
+describe('share collection local AI worklog flow', () => {
+  it('can improve uploadable share drafts before upload', async () => {
+    // Given: share will upload and local AI returns an improved draft.
+    const draft = draftWithId('draft_share_ai_original');
+    const improved = draftWithId('draft_share_ai_improved');
+    improved.worklog.title = 'AI share title';
+
+    // When: share collection runs with AI worklog enabled.
+    const result = await runShareCollectionCommand({
+      cwd: '/tmp/agentfeed-share-collection-execution',
+      args: ['--ai-worklog'],
+      share: { ...defaultShareOptions(), json: false },
+      interactive: false,
+      dependencies: {
+        loadProjectConfig: async () => undefined,
+        resolveCollectionWindowWithDiagnostics: async () => ({
+          window: { since: null, until: null },
+          warnings: [],
+          collection_state: { state: {}, path: '/tmp/state.json', warnings: [], valid: true }
+        }),
+        loadCredentials: async () => credentials,
+        collectDraftWithStatus: async () => ({ draft, reusedExisting: false, warnings: [] }),
+        sanitizeDraftForOutput: async (_cwd, nextDraft) => nextDraft,
+        runLocalAiWorklogFlow: async () => ({ draft: improved, warnings: ['ai warning'] })
+      }
+    });
+
+    // Then: the improved draft and AI warnings continue into upload flow.
+    expect(result.draft.id).toBe('draft_share_ai_improved');
+    expect(result.warnings).toEqual(['ai warning']);
+  });
+});

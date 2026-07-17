@@ -29,6 +29,7 @@ const COMPLETION_OPTION_METADATA = createCompletionOptionMetadata({
   commandSpecs: COMMAND_ARG_SPECS,
   valueChoices: {
     '--source': SUPPORTED_SOURCES,
+    '--ai-worklog-tool': ['claude', 'codex', 'gemini', 'antigravity'],
     '--token': ['-']
   }
 });

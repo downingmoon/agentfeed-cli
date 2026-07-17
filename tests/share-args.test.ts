@@ -18,7 +18,10 @@ describe('share command argument parsing', () => {
       noClipboard: true,
       noSaveCursor: true,
       runConfiguredCommands: true,
-      yes: false
+      yes: false,
+      aiWorklog: false,
+      noAiWorklog: false,
+      aiWorklogTool: null
     });
     expect(parseShareArgs(['--explain']).explain).toBe(true);
     expect(parseShareArgs(['--yes']).yes).toBe(true);

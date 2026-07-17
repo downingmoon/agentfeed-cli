@@ -5,6 +5,7 @@ import { collectDraftWithStatus as defaultCollectDraftWithStatus, type CollectDr
 import type { AgentFeedCredentials, AgentType, LocalDraft } from '../types.js';
 import { flag } from './args.js';
 import { sanitizeDraftForCliOutput as defaultSanitizeDraftForOutput } from './draft-output-sanitizer.js';
+import { runLocalAiWorklogFlow as defaultRunLocalAiWorklogFlow, type LocalAiWorklogFlow } from './local-ai-worklog-flow.js';
 
 type LoadProjectConfig = (cwd: string) => Promise<unknown>;
 type LoadCredentials = () => Promise<AgentFeedCredentials | null>;
@@ -18,6 +19,7 @@ export type ShareCollectionInput = {
   readonly dryRun: boolean;
   readonly note?: string | null;
   readonly runConfiguredCommands: boolean;
+  readonly json?: boolean;
 };
 
 export type ShareCollectionDependencies = {
@@ -26,6 +28,7 @@ export type ShareCollectionDependencies = {
   readonly resolveCollectionWindowWithDiagnostics?: ResolveCollectionWindowWithDiagnostics;
   readonly collectDraftWithStatus?: CollectDraftWithStatus;
   readonly sanitizeDraftForOutput?: SanitizeDraftForOutput;
+  readonly runLocalAiWorklogFlow?: LocalAiWorklogFlow;
 };
 
 export type ShareCollectionOptions = {
@@ -33,6 +36,8 @@ export type ShareCollectionOptions = {
   readonly args: readonly string[];
   readonly share: ShareCollectionInput;
   readonly dependencies?: ShareCollectionDependencies;
+  readonly interactive?: boolean;
+  readonly printLines?: (lines: readonly string[]) => void;
 };
 
 export type ShareCollectionResult = {
@@ -51,6 +56,7 @@ export async function runShareCollectionCommand(options: ShareCollectionOptions)
   const loadCredentials = options.dependencies?.loadCredentials ?? defaultLoadCredentials;
   const collectDraftWithStatus = options.dependencies?.collectDraftWithStatus ?? defaultCollectDraftWithStatus;
   const sanitizeDraftForOutput = options.dependencies?.sanitizeDraftForOutput ?? defaultSanitizeDraftForOutput;
+  const runLocalAiWorklogFlow = options.dependencies?.runLocalAiWorklogFlow ?? defaultRunLocalAiWorklogFlow;
 
   await loadProjectConfig(options.cwd);
   const args = mutableArgs(options.args);
@@ -69,11 +75,23 @@ export async function runShareCollectionCommand(options: ShareCollectionOptions)
     runConfiguredCommands: options.share.runConfiguredCommands,
     skipConfiguredCommands: options.share.dryRun
   });
-  const draft = await sanitizeDraftForOutput(options.cwd, collection.draft);
+  let draft = await sanitizeDraftForOutput(options.cwd, collection.draft);
+  const warnings = [...collectionWindow.warnings, ...collection.warnings];
+  const aiWorklog = await runLocalAiWorklogFlow({
+    cwd: options.cwd,
+    args,
+    draft,
+    uploadRequested: Boolean(credentials),
+    json: options.share.json ?? false,
+    interactive: options.interactive ?? Boolean(process.stdin.isTTY && process.stdout.isTTY),
+    printLines: options.printLines ?? (() => undefined)
+  });
+  draft = aiWorklog.draft;
+  warnings.push(...aiWorklog.warnings);
   return {
     draft,
     credentials,
     reusedExistingDraft: collection.reusedExisting,
-    warnings: [...collectionWindow.warnings, ...collection.warnings]
+    warnings
   };
 }

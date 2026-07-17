@@ -89,14 +89,14 @@ export const COMMAND_ARG_SPECS: Readonly<Record<string, CommandArgSpec>> = {
     }
   },
   collect: {
-    flags: ['--dry', '--dry-run', '--all', '--force', '--run-configured-commands', '--explain', '--json', '--upload', '--open-review', '--no-open-review', '--no-save-cursor', '--no-upload'],
-    valueOptions: ['--source', '--session-file', '--since', '--until'],
-    conflicts: [['--upload', '--no-upload'], ['--dry', '--upload'], ['--dry-run', '--upload'], ['--open-review', '--no-open-review']],
+    flags: ['--dry', '--dry-run', '--all', '--force', '--run-configured-commands', '--explain', '--json', '--upload', '--open-review', '--no-open-review', '--no-save-cursor', '--no-upload', '--ai-worklog', '--no-ai-worklog'],
+    valueOptions: ['--source', '--session-file', '--since', '--until', '--ai-worklog-tool'],
+    conflicts: [['--upload', '--no-upload'], ['--dry', '--upload'], ['--dry-run', '--upload'], ['--open-review', '--no-open-review'], ['--ai-worklog', '--no-ai-worklog']],
     validatePositionals: NO_POSITIONALS('collect')
   },
   share: {
-    flags: ['--dry', '--dry-run', '--yes', '-y', '--open-review', '--no-open-review', '--all', '--force', '--run-configured-commands', '--explain', '--no-save-cursor', '--no-clipboard', '--no-clip', '--json', '--clipboard'],
-    valueOptions: ['--source', '--session-file', '--since', '--until', '--note'],
+    flags: ['--dry', '--dry-run', '--yes', '-y', '--open-review', '--no-open-review', '--all', '--force', '--run-configured-commands', '--explain', '--no-save-cursor', '--no-clipboard', '--no-clip', '--json', '--clipboard', '--ai-worklog', '--no-ai-worklog'],
+    valueOptions: ['--source', '--session-file', '--since', '--until', '--note', '--ai-worklog-tool'],
     conflicts: [
       ['--dry', '--yes'],
       ['--dry', '-y'],
@@ -104,7 +104,8 @@ export const COMMAND_ARG_SPECS: Readonly<Record<string, CommandArgSpec>> = {
       ['--dry-run', '-y'],
       ['--open-review', '--no-open-review'],
       ['--clipboard', '--no-clipboard'],
-      ['--clipboard', '--no-clip']
+      ['--clipboard', '--no-clip'],
+      ['--ai-worklog', '--no-ai-worklog']
     ],
     validatePositionals: NO_POSITIONALS('share')
   },

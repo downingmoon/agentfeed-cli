@@ -9,6 +9,7 @@ import { collectJsonPayload, renderCollectAutoUploadIgnoredWarningLines, renderC
 import { runCollectJsonUploadCommand as defaultRunCollectJsonUploadCommand } from './collect-upload-execution.js';
 import { sanitizeDraftForCliOutput as defaultSanitizeDraftForOutput } from './draft-output-sanitizer.js';
 import { parseAgentSource } from './source.js';
+import { runLocalAiWorklogFlow as defaultRunLocalAiWorklogFlow, type LocalAiWorklogFlow } from './local-ai-worklog-flow.js';
 
 type Print = (text?: string) => void;
 type PrintLines = (lines: readonly string[]) => void;
@@ -29,6 +30,7 @@ export type CollectCliCommandDependencies = {
   readonly sanitizeDraftForOutput?: SanitizeDraftForOutput;
   readonly runCollectJsonUploadCommand?: RunCollectJsonUploadCommand;
   readonly markCollectionComplete?: MarkCollectionComplete;
+  readonly runLocalAiWorklogFlow?: LocalAiWorklogFlow;
 };
 
 export type CollectCliCommandIo = {
@@ -37,6 +39,7 @@ export type CollectCliCommandIo = {
   readonly printLines: PrintLines;
   readonly publish: Publish;
   readonly dependencies?: CollectCliCommandDependencies;
+  readonly interactive?: boolean;
 };
 
 function collectPublishArgs(args: string[], draft: LocalDraft): string[] {
@@ -64,6 +67,7 @@ export async function runCollectCliCommand(args: string[], io: CollectCliCommand
   const sanitizeDraftForOutput = io.dependencies?.sanitizeDraftForOutput ?? defaultSanitizeDraftForOutput;
   const runCollectJsonUploadCommand = io.dependencies?.runCollectJsonUploadCommand ?? defaultRunCollectJsonUploadCommand;
   const markCollectionComplete = io.dependencies?.markCollectionComplete ?? defaultMarkCollectionComplete;
+  const runLocalAiWorklogFlow = io.dependencies?.runLocalAiWorklogFlow ?? defaultRunLocalAiWorklogFlow;
   const source = parseAgentSource(option(args, '--source'), 'collect');
   const config = await loadProjectConfig(io.cwd);
   const collectionWindow = await resolveCollectionWindowWithDiagnostics({ cwd: io.cwd, args });
@@ -82,6 +86,7 @@ export async function runCollectCliCommand(args: string[], io: CollectCliCommand
   });
   let draft = await sanitizeDraftForOutput(io.cwd, collection.draft);
   const warnings = [...collectionWindow.warnings, ...collection.warnings];
+  const interactive = io.interactive ?? Boolean(process.stdin.isTTY && process.stdout.isTTY);
 
   if (flag(args, '--json')) {
     if (uploadCredentials) {
@@ -97,6 +102,18 @@ export async function runCollectCliCommand(args: string[], io: CollectCliCommand
     io.print(JSON.stringify(collectJsonPayload({ draft, warnings }), null, 2));
     return;
   }
+
+  const aiWorklog = await runLocalAiWorklogFlow({
+    cwd: io.cwd,
+    args,
+    draft,
+    uploadRequested: flag(args, '--upload'),
+    json: false,
+    interactive,
+    printLines: io.printLines
+  });
+  draft = aiWorklog.draft;
+  warnings.push(...aiWorklog.warnings);
 
   io.printLines(renderCollectHumanLines({
     draft,

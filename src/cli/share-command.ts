@@ -26,6 +26,7 @@ export type ShareCliCommandIo = {
   readonly print: Print;
   readonly printLines: PrintLines;
   readonly dependencies?: ShareCliCommandDependencies;
+  readonly interactive?: boolean;
 };
 
 async function hasCredentialsForPublishGuidance(io: ShareCliCommandIo): Promise<boolean> {
@@ -47,7 +48,7 @@ export async function runShareCliCommand(args: string[], io: ShareCliCommandIo):
   const opts = parseShareArgs(args);
   const runShareCollectionCommand = io.dependencies?.runShareCollectionCommand ?? defaultRunShareCollectionCommand;
   const runShareUploadCommand = io.dependencies?.runShareUploadCommand ?? defaultRunShareUploadCommand;
-  const collection = await runShareCollectionCommand({ cwd: io.cwd, args, share: opts });
+  const collection = await runShareCollectionCommand({ cwd: io.cwd, args, share: opts, interactive: io.interactive, printLines: io.printLines });
   const draft = collection.draft;
   const creds = collection.credentials;
   const warnings = collection.warnings;

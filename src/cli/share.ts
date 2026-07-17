@@ -20,6 +20,9 @@ export interface ShareOptions {
   noSaveCursor: boolean;
   runConfiguredCommands: boolean;
   yes: boolean;
+  aiWorklog: boolean;
+  noAiWorklog: boolean;
+  aiWorklogTool?: string | null;
 }
 
 export function formatMetricsRow(draft: LocalDraft): string {
@@ -166,6 +169,9 @@ export function parseShareArgs(args: string[]): ShareOptions {
     noClipboard: flag(args, '--no-clipboard') || flag(args, '--no-clip'),
     noSaveCursor: flag(args, '--no-save-cursor'),
     runConfiguredCommands: flag(args, '--run-configured-commands'),
-    yes: flag(args, '--yes') || flag(args, '-y')
+    yes: flag(args, '--yes') || flag(args, '-y'),
+    aiWorklog: flag(args, '--ai-worklog'),
+    noAiWorklog: flag(args, '--no-ai-worklog'),
+    aiWorklogTool: option(args, '--ai-worklog-tool') ?? null
   };
 }

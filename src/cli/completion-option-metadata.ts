@@ -1,6 +1,8 @@
 import type { CompletionCommandSpec } from './completion-vocabulary.js';
 
 const COMPLETION_OPTION_DESCRIPTIONS: Readonly<Record<string, string>> = {
+  '--ai-worklog': 'Use a local AI CLI to improve worklog text',
+  '--ai-worklog-tool': 'Select local AI CLI for worklog text',
   '--all': 'Collect from the full available local history',
   '--api-base-url': 'Override AgentFeed API base URL',
   '--browser': 'Allow browser authorization in guarded environments',
@@ -21,6 +23,7 @@ const COMPLETION_OPTION_DESCRIPTIONS: Readonly<Record<string, string>> = {
   '--no-open-review': 'Do not open the private review URL',
   '--no-save': 'Do not persist credentials after login',
   '--no-save-cursor': 'Do not advance the collection cursor',
+  '--no-ai-worklog': 'Skip local AI worklog improvement',
   '--no-upload': 'Keep the draft local instead of uploading',
   '--note': 'Attach a public-safe author note',
   '--open-review': 'Open the private review URL after upload',
@@ -91,6 +94,7 @@ const COMMAND_COMPLETION_OPTION_DESCRIPTIONS: Readonly<Record<string, Readonly<R
 };
 
 const COMPLETION_VALUE_PLACEHOLDERS: Readonly<Record<string, string>> = {
+  '--ai-worklog-tool': 'tool',
   '--api-base-url': 'API URL',
   '--id': 'draft ID',
   '--note': 'note',

@@ -19,6 +19,9 @@ Common options:
   --dry, --dry-run          Keep draft local; collect uploads only with --upload
   --explain                 Include collection source/quality diagnostics
   --run-configured-commands Run configured local evidence commands
+  --ai-worklog              Improve worklog text with local AI before upload
+  --ai-worklog-tool <tool>  Choose claude, codex, gemini, or antigravity
+  --no-ai-worklog           Skip local AI worklog improvement
 
 Advanced options:
   --json                    Print the draft JSON
@@ -62,6 +65,9 @@ Options:
   --json                    Print machine-readable output
   --clipboard               Copy review URL when --json is used
   --run-configured-commands Run configured local evidence commands
+  --ai-worklog              Improve worklog text with local AI before upload
+  --ai-worklog-tool <tool>  Choose claude, codex, gemini, or antigravity
+  --no-ai-worklog           Skip local AI worklog improvement
   --help, -h                Show this help
 
 Examples:

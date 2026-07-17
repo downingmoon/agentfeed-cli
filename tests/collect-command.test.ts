@@ -130,3 +130,65 @@ describe('collect command wrapper', () => {
     expect(inferIdleGapValues).toEqual([true, false]);
   });
 });
+
+describe('collect command local AI worklog flow', () => {
+  it('improves the draft before human upload when explicitly requested', async () => {
+    // Given: upload is requested with the local AI worklog flag.
+    const draft = draftWithId('draft_collect_ai_before_upload');
+    const improved = draftWithId('draft_collect_ai_improved');
+    improved.worklog.title = 'AI improved worklog';
+    const publishArgs: string[][] = [];
+
+    // When: collect runs before publish.
+    await runCollectCliCommand(['--upload', '--ai-worklog'], {
+      cwd: '/tmp/agentfeed-collect-command',
+      print: () => undefined,
+      printLines: () => undefined,
+      publish: async (args) => { publishArgs.push(args); },
+      interactive: false,
+      dependencies: {
+        loadProjectConfig: async () => ({ ...projectConfig, collection: { ...projectConfig.collection, auto_upload: false } }),
+        resolveCollectionWindowWithDiagnostics: async () => ({ window: { since: null, until: null }, warnings: [] }),
+        loadCredentials: async () => credentials,
+        collectDraftWithStatus: async () => ({ draft, reusedExisting: false, warnings: [] }),
+        sanitizeDraftForOutput: async (_cwd, value) => value,
+        runLocalAiWorklogFlow: async () => ({ draft: improved, warnings: [] }),
+        markCollectionComplete: async () => undefined
+      }
+    });
+
+    // Then: publish receives the improved draft id.
+    expect(publishArgs).toEqual([['--id', 'draft_collect_ai_improved', '--yes']]);
+  });
+
+  it('skips local AI worklog flow in JSON mode', async () => {
+    // Given: JSON upload is requested with AI flags.
+    const draft = draftWithId('draft_collect_ai_json_skip');
+    let aiCalls = 0;
+
+    // When: collect runs in JSON mode.
+    await runCollectCliCommand(['--json', '--upload', '--ai-worklog'], {
+      cwd: '/tmp/agentfeed-collect-command',
+      print: () => undefined,
+      printLines: () => undefined,
+      publish: async () => undefined,
+      interactive: false,
+      dependencies: {
+        loadProjectConfig: async () => ({ ...projectConfig, collection: { ...projectConfig.collection, auto_upload: false } }),
+        resolveCollectionWindowWithDiagnostics: async () => ({ window: { since: null, until: null }, warnings: [] }),
+        loadCredentials: async () => credentials,
+        collectDraftWithStatus: async () => ({ draft, reusedExisting: false, warnings: [] }),
+        sanitizeDraftForOutput: async (_cwd, value) => value,
+        runCollectJsonUploadCommand: async (input) => input.draft,
+        runLocalAiWorklogFlow: async () => {
+          aiCalls += 1;
+          return { draft, warnings: [] };
+        },
+        markCollectionComplete: async () => undefined
+      }
+    });
+
+    // Then: machine-readable JSON output remains unaffected by AI prompting.
+    expect(aiCalls).toBe(0);
+  });
+});

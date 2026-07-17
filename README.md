@@ -329,7 +329,7 @@ Repo-local test/build commands are never executed by default, even when `.agentf
 
 `agentfeed doctor` reports API reachability, ingestion token validity, and local Claude Code, Codex CLI, Antigravity CLI, OMC, OMX, and Superpowers signals so setup problems are easier to diagnose.
 
-Draft collection also records a stable fingerprint from `session_id + git head + collection_window`; repeated runs reuse the existing local draft unless `--force` or `--all` is used. If that draft was already uploaded, `share` / `publish` reuse the saved review URL instead of uploading a duplicate worklog.
+Draft collection also records a stable fingerprint from `session_id + git head + collection_window`; repeated runs reuse the existing local draft unless `--force` or `--all` is used. If that draft was already uploaded, `share` / `publish` reuse the saved review URL instead of uploading a duplicate worklog. On the AgentFeed server, a newly uploaded private review draft for the same owned project updates the existing unpublished review draft instead of creating another project worklog row; after a worklog is published, later uploads create a fresh private review draft for the next version.
 
 Successful human-readable `share` / `publish` copies the review URL to the clipboard when the platform supports it. Use `--no-clipboard` to opt out. `--open-review` forces a browser handoff after upload; `--no-open-review` suppresses project-configured browser handoff for that run. If clipboard or browser opening is requested but unavailable, the CLI prints a visible warning and leaves the review URL in the output for manual copy/open.
 

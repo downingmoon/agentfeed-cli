@@ -80,7 +80,9 @@ export async function runLocalAiWorklogFlow(input: LocalAiWorklogFlowInput): Pro
     ? toolById(tools, requestedTool)
     : await chooseTool({ tools, prompt, interactive: input.interactive });
   if (!selectedTool) {
-    warnings.push(requestedTool ? `Local AI CLI not found: ${requestedTool}.` : 'No local AI CLI selected or detected; worklog was not changed.');
+    const warning = requestedTool ? `Local AI CLI not found: ${requestedTool}.` : 'No local AI CLI selected or detected; worklog was not changed.';
+    if (input.uploadRequested) throw new Error(warning);
+    warnings.push(warning);
     return { draft: input.draft, warnings };
   }
 
@@ -98,7 +100,9 @@ export async function runLocalAiWorklogFlow(input: LocalAiWorklogFlowInput): Pro
     return { draft: nextDraft, warnings };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown local AI worklog error.';
-    warnings.push(`Local AI worklog failed (${selectedTool.label}): ${message}`);
+    const warning = `Local AI worklog failed (${selectedTool.label}): ${message}`;
+    if (input.uploadRequested) throw new Error(warning);
+    warnings.push(warning);
     return { draft: input.draft, warnings };
   }
 }

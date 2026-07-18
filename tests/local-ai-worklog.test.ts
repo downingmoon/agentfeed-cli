@@ -1,4 +1,8 @@
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { runLocalAiWorklogFlow } from '../src/cli/local-ai-worklog-flow.js';
 import { applyAiWorklogPatch, parseAiWorklogPatch } from '../src/llm/local-worklog-draft.js';
 import { detectLocalAiWorklogTools, runLocalAiWorklogTool } from '../src/llm/local-worklog-tools.js';
 import { createEmptyDraft } from '../src/draft/create.js';
@@ -67,6 +71,64 @@ describe('local AI worklog helpers', () => {
   });
 
 
+
+  it('throws when an explicitly requested local AI tool fails before upload', async () => {
+    // Given: the user explicitly asks Codex to improve a draft before share upload.
+    const cwd = await mkdtemp(join(tmpdir(), 'agentfeed-local-ai-fail-'));
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: cwd, source: 'codex' });
+
+    try {
+      // When / Then: a tool failure blocks upload instead of silently publishing the default draft.
+      await expect(runLocalAiWorklogFlow({
+        cwd,
+        args: ['--ai-worklog-tool', 'codex'],
+        draft,
+        uploadRequested: true,
+        json: false,
+        interactive: false,
+        printLines: () => undefined,
+        dependencies: {
+          resolveCommand: async (command) => command === 'codex' ? '/bin/codex' : null,
+          spawnCommand: async () => {
+            throw new Error('codex produced no JSON');
+          }
+        }
+      })).rejects.toThrow('Local AI worklog failed (Codex CLI): codex produced no JSON');
+    } finally {
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
+
+
+  it('throws when an interactively selected local AI tool fails before upload', async () => {
+    // Given: the user opts into local AI during an upload flow and chooses Codex from the prompt.
+    const cwd = await mkdtemp(join(tmpdir(), 'agentfeed-local-ai-interactive-fail-'));
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: cwd, source: 'codex' });
+    const answers = ['y', '2'];
+
+    try {
+      // When / Then: an AI failure blocks upload instead of silently publishing the default draft.
+      await expect(runLocalAiWorklogFlow({
+        cwd,
+        args: [],
+        draft,
+        uploadRequested: true,
+        json: false,
+        interactive: true,
+        printLines: () => undefined,
+        prompt: async () => answers.shift() ?? '',
+        dependencies: {
+          resolveCommand: async (command) => command === 'claude' || command === 'codex' ? `/bin/${command}` : null,
+          spawnCommand: async () => {
+            throw new Error('codex produced no JSON');
+          }
+        }
+      })).rejects.toThrow('Local AI worklog failed (Codex CLI): codex produced no JSON');
+    } finally {
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
+
   it('accepts draft-shaped local AI JSON with nested worklog fields', () => {
     // Given: a local AI CLI returns a draft-like JSON object instead of the flat patch shape.
     const draft = createEmptyDraft({ projectName: 'proj', projectRoot: '/tmp/agentfeed-local-ai', source: 'codex' });
@@ -80,6 +142,15 @@ describe('local AI worklog helpers', () => {
     expect(next.worklog.summary).toBe('Nested AI summary');
     expect(next.worklog.changed_areas).toEqual(['CLI share']);
     expect(next.worklog.public_prompt).toBe('agentfeed share --ai-worklog');
+  });
+
+
+  it('rejects empty local AI JSON patches so default drafts are not mislabeled as AI-improved', () => {
+    // Given: a local AI CLI exits successfully but returns no usable worklog fields.
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: '/tmp/agentfeed-local-ai', source: 'codex' });
+
+    // When / Then: applying the empty patch fails instead of printing an AI success message.
+    expect(() => applyAiWorklogPatch(draft, parseAiWorklogPatch('{}'))).toThrow('Local AI worklog response did not include any usable worklog fields.');
   });
 
   it('applies parsed AI worklog JSON through privacy redaction', () => {

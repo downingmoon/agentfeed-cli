@@ -112,7 +112,18 @@ export function buildAiWorklogPrompt(draft: LocalDraft): string {
   ].join('\n');
 }
 
+function hasUsableWorklogPatchField(patch: AiWorklogPatch): boolean {
+  return patch.title !== undefined
+    || patch.summary !== undefined
+    || patch.changed_areas !== undefined
+    || patch.outcome !== undefined
+    || patch.timeline !== undefined
+    || patch.tags !== undefined
+    || patch.public_prompt !== undefined;
+}
+
 export function applyAiWorklogPatch(draft: LocalDraft, patch: AiWorklogPatch): LocalDraft {
+  if (!hasUsableWorklogPatchField(patch)) throw new Error('Local AI worklog response did not include any usable worklog fields.');
   const publicFields = {
     title: patch.title ?? draft.worklog.title,
     summary: patch.summary ?? draft.worklog.summary,

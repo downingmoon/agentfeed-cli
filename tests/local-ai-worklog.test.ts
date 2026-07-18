@@ -1,10 +1,11 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { spawn } from 'node:child_process';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { runLocalAiWorklogFlow } from '../src/cli/local-ai-worklog-flow.js';
 import { applyAiWorklogPatch, parseAiWorklogPatch } from '../src/llm/local-worklog-draft.js';
-import { detectLocalAiWorklogTools, runLocalAiWorklogTool } from '../src/llm/local-worklog-tools.js';
+import { detectLocalAiWorklogTools, runLocalAiWorklogTool, spawnCommand } from '../src/llm/local-worklog-tools.js';
 import { createEmptyDraft } from '../src/draft/create.js';
 
 describe('local AI worklog helpers', () => {
@@ -44,9 +45,13 @@ describe('local AI worklog helpers', () => {
       }
     });
 
-    // Then: codex receives stdin prompt, read-only sandbox flags, and no AgentFeed token.
+    // Then: codex receives stdin prompt, isolated read-only exec flags, and no AgentFeed token.
     expect(output).toBe('{"title":"AI title"}');
-    expect(calls).toEqual([{ args: ['exec', '--sandbox', 'read-only', '--ephemeral', '-'], stdin: 'write worklog', token: undefined }]);
+    expect(calls).toEqual([{
+      args: ['exec', '--sandbox', 'read-only', '--ephemeral', '--ignore-rules', '--skip-git-repo-check', '--color', 'never', '-'],
+      stdin: 'write worklog',
+      token: undefined
+    }]);
   });
 
   it('passes Claude non-interactive prompts as the print argument', async () => {
@@ -70,6 +75,41 @@ describe('local AI worklog helpers', () => {
     expect(calls).toEqual([{ args: ['--print', 'write worklog'], stdin: '' }]);
   });
 
+
+  it('retries node shebang commands through the current node executable when direct spawn returns EINVAL', async () => {
+    // Given: a package-manager shim cannot be spawned directly on the host platform.
+    const cwd = await mkdtemp(join(tmpdir(), 'agentfeed-local-ai-spawn-einval-'));
+    const commandPath = join(cwd, 'codex');
+    await writeFile(commandPath, `#!/usr/bin/env node\nprocess.stdout.write('{"title":"AI title"}')\n`);
+
+    try {
+      // When: the first direct spawn fails with EINVAL but the Node shebang fallback can execute it.
+      const output = await spawnCommand({
+        command: commandPath,
+        args: [],
+        cwd,
+        stdin: '',
+        timeoutMs: 5_000,
+        env: process.env,
+        spawnProcess: (command, args, options) => {
+          if (command === commandPath) {
+            const child = spawn(process.execPath, ['-e', 'setTimeout(() => undefined, 10000)'], options);
+            queueMicrotask(() => {
+              child.emit('error', Object.assign(new Error('spawn EINVAL'), { code: 'EINVAL' }));
+              child.kill('SIGTERM');
+            });
+            return child;
+          }
+          return spawn(command, [...args], options);
+        }
+      });
+
+      // Then: the fallback invokes the same script through process.execPath and returns stdout.
+      expect(output.stdout).toBe('{"title":"AI title"}');
+    } finally {
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
 
 
   it('throws when an explicitly requested local AI tool fails before upload', async () => {

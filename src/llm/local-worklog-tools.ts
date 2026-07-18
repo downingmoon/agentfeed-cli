@@ -1,5 +1,5 @@
-import { spawn } from 'node:child_process';
-import { access } from 'node:fs/promises';
+import { spawn, type ChildProcessWithoutNullStreams, type SpawnOptionsWithoutStdio } from 'node:child_process';
+import { access, open } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { delimiter, join } from 'node:path';
 import { createScrubbedCommandEnv } from '../utils/subprocess-env.js';
@@ -14,14 +14,21 @@ export type LocalAiWorklogTool = {
 
 type ResolveCommand = (command: string, env?: NodeJS.ProcessEnv) => Promise<string | null>;
 
-type SpawnCommand = (input: {
+type SpawnProcess = (command: string, args: readonly string[], options: SpawnOptionsWithoutStdio) => ChildProcessWithoutNullStreams;
+
+type SpawnCommandInput = {
   readonly command: string;
   readonly args: readonly string[];
   readonly cwd: string;
   readonly stdin: string;
   readonly timeoutMs: number;
   readonly env: NodeJS.ProcessEnv;
-}) => Promise<{ readonly stdout: string; readonly stderr: string }>;
+  readonly spawnProcess?: SpawnProcess;
+};
+
+type SpawnCommand = (input: SpawnCommandInput) => Promise<{ readonly stdout: string; readonly stderr: string }>;
+
+type SpawnFailure = Error & { readonly code?: string };
 
 export type LocalAiWorklogToolDependencies = {
   readonly resolveCommand?: ResolveCommand;
@@ -94,7 +101,7 @@ export async function detectLocalAiWorklogTools(dependencies: LocalAiWorklogTool
 function finalArgsForTool(tool: LocalAiWorklogToolId, prompt: string): readonly string[] {
   switch (tool) {
     case 'claude': return ['--print', prompt];
-    case 'codex': return ['exec', '--sandbox', 'read-only', '--ephemeral', '-'];
+    case 'codex': return ['exec', '--sandbox', 'read-only', '--ephemeral', '--ignore-rules', '--skip-git-repo-check', '--color', 'never', '-'];
     case 'gemini': return ['-p', prompt];
     case 'antigravity': return ['-p', prompt];
   }
@@ -112,16 +119,37 @@ function stdinForTool(tool: LocalAiWorklogToolId, prompt: string): string {
   }
 }
 
-export async function spawnCommand(input: {
-  readonly command: string;
-  readonly args: readonly string[];
-  readonly cwd: string;
-  readonly stdin: string;
-  readonly timeoutMs: number;
-  readonly env: NodeJS.ProcessEnv;
-}): Promise<{ readonly stdout: string; readonly stderr: string }> {
+function isSpawnFailure(error: unknown): error is SpawnFailure {
+  return error instanceof Error && 'code' in error && typeof error.code === 'string';
+}
+
+async function nodeShebangCommand(command: string): Promise<{ readonly command: string; readonly argsPrefix: readonly string[] } | null> {
+  if (process.platform === 'win32') return null;
+  try {
+    const file = await open(command, 'r');
+    try {
+      const buffer = Buffer.alloc(256);
+      const result = await file.read(buffer, 0, buffer.length, 0);
+      const header = buffer.subarray(0, result.bytesRead).toString('utf8');
+      const firstLine = header.split('\n', 1)[0] ?? '';
+      if (!firstLine.startsWith('#!') || !/\bnode(?:\s|$)/.test(firstLine)) return null;
+      return { command: process.execPath, argsPrefix: [command] };
+    } finally {
+      await file.close();
+    }
+  } catch {
+    return null;
+  }
+}
+
+function defaultSpawnProcess(command: string, args: readonly string[], options: SpawnOptionsWithoutStdio): ChildProcessWithoutNullStreams {
+  return spawn(command, [...args], options);
+}
+
+async function spawnCommandOnce(input: SpawnCommandInput): Promise<{ readonly stdout: string; readonly stderr: string }> {
   return await new Promise((resolve, reject) => {
-    const child = spawn(input.command, [...input.args], {
+    const spawnProcess = input.spawnProcess ?? defaultSpawnProcess;
+    const child = spawnProcess(input.command, input.args, {
       cwd: input.cwd,
       env: input.env,
       stdio: ['pipe', 'pipe', 'pipe']
@@ -148,6 +176,21 @@ export async function spawnCommand(input: {
     });
     child.stdin.end(input.stdin);
   });
+}
+
+export async function spawnCommand(input: SpawnCommandInput): Promise<{ readonly stdout: string; readonly stderr: string }> {
+  try {
+    return await spawnCommandOnce(input);
+  } catch (error) {
+    if (!isSpawnFailure(error) || error.code !== 'EINVAL') throw error;
+    const fallback = await nodeShebangCommand(input.command);
+    if (!fallback) throw error;
+    return await spawnCommandOnce({
+      ...input,
+      command: fallback.command,
+      args: [...fallback.argsPrefix, ...input.args]
+    });
+  }
 }
 
 export async function runLocalAiWorklogTool(input: {

@@ -152,14 +152,10 @@ function defaultSpawnProcess(command: string, args: readonly string[], options: 
   return spawn(command, [...args], options);
 }
 
-function quoteWindowsCommandPath(command: string): string {
-  return `"${command.replaceAll('"', '\"')}"`;
-}
-
 function windowsCmdCommand(command: string, env: NodeJS.ProcessEnv): SpawnFallback {
   return {
     command: env.ComSpec ?? env.COMSPEC ?? 'cmd.exe',
-    argsPrefix: ['/d', '/s', '/c', 'call', quoteWindowsCommandPath(command)]
+    argsPrefix: ['/d', '/s', '/c', 'call', command]
   };
 }
 

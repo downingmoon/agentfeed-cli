@@ -112,7 +112,7 @@ describe('local AI worklog helpers', () => {
   });
 
 
-  it('retries Windows command shims through cmd.exe when direct spawn returns EINVAL', async () => {
+  it('retries Windows command shims through cmd.exe without pre-quoting when direct spawn returns EINVAL', async () => {
     // Given: Codex resolves to a Windows npm .cmd shim that cannot be spawned directly.
     const commandPath = 'C:\\Users\\dev\\AppData\\Roaming\\npm\\codex.CMD';
     const calls: Array<{ readonly command: string; readonly args: readonly string[] }> = [];
@@ -140,7 +140,7 @@ describe('local AI worklog helpers', () => {
       }
     });
 
-    // Then: the fallback runs the shim via cmd.exe and preserves Codex arguments.
+    // Then: the fallback lets Node/cmd.exe handle argument quoting and preserves Codex arguments.
     expect(output.stdout).toBe('{"title":"AI title"}');
     expect(calls).toEqual([
       {
@@ -149,9 +149,44 @@ describe('local AI worklog helpers', () => {
       },
       {
         command: 'cmd.exe',
-        args: ['/d', '/s', '/c', 'call', '"C:\\Users\\dev\\AppData\\Roaming\\npm\\codex.CMD"', 'exec', '--sandbox', 'read-only', '--ephemeral', '--ignore-rules', '--skip-git-repo-check', '--color', 'never', '-']
+        args: ['/d', '/s', '/c', 'call', 'C:\\Users\\dev\\AppData\\Roaming\\npm\\codex.CMD', 'exec', '--sandbox', 'read-only', '--ephemeral', '--ignore-rules', '--skip-git-repo-check', '--color', 'never', '-']
       }
     ]);
+  });
+
+  it('does not wrap Windows command shim paths in literal quotes for cmd.exe fallback', async () => {
+    // Given: Codex resolves to the npm global path shape from Windows bug reports.
+    const commandPath = 'C:\\npm-global\\codex.cmd';
+    const calls: Array<{ readonly command: string; readonly args: readonly string[] }> = [];
+
+    // When: direct spawn fails with EINVAL on win32.
+    await spawnCommand({
+      command: commandPath,
+      args: ['exec', '-'],
+      cwd: process.cwd(),
+      stdin: 'write worklog',
+      timeoutMs: 5_000,
+      env: { ...process.env, ComSpec: 'cmd.exe' },
+      platform: 'win32',
+      spawnProcess: (command, args, options) => {
+        calls.push({ command, args });
+        if (command === commandPath) {
+          const child = spawn(process.execPath, ['-e', 'setTimeout(() => undefined, 10000)'], options);
+          queueMicrotask(() => {
+            child.emit('error', Object.assign(new Error('spawn EINVAL'), { code: 'EINVAL' }));
+            child.kill('SIGTERM');
+          });
+          return child;
+        }
+        return spawn(process.execPath, ['-e', 'process.stdout.write("ok")'], options);
+      }
+    });
+
+    // Then: cmd.exe receives the raw shim path, not a value containing quote characters.
+    expect(calls[1]).toEqual({
+      command: 'cmd.exe',
+      args: ['/d', '/s', '/c', 'call', 'C:\\npm-global\\codex.cmd', 'exec', '-']
+    });
   });
 
 

@@ -118,6 +118,44 @@ describe('richer summary public contract', () => {
     expect(fields.timeline[0]?.title).toBe('Collected AI agent session metadata');
   });
 
+
+  it('uses public feature labels for changed areas and outcomes when safe file evidence exists', () => {
+    // Given: changed-file evidence contains safe feature names plus one unsafe private path.
+    const git: GitMetrics = {
+      dirty: true,
+      files_changed: 4,
+      lines_added: 210,
+      lines_removed: 32,
+      changed_files: [
+        { path: 'src/features/worklog-review-panel.tsx', extension: '.tsx', language: 'TypeScript', status: 'modified', lines_added: 120, lines_removed: 20, publish_path: false },
+        { path: 'src/collectors/agent-session-summary.ts', extension: '.ts', language: 'TypeScript', status: 'added', lines_added: 70, lines_removed: 0, publish_path: false },
+        { path: 'src/private/payment-token.ts', extension: '.ts', language: 'TypeScript', status: 'modified', lines_added: 18, lines_removed: 12, publish_path: false },
+        { path: 'tests/worklog-review-panel.test.ts', extension: '.ts', language: 'TypeScript', status: 'modified', lines_added: 2, lines_removed: 0, publish_path: false },
+      ],
+    };
+
+    // When: richer public fields are generated from broad default area labels.
+    const fields = generateRicherSummaryFields({
+      areas: ['Application code', 'Test coverage', 'API layer'],
+      metrics: { ...richerMetrics, files_changed: 4, lines_added: 210, lines_removed: 32 },
+      git,
+      tags: [],
+      agent: 'codex',
+      model: 'gpt-5.5',
+      publicPrompt: null,
+    });
+
+    // Then: the public result explains concrete safe artifacts without leaking raw paths or unsafe names.
+    expect(fields.changed_areas).toEqual(['Worklog Review Panel updated', 'Agent Session Summary added', 'Application code', 'Test coverage', 'API layer']);
+    expect(fields.outcome).toContain('Included public-safe work on Worklog Review Panel');
+    expect(fields.outcome).toContain('Included public-safe work on Agent Session Summary');
+    expect(fields.summary).toContain('Public-safe feature signals: Worklog Review Panel and Agent Session Summary.');
+    const serialized = JSON.stringify(fields);
+    expect(serialized).not.toContain('src/features/worklog-review-panel.tsx');
+    expect(serialized).not.toContain('payment-token');
+    expect(serialized).not.toContain('src/private');
+  });
+
   it('filters unsafe model labels before adding workflow evidence', () => {
     // Given: a model-like value contains a private path and secret-shaped token.
     const fields = generateRicherSummaryFields({

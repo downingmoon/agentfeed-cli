@@ -1,6 +1,6 @@
 {
   "name": "agentfeed-cli",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "AgentFeed CLI for sharing privacy-safe AI agent worklogs — never your code.",
   "keywords": [
     "agentfeed",

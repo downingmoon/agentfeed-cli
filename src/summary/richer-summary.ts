@@ -1,5 +1,6 @@
 import type { AgentType, GitMetrics, WorklogMetrics, WorklogTimelineItem } from '../types.js';
 import { generateOutcome, generateSummary, generateTimeline, generateTitle } from './rule-based.js';
+import { publicChangedAreaFromFile, publicFeatureLabels, topPublicChangedFiles } from './public-change-signals.js';
 
 export interface RicherSummaryInput {
   readonly areas: string[];
@@ -33,9 +34,27 @@ function positive(value?: number | null): boolean {
   return typeof value === 'number' && value > 0;
 }
 
+const GENERAL_AREA_LABELS = new Set(['Application code', 'API layer', 'UI components']);
+
 function meaningfulAreas(areas: string[]): string[] {
   const normalized = areas.map((area) => area.trim()).filter(Boolean);
   return normalized.length ? normalized.slice(0, 8) : ['Application code'];
+}
+
+function enrichedAreas(input: RicherSummaryInput): string[] {
+  const areas = meaningfulAreas(input.areas);
+  const detailed = topPublicChangedFiles(input.git.changed_files).map(publicChangedAreaFromFile).filter((area): area is string => Boolean(area));
+  if (!detailed.length) return areas;
+  const result: string[] = [];
+  const seen = new Set<string>();
+  for (const area of [...detailed, ...areas]) {
+    const key = area.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(area);
+    if (result.length >= 8) break;
+  }
+  return result.length ? result : areas;
 }
 
 function areaText(areas: string[]): string {
@@ -128,23 +147,31 @@ function supportingEvidenceSentence(input: RicherSummaryInput): string | null {
   return evidence.length > 0 ? `Supporting evidence: ${evidence.join('; ')}.` : null;
 }
 
-function richerSummary(input: RicherSummaryInput, areas: string[]): string {
+function richerSummary(input: RicherSummaryInput, areas: string[], features: readonly string[]): string {
   const agentLabel = publicAgentLabel(input.agent);
+  const featureSentence = features.length ? ` Public-safe feature signals: ${areaText([...features])}.` : '';
   const sentences = [
-    `${agentLabel} prepared a review-ready ${areaText(areas)} update that explains the change before readers inspect the metrics.`,
+    `${agentLabel} prepared a review-ready ${areaText(areas)} update that explains the change before readers inspect the metrics.${featureSentence}`,
     supportingEvidenceSentence(input),
     'AgentFeed converts local evidence into public-safe labels, metrics, outcomes, and timeline entries for review; raw transcripts, diffs, source text, and file paths stay local.',
   ].filter((sentence): sentence is string => typeof sentence === 'string' && sentence.length > 0);
   return sentences.join(' ').slice(0, 2000);
 }
 
-function richerTitle(input: RicherSummaryInput, areas: string[]): string {
-  const prefix = positive(input.metrics.tests_passed) ? 'Verified' : 'Summarized';
-  return `${prefix} ${areaText(areas)} with ${publicAgentLabel(input.agent)}`.slice(0, 120);
+function titleAreas(inputAreas: readonly string[], enriched: readonly string[]): string[] {
+  const input = meaningfulAreas([...inputAreas]);
+  if (input.some((area) => !GENERAL_AREA_LABELS.has(area))) return input;
+  return enriched.length ? [...enriched].slice(0, 2) : input;
 }
 
-function richerOutcome(input: RicherSummaryInput, areas: string[]): string[] {
+function richerTitle(input: RicherSummaryInput, areas: string[]): string {
+  const prefix = positive(input.metrics.tests_passed) ? 'Verified' : 'Summarized';
+  return `${prefix} ${areaText(titleAreas(input.areas, areas))} with ${publicAgentLabel(input.agent)}`.slice(0, 120);
+}
+
+function richerOutcome(input: RicherSummaryInput, areas: string[], features: readonly string[]): string[] {
   const outcome = [`Updated ${areaText(areas)}`];
+  for (const feature of features.slice(0, 4)) outcome.push(`Included public-safe work on ${feature}`);
   if (positive(input.metrics.files_changed)) outcome.push(`Captured ${input.metrics.files_changed} changed files as aggregate metrics`);
   if (positive(input.metrics.lines_added) || positive(input.metrics.lines_removed)) outcome.push(`Recorded ${input.metrics.lines_added ?? 0} additions and ${input.metrics.lines_removed ?? 0} deletions without file paths`);
   if (positive(input.metrics.tests_run)) outcome.push(`Captured ${input.metrics.tests_passed ?? 0} passing tests as verification evidence`);
@@ -164,7 +191,7 @@ function richerTimeline(input: RicherSummaryInput): WorklogTimelineItem[] {
 }
 
 export function generateRicherSummaryFields(input: RicherSummaryInput): RicherSummaryFields {
-  const areas = meaningfulAreas(input.areas);
+  const areas = enrichedAreas(input);
   if (!hasRicherEvidence(input, areas)) {
     return {
       title: generateTitle(areas, input.git),
@@ -176,11 +203,12 @@ export function generateRicherSummaryFields(input: RicherSummaryInput): RicherSu
       tags: publicTags(input.tags),
     };
   }
+  const features = publicFeatureLabels(input.git);
   return {
     title: richerTitle(input, areas),
-    summary: richerSummary(input, areas),
+    summary: richerSummary(input, areas, features),
     changed_areas: areas,
-    outcome: richerOutcome(input, areas),
+    outcome: richerOutcome(input, areas, features),
     timeline: richerTimeline(input),
     public_prompt: boundedPublicPrompt(input.publicPrompt),
     tags: publicTags(input.tags),

@@ -24,11 +24,17 @@ type SpawnCommandInput = {
   readonly timeoutMs: number;
   readonly env: NodeJS.ProcessEnv;
   readonly spawnProcess?: SpawnProcess;
+  readonly platform?: NodeJS.Platform;
 };
 
 type SpawnCommand = (input: SpawnCommandInput) => Promise<{ readonly stdout: string; readonly stderr: string }>;
 
 type SpawnFailure = Error & { readonly code?: string };
+
+type SpawnFallback = {
+  readonly command: string;
+  readonly argsPrefix: readonly string[];
+};
 
 export type LocalAiWorklogToolDependencies = {
   readonly resolveCommand?: ResolveCommand;
@@ -123,8 +129,8 @@ function isSpawnFailure(error: unknown): error is SpawnFailure {
   return error instanceof Error && 'code' in error && typeof error.code === 'string';
 }
 
-async function nodeShebangCommand(command: string): Promise<{ readonly command: string; readonly argsPrefix: readonly string[] } | null> {
-  if (process.platform === 'win32') return null;
+async function nodeShebangCommand(command: string, platform: NodeJS.Platform = process.platform): Promise<SpawnFallback | null> {
+  if (platform === 'win32') return null;
   try {
     const file = await open(command, 'r');
     try {
@@ -144,6 +150,23 @@ async function nodeShebangCommand(command: string): Promise<{ readonly command: 
 
 function defaultSpawnProcess(command: string, args: readonly string[], options: SpawnOptionsWithoutStdio): ChildProcessWithoutNullStreams {
   return spawn(command, [...args], options);
+}
+
+function quoteWindowsCommandPath(command: string): string {
+  return `"${command.replaceAll('"', '\"')}"`;
+}
+
+function windowsCmdCommand(command: string, env: NodeJS.ProcessEnv): SpawnFallback {
+  return {
+    command: env.ComSpec ?? env.COMSPEC ?? 'cmd.exe',
+    argsPrefix: ['/d', '/s', '/c', 'call', quoteWindowsCommandPath(command)]
+  };
+}
+
+async function spawnFallbackCommand(input: SpawnCommandInput): Promise<SpawnFallback | null> {
+  const platform = input.platform ?? process.platform;
+  if (platform === 'win32') return windowsCmdCommand(input.command, input.env);
+  return await nodeShebangCommand(input.command, platform);
 }
 
 async function spawnCommandOnce(input: SpawnCommandInput): Promise<{ readonly stdout: string; readonly stderr: string }> {
@@ -183,7 +206,7 @@ export async function spawnCommand(input: SpawnCommandInput): Promise<{ readonly
     return await spawnCommandOnce(input);
   } catch (error) {
     if (!isSpawnFailure(error) || error.code !== 'EINVAL') throw error;
-    const fallback = await nodeShebangCommand(input.command);
+    const fallback = await spawnFallbackCommand(input);
     if (!fallback) throw error;
     return await spawnCommandOnce({
       ...input,

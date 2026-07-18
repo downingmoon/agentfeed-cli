@@ -112,6 +112,49 @@ describe('local AI worklog helpers', () => {
   });
 
 
+  it('retries Windows command shims through cmd.exe when direct spawn returns EINVAL', async () => {
+    // Given: Codex resolves to a Windows npm .cmd shim that cannot be spawned directly.
+    const commandPath = 'C:\\Users\\dev\\AppData\\Roaming\\npm\\codex.CMD';
+    const calls: Array<{ readonly command: string; readonly args: readonly string[] }> = [];
+
+    // When: direct spawn fails with EINVAL on win32.
+    const output = await spawnCommand({
+      command: commandPath,
+      args: ['exec', '--sandbox', 'read-only', '--ephemeral', '--ignore-rules', '--skip-git-repo-check', '--color', 'never', '-'],
+      cwd: process.cwd(),
+      stdin: 'write worklog',
+      timeoutMs: 5_000,
+      env: { ...process.env, ComSpec: 'cmd.exe' },
+      platform: 'win32',
+      spawnProcess: (command, args, options) => {
+        calls.push({ command, args });
+        if (command === commandPath) {
+          const child = spawn(process.execPath, ['-e', 'setTimeout(() => undefined, 10000)'], options);
+          queueMicrotask(() => {
+            child.emit('error', Object.assign(new Error('spawn EINVAL'), { code: 'EINVAL' }));
+            child.kill('SIGTERM');
+          });
+          return child;
+        }
+        return spawn(process.execPath, ['-e', 'process.stdout.write(JSON.stringify({ title: "AI title" }))'], options);
+      }
+    });
+
+    // Then: the fallback runs the shim via cmd.exe and preserves Codex arguments.
+    expect(output.stdout).toBe('{"title":"AI title"}');
+    expect(calls).toEqual([
+      {
+        command: commandPath,
+        args: ['exec', '--sandbox', 'read-only', '--ephemeral', '--ignore-rules', '--skip-git-repo-check', '--color', 'never', '-']
+      },
+      {
+        command: 'cmd.exe',
+        args: ['/d', '/s', '/c', 'call', '"C:\\Users\\dev\\AppData\\Roaming\\npm\\codex.CMD"', 'exec', '--sandbox', 'read-only', '--ephemeral', '--ignore-rules', '--skip-git-repo-check', '--color', 'never', '-']
+      }
+    ]);
+  });
+
+
   it('throws when an explicitly requested local AI tool fails before upload', async () => {
     // Given: the user explicitly asks Codex to improve a draft before share upload.
     const cwd = await mkdtemp(join(tmpdir(), 'agentfeed-local-ai-fail-'));

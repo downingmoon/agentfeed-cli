@@ -47,7 +47,7 @@ describe('CLI version metadata', () => {
 
   it('builds dist before npm packaging', () => {
     expect(packageJson.name).toBe('agentfeed-cli');
-    expect(packageJson.bin?.agentfeed).toBe('./dist/cli/index.js');
+    expect(packageJson.bin?.agentfeed).toBe('dist/cli/index.js');
     expect(packageJson.files).toEqual(['dist', 'README.md', 'LICENSE']);
     expect(packageJson.scripts?.postbuild).toBe('node scripts/ensure-bin-executable.mjs');
     expect(packageJson.scripts?.prepack).toBe('npm run clean && npm run build && npm run typecheck && npm test -- --run');

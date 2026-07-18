@@ -11,17 +11,17 @@ export type AutoAgentSources = {
 };
 
 export async function autoAgentSources(cwd: string, config: AgentFeedProjectConfig): Promise<AutoAgentSources> {
-  const sources: AgentType[] = [];
-  if (config.agents.claude_code.enabled) sources.push('claude_code');
-  if (config.agents.codex.enabled) sources.push('codex');
-  if (config.agents.cursor.enabled) sources.push('cursor');
-  if (config.agents.gemini_cli.enabled) sources.push('gemini_cli');
+  const configuredSources: AgentType[] = [];
+  if (config.agents.claude_code.enabled) configuredSources.push('claude_code');
+  if (config.agents.codex.enabled) configuredSources.push('codex');
+  if (config.agents.cursor.enabled) configuredSources.push('cursor');
+  if (config.agents.gemini_cli.enabled) configuredSources.push('gemini_cli');
   let signals: Awaited<ReturnType<typeof detectAgentSignals>>;
   try {
     signals = await detectAgentSignals({ cwd });
   } catch (error) {
     return {
-      enabled: sources,
+      enabled: configuredSources,
       attributable: [],
       globalOnly: [],
       warnings: [
@@ -60,8 +60,12 @@ export async function autoAgentSources(cwd: string, config: AgentFeedProjectConf
     gemini_cli: hasProjectLocalSignal([...signals.gemini_cli.paths, ...signals.superpowers.paths]) ? 2 : 0,
     other: 0
   };
-  const enabled = [...sources].sort((a, b) => scores[b] - scores[a]);
   const knownSources: readonly AgentType[] = ['claude_code', 'codex', 'cursor', 'gemini_cli'];
+  const enabledSet = new Set<AgentType>(configuredSources);
+  for (const source of knownSources) {
+    if (localScores[source] > 0 || (source === 'codex' && scores[source] > 0)) enabledSet.add(source);
+  }
+  const enabled = [...enabledSet].sort((a, b) => scores[b] - scores[a]);
   return {
     enabled,
     attributable: enabled.filter((source) => localScores[source] > 0),

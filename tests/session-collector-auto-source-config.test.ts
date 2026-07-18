@@ -113,6 +113,38 @@ describe('agent session auto source config', () => {
     expect(draft.worklog.changed_areas).toContain('Application code');
   });
 
+
+  it('auto-enables detected Codex sessions so default Claude config does not misattribute Codex work', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'agentfeed-home-'));
+    process.env.HOME = home;
+    await initProject({ cwd: dir, noGitCheck: false });
+    execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });
+    execFileSync('git', ['commit', '-m', 'agentfeed config'], { cwd: dir, stdio: 'ignore' });
+    const configPath = join(dir, '.agentfeed', 'config.json');
+    const config = JSON.parse(await readFile(configPath, 'utf8'));
+    config.agents.claude_code.enabled = true;
+    config.agents.codex.enabled = false;
+    config.agents.cursor.enabled = false;
+    config.agents.gemini_cli.enabled = false;
+    await writeFile(configPath, JSON.stringify(config, null, 2) + '\n');
+
+    const codexSessionFile = join(home, '.codex', 'sessions', 'codex-detected-session.jsonl');
+    await mkdir(join(home, '.codex', 'sessions'), { recursive: true });
+    await writeJsonl(codexSessionFile, [
+      { timestamp: '2026-05-20T01:00:00Z', type: 'session_meta', payload: { id: 'codex-detected-session', cwd: dir, model: 'gpt-5.5' } },
+      { timestamp: '2026-05-20T01:01:00Z', type: 'response_item', payload: { type: 'patch_apply_end', status: 'completed', changes: {
+        [join(dir, 'src', 'codex-detected.ts')]: { type: 'add', content: 'export const detectedCodex = true;\n' }
+      } } }
+    ]);
+
+    const draft = await collectDraft({ cwd: dir, since: '2026-05-20T01:00:00Z', until: '2026-05-20T02:00:00Z' });
+
+    expect(draft.worklog.agent).toBe('codex');
+    expect(draft.source.agent).toBe('codex');
+    expect(draft.source.session_id).toBe('codex-detected-session');
+    expect(draft.worklog.model).toBe('gpt-5.5');
+  });
+
   it('allows explicit source to override disabled agent config', async () => {
     await initProject({ cwd: dir, noGitCheck: false });
     execFileSync('git', ['add', '.agentfeed/config.json', '.agentfeed/redaction-rules.json'], { cwd: dir });

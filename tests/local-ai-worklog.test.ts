@@ -259,7 +259,18 @@ describe('local AI worklog helpers', () => {
     expect(next.worklog.title).toBe('Nested AI title');
     expect(next.worklog.summary).toBe('Nested AI summary');
     expect(next.worklog.changed_areas).toEqual(['CLI share']);
-    expect(next.worklog.public_prompt).toBe('agentfeed share --ai-worklog');
+    expect(next.worklog.public_prompt).toBeNull();
+  });
+
+
+  it('ignores local AI public_prompt responses so worklog-writing prompts are not published', () => {
+    const draft = createEmptyDraft({ projectName: 'proj', projectRoot: '/tmp/agentfeed-local-ai', source: 'codex' });
+
+    const patch = parseAiWorklogPatch('{"title":"AI title","public_prompt":"Summarize collected metadata for the worklog."}');
+    const next = applyAiWorklogPatch(draft, patch);
+
+    expect(next.worklog.title).toBe('AI title');
+    expect(next.worklog.public_prompt).toBeNull();
   });
 
 

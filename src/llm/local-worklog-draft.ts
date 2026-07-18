@@ -9,7 +9,6 @@ export type AiWorklogPatch = {
   readonly outcome?: readonly string[];
   readonly timeline?: readonly WorklogTimelineItem[];
   readonly tags?: readonly string[];
-  readonly public_prompt?: string | null;
 };
 
 const VALID_TIMELINE_STATUSES = ['success', 'warning', 'failed', 'info'] as const;
@@ -71,15 +70,13 @@ export function parseAiWorklogPatch(text: string): AiWorklogPatch {
   const parsed: unknown = JSON.parse(extractJsonObject(text));
   if (!isRecord(parsed)) throw new Error('Local AI worklog response JSON must be an object.');
   const payload = isRecord(parsed.worklog) ? { ...parsed, ...parsed.worklog } : parsed;
-  const publicPrompt = payload.public_prompt === null ? null : optionalString(payload.public_prompt);
   return {
     title: optionalString(payload.title),
     summary: optionalString(payload.summary),
     changed_areas: optionalStringArray(payload.changed_areas, 8),
     outcome: optionalStringArray(payload.outcome, 10),
     timeline: optionalTimeline(payload.timeline),
-    tags: optionalStringArray(payload.tags, 10),
-    ...(publicPrompt !== undefined ? { public_prompt: publicPrompt } : {})
+    tags: optionalStringArray(payload.tags, 10)
   };
 }
 
@@ -88,7 +85,7 @@ export function buildAiWorklogPrompt(draft: LocalDraft): string {
     'You are writing a public-safe AgentFeed worklog from already-collected metadata.',
     'Do not invent secrets, URLs, local paths, private customer names, or code content.',
     'Do not modify files or run commands. Output JSON only, no markdown fences.',
-    'Return keys: title, summary, changed_areas, outcome, timeline, tags, public_prompt.',
+    'Return keys: title, summary, changed_areas, outcome, timeline, tags.',
     'Constraints: title <= 120 chars; summary <= 2000 chars; arrays concise; timeline items use {"order", "title", "description", "status"}.',
     '',
     JSON.stringify({
@@ -103,8 +100,7 @@ export function buildAiWorklogPrompt(draft: LocalDraft): string {
         changed_areas: draft.worklog.changed_areas,
         outcome: draft.worklog.outcome,
         timeline: draft.worklog.timeline,
-        tags: draft.worklog.tags,
-        public_prompt: draft.worklog.public_prompt ?? null
+        tags: draft.worklog.tags
       },
       privacy_scan: draft.privacy_scan,
       source: draft.source
@@ -118,8 +114,7 @@ function hasUsableWorklogPatchField(patch: AiWorklogPatch): boolean {
     || patch.changed_areas !== undefined
     || patch.outcome !== undefined
     || patch.timeline !== undefined
-    || patch.tags !== undefined
-    || patch.public_prompt !== undefined;
+    || patch.tags !== undefined;
 }
 
 export function applyAiWorklogPatch(draft: LocalDraft, patch: AiWorklogPatch): LocalDraft {
@@ -128,7 +123,7 @@ export function applyAiWorklogPatch(draft: LocalDraft, patch: AiWorklogPatch): L
     title: patch.title ?? draft.worklog.title,
     summary: patch.summary ?? draft.worklog.summary,
     user_note: draft.worklog.user_note ?? null,
-    public_prompt: patch.public_prompt ?? draft.worklog.public_prompt ?? null,
+    public_prompt: draft.worklog.public_prompt ?? null,
     outcome: patch.outcome ? [...patch.outcome] : draft.worklog.outcome,
     timeline: patch.timeline ? [...patch.timeline] : draft.worklog.timeline,
     changed_areas: patch.changed_areas ? [...patch.changed_areas] : draft.worklog.changed_areas,

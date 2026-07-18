@@ -26,7 +26,7 @@
   },
   "type": "module",
   "bin": {
-    "agentfeed": "./dist/cli/index.js"
+    "agentfeed": "dist/cli/index.js"
   },
   "scripts": {
     "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",

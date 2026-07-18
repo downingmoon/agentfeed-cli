@@ -63,9 +63,18 @@ function mergedCollectionQuality(sources: NonNullable<WorklogMetrics['collection
   return best;
 }
 
-function mergeCollectionSources(candidates: AgentSessionCandidate[]): NonNullable<WorklogMetrics['collection_sources']> {
+function orderedCandidates(candidates: AgentSessionCandidate[], primary: AgentSessionCandidate): AgentSessionCandidate[] {
+  return [
+    primary,
+    ...candidates
+      .filter((candidate) => candidate !== primary)
+      .sort((a, b) => `${a.source}:${a.session.session_id ?? ''}`.localeCompare(`${b.source}:${b.session.session_id ?? ''}`))
+  ];
+}
+
+function mergeCollectionSources(candidates: AgentSessionCandidate[], primary: AgentSessionCandidate): NonNullable<WorklogMetrics['collection_sources']> {
   const sources: NonNullable<WorklogMetrics['collection_sources']> = [];
-  for (const candidate of candidates) {
+  for (const candidate of orderedCandidates(candidates, primary)) {
     for (const source of candidate.session.collection_sources ?? []) {
       if (!sources.some((row) => row.type === source.type && row.name === source.name)) sources.push(source);
     }
@@ -141,11 +150,9 @@ function agentMetricForCandidate(candidate: AgentSessionCandidate): AgentMetricS
   };
 }
 
-function agentMetricsForCandidates(candidates: AgentSessionCandidate[]): AgentMetricSummary[] | null {
+function agentMetricsForCandidates(candidates: AgentSessionCandidate[], primary: AgentSessionCandidate): AgentMetricSummary[] | null {
   if (!candidates.length) return null;
-  return candidates
-    .map(agentMetricForCandidate)
-    .sort((a, b) => `${a.agent}:${a.session_id ?? ''}`.localeCompare(`${b.agent}:${b.session_id ?? ''}`));
+  return orderedCandidates(candidates, primary).map(agentMetricForCandidate);
 }
 
 export function agentMetricsForSession(source: AgentType, session?: AgentSessionMetrics | null): AgentMetricSummary[] | null {
@@ -203,7 +210,7 @@ export function mergeAgentSessions(candidates: AgentSessionCandidate[], requeste
   const changedFiles = mergeChangedFiles([], candidates.flatMap((candidate) => candidate.session.changed_files));
   const linesAdded = sumChangedFileLines(changedFiles, 'lines_added');
   const linesRemoved = sumChangedFileLines(changedFiles, 'lines_removed');
-  const collectionSources = mergeCollectionSources(candidates);
+  const collectionSources = mergeCollectionSources(candidates, primary);
   const collectionWindow = mergeSessionWindow(candidates, requestedWindow);
   const modelsUsed = mergeModelsUsed(candidates);
   const session: AgentSessionMetrics = {
@@ -226,7 +233,7 @@ export function mergeAgentSessions(candidates: AgentSessionCandidate[], requeste
     subagents_completed: addOptionalCounts(...candidates.map((candidate) => candidate.session.subagents_completed)),
     agent_turns: addOptionalCounts(...candidates.map((candidate) => candidate.session.agent_turns)),
     models_used: modelsUsed,
-    agent_metrics: agentMetricsForCandidates(candidates),
+    agent_metrics: agentMetricsForCandidates(candidates, primary),
     agent_modes: mergeAgentModes(candidates),
     collection_quality: mergedCollectionQuality(collectionSources),
     collection_sources: collectionSources.length ? collectionSources : null,

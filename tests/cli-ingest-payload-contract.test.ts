@@ -57,8 +57,8 @@ describe('CLI ingest payload contract', () => {
     draft.worklog.model = 'gpt-5.5';
     draft.worklog.metrics.models_used = ['claude-sonnet', 'gpt-5.5'];
     draft.worklog.metrics.agent_metrics = [
-      { agent: 'claude_code', model: 'claude-sonnet', session_id: 'claude-session', tokens_used: 15, files_changed: 1, lines_added: 1, tool_calls: 1 },
-      { agent: 'codex', model: 'gpt-5.5', session_id: 'codex-session', tokens_used: 240, files_changed: 1, lines_added: 2, tool_calls: 2 }
+      { agent: 'codex', model: 'gpt-5.5', session_id: 'codex-session', tokens_used: 240, files_changed: 1, lines_added: 2, tool_calls: 2 },
+      { agent: 'claude_code', model: 'claude-sonnet', session_id: 'claude-session', tokens_used: 15, files_changed: 1, lines_added: 1, tool_calls: 1 }
     ];
 
     const payload = draftToIngestRequest(draft);
@@ -66,8 +66,8 @@ describe('CLI ingest payload contract', () => {
     expect(payload.worklog.model).toBe('gpt-5.5');
     expect(payload.worklog.metrics.models_used).toEqual(['claude-sonnet', 'gpt-5.5']);
     expect(payload.worklog.metrics.agent_metrics).toEqual([
-      expect.objectContaining({ agent: 'claude_code', model: 'claude-sonnet', tokens_used: 15, tool_calls: 1 }),
-      expect.objectContaining({ agent: 'codex', model: 'gpt-5.5', tokens_used: 240, tool_calls: 2 })
+      expect.objectContaining({ agent: 'codex', model: 'gpt-5.5', tokens_used: 240, tool_calls: 2 }),
+      expect.objectContaining({ agent: 'claude_code', model: 'claude-sonnet', tokens_used: 15, tool_calls: 1 })
     ]);
   });
 
